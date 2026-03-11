@@ -1,0 +1,16 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm install
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: build # 如果您使用 React；Vue 项目通常是 dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

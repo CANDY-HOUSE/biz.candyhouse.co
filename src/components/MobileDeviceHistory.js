@@ -1,0 +1,183 @@
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Box, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { CmHistoryExt } from './biz/device/CmHistoryExt';
+import { Buffer } from 'buffer';
+import { biz3utils } from '@/utils/biz3utils';
+
+const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
+  const [groupedHistories, setGroupedHistories] = useState([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const scrollRef = useRef(null);
+  const containerRef = useRef(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadMoreTriggerRef = useRef(null);
+  const rowHeight = 72;
+
+  // 按日期分组历史记录
+  const groupHistoriesByDate = (histories) => {
+    const sorted = [...histories].sort((a, b) => a.timestamp - b.timestamp);
+    const grouped = {};
+    sorted.forEach((item) => {
+      const date = new Date(item.timestamp);
+      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayOfWeek = daysOfWeek[date.getDay()];
+      const dateKey = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${dayOfWeek}`;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(item);
+    });
+    return Object.keys(grouped)
+      .sort((a, b) => new Date(a) - new Date(b))
+      .map((date) => ({
+        date,
+        items: grouped[date],
+      }));
+  };
+
+  const prevScrollInfo = useRef({ height: 0, top: 0 });
+  useEffect(() => {
+    if (histories && histories.length > 0) {
+      const grouped = groupHistoriesByDate(histories);
+      if (scrollRef.current && !isInitialLoad) {
+        prevScrollInfo.current = {
+          height: scrollRef.current.scrollHeight,
+          top: scrollRef.current.scrollTop,
+        };
+      }
+      setGroupedHistories(grouped);
+    } else {
+      setGroupedHistories([]);
+    }
+  }, [histories, isInitialLoad]);
+
+  useLayoutEffect(() => {
+    if (groupedHistories.length > 0 && scrollRef.current) {
+      if (isInitialLoad) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        setIsInitialLoad(false); // 使用 setState
+      } else {
+        const heightDiff = scrollRef.current.scrollHeight - prevScrollInfo.current.height;
+        if (heightDiff > 0) {
+          scrollRef.current.scrollTop = prevScrollInfo.current.top + heightDiff - rowHeight * 0.5;
+        }
+      }
+    }
+  }, [groupedHistories, isInitialLoad]);
+
+  useEffect(() => {
+    if (!loadMoreTriggerRef.current || !hasMore || isInitialLoad) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !isLoading && hasMore) {
+          setIsLoading(true);
+          if (onLoadMore) {
+            onLoadMore((lastKey) => {
+              setTimeout(() => {
+                setHasMore(!!lastKey);
+                setIsLoading(false);
+              }, 100);
+            });
+          }
+        }
+      },
+      {
+        root: scrollRef.current,
+        rootMargin: '50px',
+        threshold: 0.1,
+      }
+    );
+    observer.observe(loadMoreTriggerRef.current);
+    return () => {
+      if (loadMoreTriggerRef.current) {
+        observer.unobserve(loadMoreTriggerRef.current);
+      }
+    };
+  }, [hasMore, isLoading, onLoadMore, isInitialLoad]); // 添加 isInitialLoad 到依赖项
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{
+        width: '100%',
+        height: fullHeight ? '100vh' : '100%',
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Box
+        ref={scrollRef}
+        sx={{
+          width: '100%',
+          height: '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        }}
+      >
+        {hasMore && <Box ref={loadMoreTriggerRef} sx={{ height: 40 }} />}
+        {groupedHistories.map((group, _groupIndex) => (
+          <Box key={group.date}>
+            <Box
+              sx={{
+                position: 'sticky',
+                top: 0,
+                bgcolor: 'secondary.main',
+                height: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}
+            >
+              <Typography variant="h4" sx={{ p: '0px !important' }}>
+                {group.date}
+              </Typography>
+            </Box>
+            <List sx={{ p: 0 }}>
+              {group.items.map((item, index) => (
+                <ListItem
+                  key={`${item.record_id}-${index}`}
+                  sx={{
+                    height: rowHeight,
+                    py: 0,
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: '2.5rem' }}>
+                    <CmHistoryExt.StatusView type={item.type} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography variant="body1" sx={{ fontWeight: 400 }}>
+                        {item.history_tag
+                          ? Buffer.from(item.history_tag, 'base64').toString('utf8')
+                          : CmHistoryExt.ManualContent({ type: item.type })}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" sx={{ color: 'info.light', mt: 0.5 }}>
+                        {biz3utils.timestampToTime(item.timestamp, false)}
+                      </Typography>
+                    }
+                  />
+                  <CmHistoryExt.ViaView type={item.type} />
+                  {item.deviceName?.length > 0 && (
+                    <Typography variant="h4" sx={{ color: 'info.light', pl: 2 }}>
+                      {item.deviceName}
+                    </Typography>
+                  )}
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+export default MobileDeviceHistory;

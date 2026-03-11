@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap');
+
+html,
+body,
+#___gatsby,
+#gatsby-focus-wrapper {
+  height: 100%;
+  letter-spacing: 0.02rem !important;
+}
+
+a {
+  display: block;
+  text-decoration: none;
+}
+
+.react-datepicker__day--weekend {
+  background: #fdea8e;
+}
+
+.react-datepicker-popper {
+  z-index: 2000 !important;
+}
+
+.react-datepicker__input-container {
+  width: 250px !important;
+}
+
+.react-datepicker__input-container > .MuiTextField-root {
+  width: 100% !important;
+}
+.react-datepicker-wrapper {
+  width: unset !important;
+}

@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.yarn/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+bin/
+.cache/
+.parcel-cache
+
+# Gatsby specific
+.gatsby-context.js
+test/**/public
+e2e-tests/gatsby-pnp/
+__diff_output__/
+
+# Logs and debugging
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+junit.xml
+coverage/
+lib-cov/
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# IDE specific
+.idea/
+.vscode/
+*.sw*
+*.un~
+
+# OS specific
+.DS_Store
+.Rhistory

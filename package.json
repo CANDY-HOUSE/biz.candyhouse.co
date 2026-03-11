@@ -1,0 +1,114 @@
+{
+  "name": "biz3",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "react-app-rewired start",
+    "build": "npx cross-env REMOVE_CONSOLE=true react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "prebuild": "node generate-version.js",
+    "lint": "eslint ./src --ext .js,.jsx,.ts,.tsx",
+    "lintfix": "eslint ./src --ext .js,.jsx,.ts,.tsx --fix",
+    "check-format": "prettier --check .",
+    "format": "prettier --write .",
+    "precommit": "lint-staged",
+    "prepare": "husky install",
+    "deploy": "npx serve -s build"
+  },
+  "homepage": ".",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --check",
+      "eslint"
+    ]
+  },
+  "keywords": [
+    "react",
+    "CANDY HOUSE"
+  ],
+  "author": "CANDY HOUSE",
+  "contributors": [
+    {
+      "name": "harry",
+      "email": "harry@cn.candyhouse.co"
+    },
+    {
+      "name": "eddy",
+      "email": "caijinshu@tanguo.co"
+    },
+    {
+      "name": "midori",
+      "email": "midori@candyhouse.co"
+    }
+  ],
+  "description": "",
+  "dependencies": {
+    "@aws-amplify/auth": "^5.6.4",
+    "@aws-amplify/core": "^5.6.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^6.1.7",
+    "@mui/lab": "^6.0.0-beta.19",
+    "@mui/material": "^6.1.7",
+    "@nuintun/qrcode": "3.4.0",
+    "@stripe/react-stripe-js": "^3.0.0",
+    "@stripe/stripe-js": "^5.2.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.1",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "buffer": "^6.0.3",
+    "cross-env": "^7.0.3",
+    "crypto-browserify": "^3.12.1",
+    "customize-cra": "^1.0.0",
+    "file-saver": "^2.0.5",
+    "i18next": "^23.16.5",
+    "i18next-browser-languagedetector": "^8.0.0",
+    "loadash": "^1.0.0",
+    "mui-datatables": "^4.3.0",
+    "papaparse": "^5.4.1",
+    "react": "^18.3.1",
+    "react-app-rewired": "^2.2.1",
+    "react-datepicker": "^7.5.0",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.1.1",
+    "react-router-dom": "^7.0.2",
+    "react-scripts": "^5.0.1",
+    "recharts": "^3.6.0",
+    "serve": "^14.2.4",
+    "webpack": "^5.97.1",
+    "ws": "^8.18.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "cross-env": "^7.0.3",
+    "eslint": "8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.1",
+    "typescript": "5.1.6",
+    "yarn": "^1.22.22"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

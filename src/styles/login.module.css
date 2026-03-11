@@ -1,0 +1,22 @@
+.loginBox {
+  text-align: center;
+  width: 100%;
+  padding: 12px 0;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 1px solid lightgray;
+  font-size: 20px;
+}
+
+.loginBox:focus {
+  outline: none;
+  border: none;
+  border-bottom: 1px solid #aaaaaa;
+}
+
+.loginBox::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #bbbbbb;
+  opacity: 1; /* Firefox */
+}
