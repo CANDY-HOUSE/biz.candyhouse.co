@@ -55,6 +55,7 @@
         "HeavyV": "低電圧",
         "VoltageValue": "電圧値",
         "Percentage": "パーセンテージ",
+        "RechargeableBattery": "充電式電池",
         "SetAngle": "角度の設定",
         "LockWithOpenSensor": "オープンセンサーで施錠",
         "AutoLockCountdown": "タイマー式のオートロック",

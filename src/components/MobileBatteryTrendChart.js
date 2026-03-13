@@ -215,6 +215,12 @@ const MobileBatteryTrendChart = ({
           font-size: 10px;
           fill: #666;
         }
+        .recharts-layer .recharts-brush-texts text:first-child {
+          transform: translate(50px, -24px);
+        }
+        .recharts-layer .recharts-brush-texts text:last-child {
+          transform: translate(-50px, -24px);
+        }
         `}
       </style>
       <Card sx={{ p: 0 }}>
@@ -268,6 +274,7 @@ const MobileBatteryTrendChart = ({
                 endIndex={brushEndIndex}
                 onChange={handleBrushChange}
                 tickFormatter={formatXAxis}
+                y={height - 45}
               />
             </LineChart>
           </ResponsiveContainer>

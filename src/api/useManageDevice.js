@@ -364,6 +364,19 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     [subscribeDevicesUpdate]
   );
 
+  const switchRechargebleBattery = useCallback(
+    ({ deviceUUID, isRechargeBattery }, cb) => {
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
+        deviceUUID,
+        isRechargeBattery: isRechargeBattery ? 1 : 0,
+        op: 'switchRecharge',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [registerCallback]
+  );
   return {
     companyDevices,
     getCompanyDevices,
@@ -384,5 +397,6 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     reorderDevice,
     getDevicesNotifyStatus,
     switchDeviceNotify,
+    switchRechargebleBattery,
   };
 };

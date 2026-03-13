@@ -54,6 +54,7 @@
         "HeavyV": "Low Voltage",
         "VoltageValue": "Voltage Value",
         "Percentage": "Percentage",
+        "RechargeableBattery": "Rechargeable Battery",
         "SetAngle": "Set Angle",
         "LockWithOpenSensor": "Lock with Open Sensor",
         "AutoLockCountdown": "Auto Lock Countdown",

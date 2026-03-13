@@ -55,6 +55,7 @@
         "HeavyV": "低電壓",
         "VoltageValue": "電壓值",
         "Percentage": "百分比",
+        "RechargeableBattery": "可充電電池",
         "SetAngle": "設定角度",
         "LockWithOpenSensor": "開門感應器上鎖",
         "AutoLockCountdown": "自動上鎖倒數計時",
