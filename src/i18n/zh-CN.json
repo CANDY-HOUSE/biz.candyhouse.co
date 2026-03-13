@@ -55,7 +55,7 @@
         "HeavyV": "低电压",
         "VoltageValue": "电压值",
         "Percentage": "百分比",
-        "RechargeableBattery": "可充电电池",
+        "RechargeableBattery": "3.7V 可充电电池",
         "SetAngle": "设置角度",
         "LockWithOpenSensor": "用开关传感器上锁",
         "AutoLockCountdown": "倒数自动上锁",
