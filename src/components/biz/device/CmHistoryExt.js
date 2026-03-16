@@ -6,6 +6,7 @@ import ComputerRoundedIcon from '@mui/icons-material/ComputerRounded';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import React from 'react';
 import { SensorDoor } from '@mui/icons-material';
 import i18n from '@/i18n';
@@ -16,6 +17,10 @@ const style = {
   padding: '5px',
   borderRadius: '100%',
 };
+
+const BOT_HISTORY_TYPE_START = 170;
+const BOT_HISTORY_TYPE_END = 179;
+
 // [eddy todo] 应在服务端完成
 const ManualContent = ({ type }) => {
   switch (type) {
@@ -37,7 +42,39 @@ const ManualContent = ({ type }) => {
   }
 };
 
-const ViaView = ({ type }) => {
+const ViaView = ({ type, botViaType }) => {
+  // bot2 script history
+  if (type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) {
+    switch (botViaType) {
+      case 'BLE':
+        return (
+          <BluetoothIcon
+            sx={{
+              color: (theme) => theme.palette.info.light,
+            }}
+          />
+        );
+      case 'WIFI':
+        return (
+          <WifiIcon
+            sx={{
+              color: (theme) => theme.palette.info.light,
+            }}
+          />
+        );
+      case 'WEB':
+        return (
+          <ComputerRoundedIcon
+            sx={{
+              color: (theme) => theme.palette.info.light,
+            }}
+          />
+        );
+      default:
+        return '';
+    }
+  }
+
   switch (type) {
     case 1:
     case 2:
@@ -94,6 +131,11 @@ const ViaView = ({ type }) => {
   }
 };
 const StatusView = ({ type }) => {
+  // bot2 script history
+  if (type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) {
+    return <SmartToyOutlinedIcon sx={{ ...style, backgroundColor: 'primary.light' }} />;
+  }
+
   switch (type) {
     case 1:
     case 6:

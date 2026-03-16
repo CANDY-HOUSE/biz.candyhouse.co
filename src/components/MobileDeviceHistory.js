@@ -97,6 +97,18 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
     };
   }, [hasMore, isLoading, onLoadMore, isInitialLoad]); // 添加 isInitialLoad 到依赖项
 
+  const getPrimaryTitle = (item) => {
+    const userName = item.history_tag
+      ? Buffer.from(item.history_tag, 'base64').toString('utf8')
+      : CmHistoryExt.ManualContent({ type: item.type });
+
+    if (item.type >= 170 && item.type <= 179) {
+      return item.botAlias ? `${userName} ${item.botAlias}` : userName;
+    }
+
+    return userName;
+  };
+
   return (
     <Box
       ref={containerRef}
@@ -153,9 +165,7 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
                   <ListItemText
                     primary={
                       <Typography variant="body1" sx={{ fontWeight: 400 }}>
-                        {item.history_tag
-                          ? Buffer.from(item.history_tag, 'base64').toString('utf8')
-                          : CmHistoryExt.ManualContent({ type: item.type })}
+                        {getPrimaryTitle(item)}
                       </Typography>
                     }
                     secondary={
@@ -164,7 +174,7 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
                       </Typography>
                     }
                   />
-                  <CmHistoryExt.ViaView type={item.type} />
+                  <CmHistoryExt.ViaView type={item.type} botViaType={item.botViaType} />
                   {item.deviceName?.length > 0 && (
                     <Typography variant="h4" sx={{ color: 'info.light', pl: 2 }}>
                       {item.deviceName}
