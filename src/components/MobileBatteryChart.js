@@ -67,15 +67,17 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
       if (!res.success) {
         setIsRechargeableBattery(!newValue);
       } else {
-        gManageDevice.getCompanyDevices(true);
         // App 刷新首页
         if (
           !biz3utils.triggerBridge({
             action: 'requestRefreshApp',
           })
         ) {
+          gManageDevice.getCompanyDevices(true);
           console.log('not in app');
         }
+        setChartData([]);
+        getBatteryRecord();
       }
     });
   };
