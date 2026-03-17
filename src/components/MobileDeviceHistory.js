@@ -102,8 +102,13 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
       ? Buffer.from(item.history_tag, 'base64').toString('utf8')
       : CmHistoryExt.ManualContent({ type: item.type });
 
-    if (item.type >= 170 && item.type <= 179) {
+    if (item.botHistoryMode === 'script') {
       return item.botAlias ? `${userName} ${item.botAlias}` : userName;
+    }
+
+    // Bot2/Bot3 manual click history
+    if (item.botHistoryMode === 'manual') {
+      return 'Manual Click';
     }
 
     return userName;
@@ -174,7 +179,11 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
                       </Typography>
                     }
                   />
-                  <CmHistoryExt.ViaView type={item.type} botViaType={item.botViaType} />
+                  <CmHistoryExt.ViaView
+                    type={item.type}
+                    botViaType={item.botViaType}
+                    botHistoryMode={item.botHistoryMode}
+                  />
                   {item.deviceName?.length > 0 && (
                     <Typography variant="h4" sx={{ color: 'info.light', pl: 2 }}>
                       {item.deviceName}
