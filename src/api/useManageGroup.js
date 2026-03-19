@@ -292,6 +292,20 @@ const useManageGroup = (gStripe) => {
     [gStripe.customerInfo.companyID, registerCallback]
   );
 
+  const makeInvisibleHistory = useCallback(
+    ({ deviceUUID, timestamp }, cb) => {
+      const msgData = {
+        action: ACTION_TYPES.BIZ3_GET_DEVICEHISTORY,
+        deviceUUID,
+        timestamp,
+        op: 'makeInvisible',
+      };
+      sendMessage(msgData);
+      registerCallback(msgData.action, msgData.op, cb);
+    },
+    [registerCallback]
+  );
+
   const postDeviceGroupInfo = useCallback(
     (item, cb) => {
       const companyID = gStripe.customerInfo.companyID;
@@ -328,6 +342,7 @@ const useManageGroup = (gStripe) => {
     removeEmployeeDeviceKey,
     updateGuestKeyTag,
     generateGuestQRCode,
+    makeInvisibleHistory,
   };
 };
 

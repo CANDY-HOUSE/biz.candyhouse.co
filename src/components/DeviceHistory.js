@@ -1,12 +1,24 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { CircularProgress, Backdrop, Box, Tooltip, IconButton } from '@mui/material'; // 添加导入
+import {
+  CircularProgress,
+  Backdrop,
+  Box,
+  Tooltip,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+} from '@mui/material';
 import { gUtils } from '@/utils/gUtils';
 import { useSearchParams } from 'react-router-dom';
 import MobileDeviceHistory from './MobileDeviceHistory';
 import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BlurOverlay from './BlurOverlay';
+import { useTranslation } from 'react-i18next';
 
 export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false }) {
   const { gManageGroup, gStripe } = useContext(GlobalStateContext);
@@ -18,6 +30,8 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
   const keyLevel = searchParams.get('keyLevel');
   const deviceUUID = propDeviceUUID || searchDeviceUUID;
   const noToolBar = gStripe.isFromApp || !showToolBar;
+  const [menuState, setMenuState] = useState({ open: false, item: null });
+  const { t } = useTranslation();
 
   const loadHistory = (lastKey = null, cb) => {
     gManageGroup.getDeviceHistory([{ deviceUUID, lastKey }], (resp) => {
@@ -77,6 +91,27 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     return parseInt(keyLevel) === 2;
   }, [keyLevel]);
 
+  const handleItemLongPress = (item, event) => {
+    event.preventDefault();
+    setMenuState({ open: true, item });
+  };
+
+  const handleCloseMenu = () => {
+    setMenuState({ open: false, item: null });
+  };
+
+  const handleItemDetails = useCallback(() => {
+    if (!menuState.item) {
+      handleCloseMenu();
+      return;
+    }
+    const { device_id: deviceUUID, timestamp } = menuState.item;
+    gManageGroup.makeInvisibleHistory({ deviceUUID, timestamp }, (res) => {
+      res.success && setDeviceHistory((prev) => prev.filter((item) => item.record_id !== menuState.item.record_id));
+    });
+    handleCloseMenu();
+  }, [menuState]);
+
   const content = noToolBar ? (
     <MobileDeviceHistory
       histories={deviceHistory}
@@ -85,6 +120,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
           cb(lastKey);
         });
       }}
+      onItemLongPress={handleItemLongPress}
     />
   ) : (
     <>
@@ -116,6 +152,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
                 cb(lastKey);
               });
             }}
+            onItemLongPress={handleItemLongPress}
           />
         </Box>
       </Box>
@@ -135,5 +172,30 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     </>
   );
 
-  return <BlurOverlay enabled={disableInteraction}>{content}</BlurOverlay>;
+  return (
+    <>
+      <BlurOverlay enabled={disableInteraction}>{content}</BlurOverlay>
+      <Drawer anchor="bottom" open={menuState.open} onClose={handleCloseMenu}>
+        <List sx={{ pb: 1, justifyContent: 'center' }} disablePadding>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleItemDetails}>
+              <ListItemText
+                primary={t('pages.ir.remote.delete')}
+                sx={{
+                  textAlign: 'center',
+                  color: 'error.main',
+                  fontWeight: 500,
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleCloseMenu}>
+              <ListItemText primary={t('pages.ir.remote.cancel')} sx={{ textAlign: 'center' }} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Drawer>
+    </>
+  );
 }

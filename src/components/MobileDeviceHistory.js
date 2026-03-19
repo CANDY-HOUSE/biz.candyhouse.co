@@ -4,7 +4,7 @@ import { CmHistoryExt } from './biz/device/CmHistoryExt';
 import { Buffer } from 'buffer';
 import { biz3utils } from '@/utils/biz3utils';
 
-const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
+const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemLongPress }) => {
   const [groupedHistories, setGroupedHistories] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollRef = useRef(null);
@@ -13,6 +13,8 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
   const [isLoading, setIsLoading] = useState(false);
   const loadMoreTriggerRef = useRef(null);
   const rowHeight = 72;
+  const longPressTimer = useRef(null);
+  const longPressThreshold = 500;
 
   // 按日期分组历史记录
   const groupHistoriesByDate = (histories) => {
@@ -97,6 +99,28 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
     };
   }, [hasMore, isLoading, onLoadMore, isInitialLoad]); // 添加 isInitialLoad 到依赖项
 
+  const handleTouchStart = (e, item) => {
+    longPressTimer.current = setTimeout(() => {
+      if (onItemLongPress) {
+        onItemLongPress(item, e);
+      }
+    }, longPressThreshold);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   const getPrimaryTitle = (item) => {
     const userName = item.history_tag
       ? Buffer.from(item.history_tag, 'base64').toString('utf8')
@@ -162,7 +186,14 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore }) => {
                   sx={{
                     height: rowHeight,
                     py: 0,
+                    userSelect: 'none',
                   }}
+                  onTouchStart={(e) => handleTouchStart(e, item)}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchMove={handleTouchMove}
+                  onMouseDown={(e) => handleTouchStart(e, item)}
+                  onMouseUp={handleTouchEnd}
+                  onMouseLeave={handleTouchEnd}
                 >
                   <ListItemIcon sx={{ minWidth: '2.5rem' }}>
                     <CmHistoryExt.StatusView type={item.type} />
