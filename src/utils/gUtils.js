@@ -269,6 +269,7 @@ const lockModelDevices = [
   gConfig.sesameDeviceModel.sesame_5_pro,
   gConfig.sesameDeviceModel.sesame_5_us,
   gConfig.sesameDeviceModel.bot_2,
+  gConfig.sesameDeviceModel.bot_3,
   gConfig.sesameDeviceModel.ssmbot_1,
   gConfig.sesameDeviceModel.sesame_6_pro,
   gConfig.sesameDeviceModel.ble_connector,
