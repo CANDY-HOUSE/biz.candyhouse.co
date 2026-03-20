@@ -20,6 +20,7 @@ const style = {
 
 const BOT_HISTORY_TYPE_START = 170;
 const BOT_HISTORY_TYPE_END = 179;
+const BOT_HISTORY_CLICK_TYPE = 89;
 const BOT_HISTORY_MANUAL_TYPE = 4;
 
 // [eddy todo] 应在服务端完成
@@ -45,7 +46,11 @@ const ManualContent = ({ type }) => {
 
 const ViaView = ({ type, botViaType, botHistoryMode }) => {
   // bot2 script history
-  if ((type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) || botHistoryMode === 'manual') {
+  if (
+    type === BOT_HISTORY_CLICK_TYPE ||
+    (type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) ||
+    botHistoryMode === 'manual'
+  ) {
     if (botHistoryMode === 'manual') {
       return (
         <BluetoothIcon
@@ -143,7 +148,11 @@ const ViaView = ({ type, botViaType, botHistoryMode }) => {
 };
 const StatusView = ({ type }) => {
   // bot2 script history
-  if ((type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) || type === BOT_HISTORY_MANUAL_TYPE) {
+  if (
+    type === BOT_HISTORY_CLICK_TYPE ||
+    (type >= BOT_HISTORY_TYPE_START && type <= BOT_HISTORY_TYPE_END) ||
+    type === BOT_HISTORY_MANUAL_TYPE
+  ) {
     return <SmartToyOutlinedIcon sx={{ ...style, backgroundColor: 'primary.light' }} />;
   }
 

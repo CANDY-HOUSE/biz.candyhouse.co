@@ -126,8 +126,14 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
       ? Buffer.from(item.history_tag, 'base64').toString('utf8')
       : CmHistoryExt.ManualContent({ type: item.type });
 
+    // Bot2/Bot3 script history
     if (item.botHistoryMode === 'script') {
       return item.botAlias ? `${userName} ${item.botAlias}` : userName;
+    }
+
+    // Bot2/Bot3 widget click history
+    if (item.botHistoryMode === 'widget') {
+      return `${userName} Widget Click`;
     }
 
     // Bot2/Bot3 manual click history
