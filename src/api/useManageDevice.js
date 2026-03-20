@@ -1,10 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
 
+const PubedCompanyDevice = 'PubedCompanyDevice';
+const PubedUserDevice = 'PubedUserDevice';
 export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   const [filteredSsmDevices, setFilteredSsmDevices] = useState([]); //公司用户ssm设备
   const [filteredAccessControlDevices, setFilteredAccessControlDevices] = useState([]); //公司用户认证机器
@@ -12,8 +14,9 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   const [canChoosedSsmDevices, setCanChoosedSsmDevices] = useState([]); //用户可选择的ssm设备
   const [userDevices, setUserDevices] = useState([]); //个人用户所有设备
   const [companyDevices, setCompanyDevices] = useState([]); //公司用户所有设备
-
   const { registerCallback, invokeCallbacks } = useCallbacks();
+  const tempCompanyDevicesRef = useRef([]); //临时存储公司设备数据
+  const tempUserDevicesRef = useRef([]); //临时个人设备数据
 
   const handleManageDeviceResponse = useCallback(
     (message) => {
@@ -28,15 +31,26 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
         return;
       }
       switch (message.op) {
-        case 'getUser':
-          let res = message.data;
-          setUserDevices((prevState) => {
-            return [...prevState, ...res.filter((item) => !prevState.some((i) => i.deviceUUID === item.deviceUUID))];
-          });
-          break;
-        case 'getComp':
-          setCompanyDevices(message.data);
-          subscribeDevices(message.data);
+        case PubedCompanyDevice:
+        case PubedUserDevice:
+          const {
+            totalPage,
+            data: { list, page },
+          } = message.data;
+          const tmpRef = message.op === PubedCompanyDevice ? tempCompanyDevicesRef : tempUserDevicesRef;
+          if (page === 1) {
+            tmpRef.current = [...list];
+          } else {
+            tmpRef.current = [...tmpRef.current, ...list];
+          }
+          if (totalPage === page) {
+            if (message.op === PubedCompanyDevice) {
+              setCompanyDevices(tmpRef.current);
+              subscribeDevices(tmpRef.current);
+            } else {
+              setUserDevices(tmpRef.current);
+            }
+          }
           break;
         case 'add':
           getCompanyDevices();
@@ -221,7 +235,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
 
   const getUserDevices = useCallback(
     (forceFetch = false) => {
-      let message = { action: ACTION_TYPES.BIZ3_MANAGE_DEVICE, op: 'getUser' };
+      let message = { action: ACTION_TYPES.BIZ3_MANAGE_DEVICE, op: 'getUserDevice' };
       forceFetch ? sendMessage(message) : handleSendMessage(message);
     },
     [handleSendMessage]
@@ -231,7 +245,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     (forceFetch = false) => {
       const companyID = gStripe.customerInfo.companyID;
       if (!companyID) return;
-      let message = { action: ACTION_TYPES.BIZ3_MANAGE_DEVICE, op: 'getComp', companyID };
+      let message = { action: ACTION_TYPES.BIZ3_MANAGE_DEVICE, op: 'getCompanyDevice', companyID };
       forceFetch ? sendMessage(message) : handleSendMessage(message);
     },
     [handleSendMessage, gStripe.customerInfo.companyID]
