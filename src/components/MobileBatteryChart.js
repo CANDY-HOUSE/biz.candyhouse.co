@@ -1,5 +1,16 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Box, Card, IconButton, Typography, Switch, List, ListItem, ListItemText } from '@mui/material';
+import {
+  Box,
+  Card,
+  IconButton,
+  Typography,
+  Switch,
+  List,
+  ListItem,
+  ListItemText,
+  Drawer,
+  ListItemButton,
+} from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
@@ -15,6 +26,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const [chartData, setChartData] = useState([]);
   const [lastKey, setLastKey] = useState(null);
   const [isRechargeableBattery, setIsRechargeableBattery] = useState(false);
+  const [menuState, setMenuState] = useState({ open: false, selectedPoint: null });
   const [searchParams] = useSearchParams();
   const deviceUUID = searchParams.get('deviceUUID') || userDeviceUUID;
   const isWifiModule = deviceUUID.startsWith('00000000-055A-FD81-0D00');
@@ -24,16 +36,22 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const isSettingPush = Boolean(searchParams.get('setting')) === true;
 
   const getBatteryRecordCallback = useCallback((message) => {
-    const processedData = (message.data.records || []).map((item) => ({
-      time: new Date(item.ts * 1000).toLocaleString(),
-      timestamp: item.ts,
-      light: item.light / 1000,
-      heavy: item.heavy > -1 ? item.heavy / 1000 : undefined,
-      lightPercentage: item.lightPercentage,
-      heavyPercentage: item.heavyPercentage,
-    }));
-    setLastKey(message.data.lastEvaluatedKey);
-    setChartData((prevData) => [...processedData, ...prevData]);
+    if (message.action !== ACTION_TYPES.BIZ3_GET_BATTERY_RECORD) return;
+    if (message.op === 'batch-get') {
+      const processedData = (message.data.records || []).map((item) => ({
+        time: new Date(item.ts * 1000).toLocaleString(),
+        timestamp: item.ts,
+        light: item.light / 1000,
+        heavy: item.heavy > -1 ? item.heavy / 1000 : undefined,
+        lightPercentage: item.lightPercentage,
+        heavyPercentage: item.heavyPercentage,
+      }));
+      setLastKey(message.data.lastEvaluatedKey);
+      setChartData((prevData) => [...processedData, ...prevData]);
+    } else if (message.op === 'makeInvisible') {
+      message.success &&
+        setChartData((prevData) => prevData.filter((item) => item.timestamp !== message.data.timestamp_second));
+    }
   }, []);
 
   useWebSocket(ACTION_TYPES.BIZ3_GET_BATTERY_RECORD, getBatteryRecordCallback);
@@ -45,6 +63,17 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
       lastEvaluatedKey: lastKey,
       pageSize: isFromApp ? 50 : 100,
       op: 'batch-get',
+    };
+    sendMessage(msgData);
+  };
+
+  const makeInvisibleRecord = ({ deviceUUID, timestamp_second }) => {
+    if (isWifiModule) return;
+    const msgData = {
+      action: ACTION_TYPES.BIZ3_GET_BATTERY_RECORD,
+      deviceUUID,
+      timestamp_second,
+      op: 'makeInvisible',
     };
     sendMessage(msgData);
   };
@@ -99,6 +128,18 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
     }
   }, [device]);
 
+  const handleCloseMenu = () => {
+    setMenuState({ open: false, selectedPoint: null });
+  };
+
+  const handleDeleteRecord = () => {
+    if (menuState.selectedPoint) {
+      const { timestamp } = menuState.selectedPoint;
+      makeInvisibleRecord({ deviceUUID, timestamp_second: timestamp });
+    }
+    handleCloseMenu();
+  };
+
   return (
     <>
       {!isFromApp && isSettingPush && (
@@ -118,6 +159,9 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
             lastKey && getBatteryRecord(lastKey);
           }}
           height={isFromApp ? 300 : 400}
+          onPointLongPress={({ payload }) => {
+            setMenuState({ open: true, selectedPoint: payload });
+          }}
         />
         {!gUtils.isWifiModel(device?.deviceModel) && (
           <List disablePadding>
@@ -134,6 +178,27 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
           </List>
         )}
       </Card>
+      <Drawer anchor="bottom" open={menuState.open} onClose={handleCloseMenu} variant="temporary">
+        <List sx={{ pb: 1, justifyContent: 'center' }} disablePadding>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleDeleteRecord}>
+              <ListItemText
+                primary={t('pages.ir.remote.delete')}
+                sx={{
+                  textAlign: 'center',
+                  color: 'error.main',
+                  fontWeight: 500,
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleCloseMenu}>
+              <ListItemText primary={t('pages.ir.remote.cancel')} sx={{ textAlign: 'center' }} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Drawer>
     </>
   );
 };

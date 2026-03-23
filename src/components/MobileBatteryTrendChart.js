@@ -14,6 +14,7 @@ const MobileBatteryTrendChart = ({
   xAxisDataKey = 'time',
   height = 400,
   onLoadMore,
+  onPointLongPress, // 长按回调函数
 }) => {
   const { t } = useTranslation();
   const [brushStartIndex, setBrushStartIndex] = useState(0);
@@ -21,6 +22,8 @@ const MobileBatteryTrendChart = ({
   const containerRef = useRef(null);
   const startXRef = useRef(0);
   const isDraggingRef = useRef(false);
+  const longPressTimerRef = useRef(null); // 长按定时器
+  const activePayloadRef = useRef(null); // 存储当前激活的数据点
   const [yAxisUnit, setYAxisUnit] = useState('%');
   const lineDataKeyMap = {
     V: {
@@ -57,9 +60,20 @@ const MobileBatteryTrendChart = ({
     const handleStart = (clientX) => {
       isDraggingRef.current = true;
       startXRef.current = clientX;
+      // 启动长按定时器
+      longPressTimerRef.current = setTimeout(() => {
+        isDraggingRef.current = false;
+        if (onPointLongPress && activePayloadRef.current) {
+          onPointLongPress(activePayloadRef.current);
+        }
+      }, 500); // 长按阈值 500ms
     };
 
     const handleMove = (clientX) => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
       if (!isDraggingRef.current) return;
       const deltaX = clientX - startXRef.current;
       // 向右拖拽超过阈值（50px）触发加载更多
@@ -72,6 +86,10 @@ const MobileBatteryTrendChart = ({
     };
 
     const handleEnd = () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
       isDraggingRef.current = false;
     };
 
@@ -100,7 +118,7 @@ const MobileBatteryTrendChart = ({
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [brushStartIndex, onLoadMore]);
+  }, [brushStartIndex, onLoadMore, onPointLongPress]);
 
   const formatXAxis = (value) => {
     if (value && typeof value === 'string') {
@@ -110,6 +128,15 @@ const MobileBatteryTrendChart = ({
   };
 
   const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      activePayloadRef.current = {
+        payload: payload[0].payload,
+        dataKeys: {
+          light: dataSource.high,
+          heavy: dataSource.low,
+        },
+      };
+    }
     if (active && payload && payload.length) {
       return (
         <Box
@@ -190,6 +217,15 @@ const MobileBatteryTrendChart = ({
     }
   };
 
+  // 清理长按定时器
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <>
       <style>
@@ -220,6 +256,13 @@ const MobileBatteryTrendChart = ({
         }
         .recharts-layer .recharts-brush-texts text:last-child {
           transform: translate(-50px, -24px);
+        }
+        .recharts-wrapper {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          -webkit-touch-callout: none;
         }
         `}
       </style>
