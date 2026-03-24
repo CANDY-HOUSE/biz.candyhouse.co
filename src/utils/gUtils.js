@@ -443,6 +443,11 @@ const authText = {
   },
 };
 
+const isSupportRechargeableBattery = (model) => {
+  const productTypeId = Object.keys(modelNameByProductType).find((key) => modelNameByProductType[key] === model);
+  return parseInt(productTypeId ?? 21) - 21 >= 0;
+};
+
 export const gUtils = {
   csvUtils,
   uuidsToNames,
@@ -472,5 +477,6 @@ export const gUtils = {
   isContainPage,
   canWifiModuleControl,
   formatTimestampToMonthDayLocal,
+  isSupportRechargeableBattery,
   authText,
 };

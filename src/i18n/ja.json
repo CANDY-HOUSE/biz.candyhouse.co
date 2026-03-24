@@ -56,6 +56,7 @@
         "VoltageValue": "電圧値",
         "Percentage": "パーセンテージ",
         "RechargeableBattery": "3.7V 充電式電池",
+        "RechargeableBatteryNotice": "現在のデバイスは3.7V充電池の残量表示の最適化には対応しておりません",
         "SetAngle": "角度の設定",
         "LockWithOpenSensor": "オープンセンサーで施錠",
         "AutoLockCountdown": "タイマー式のオートロック",

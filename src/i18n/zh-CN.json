@@ -56,6 +56,7 @@
         "VoltageValue": "电压值",
         "Percentage": "百分比",
         "RechargeableBattery": "3.7V 可充电电池",
+        "RechargeableBatteryNotice": "当前设备不支持对 3.7V 可充电电池的剩余电量显示进行优化",
         "SetAngle": "设置角度",
         "LockWithOpenSensor": "用开关传感器上锁",
         "AutoLockCountdown": "倒数自动上锁",

@@ -172,6 +172,13 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
                     {t('pages.sesameAccessControlDevice.index.RechargeableBattery')}
                   </Typography>
                 }
+                secondary={
+                  !gUtils.isSupportRechargeableBattery(device?.deviceModel) && (
+                    <Typography sx={{ fontSize: 10, color: 'error.main' }}>
+                      {t('pages.sesameAccessControlDevice.index.RechargeableBatteryNotice')}
+                    </Typography>
+                  )
+                }
               />
               <Switch checked={isRechargeableBattery} onChange={handleSwitchChange} />
             </ListItem>

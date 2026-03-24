@@ -55,6 +55,7 @@
         "VoltageValue": "Voltage Value",
         "Percentage": "Percentage",
         "RechargeableBattery": "3.7V Rechargeable Battery",
+        "RechargeableBatteryNotice": "The current device does not support battery level optimization for 3.7V rechargeable batteries",
         "SetAngle": "Set Angle",
         "LockWithOpenSensor": "Lock with Open Sensor",
         "AutoLockCountdown": "Auto Lock Countdown",
