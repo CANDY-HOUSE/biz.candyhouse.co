@@ -66,7 +66,7 @@ const MobileBatteryTrendChart = ({
         if (onPointLongPress && activePayloadRef.current) {
           onPointLongPress(activePayloadRef.current);
         }
-      }, 500); // 长按阈值 500ms
+      }, 400); // 长按阈值 400ms
     };
 
     const handleMove = (clientX) => {
