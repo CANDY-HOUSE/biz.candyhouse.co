@@ -22,7 +22,7 @@ import { biz3utils } from '@/utils/biz3utils';
 import { gUtils } from '@/utils/gUtils';
 
 const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
-  const { gManageDevice, gStripe } = useContext(GlobalStateContext);
+  const { gManageDevice, gStripe, gMediaType } = useContext(GlobalStateContext);
   const [chartData, setChartData] = useState([]);
   const [lastKey, setLastKey] = useState(null);
   const [isRechargeableBattery, setIsRechargeableBattery] = useState(false);
@@ -154,12 +154,13 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
       )}
       <Card>
         <MobileBatteryTrendChart
+          showDeleteButton={gMediaType.isMobile}
           chartData={chartData}
           onLoadMore={() => {
             lastKey && getBatteryRecord(lastKey);
           }}
           height={isFromApp ? 300 : 400}
-          onPointLongPress={({ payload }) => {
+          onDeleteItemPress={({ payload }) => {
             setMenuState({ open: true, selectedPoint: payload });
           }}
         />
@@ -185,7 +186,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
           </List>
         )}
       </Card>
-      <Drawer anchor="bottom" open={menuState.open} onClose={handleCloseMenu} variant="temporary">
+      <Drawer anchor="bottom" open={menuState.open} variant="temporary">
         <List sx={{ pb: 1, justifyContent: 'center' }} disablePadding>
           <ListItem disablePadding>
             <ListItemButton onClick={handleDeleteRecord}>

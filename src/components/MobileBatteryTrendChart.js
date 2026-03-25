@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Box, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Card, Box, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 import { useTranslation } from 'react-i18next';
 
@@ -14,7 +15,8 @@ const MobileBatteryTrendChart = ({
   xAxisDataKey = 'time',
   height = 400,
   onLoadMore,
-  onPointLongPress, // 长按回调函数
+  onDeleteItemPress, // 长按回调函数
+  showDeleteButton = false, // 是否显示删除按钮
 }) => {
   const { t } = useTranslation();
   const [brushStartIndex, setBrushStartIndex] = useState(0);
@@ -63,8 +65,8 @@ const MobileBatteryTrendChart = ({
       // 启动长按定时器
       longPressTimerRef.current = setTimeout(() => {
         isDraggingRef.current = false;
-        if (onPointLongPress && activePayloadRef.current) {
-          onPointLongPress(activePayloadRef.current);
+        if (onDeleteItemPress && activePayloadRef.current) {
+          onDeleteItemPress(activePayloadRef.current);
         }
       }, 400); // 长按阈值 400ms
     };
@@ -118,7 +120,7 @@ const MobileBatteryTrendChart = ({
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [brushStartIndex, onLoadMore, onPointLongPress]);
+  }, [brushStartIndex, onLoadMore, onDeleteItemPress]);
 
   const formatXAxis = (value) => {
     if (value && typeof value === 'string') {
@@ -136,24 +138,68 @@ const MobileBatteryTrendChart = ({
           heavy: dataSource.low,
         },
       };
+    } else {
+      activePayloadRef.current = null;
     }
     if (active && payload && payload.length) {
+      const isDeleteButton = (target) => {
+        while (target) {
+          if (target.getAttribute && target.getAttribute('data-delete-button') === 'true') {
+            return true;
+          }
+          target = target.parentElement;
+        }
+        return false;
+      };
+      const handleTouchEnd = (e) => {
+        if (isDeleteButton(e.target)) {
+          if (onDeleteItemPress && activePayloadRef.current) {
+            onDeleteItemPress(activePayloadRef.current);
+          }
+          return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+      };
+
       return (
         <Box
+          onTouchEnd={handleTouchEnd}
           sx={{
             bgcolor: 'white',
             p: 0.5,
             border: '1px solid #ccc',
             borderRadius: 1,
             fontSize: 12,
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
           }}
         >
-          <p style={{ margin: 0, marginBottom: 0 }}>{payload[0].payload[xAxisDataKey]}</p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ margin: 0, marginBottom: 0, color: entry.color }}>
-              {`${entry.name}: ${isNaN(entry.value) ? '' : entry.value + yAxisUnit}`}
-            </p>
-          ))}
+          <Box sx={{ flex: 1 }}>
+            <p style={{ margin: 0, marginBottom: 0 }}>{payload[0].payload[xAxisDataKey]}</p>
+            {payload.map((entry, index) => (
+              <p key={index} style={{ margin: 0, marginBottom: 0, color: entry.color }}>
+                {`${entry.name}: ${isNaN(entry.value) ? '' : entry.value + yAxisUnit}`}
+              </p>
+            ))}
+          </Box>
+          {showDeleteButton && (
+            <IconButton
+              data-delete-button="true"
+              sx={{
+                p: 0,
+                minWidth: 'auto',
+                color: 'error.main',
+                pointerEvents: 'auto',
+                '&:active': {
+                  opacity: 0.6,
+                },
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          )}
         </Box>
       );
     }
