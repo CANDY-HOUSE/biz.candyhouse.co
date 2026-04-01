@@ -15,7 +15,7 @@ const levelData = () => [
     cards: '5 カード',
     fingers: '5 指紋',
     passwords: '5 暗証番号',
-    apis: 'APIリクエスト上限\n 3,000 回',
+    apis: 'APIリクエスト上限\n 1,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
   {
