@@ -6,9 +6,9 @@ import { Cmac } from '@/utils/Cmac.js';
 import { biz3utils } from '@/utils/biz3utils.js';
 
 const API = {
-  WEBAPI_DEVICE_STATE: 'attendance_apifun_getshadow',
-  WEBAPI_DEVICE_HISTORY: 'attendance_apifun_history',
-  WEBAPI_DEVICE_TRIGGER: 'attendance_apifun_cmd',
+  WEBAPI_DEVICE_STATE: 'webapi_ssm_shadow_get',
+  WEBAPI_DEVICE_HISTORY: 'webapi_history_get',
+  WEBAPI_DEVICE_TRIGGER: 'webapi_cmd_send',
 };
 
 export const useDeveloper = (gStripe, gAuth) => {
