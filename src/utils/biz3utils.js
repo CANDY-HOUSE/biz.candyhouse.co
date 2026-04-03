@@ -80,10 +80,22 @@ const getMatterProductTypeFromModelName = (model_name) => {
     17: 1,
     18: 255,
     19: 255,
-    21: 255,
+    20: 0,
+    21: 0,
     22: 255,
     23: 255,
     24: 255,
+    25: 255,
+    26: 255,
+    27: 255,
+    28: 255,
+    // 29: 255,
+    30: 255,
+    31: 255,
+    32: 0,
+    33: 0,
+    34: 0,
+    35: 1,
   };
   return matterProductTypeMap[productType];
 };
