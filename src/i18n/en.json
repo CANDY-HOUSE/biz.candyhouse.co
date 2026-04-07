@@ -36,6 +36,7 @@
         "BindDeviceToHub3Hint": "Add Sesame to be connected within 5 meters of this {{deviceName}}:",
         "BindIRToHub3Hint": "Add Infrared device to be connected within 5 meters of this Hub3:",
         "OSUpdate": "Software Update＆Restart",
+        "Latest": "(Latest)",
         "UpgradeHint": "Update {{sesame}} firmware: Please ensure {{sesame}} maintains Bluetooth connection with {{hub}} and {{hub}}'s network environment is stable",
         "AddSesame": "Add Sesame...",
         "DFU_CONNECTING": "Connecting to DFU...",
