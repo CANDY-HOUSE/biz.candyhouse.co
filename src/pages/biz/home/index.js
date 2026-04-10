@@ -14,15 +14,14 @@ const BizHomePage = () => {
   const noLimit = '/無制限';
 
   useEffect(() => {
-    if (gStripe.levelInfo) {
-      setMemberCount(`/${gStripe.levelInfo?.memberCount ?? '-'}人`);
-      setLockCount(`/${gStripe.levelInfo?.lockCount ?? '-'}台`);
-    }
     if (gStripe.customerInfo.isRootUser) {
       setMemberCount(noLimit);
       setLockCount(noLimit);
+    } else if (gStripe.quotas) {
+      setMemberCount(`/${gStripe.quotas?.memberCount ?? '-'}人`);
+      setLockCount(`/${gStripe.quotas?.lockCount ?? '-'}台`);
     }
-  }, [gStripe.levelInfo, gStripe.customerInfo]);
+  }, [gStripe.quotas, gStripe.customerInfo]);
 
   return (
     <>

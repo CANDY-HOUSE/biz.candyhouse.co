@@ -44,13 +44,14 @@ export default function Developer() {
     (isUpdate = false) => {
       gStripe.getDevApiInfo(isUpdate);
     },
-    [gStripe.customerInfo.subscriptionId]
+    [gStripe]
   );
 
   useEffect(() => {
-    const devices = gManageDevice.userDevices.filter((item) => gUtils.isLockModel(item.deviceModel));
+    const chooseDevices = gStripe.customerInfo.isSesameApp ? gManageDevice.companyDevices : gManageDevice.userDevices;
+    const devices = chooseDevices.filter((item) => gUtils.isLockModel(item.deviceModel));
     setUserDevices(devices);
-  }, gManageDevice.userDevices);
+  }, [gManageDevice.userDevices, gManageDevice.companyDevices, gStripe.customerInfo.isSesameApp]);
 
   useEffect(() => {
     getApiInfo(false);

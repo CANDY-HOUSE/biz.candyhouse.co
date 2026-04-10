@@ -31,6 +31,7 @@ import { LoadingButton } from '@mui/lab';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import SideBarMenu from './SideBarMenu.js';
+import BuildInfoBar from './BuildInfoBar.js';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -313,6 +314,7 @@ const Layout = () => {
               }}
             >
               <SidebarContent />
+              <BuildInfoBar />
             </Grid2>
           ) : (
             <Drawer
@@ -332,6 +334,7 @@ const Layout = () => {
             >
               <Box sx={{ width: 250 }} role="presentation">
                 <SidebarContent onItemClick={isMobile ? toggleDrawer(false) : undefined} />
+                <BuildInfoBar />
               </Box>
             </Drawer>
           )}

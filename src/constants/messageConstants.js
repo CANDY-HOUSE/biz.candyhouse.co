@@ -1,6 +1,6 @@
 export const ACTION_TYPES = {
   BIZ3_KEEP_ALIVE: 'biz3KeepAlive',
-  BIZ3_GET_LOGIN_INFO: 'biz3GetLoginInfo',
+  BIZ3_GET_LOGIN_INFO: 'biz3GetLoginUser',
   BIZ3_MANAGE_DEVICE: 'biz3ManageDevice',
   BIZ3_MANAGE_COMPANY: 'biz3ManageCompany',
   BIZ3_MANAGE_EMPLOYEE: 'biz3ManageEmployee',

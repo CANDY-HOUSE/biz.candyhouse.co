@@ -5,11 +5,10 @@ import { NavigatorItem, NavigatorItemTop } from './Navigatoritem';
 import { gUtils } from '@/utils/gUtils';
 import { useTranslation } from 'react-i18next';
 import { URLs } from '@constants/URLs';
-import BuildInfoBar from './BuildInfoBar';
 
 export default function Navigator({ location, onClick }) {
   const { t } = useTranslation();
-  const { gStripe, gMediaType } = useContext(GlobalStateContext);
+  const { gStripe } = useContext(GlobalStateContext);
   const { customerInfo } = gStripe;
   const { isSesameApp } = customerInfo;
 
@@ -23,8 +22,6 @@ export default function Navigator({ location, onClick }) {
       .map((id) => categoriesConf.find((cat) => cat.id === id))
       .filter(Boolean)
       .map(({ id, items, router }) => ({ id, items, router, onClick }));
-
-    if (isSesameApp) return routerParams;
     const devIndex = routerParams.findIndex((item) => item.id === pageNames.developer);
     return devIndex === -1 ? [routerParams, []] : [routerParams.slice(0, devIndex), routerParams.slice(devIndex)];
   }, [customerInfo, onClick]);
@@ -46,37 +43,27 @@ export default function Navigator({ location, onClick }) {
         flexDirection: 'column',
         justifyContent: 'space-between',
         backgroundColor: 'white',
-        paddingTop: '10px',
-        paddingLeft: '16px',
-        paddingBottom: '30px',
+        py: '10px',
+        pl: '16px',
       }}
     >
-      {isSesameApp ? (
-        <>
-          <Box>{renderCategoryItems(renderCategories)}</Box>
-          <Box sx={{ mb: gMediaType.isMobile ? 5 : 0 }}>
-            <BuildInfoBar />
-          </Box>
-        </>
-      ) : (
-        <>
-          <Box>
-            <NavigatorItem to="/biz" name={t('navigator.Home')} location={location} onClick={onClick} />
-            {renderCategoryItems(renderCategories[0])}
-          </Box>
-          <Box>
-            {renderCategoryItems(renderCategories[1])}
-            <NavigatorItem
-              to={URLs.intro}
-              name={t('navigator.Support')}
-              external={true}
-              location={location}
-              onClick={onClick}
-            />
-            <NavigatorItem to="/biz/settings" name={t('navigator.Settings')} location={location} onClick={onClick} />
-          </Box>
-        </>
-      )}
+      <Box>
+        {!isSesameApp && <NavigatorItem to="/biz" name={t('navigator.Home')} location={location} onClick={onClick} />}
+        {renderCategoryItems(renderCategories[0])}
+      </Box>
+      <Box>
+        {renderCategoryItems(renderCategories[1])}
+        {!isSesameApp && (
+          <NavigatorItem
+            to={URLs.intro}
+            name={t('navigator.Support')}
+            external={true}
+            location={location}
+            onClick={onClick}
+          />
+        )}
+        <NavigatorItem to="/biz/settings" name={t('navigator.Settings')} location={location} onClick={onClick} />
+      </Box>
     </List>
   );
 }

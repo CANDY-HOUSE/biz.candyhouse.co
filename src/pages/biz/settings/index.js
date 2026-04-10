@@ -57,14 +57,24 @@ const CmTextItem = ({ leftItem, rightItem }) => {
 export default function Settings() {
   const { gStripe, setCustomModalOpen, setModalContent, setCustomModalKeep, setSnackbarValue, gMediaType } =
     useContext(GlobalStateContext);
-  const [level, setLevel] = useState(0);
-  const [price, setPrice] = useState('00');
-  const [date, setDate] = useState('');
-  const [formattedPrice, setFormattedPrice] = useState('');
+  const [paymentConfig, setPaymentConfig] = useState({
+    config: {},
+    isYear: false,
+    time: 0,
+    total: 0,
+    level: 0,
+  });
+  const formattedPrice = useMemo(() => {
+    return new Intl.NumberFormat('ja-JP').format(paymentConfig.total);
+  }, [paymentConfig.total]);
+
+  const formattedDate = useMemo(() => {
+    return gUtils.timeToDate(paymentConfig.time);
+  }, [paymentConfig.time]);
 
   const isShowPaymentPlan = useMemo(() => {
     // 超级公司无服务费计划入口和下次支付日期
-    if (gStripe.customerInfo.isRootUser) {
+    if (gStripe.priorityCompany.isRootUser) {
       return false;
     }
     // 其他公司 不是 owner 不用显示
@@ -72,18 +82,19 @@ export default function Settings() {
       return true;
     }
     return false;
-  }, [gStripe.customerInfo, gStripe.isOwner]);
-
-  useEffect(() => {
-    setFormattedPrice(new Intl.NumberFormat('ja-JP').format(price));
-  }, [price]);
+  }, [gStripe.priorityCompany, gStripe.isOwner]);
 
   useEffect(() => {
     // 显示控件时，才需要获取卡片
     if (isShowPaymentPlan) {
       gStripe.getCardList();
+      gStripe.getLevelConfig((res) => {
+        if (res.success) {
+          setPaymentConfig({ ...res.data });
+        }
+      });
     }
-  }, [gStripe.customerInfo.companyID, isShowPaymentPlan]);
+  }, [gStripe.priorityCompany.companyID, isShowPaymentPlan]);
 
   const openCmPay = () => {
     setCustomModalOpen(true);
@@ -97,16 +108,6 @@ export default function Settings() {
     );
   };
 
-  useEffect(() => {
-    console.log('当前levelinfo', gStripe.levelInfo);
-    if (gStripe.levelInfo) {
-      setLevel(gStripe.levelInfo.level);
-      setDate(gUtils.timeToDate(gStripe.levelInfo.time));
-      const price = gStripe.levelInfo.total;
-      setPrice(price);
-    }
-  }, [gStripe.levelInfo]);
-
   const callUpdate = async (chooseLevel, isCancel) => {
     if (isCancel) {
       gStripe.updateLevel({ level: 0, isUpgrade: false, isCancel: true });
@@ -116,7 +117,7 @@ export default function Settings() {
         setCustomModalKeep(true);
         setModalContent(
           <CmLevelUpdate
-            levelConfig={gStripe.levelInfo.config}
+            levelConfig={paymentConfig.config}
             clickCancel={() => {
               setCustomModalKeep(false);
               setCustomModalOpen(false);
@@ -125,8 +126,8 @@ export default function Settings() {
               //  if (isYear)
               let c = isYear ? 1 : 0;
               let plevel = Math.floor(nlevel * 2 + c);
-              let isUpgrade = level * 2 < plevel;
-              console.log('levelInfo', plevel, nlevel, isYear, level, isUpgrade);
+              let isUpgrade = paymentConfig.level * 2 < plevel;
+              console.log('levelInfo', plevel, nlevel, isYear, paymentConfig.level, isUpgrade);
               gStripe.updateLevel({
                 level: plevel,
                 isUpgrade,
@@ -144,7 +145,7 @@ export default function Settings() {
               });
             }}
             chooseLevel={chooseLevel}
-            curLevel={level}
+            curLevel={paymentConfig.level}
           />
         );
       } else {
@@ -160,14 +161,10 @@ export default function Settings() {
   };
 
   const getNextLevelTitle = (gStripe) => {
-    if (gStripe.customerInfo.isRootUser) {
+    if (gStripe.priorityCompany.isRootUser) {
       return '無制限プラン';
     }
-    let info = gStripe.levelInfo;
-    if (!info) {
-      return getLevel(0);
-    }
-
+    let info = paymentConfig;
     const paymentMethod = info.isYear ? '年額プラン' : '月額プラン';
     if (info.nextEndDate) {
       console.log('info.nextPrice', info.nextPrice);
@@ -209,7 +206,7 @@ export default function Settings() {
               <Box sx={{ ml: '12px' }}>
                 <EditableText
                   style={{ ...rightItemStyle, marginLeft: '0' }}
-                  initialValue={gStripe.customerInfo.name}
+                  initialValue={gStripe.priorityCompany.name}
                   onSave={
                     gStripe.isOwner &&
                     ((newValue, callback) => {
@@ -218,7 +215,7 @@ export default function Settings() {
                       }
                       gStripe.updateCompanyName(newValue, (res) => {
                         callback(res.success);
-                        if (res.success) {
+                        if (res.success && !gStripe.customerInfo.isSesameApp) {
                           gStripe.setCustomerInfo((prev) => {
                             return {
                               ...prev,
@@ -233,9 +230,9 @@ export default function Settings() {
               </Box>
             </Box>
             <CmTextItem leftItem={'現在ご契約中のプラン'} rightItem={getNextLevelTitle(gStripe)} />
-            {!gStripe.customerInfo.isRootUser && (
+            {!gStripe.priorityCompany.isRootUser && (
               <>
-                <CmTextItem leftItem={'次のお支払い日'} rightItem={date} />
+                <CmTextItem leftItem={'次のお支払い日'} rightItem={formattedDate} />
                 <CmTextItem leftItem={'次のお支払い金額'} rightItem={`${formattedPrice}円(税込)`} />
               </>
             )}
@@ -280,8 +277,8 @@ export default function Settings() {
                 <CmFeeLevel
                   isMobile={gMediaType.isMobile}
                   callUpdate={callUpdate}
-                  nextPrice={gStripe.levelInfo?.nextPrice}
-                  levleInfo={gStripe.levelInfo}
+                  nextPrice={paymentConfig.nextPrice}
+                  levleInfo={paymentConfig}
                 />
                 <Typography sx={{ marginLeft: '8px' }}>
                   ※プランの表示価格はすべて年額プランの月換算した金額（税抜き）です。

@@ -7,14 +7,9 @@ const levelData = () => [
     name: 'Free',
     feeC: 0,
     fee: '円 /月',
-    isCheck: false,
-    upgrade: 'アップグレード',
     isUpgrade: true,
     users: '5 ユーザー',
     doors: '1 ドア',
-    cards: '5 カード',
-    fingers: '5 指紋',
-    passwords: '5 暗証番号',
     apis: 'APIリクエスト上限\n 1,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
@@ -23,14 +18,9 @@ const levelData = () => [
     name: 'Light',
     feeC: '1,980',
     fee: '円 /月',
-    isCheck: false,
-    upgrade: 'アップグレード',
     isUpgrade: false,
     users: '20 ユーザー',
     doors: '2 ドア',
-    cards: '20 カード',
-    fingers: '15 指紋',
-    passwords: '10 暗証番号',
     apis: 'APIリクエスト上限\n 30,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
@@ -39,14 +29,9 @@ const levelData = () => [
     name: 'Pro',
     feeC: '4,980',
     fee: '円 /月',
-    isCheck: false,
-    upgrade: 'アップグレード',
     isUpgrade: false,
     users: '50 ユーザー',
     doors: '5 ドア',
-    cards: '50 カード',
-    fingers: '25 指紋',
-    passwords: '50 暗証番号',
     apis: 'APIリクエスト上限\n 100,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
@@ -55,14 +40,9 @@ const levelData = () => [
     name: 'Business',
     feeC: '9,800',
     fee: '円 /月',
-    isCheck: false,
-    upgrade: 'アップグレード',
     isUpgrade: false,
     users: '100 ユーザー',
     doors: '10 ドア',
-    cards: '100 カード',
-    fingers: '50 指紋',
-    passwords: '100 暗証番号',
     apis: 'APIリクエスト上限\n 500,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
@@ -71,21 +51,16 @@ const levelData = () => [
     name: 'Enterprise',
     feeC: '19,800',
     fee: '円 /月',
-    isCheck: false,
-    upgrade: 'アップグレード',
     isUpgrade: false,
     users: '200 ユーザー',
     doors: '50 ドア',
-    cards: '200 カード',
-    fingers: '100 指紋',
-    passwords: '200 暗証番号',
     apis: 'APIリクエスト上限\n 無制限',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
 ];
 
 // eslint-disable-next-line
-const CmCheckText = ({ item, name, onCheckChange }) => {
+const CmCheckText = ({ item, name }) => {
   if (!item[name]) return null;
 
   return (
@@ -97,9 +72,6 @@ const CmCheckText = ({ item, name, onCheckChange }) => {
           paddingRight: '4px',
           paddingLeft: '4px',
         }}
-        // onClick={() => {
-        //  onCheckChange({...item,isCheck:!item.isCheck});
-        // }}
       >
         <CheckCircleIcon style={{ color: item.isUpgrade ? '#333333' : '#D3D3D3' }} />
       </Box>
@@ -133,16 +105,10 @@ export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
         } else {
           isCancel = nextPrice ? item.id === Math.floor(nextPrice / 2) : false;
         }
-
-        // console.log("isCancelisCancel",isCancel,nextPrice,level,item.id)
         return { ...item, isUpgrade: item.id === levleInfo.level, isCancel: isCancel };
       })
     );
   }, [levleInfo, nextPrice]);
-
-  const handleCheckChange = (newItem) => {
-    setData(data.map((item) => (item.id === newItem.id ? newItem : item)));
-  };
 
   return (
     <Box
@@ -213,11 +179,6 @@ export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
               {item.fee}
             </Typography>
           </Box>
-
-          {/*   {item.isUpgrade
-                        ?<Button variant="contained" sx={{marginTop:'20px'}}>{item.upgrade}</Button>
-                        :<Button variant="outlined">{item.upgrade}</Button>}*/}
-
           <Button
             disableElevation
             variant="contained"
@@ -236,42 +197,26 @@ export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
                 opacity: '0.8',
               },
             }}
-            /*    disabled={
-              item.isUpgrade || (gStripe.levelInfo && item.id < gStripe.levelInfo.nextPrice)
-            }*/
             disabled={item.isUpgrade}
             onClick={() => {
               console.log('clic', item);
               if (callUpdate) callUpdate(item.id, item.isCancel);
             }}
           >
-            {item.isUpgrade
-              ? '現在のプラン'
-              : item.id > levleInfo.level
-                ? 'アップグレード'
-                : item.isCancel
-                  ? 'ダウングレード取消'
-                  : 'ダウングレード'}
+            {!levleInfo
+              ? 'アップグレード'
+              : item.isUpgrade
+                ? '現在のプラン'
+                : item.id > levleInfo.level
+                  ? 'アップグレード'
+                  : item.isCancel
+                    ? 'ダウングレード取消'
+                    : 'ダウングレード'}
           </Button>
-          <CmCheckText item={item} onCheckChange={handleCheckChange} name={'users'} />
-          <CmCheckText item={item} onCheckChange={handleCheckChange} name={'doors'} />
-          {/*         <CmCheckText
-            item={item}
-            onCheckChange={handleCheckChange}
-            name={"cards"}
-          />
-          <CmCheckText
-            item={item}
-            onCheckChange={handleCheckChange}
-            name={"fingers"}
-          />
-          <CmCheckText
-            item={item}
-            onCheckChange={handleCheckChange}
-            name={"passwords"}
-          />*/}
-          <CmCheckText item={item} onCheckChange={handleCheckChange} name={'apis'} />
-          <CmCheckText item={item} onCheckChange={handleCheckChange} name={'cfpUse'} />
+          <CmCheckText item={item} name={'users'} />
+          <CmCheckText item={item} name={'doors'} />
+          <CmCheckText item={item} name={'apis'} />
+          <CmCheckText item={item} name={'cfpUse'} />
         </Box>
       ))}
     </Box>

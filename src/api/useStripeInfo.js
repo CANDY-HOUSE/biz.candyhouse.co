@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { useCallbacks } from '../hooks/useCallbacks.js';
@@ -20,14 +20,16 @@ export const useStripeInfo = (gAuth) => {
   const [customerInfo, setCustomerInfo] = useState(INIT_CUSTOMER);
   const [apiKey, setApiKey] = useState({ apiKeyValue: '', apiKeyId: '', usedCount: 0 });
   const [cardList, setCardList] = useState([]);
-  const [levelInfo, setLevelInfo] = useState({});
-  const [isOwner, setIsOwner] = useState(false);
+  const [quotas, setQuotasInfo] = useState({});
   const [companies, setCompanies] = useState([]);
   const { registerCallback, invokeCallbacks } = useCallbacks();
 
   // Helper function to process tags and set access permissions
   const newTags = useCallback((res) => {
     if (!res) return res;
+    if (res.isSesameApp) {
+      return { ...res, access: [...res.access, gUtils.pageNames.developer] };
+    }
     if (res.tag && res.tag.length > 0) {
       if (res.tag[0] === 'オーナー' || res.tag[0] === 'マネージャー') {
         return { ...res, access: gUtils.allTags };
@@ -36,19 +38,37 @@ export const useStripeInfo = (gAuth) => {
     return res;
   }, []);
 
-  // Check if user is owner based on tag
-  const isOwnerByTag = useCallback((tag) => {
-    try {
-      if (tag && tag[0] === 'オーナー') {
-        // Owner
-        setIsOwner(true);
-      } else {
-        setIsOwner(false);
-      }
-    } catch (e) {
-      setIsOwner(false);
+  const priorityCompany = useMemo(() => {
+    if (!customerInfo.isSesameApp) {
+      const target = companies.find((company) => company.companyID === customerInfo.companyID);
+      return {
+        ...customerInfo,
+        subscriptionId: target?.feeLevel?.subscriptionId,
+      };
     }
-  }, []);
+    if (companies.length === 0) return {};
+    const rootUser = companies.find((company) => company.feeLevel?.isRootUser === true);
+    if (rootUser)
+      return {
+        ...rootUser,
+        ...rootUser.feeLevel,
+      };
+    const maxLevelUser = companies
+      .filter((c) => !c.isSesameApp)
+      .reduce((max, c) => (!max || c.feeLevel?.level > max.feeLevel?.level ? c : max), null);
+    return {
+      ...maxLevelUser,
+      ...maxLevelUser.feeLevel,
+    };
+  }, [companies, customerInfo]);
+
+  const priorityCompanyId = useMemo(() => {
+    return priorityCompany?.companyID ?? null;
+  }, [priorityCompany]);
+
+  const isOwner = useMemo(() => {
+    return priorityCompany?.tag && priorityCompany.tag[0] === 'オーナー';
+  }, [priorityCompany]);
 
   const getCompanies = useCallback(() => {
     if (isFromApp) {
@@ -69,17 +89,16 @@ export const useStripeInfo = (gAuth) => {
         let customerInfoData = message.data.customerInfo;
         customerInfoData = newTags(customerInfoData);
         setCustomerInfo(customerInfoData);
-        setLevelInfo(message.data.feeLevel);
+        setQuotasInfo(message.data.quotas);
         localStorage.setItem('curLogin', customerInfoData.companyID);
-        isOwnerByTag(customerInfoData.tag);
         getCompanies();
       }
     },
-    [newTags, isOwnerByTag, getCompanies]
+    [newTags, getCompanies]
   );
 
   const getCardList = useCallback(() => {
-    const customerId = customerInfo.companyID;
+    const customerId = priorityCompanyId;
     if (!customerId) return;
     const msgData = {
       action: ACTION_TYPES.BIZ3_MANAGE_PAYMENT,
@@ -87,7 +106,7 @@ export const useStripeInfo = (gAuth) => {
       op: 'getPaymentMethods',
     };
     sendMessage(msgData);
-  }, [customerInfo.companyID]);
+  }, [priorityCompanyId]);
 
   const handlePaymentResponse = useCallback(
     (message) => {
@@ -122,14 +141,9 @@ export const useStripeInfo = (gAuth) => {
             if (!message.success) {
               return;
             }
-            const data = message.data;
-            if (data.subId) {
-              setCustomerInfo((prevState) => ({
-                ...prevState,
-                subscriptionId: data.subId,
-              }));
-            }
-            setLevelInfo(data);
+            setTimeout(() => {
+              window.location.reload();
+            }, 200);
             break;
           default:
             break;
@@ -142,6 +156,7 @@ export const useStripeInfo = (gAuth) => {
   const handleCompaniesResponse = useCallback(
     (message) => {
       if (message.action !== ACTION_TYPES.BIZ3_MANAGE_COMPANY) return;
+      invokeCallbacks(message);
       switch (message.op) {
         case 'get':
           if (message.success) {
@@ -149,7 +164,6 @@ export const useStripeInfo = (gAuth) => {
           }
           break;
         case 'updateName':
-          invokeCallbacks(message);
           if (message.success) {
             setCompanies((prevCompanies) =>
               prevCompanies.map((company) =>
@@ -159,7 +173,6 @@ export const useStripeInfo = (gAuth) => {
           }
           break;
         case 'add':
-          invokeCallbacks(message);
           if (message.success) {
             setCompanies((prevState) => [...prevState, message.data]);
           }
@@ -186,6 +199,7 @@ export const useStripeInfo = (gAuth) => {
 
   const updateLevel = useCallback(
     ({ level, isUpgrade, isCancel = false, cb }) => {
+      const customerInfo = priorityCompany;
       const subId = customerInfo.subscriptionId;
       const customerId = customerInfo.companyID;
       if (!customerId) return;
@@ -201,11 +215,12 @@ export const useStripeInfo = (gAuth) => {
       sendMessage(msgData);
       registerCallback(msgData.action, msgData.op, cb);
     },
-    [customerInfo.subscriptionId, customerInfo.companyID, registerCallback]
+    [priorityCompany, registerCallback]
   );
 
   const getClientSecret = useCallback(
     (cb) => {
+      const customerInfo = priorityCompany;
       const customerId = customerInfo.companyID;
       if (!customerId) return;
       const msgData = {
@@ -216,12 +231,12 @@ export const useStripeInfo = (gAuth) => {
       sendMessage(msgData);
       registerCallback(msgData.action, msgData.op, cb);
     },
-    [customerInfo.companyID, registerCallback]
+    [priorityCompany, registerCallback]
   );
 
   const changeDefaultPay = useCallback(
     (defaultPaymentMethod, cb) => {
-      const customerId = customerInfo.companyID;
+      const customerId = priorityCompany.companyID;
       const msgData = {
         action: ACTION_TYPES.BIZ3_MANAGE_PAYMENT,
         customerId,
@@ -231,12 +246,12 @@ export const useStripeInfo = (gAuth) => {
       sendMessage(msgData);
       registerCallback(msgData.action, msgData.op, cb);
     },
-    [customerInfo.companyID, registerCallback]
+    [priorityCompany, registerCallback]
   );
 
   const delCard = useCallback(
     (paymentId) => {
-      const customerId = customerInfo.companyID;
+      const customerId = priorityCompany.companyID;
       const msgData = {
         action: ACTION_TYPES.BIZ3_MANAGE_PAYMENT,
         paymentId,
@@ -245,7 +260,7 @@ export const useStripeInfo = (gAuth) => {
       };
       sendMessage(msgData);
     },
-    [customerInfo.companyID]
+    [priorityCompany]
   );
 
   const getCustomerInfo = useCallback(
@@ -257,9 +272,10 @@ export const useStripeInfo = (gAuth) => {
 
   const getDevApiInfo = useCallback(
     (isUpdate = null) => {
-      const customerId = customerInfo.companyID;
-      const email = customerInfo.employeeEmail;
+      const customerId = priorityCompanyId;
       if (!customerId) return;
+      const email = priorityCompany.employeeEmail;
+      if (!email) return;
       let msgData = {
         action: ACTION_TYPES.BIZ3_MANAGE_PAYMENT,
         customerId,
@@ -271,12 +287,12 @@ export const useStripeInfo = (gAuth) => {
       }
       sendMessage(msgData);
     },
-    [customerInfo.companyID, customerInfo.employeeEmail]
+    [priorityCompanyId, customerInfo.employeeEmail]
   );
 
   const updateCompanyName = useCallback(
     (name, cb) => {
-      const companyID = localStorage.getItem('curLogin');
+      const companyID = priorityCompanyId;
       const message = {
         action: ACTION_TYPES.BIZ3_MANAGE_COMPANY,
         obj: { companyID, name },
@@ -285,7 +301,7 @@ export const useStripeInfo = (gAuth) => {
       sendMessage(message);
       registerCallback(message.action, message.op, cb);
     },
-    [registerCallback]
+    [registerCallback, priorityCompanyId]
   );
 
   const addCompany = useCallback(
@@ -301,6 +317,20 @@ export const useStripeInfo = (gAuth) => {
       registerCallback(message.action, message.op, cb);
     },
     [registerCallback]
+  );
+
+  const getLevelConfig = useCallback(
+    (cb) => {
+      const customerId = priorityCompanyId;
+      const message = {
+        action: ACTION_TYPES.BIZ3_MANAGE_COMPANY,
+        companyID: customerId,
+        op: 'getPaymentConfig',
+      };
+      sendMessage(message);
+      registerCallback(message.action, message.op, cb);
+    },
+    [priorityCompanyId, registerCallback]
   );
 
   const reset = () => {
@@ -326,8 +356,9 @@ export const useStripeInfo = (gAuth) => {
     getCardList,
     delCard,
     changeDefaultPay,
-    levelInfo,
+    quotas,
     updateLevel,
+    getLevelConfig,
     getDevApiInfo,
     apiKey,
 
@@ -336,5 +367,6 @@ export const useStripeInfo = (gAuth) => {
     companies,
     getCompanies,
     updateCompanyName,
+    priorityCompany,
   };
 };

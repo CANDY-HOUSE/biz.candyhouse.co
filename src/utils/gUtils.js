@@ -362,7 +362,7 @@ const isBotModel = (model) => {
 };
 
 const isOPSModel = (model) => {
-  const targetDeviceModels = [gConfig.sesameDeviceModel.ssm_opensensor_1];
+  const targetDeviceModels = [gConfig.sesameDeviceModel.ssm_opensensor_1, gConfig.sesameDeviceModel.ssm_opensensor_2];
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
