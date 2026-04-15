@@ -18,6 +18,7 @@ const MobileBatteryTrendChart = ({
   onDeleteItemPress, // 回调函数
   showDeleteButton = false, // 是否显示删除按钮
   isMenuOpen = false,
+  enablePressDeleteTrigger = false,
 }) => {
   const { t } = useTranslation();
   const [brushStartIndex, setBrushStartIndex] = useState(0);
@@ -73,7 +74,7 @@ const MobileBatteryTrendChart = ({
 
       const isMouseEvent = e?.type === 'mousedown';
 
-      if (isMouseEvent && onDeleteItemPress && activePayloadRef.current) {
+      if (enablePressDeleteTrigger && isMouseEvent && onDeleteItemPress && activePayloadRef.current) {
         isDraggingRef.current = false;
         setIsTooltipLocked(true);
         onDeleteItemPress(activePayloadRef.current);

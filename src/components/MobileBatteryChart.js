@@ -164,6 +164,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
             setMenuState({ open: true, selectedPoint: payload });
           }}
           isMenuOpen={menuState.open}
+          enablePressDeleteTrigger={!gMediaType.isMobile && !isFromApp}
         />
         {!gUtils.isWifiModel(device?.deviceModel) && (
           <List disablePadding>
@@ -187,7 +188,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
           </List>
         )}
       </Card>
-      <Drawer anchor="bottom" open={menuState.open} variant="temporary">
+      <Drawer anchor="bottom" open={menuState.open} variant="temporary" onClose={handleCloseMenu}>
         <List sx={{ pb: 1, justifyContent: 'center' }} disablePadding>
           <ListItem disablePadding>
             <ListItemButton onClick={handleDeleteRecord}>
