@@ -163,6 +163,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
           onDeleteItemPress={({ payload }) => {
             setMenuState({ open: true, selectedPoint: payload });
           }}
+          isMenuOpen={menuState.open}
         />
         {!gUtils.isWifiModel(device?.deviceModel) && (
           <List disablePadding>

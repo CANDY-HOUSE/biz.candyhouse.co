@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Box, ToggleButtonGroup, ToggleButton, IconButton } from '@mui/material';
+import { Card, Box, ToggleButtonGroup, ToggleButton, IconButton, Popper } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -15,8 +15,9 @@ const MobileBatteryTrendChart = ({
   xAxisDataKey = 'time',
   height = 400,
   onLoadMore,
-  onDeleteItemPress, // 长按回调函数
+  onDeleteItemPress, // 回调函数
   showDeleteButton = false, // 是否显示删除按钮
+  isMenuOpen = false,
 }) => {
   const { t } = useTranslation();
   const [brushStartIndex, setBrushStartIndex] = useState(0);
@@ -24,9 +25,16 @@ const MobileBatteryTrendChart = ({
   const containerRef = useRef(null);
   const startXRef = useRef(0);
   const isDraggingRef = useRef(false);
-  const longPressTimerRef = useRef(null); // 长按定时器
   const activePayloadRef = useRef(null); // 存储当前激活的数据点
+  const virtualAnchorRef = useRef({
+    getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
+  });
+  const tooltipStateRef = useRef({ active: false, payload: null, coordinate: null });
   const [yAxisUnit, setYAxisUnit] = useState('%');
+  const [popperOpen, setPopperOpen] = useState(false);
+  const [popperData, setPopperData] = useState(null);
+  const [popperPosition, setPopperPosition] = useState(null);
+  const [isTooltipLocked, setIsTooltipLocked] = useState(false);
   const lineDataKeyMap = {
     V: {
       light: lightLoadDataKey,
@@ -59,23 +67,21 @@ const MobileBatteryTrendChart = ({
     const container = containerRef.current;
     if (!container) return;
 
-    const handleStart = (clientX) => {
+    const handleStart = (clientX, e) => {
       isDraggingRef.current = true;
       startXRef.current = clientX;
-      // 启动长按定时器
-      longPressTimerRef.current = setTimeout(() => {
+
+      const isMouseEvent = e?.type === 'mousedown';
+
+      if (isMouseEvent && onDeleteItemPress && activePayloadRef.current) {
         isDraggingRef.current = false;
-        if (onDeleteItemPress && activePayloadRef.current) {
-          onDeleteItemPress(activePayloadRef.current);
-        }
-      }, 400); // 长按阈值 400ms
+        setIsTooltipLocked(true);
+        onDeleteItemPress(activePayloadRef.current);
+        return;
+      }
     };
 
     const handleMove = (clientX) => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
       if (!isDraggingRef.current) return;
       const deltaX = clientX - startXRef.current;
       // 向右拖拽超过阈值（50px）触发加载更多
@@ -88,20 +94,16 @@ const MobileBatteryTrendChart = ({
     };
 
     const handleEnd = () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-      }
       isDraggingRef.current = false;
     };
 
     // 鼠标事件
-    const handleMouseDown = (e) => handleStart(e.clientX);
+    const handleMouseDown = (e) => handleStart(e.clientX, e);
     const handleMouseMove = (e) => handleMove(e.clientX);
     const handleMouseUp = () => handleEnd();
 
     // 触摸事件
-    const handleTouchStart = (e) => handleStart(e.touches[0].clientX);
+    const handleTouchStart = (e) => handleStart(e.touches[0].clientX, e);
     const handleTouchMove = (e) => handleMove(e.touches[0].clientX);
     const handleTouchEnd = () => handleEnd();
 
@@ -129,79 +131,104 @@ const MobileBatteryTrendChart = ({
     return value;
   };
 
-  const CustomTooltip = ({ active, payload }) => {
+  const closePopper = () => {
+    setPopperOpen(false);
+    setPopperData(null);
+    setPopperPosition(null);
+  };
+
+  const updateVirtualAnchor = (coordinate) => {
+    const container = containerRef.current;
+    if (!container || !coordinate) return;
+    const rect = container.getBoundingClientRect();
+    const left = rect.left + coordinate.x;
+    const top = rect.top + coordinate.y;
+    virtualAnchorRef.current = {
+      getBoundingClientRect: () => new DOMRect(left, top, 0, 0),
+    };
+  };
+
+  const TooltipContent = ({ payloadData, payloadList }) => {
+    return (
+      <Box
+        sx={{
+          bgcolor: 'white',
+          p: 0.5,
+          border: '1px solid #ccc',
+          borderRadius: 1,
+          fontSize: 12,
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
+          <p style={{ margin: 0, marginBottom: 0 }}>{payloadData?.[xAxisDataKey]}</p>
+          {(payloadList || []).map((entry, index) => (
+            <p key={index} style={{ margin: 0, marginBottom: 0, color: entry.color }}>
+              {`${entry.name}: ${isNaN(entry.value) ? '' : entry.value + yAxisUnit}`}
+            </p>
+          ))}
+        </Box>
+        {showDeleteButton && (
+          <IconButton
+            data-delete-button="true"
+            sx={{
+              p: 0,
+              minWidth: 'auto',
+              color: 'error.main',
+              pointerEvents: 'auto',
+              '&:active': { opacity: 0.6 },
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onDeleteItemPress && activePayloadRef.current) {
+                setIsTooltipLocked(true);
+                onDeleteItemPress(activePayloadRef.current);
+              }
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onDeleteItemPress && activePayloadRef.current) {
+                setIsTooltipLocked(true);
+                onDeleteItemPress(activePayloadRef.current);
+              }
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
+      </Box>
+    );
+  };
+
+  const CustomTooltip = ({ active, payload, coordinate }) => {
     if (active && payload && payload.length) {
-      activePayloadRef.current = {
+      const nextPayload = {
         payload: payload[0].payload,
         dataKeys: {
           light: dataSource.high,
           heavy: dataSource.low,
         },
+        payloadList: payload,
+        coordinate,
+      };
+      activePayloadRef.current = nextPayload;
+      tooltipStateRef.current = {
+        active: true,
+        payload: nextPayload,
+        coordinate,
       };
     } else {
       activePayloadRef.current = null;
-    }
-    if (active && payload && payload.length) {
-      const isDeleteButton = (target) => {
-        while (target) {
-          if (target.getAttribute && target.getAttribute('data-delete-button') === 'true') {
-            return true;
-          }
-          target = target.parentElement;
-        }
-        return false;
+      tooltipStateRef.current = {
+        active: false,
+        payload: null,
+        coordinate: null,
       };
-      const handleTouchEnd = (e) => {
-        if (isDeleteButton(e.target)) {
-          if (onDeleteItemPress && activePayloadRef.current) {
-            onDeleteItemPress(activePayloadRef.current);
-          }
-          return;
-        }
-        e.stopPropagation();
-        e.preventDefault();
-      };
-
-      return (
-        <Box
-          onTouchEnd={handleTouchEnd}
-          sx={{
-            bgcolor: 'white',
-            p: 0.5,
-            border: '1px solid #ccc',
-            borderRadius: 1,
-            fontSize: 12,
-            display: 'flex',
-            gap: 1,
-            alignItems: 'center',
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <p style={{ margin: 0, marginBottom: 0 }}>{payload[0].payload[xAxisDataKey]}</p>
-            {payload.map((entry, index) => (
-              <p key={index} style={{ margin: 0, marginBottom: 0, color: entry.color }}>
-                {`${entry.name}: ${isNaN(entry.value) ? '' : entry.value + yAxisUnit}`}
-              </p>
-            ))}
-          </Box>
-          {showDeleteButton && (
-            <IconButton
-              data-delete-button="true"
-              sx={{
-                p: 0,
-                minWidth: 'auto',
-                color: 'error.main',
-                pointerEvents: 'auto',
-                '&:active': {
-                  opacity: 0.6,
-                },
-              }}
-            >
-              <DeleteIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          )}
-        </Box>
-      );
     }
     return null;
   };
@@ -263,14 +290,83 @@ const MobileBatteryTrendChart = ({
     }
   };
 
-  // 清理长按定时器
   useEffect(() => {
+    if (!isMenuOpen) {
+      setIsTooltipLocked(false);
+      setPopperOpen(false);
+      setPopperData(null);
+      setPopperPosition(null);
+      activePayloadRef.current = null;
+      tooltipStateRef.current = { active: false, payload: null, coordinate: null };
+    }
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    let frameId = null;
+
+    const syncPopper = () => {
+      const { active, payload, coordinate } = tooltipStateRef.current;
+
+      if (active && payload && coordinate) {
+        if (!isTooltipLocked) {
+          updateVirtualAnchor(coordinate);
+          setPopperData((prev) => {
+            const prevTimestamp = prev?.payload?.timestamp;
+            const nextTimestamp = payload?.payload?.timestamp;
+            const samePosition = popperPosition?.x === coordinate.x && popperPosition?.y === coordinate.y;
+            if (prevTimestamp === nextTimestamp && samePosition) {
+              return prev;
+            }
+            return {
+              payload: payload.payload,
+              payloadList: payload.payloadList,
+            };
+          });
+          setPopperPosition((prev) => {
+            if (prev?.x === coordinate.x && prev?.y === coordinate.y) {
+              return prev;
+            }
+            return coordinate;
+          });
+          setPopperOpen(true);
+        }
+      } else {
+        if (!isTooltipLocked) {
+          closePopper();
+        }
+      }
+
+      frameId = requestAnimationFrame(syncPopper);
+    };
+
+    frameId = requestAnimationFrame(syncPopper);
+
     return () => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
+      if (frameId) {
+        cancelAnimationFrame(frameId);
       }
     };
-  }, []);
+  }, [isTooltipLocked, popperPosition]);
+
+  useEffect(() => {
+    if (!isTooltipLocked && popperOpen && popperPosition) {
+      updateVirtualAnchor(popperPosition);
+    }
+  }, [popperOpen, popperPosition]);
+
+  useEffect(() => {
+    const handleWindowChange = () => {
+      if (popperOpen && popperPosition) {
+        updateVirtualAnchor(popperPosition);
+      }
+    };
+    window.addEventListener('resize', handleWindowChange);
+    window.addEventListener('scroll', handleWindowChange, true);
+    return () => {
+      window.removeEventListener('resize', handleWindowChange);
+      window.removeEventListener('scroll', handleWindowChange, true);
+    };
+  }, [popperOpen, popperPosition]);
 
   return (
     <>
@@ -334,7 +430,7 @@ const MobileBatteryTrendChart = ({
                 width={40}
                 axisLine={{ stroke: '#999' }}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} wrapperStyle={{ display: 'none' }} />
               <Legend verticalAlign="top" height={45} content={<CustomLegend />} />
               <Line
                 dataKey={dataSource.high}
@@ -367,6 +463,34 @@ const MobileBatteryTrendChart = ({
               />
             </LineChart>
           </ResponsiveContainer>
+          <Popper
+            open={popperOpen && !!popperData}
+            anchorEl={virtualAnchorRef.current}
+            placement="top-start"
+            modifiers={[
+              {
+                name: 'offset',
+                options: {
+                  offset: [12, -10],
+                },
+              },
+              {
+                name: 'flip',
+                options: {
+                  fallbackPlacements: ['bottom-start', 'top-end', 'bottom-end'],
+                },
+              },
+              {
+                name: 'preventOverflow',
+                options: {
+                  padding: 8,
+                },
+              },
+            ]}
+            sx={{ zIndex: 1300, pointerEvents: 'auto' }}
+          >
+            <TooltipContent payloadData={popperData?.payload} payloadList={popperData?.payloadList || []} />
+          </Popper>
         </div>
       </Card>
     </>
