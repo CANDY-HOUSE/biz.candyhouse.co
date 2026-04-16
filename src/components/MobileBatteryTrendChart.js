@@ -176,8 +176,9 @@ const MobileBatteryTrendChart = ({
           <IconButton
             data-delete-button="true"
             sx={{
-              p: 0,
-              minWidth: 'auto',
+              p: 1,
+              width: 32,
+              height: 32,
               color: 'error.main',
               pointerEvents: 'auto',
               '&:active': { opacity: 0.6 },
