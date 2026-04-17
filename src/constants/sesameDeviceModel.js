@@ -33,6 +33,7 @@ export const sesameDeviceModel = {
   sesame_6_pro_slidingdoor: 'sesame_6_pro_slidingdoor', // 32
   ssm_bike3: 'bike_3', // 33
   bot_3: 'bot_3', // 35
+  hub3_lte: 'hub_3_lte', // 36
 };
 
 // 用于根据设备产品类型 ID 获取对应的型号名称
@@ -70,4 +71,5 @@ export const modelNameByProductType = {
   32: sesameDeviceModel.sesame_6_pro_slidingdoor,
   33: sesameDeviceModel.ssm_bike3,
   35: sesameDeviceModel.bot_3,
+  36: sesameDeviceModel.hub3_lte,
 };
