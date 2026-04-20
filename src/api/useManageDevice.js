@@ -355,17 +355,17 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
         items: deviceInfos,
         companyID: companyID,
       };
-      handleSendMessage(message);
+      sendMessage(message);
     },
-    [handleSendMessage, gStripe]
+    [sendMessage, gStripe]
   );
 
   const subscribeDevices = useCallback(
-    (companyDevices) => {
-      if (!companyDevices || companyDevices.length === 0) {
+    (devices) => {
+      if (!devices || devices.length === 0) {
         return;
       }
-      const deviceInfos = companyDevices.map((device) => ({
+      const deviceInfos = devices.map((device) => ({
         deviceUUID: device.deviceUUID,
         deviceModel: device.deviceModel,
       }));
