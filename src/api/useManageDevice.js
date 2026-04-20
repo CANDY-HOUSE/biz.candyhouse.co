@@ -365,12 +365,10 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       if (!companyDevices || companyDevices.length === 0) {
         return;
       }
-      const deviceInfos = companyDevices
-        .filter((device) => !gUtils.isWifiModel(device.deviceModel))
-        .map((device) => ({
-          deviceUUID: device.deviceUUID,
-          deviceModel: device.deviceModel,
-        }));
+      const deviceInfos = companyDevices.map((device) => ({
+        deviceUUID: device.deviceUUID,
+        deviceModel: device.deviceModel,
+      }));
       if (deviceInfos.length > 0) {
         subscribeDevicesUpdate(deviceInfos);
       }

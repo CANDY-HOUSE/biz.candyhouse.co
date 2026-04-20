@@ -46,7 +46,9 @@ const MobileDeviceSetting = () => {
   };
 
   useEffect(() => {
-    gManageDevice.getCompanyDevices(true);
+    if (gManageDevice.companyDevices.length < 1) {
+      gManageDevice.getCompanyDevices(true);
+    }
   }, []);
 
   useEffect(() => {
