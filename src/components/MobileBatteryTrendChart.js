@@ -36,6 +36,7 @@ const MobileBatteryTrendChart = ({
   const [popperData, setPopperData] = useState(null);
   const [popperPosition, setPopperPosition] = useState(null);
   const [isTooltipLocked, setIsTooltipLocked] = useState(false);
+  const [popperPlacement, setPopperPlacement] = useState('top-start');
   const lineDataKeyMap = {
     V: {
       light: lightLoadDataKey,
@@ -147,6 +148,13 @@ const MobileBatteryTrendChart = ({
     virtualAnchorRef.current = {
       getBoundingClientRect: () => new DOMRect(left, top, 0, 0),
     };
+  };
+
+  const getPopperPlacement = (coordinate) => {
+    const container = containerRef.current;
+    if (!container || !coordinate) return 'top-start';
+    const containerWidth = container.clientWidth || 0;
+    return coordinate.x > containerWidth * 0.65 ? 'top-end' : 'top-start';
   };
 
   const TooltipContent = ({ payloadData, payloadList }) => {
@@ -298,6 +306,7 @@ const MobileBatteryTrendChart = ({
       setPopperOpen(false);
       setPopperData(null);
       setPopperPosition(null);
+      setPopperPlacement('top-start');
       activePayloadRef.current = null;
       tooltipStateRef.current = { active: false, payload: null, coordinate: null };
     }
@@ -312,6 +321,10 @@ const MobileBatteryTrendChart = ({
       if (active && payload && coordinate) {
         if (!isTooltipLocked) {
           updateVirtualAnchor(coordinate);
+          setPopperPlacement((prev) => {
+            const nextPlacement = getPopperPlacement(coordinate);
+            return prev === nextPlacement ? prev : nextPlacement;
+          });
           setPopperData((prev) => {
             const prevTimestamp = prev?.payload?.timestamp;
             const nextTimestamp = payload?.payload?.timestamp;
@@ -468,25 +481,15 @@ const MobileBatteryTrendChart = ({
           <Popper
             open={popperOpen && !!popperData}
             anchorEl={virtualAnchorRef.current}
-            placement="top-start"
+            placement={popperPlacement}
             modifiers={[
               {
                 name: 'offset',
-                options: {
-                  offset: [12, -10],
-                },
-              },
-              {
-                name: 'flip',
-                options: {
-                  fallbackPlacements: ['bottom-start', 'top-end', 'bottom-end'],
-                },
+                options: { offset: popperPlacement === 'top-end' ? [-12, -10] : [12, -10] },
               },
               {
                 name: 'preventOverflow',
-                options: {
-                  padding: 8,
-                },
+                options: { padding: 8 },
               },
             ]}
             sx={{ zIndex: 1300, pointerEvents: 'auto' }}
