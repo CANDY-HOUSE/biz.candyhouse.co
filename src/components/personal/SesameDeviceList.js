@@ -24,6 +24,7 @@ import { DataSearch } from '../biz/device/DataSearch';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { gUtils } from '@/utils/gUtils';
+import { Error } from '@mui/icons-material';
 
 const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {
   const {
@@ -90,6 +91,9 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
               sx={{ color: device.stateInfo.wm2State === true ? 'primary.main' : 'info.light' }}
             />
             <BatteryLevel level={device.stateInfo.batteryPercentage} />
+            {device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer && (
+              <Error sx={{ color: 'warn.main', fontSize: 16 }} />
+            )}
           </Stack>
           <Stack direction="row" spacing="5px" alignItems="center">
             {isHub3 && (
@@ -209,7 +213,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch }
           <Box sx={{ p: '16px', pb: '8px' }}>
             <DataSearch callSearch={callSearch} />
           </Box>
-          <List>
+          <List disablePadding>
             {sortableData.map((device, index) => (
               <SortableItemComponent
                 key={device.deviceUUID}

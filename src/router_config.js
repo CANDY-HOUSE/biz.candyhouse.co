@@ -1,4 +1,3 @@
-import SesameAccessControlDeviceIndex from '@biz/access-control/index/index';
 import SesameAccessControlDeviceRegion from '@biz/access-control/region/region';
 import Passwords from '@biz/access-control/password/passwords';
 import PasswordDetails from '@biz/access-control/password/passworddetails';
@@ -6,7 +5,6 @@ import VCards from '@biz/access-control/cards/cards';
 import EmployeeList from '@biz/employees/list/EmployeeList';
 import EmployeeGroups from '@biz/employees/group/EmployeeGroups';
 import EmployeeRoles from '@biz/employees/role/EmployeeRoles';
-import DeviceList from '@biz/devices/list/DeviceList';
 import DeviceGroup from '@biz/devices/group/DeviceGroup';
 import HistoryList from '@biz/history';
 import Cards from '@biz/cards';
@@ -83,7 +81,7 @@ const routerComponentMap = [
   {
     router: '/biz/devices',
     components: [
-      { router: 'list', component: DeviceList },
+      { router: 'list', component: Devices },
       { router: 'list-item', component: DeviceItem },
       { router: 'device-share', component: DeviceShare },
       { router: 'group-share', component: GroupShare },
@@ -94,7 +92,7 @@ const routerComponentMap = [
   {
     router: '/biz/access-control',
     components: [
-      { router: 'index', component: SesameAccessControlDeviceIndex },
+      { router: 'index', component: Devices },
       { router: 'region', component: SesameAccessControlDeviceRegion },
       { router: 'cards', component: VCards },
       { router: 'passwords', component: Passwords },

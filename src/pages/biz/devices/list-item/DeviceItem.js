@@ -45,9 +45,11 @@ const DeviceItem = () => {
             {deviceName}
           </Typography>
         </IconButton>
-        <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
-          <MoreHoriz sx={{ color: 'black' }} />
-        </IconButton>
+        {gMediaType.isMobile ? (
+          <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
+            <MoreHoriz sx={{ color: 'black' }} />
+          </IconButton>
+        ) : null}
       </Box>
       <Grid2
         container
@@ -88,7 +90,7 @@ const DeviceItem = () => {
               </Box>
             </Grid2>
             <Grid2 size={4} sx={{ height: '560px' }}>
-              <DeviceSetting />
+              <DeviceSetting showBack={false} />
             </Grid2>
             <Grid2 size={12} sx={{ height: '560px' }}>
               <Box>

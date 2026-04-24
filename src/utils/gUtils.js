@@ -357,7 +357,11 @@ const isShowType = (model, type) => {
 };
 
 const isBotModel = (model) => {
-  const targetDeviceModels = [gConfig.sesameDeviceModel.ssmbot_1, gConfig.sesameDeviceModel.bot_2];
+  const targetDeviceModels = [
+    gConfig.sesameDeviceModel.ssmbot_1,
+    gConfig.sesameDeviceModel.bot_2,
+    gConfig.sesameDeviceModel.bot_3,
+  ];
   return targetDeviceModels.indexOf(model) !== -1;
 };
 

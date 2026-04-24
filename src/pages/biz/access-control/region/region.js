@@ -74,7 +74,7 @@ export default function SesameAccessControlDeviceRegion() {
               </Box>
             </Grid2>
             <Grid2 size={4} sx={{ height: '500px' }}>
-              <DeviceSetting />
+              <DeviceSetting showBack={false} />
             </Grid2>
             <Grid2 size={12}>
               <Box>
