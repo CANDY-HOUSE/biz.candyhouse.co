@@ -187,6 +187,29 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
             }
             break;
 
+          case gConfig.cmdCode.HUB3_OS3_RELAY_SWITCH:
+            {
+              // Hub3 LTE 继电器开关命令
+              // op 固定为 0x01，代表开关操作
+              const op = iotPayload.op !== undefined ? iotPayload.op : 0x01;
+
+              // 边界检查确保值在Uint8范围内
+              if (op < 0 || op > 255) {
+                console.error('Parameter out of range for Uint8Array: op=', op);
+                return;
+              }
+
+              const iotPayloadArray = new Uint8Array(1);
+              iotPayloadArray[0] = op;
+
+              // 合并到 payloadArray
+              const newPayloadArray = new Uint8Array(payloadArray.length + iotPayloadArray.length);
+              newPayloadArray.set(payloadArray, 0);
+              newPayloadArray.set(iotPayloadArray, payloadArray.length);
+              payloadArray = newPayloadArray;
+            }
+            break;
+
           default:
             console.warn('Unsupported cmd for iotPayload:', cmd);
             break;

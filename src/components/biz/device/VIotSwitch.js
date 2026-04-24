@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Hider from '@/components/biz/Hider';
 import { PngBotIcon, SvgLock, SvgLockDisable, SvgOPS, SvgUnLock } from '@/assets/svg/svgLock';
 import { gUtils } from '@/utils/gUtils';
+import { gConfig } from '@/constants/gConfig';
 
 const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defaultState = undefined }) => {
   const [checked, setChecked] = useState(undefined);
@@ -49,6 +50,23 @@ const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defau
       return (
         <IconButton icon={<SvgOPS />} variant="text" sx={{ color: 'info.light', fontSize: '1rem' }}>
           {defaultState}
+        </IconButton>
+      );
+    }
+    if (gUtils.isHub3LTE(model)) {
+      return (
+        <IconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            gIot.sendCommandToHub3WithConnectionId({
+              device_id: deviceUUID,
+              secretKey: shareKey,
+              cmd: gConfig.cmdCode.HUB3_OS3_RELAY_SWITCH,
+              iotPayload: { op: 0x01 },
+            });
+          }}
+        >
+          {checked === undefined ? <SvgLockDisable /> : checked ? <SvgLock /> : <SvgLockDisable />}
         </IconButton>
       );
     }

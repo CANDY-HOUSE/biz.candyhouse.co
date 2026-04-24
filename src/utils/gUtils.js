@@ -366,6 +366,11 @@ const isOPSModel = (model) => {
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
+const isHub3LTE = (model) => {
+  const targetDeviceModels = [gConfig.sesameDeviceModel.hub3_lte];
+  return targetDeviceModels.indexOf(model) !== -1;
+};
+
 const isDeviceKeyOwner = (sesameKeylevel) => {
   return sesameKeylevel === 0;
 };
@@ -471,6 +476,7 @@ export const gUtils = {
   hasObj,
   isBotModel,
   isOPSModel,
+  isHub3LTE,
   getStartTimeEndTime,
   isValidEmail,
   isShowType,

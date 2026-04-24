@@ -23,6 +23,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { DataSearch } from '../biz/device/DataSearch';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import { gUtils } from '@/utils/gUtils';
 
 const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {
   const {
@@ -121,7 +122,13 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
             model={device.deviceModel}
             deviceUUID={device.deviceUUID}
             gIot={gIot}
-            defaultState={device.stateInfo.CHSesame2Status}
+            defaultState={
+              gUtils.isHub3LTE(device.deviceModel)
+                ? device.stateInfo.wm2State === true
+                  ? 'unlocked'
+                  : 'locked'
+                : device.stateInfo.CHSesame2Status
+            }
             shareKey={device.secretKey}
           />
         </Box>
