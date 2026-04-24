@@ -92,7 +92,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
             />
             <BatteryLevel level={device.stateInfo.batteryPercentage} />
             {device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer && (
-              <Error sx={{ color: 'warn.main', fontSize: 16 }} />
+              <Error sx={{ color: 'error.main', fontSize: 16 }} />
             )}
           </Stack>
           <Stack direction="row" spacing="5px" alignItems="center">

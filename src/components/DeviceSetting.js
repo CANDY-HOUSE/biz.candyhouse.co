@@ -177,7 +177,7 @@ export default function DeviceSetting({ showBack = true }) {
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {subFunctionsComp}
-        <UpgradeFirmware device={currentDevice} Hub3DeviceUUID={'111'} />
+        <UpgradeFirmware device={currentDevice} Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID} />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <BatteryPercent device={currentDevice} />
         <ListItem>
