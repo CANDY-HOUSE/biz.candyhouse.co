@@ -24,6 +24,7 @@ const MobileBatteryTrendChart = ({
   const [brushStartIndex, setBrushStartIndex] = useState(0);
   const [brushEndIndex, setBrushEndIndex] = useState(0);
   const containerRef = useRef(null);
+  const chartAreaRef = useRef(null);
   const startXRef = useRef(0);
   const isDraggingRef = useRef(false);
   const activePayloadRef = useRef(null); // 存储当前激活的数据点
@@ -74,8 +75,15 @@ const MobileBatteryTrendChart = ({
       startXRef.current = clientX;
 
       const isMouseEvent = e?.type === 'mousedown';
+      const isInsideChartArea = isEventInsideChartArea(e);
 
-      if (enablePressDeleteTrigger && isMouseEvent && onDeleteItemPress && activePayloadRef.current) {
+      if (
+        enablePressDeleteTrigger &&
+        isMouseEvent &&
+        isInsideChartArea &&
+        onDeleteItemPress &&
+        activePayloadRef.current
+      ) {
         isDraggingRef.current = false;
         setIsTooltipLocked(true);
         onDeleteItemPress(activePayloadRef.current);
@@ -131,6 +139,12 @@ const MobileBatteryTrendChart = ({
       return value.split(' ')[0];
     }
     return value;
+  };
+
+  const isEventInsideChartArea = (e) => {
+    const chartArea = chartAreaRef.current;
+    if (!chartArea || !e?.target) return false;
+    return chartArea.contains(e.target);
   };
 
   const closePopper = () => {
@@ -425,59 +439,61 @@ const MobileBatteryTrendChart = ({
       </style>
       <Card sx={{ p: 0 }}>
         <div ref={containerRef} style={{ touchAction: 'pan-y' }}>
-          <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={dataSource.main}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-              <XAxis
-                dataKey={xAxisDataKey}
-                tickFormatter={formatXAxis}
-                height={48}
-                minTickGap={100}
-                interval="preserveStartEnd"
-                tick={{ fontSize: 12 }}
-                padding={{ left: 0, right: 0 }}
-                axisLine={{ stroke: '#999' }}
-              />
-              <YAxis
-                unit={yAxisUnit}
-                tick={{ fontSize: 12 }}
-                domain={dataSource.yRange}
-                width={40}
-                axisLine={{ stroke: '#999' }}
-              />
-              <Tooltip content={<CustomTooltip />} wrapperStyle={{ display: 'none' }} />
-              <Legend verticalAlign="top" height={45} content={<CustomLegend />} />
-              <Line
-                dataKey={dataSource.high}
-                stroke="#1d7f7f"
-                name={t(lightLoadString)}
-                dot={{ fill: '#1d7f7f', r: 1.2, strokeWidth: 1 }}
-                strokeWidth={1}
-                connectNulls={true}
-                animationDuration={1000}
-              />
-              <Line
-                dataKey={dataSource.low}
-                stroke="#97eded"
-                name={t(heavyLoadString)}
-                dot={{ fill: '#97eded', r: 1.2, strokeWidth: 1 }}
-                strokeWidth={1}
-                connectNulls={true}
-                animationDuration={1000}
-              />
-              <Brush
-                dataKey={xAxisDataKey}
-                height={30}
-                stroke="lightgray"
-                travellerWidth={20}
-                startIndex={brushStartIndex}
-                endIndex={brushEndIndex}
-                onChange={handleBrushChange}
-                tickFormatter={formatXAxis}
-                y={height - 45}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <Box ref={chartAreaRef}>
+            <ResponsiveContainer width="100%" height={height}>
+              <LineChart data={dataSource.main}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis
+                  dataKey={xAxisDataKey}
+                  tickFormatter={formatXAxis}
+                  height={48}
+                  minTickGap={100}
+                  interval="preserveStartEnd"
+                  tick={{ fontSize: 12 }}
+                  padding={{ left: 0, right: 0 }}
+                  axisLine={{ stroke: '#999' }}
+                />
+                <YAxis
+                  unit={yAxisUnit}
+                  tick={{ fontSize: 12 }}
+                  domain={dataSource.yRange}
+                  width={40}
+                  axisLine={{ stroke: '#999' }}
+                />
+                <Tooltip content={<CustomTooltip />} wrapperStyle={{ display: 'none' }} />
+                <Legend verticalAlign="top" height={45} content={<CustomLegend />} />
+                <Line
+                  dataKey={dataSource.high}
+                  stroke="#1d7f7f"
+                  name={t(lightLoadString)}
+                  dot={{ fill: '#1d7f7f', r: 1.2, strokeWidth: 1 }}
+                  strokeWidth={1}
+                  connectNulls={true}
+                  animationDuration={1000}
+                />
+                <Line
+                  dataKey={dataSource.low}
+                  stroke="#97eded"
+                  name={t(heavyLoadString)}
+                  dot={{ fill: '#97eded', r: 1.2, strokeWidth: 1 }}
+                  strokeWidth={1}
+                  connectNulls={true}
+                  animationDuration={1000}
+                />
+                <Brush
+                  dataKey={xAxisDataKey}
+                  height={30}
+                  stroke="lightgray"
+                  travellerWidth={20}
+                  startIndex={brushStartIndex}
+                  endIndex={brushEndIndex}
+                  onChange={handleBrushChange}
+                  tickFormatter={formatXAxis}
+                  y={height - 45}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
           <Popper
             open={popperOpen && !!popperData}
             anchorEl={virtualAnchorRef.current}
