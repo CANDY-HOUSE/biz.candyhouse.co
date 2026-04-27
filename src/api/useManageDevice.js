@@ -135,57 +135,27 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     );
   }, [userDevices, filteredAccessControlDevices, filteredSsmDevices]);
 
-  const updateDeviceState = useCallback(
-    (updatedDevice) => {
-      const deviceInSsm = filteredSsmDevices.some((device) => device.deviceUUID === updatedDevice.deviceUUID);
-      const deviceInAccessControl = filteredAccessControlDevices.some(
-        (device) => device.deviceUUID === updatedDevice.deviceUUID
-      );
-      if (deviceInSsm) {
-        let shouldUpdate = true;
-        // 如果 wm2State 为 true，必须有 CHSesame2Status 值才能更新
-        if (
-          updatedDevice.stateInfo.wm2State === true &&
-          (!updatedDevice.stateInfo.CHSesame2Status || updatedDevice.stateInfo.CHSesame2Status === '')
-        ) {
-          shouldUpdate = false;
-        }
-        shouldUpdate &&
-          setCompanyDevices((prevDevices) =>
-            prevDevices.map((device) =>
-              device.deviceUUID === updatedDevice.deviceUUID ? { ...device, ...updatedDevice } : device
-            )
-          );
-      }
-      if (deviceInAccessControl) {
-        setCompanyDevices((prevDevices) =>
-          prevDevices.map((device) => {
-            if (device.deviceUUID === updatedDevice.deviceUUID) {
-              const updatedFields = {};
-              Object.entries(updatedDevice.stateInfo).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                  updatedFields[key] = value;
-                }
-              });
-
-              if (Object.keys(updatedFields).length > 0) {
-                return {
-                  ...device,
-                  stateInfo: {
-                    ...(device.stateInfo || {}),
-                    ...updatedFields,
-                  },
-                };
+  const updateDeviceState = useCallback((updatedDevice) => {
+    setCompanyDevices((prevDevices) =>
+      prevDevices.map((device) => {
+        if (device.deviceUUID === updatedDevice.deviceUUID) {
+          const lockStateChange = updatedDevice.stateInfo.wm2State === false ? { CHSesame2Status: undefined } : {};
+          const updatedStateInfo = updatedDevice.stateInfo
+            ? {
+                ...(device.stateInfo || {}),
+                ...updatedDevice.stateInfo,
+                ...lockStateChange,
               }
-              return { ...device };
-            }
-            return device;
-          })
-        );
-      }
-    },
-    [filteredSsmDevices, filteredAccessControlDevices]
-  );
+            : device.stateInfo;
+          return {
+            ...device,
+            stateInfo: updatedStateInfo,
+          };
+        }
+        return device;
+      })
+    );
+  }, []);
 
   useEffect(() => {
     if (!gStripe.customerInfo.companyID) {
