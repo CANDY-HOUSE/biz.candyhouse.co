@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, Box, ToggleButtonGroup, ToggleButton, IconButton, Popper } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
 import { useTranslation } from 'react-i18next';
 
 const MobileBatteryTrendChart = ({
@@ -37,6 +37,26 @@ const MobileBatteryTrendChart = ({
   const [popperPosition, setPopperPosition] = useState(null);
   const [isTooltipLocked, setIsTooltipLocked] = useState(false);
   const [popperPlacement, setPopperPlacement] = useState('top-start');
+  const [chartResetKey, setChartResetKey] = useState(0);
+  const prevIsMenuOpenRef = useRef(isMenuOpen);
+  const chartHeaderHeight = 45;
+  const chartInnerHeight = Math.max(height - chartHeaderHeight, 200);
+
+  const resetTooltipState = () => {
+    activePayloadRef.current = null;
+    tooltipStateRef.current = {
+      active: false,
+      payload: null,
+      coordinate: null,
+    };
+
+    setIsTooltipLocked(false);
+    setPopperOpen(false);
+    setPopperData(null);
+    setPopperPosition(null);
+    setPopperPlacement('top-start');
+  };
+
   const lineDataKeyMap = {
     V: {
       light: lightLoadDataKey,
@@ -244,21 +264,22 @@ const MobileBatteryTrendChart = ({
   };
 
   const handleUnitChange = (event, newUnit) => {
-    if (newUnit !== null) {
+    if (newUnit !== null && newUnit !== yAxisUnit) {
+      resetTooltipState();
       setYAxisUnit(newUnit);
     }
   };
 
-  const CustomLegend = (props) => {
-    const { payload } = props;
+  const ChartHeader = () => {
     return (
       <Box
         sx={{
+          height: chartHeaderHeight,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          pt: 1,
-          py: 0,
+          px: 1,
+          boxSizing: 'border-box',
         }}
       >
         <ToggleButtonGroup
@@ -271,23 +292,34 @@ const MobileBatteryTrendChart = ({
           <ToggleButton value="V" aria-label="voltage" sx={{ px: 1, py: 0.5, fontSize: 10 }}>
             {t('pages.sesameAccessControlDevice.index.VoltageValue')}
           </ToggleButton>
+
           <ToggleButton value="%" aria-label="percentage" sx={{ px: 1, py: 0.5, fontSize: 10 }}>
             {t('pages.sesameAccessControlDevice.index.Percentage')}
           </ToggleButton>
         </ToggleButtonGroup>
+
         <Box sx={{ display: 'flex', gap: 2 }}>
-          {payload.map((entry, index) => (
-            <Box key={`item-${index}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box
-                sx={{
-                  width: 12,
-                  height: 2,
-                  bgcolor: entry.color,
-                }}
-              />
-              <span style={{ fontSize: 12, color: '#666' }}>{entry.value}</span>
-            </Box>
-          ))}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box
+              sx={{
+                width: 12,
+                height: 2,
+                bgcolor: '#1d7f7f',
+              }}
+            />
+            <span style={{ fontSize: 12, color: '#666' }}>{t(lightLoadString)}</span>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box
+              sx={{
+                width: 12,
+                height: 2,
+                bgcolor: '#97eded',
+              }}
+            />
+            <span style={{ fontSize: 12, color: '#666' }}>{t(heavyLoadString)}</span>
+          </Box>
         </Box>
       </Box>
     );
@@ -301,15 +333,14 @@ const MobileBatteryTrendChart = ({
   };
 
   useEffect(() => {
-    if (!isMenuOpen) {
-      setIsTooltipLocked(false);
-      setPopperOpen(false);
-      setPopperData(null);
-      setPopperPosition(null);
-      setPopperPlacement('top-start');
-      activePayloadRef.current = null;
-      tooltipStateRef.current = { active: false, payload: null, coordinate: null };
+    const wasMenuOpen = prevIsMenuOpenRef.current;
+
+    if (wasMenuOpen && !isMenuOpen) {
+      resetTooltipState();
+      setChartResetKey((prev) => prev + 1);
     }
+
+    prevIsMenuOpenRef.current = isMenuOpen;
   }, [isMenuOpen]);
 
   useEffect(() => {
@@ -424,9 +455,10 @@ const MobileBatteryTrendChart = ({
         `}
       </style>
       <Card sx={{ p: 0 }}>
+        <ChartHeader />
         <div ref={containerRef} style={{ touchAction: 'pan-y' }}>
-          <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={dataSource.main}>
+          <ResponsiveContainer width="100%" height={chartInnerHeight}>
+            <LineChart key={`${yAxisUnit}-${chartResetKey}`} data={dataSource.main}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis
                 dataKey={xAxisDataKey}
@@ -446,7 +478,6 @@ const MobileBatteryTrendChart = ({
                 axisLine={{ stroke: '#999' }}
               />
               <Tooltip content={<CustomTooltip />} wrapperStyle={{ display: 'none' }} />
-              <Legend verticalAlign="top" height={45} content={<CustomLegend />} />
               <Line
                 dataKey={dataSource.high}
                 stroke="#1d7f7f"
@@ -474,7 +505,7 @@ const MobileBatteryTrendChart = ({
                 endIndex={brushEndIndex}
                 onChange={handleBrushChange}
                 tickFormatter={formatXAxis}
-                y={height - 45}
+                y={chartInnerHeight - 45}
               />
             </LineChart>
           </ResponsiveContainer>
