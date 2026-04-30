@@ -14,7 +14,7 @@ import {
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircleOutline, Error, Language, QrCode, Remove, Wifi } from '@mui/icons-material';
+import { CheckCircleOutline, Error, Language, QrCode, Remove, Wifi, SignalCellularAlt } from '@mui/icons-material';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import MobileBindDevice from '@/components/MobileBindDevice';
@@ -233,8 +233,8 @@ const MobileWifiModule = () => {
 
   const internetStatusIndicator = useMemo(() => {
     const { isAPWork, isNetwork, isIoTWork, isBindingAPWork, isConnectingNetwork, isConnectingIoT } = internetStatus;
-    const renderIcon = (IconComponent, isLoading, isActive, step1) => (
-      <Box key={IconComponent.name} sx={{ display: 'flex', alignItems: 'center' }}>
+    const renderIcon = (IconComponent, isLoading, isActive, step1, customSx = {}) => (
+      <Box key={IconComponent.name} sx={{ display: 'flex', alignItems: 'center', ...customSx }}>
         <Box sx={{ width: 25, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {isLoading ? (
             <CircularProgress size={14} sx={{ color: 'primary.main' }} />
@@ -251,14 +251,27 @@ const MobileWifiModule = () => {
         />
       </Box>
     );
+
+    // 检查是否有 lteConnected 和 wifiConnected 字段 (适配Hub3 LTE 设备)
+    const hasLteWifiFields =
+      currentDevice.stateInfo?.lteConnected !== undefined && currentDevice.stateInfo?.wifiConnected !== undefined;
+
     return (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}
+        {hasLteWifiFields ? (
+          <>
+            {/* 有 lte/wifi 字段：两者都显示，根据各自状态高亮 */}
+            {renderIcon(SignalCellularAlt, false, currentDevice.stateInfo.lteConnected, true, { marginRight: -2.5 })}
+            {renderIcon(Wifi, false, currentDevice.stateInfo.wifiConnected, true)}
+          </>
+        ) : (
+          <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
+        )}
         {renderIcon(Language, isNetwork ? false : isConnectingNetwork, isNetwork)}
         {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
       </Box>
     );
-  }, [internetStatus]);
+  }, [internetStatus, currentDevice.stateInfo]);
 
   return (
     <Box

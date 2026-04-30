@@ -240,7 +240,11 @@ const isContainPage = (access, id, isSesameApp = false) => {
 const allTags = [pageNames.members, pageNames.devices, pageNames.cards, pageNames.historys, pageNames.developer];
 
 const isWifiModel = (model) => {
-  const targetDeviceModels = [gConfig.sesameDeviceModel.wm_2, gConfig.sesameDeviceModel.hub_3];
+  const targetDeviceModels = [
+    gConfig.sesameDeviceModel.wm_2,
+    gConfig.sesameDeviceModel.hub_3,
+    gConfig.sesameDeviceModel.hub3_lte,
+  ];
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
