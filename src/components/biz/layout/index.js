@@ -32,6 +32,7 @@ import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import SideBarMenu from './SideBarMenu.js';
 import BuildInfoBar from './BuildInfoBar.js';
+import WsStatusIndicator from '@/components/WsStatusIndicator.js';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -124,6 +125,7 @@ const Layout = () => {
                 ) : (
                   <SideBarMenu />
                 )}
+                <WsStatusIndicator />
               </Box>
               <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                 <Typography variant="h4">{gStripe.customerInfo?.name || ''}</Typography>

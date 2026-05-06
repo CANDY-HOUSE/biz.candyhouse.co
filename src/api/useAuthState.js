@@ -23,6 +23,17 @@ export const useAuthState = () => {
   const [user, setUser] = useState({});
 
   useEffect(() => {
+    const checkTokenExpiration = (jwtToken) => {
+      try {
+        const payload = JSON.parse(atob(jwtToken.split('.')[1]));
+        const exp = payload.exp * 1000;
+        const now = Date.now();
+        return exp > now;
+      } catch (error) {
+        console.error('【Auth】Token 解析失败', error);
+        return false;
+      }
+    };
     const checkAuthStatus = async () => {
       try {
         const {
@@ -35,6 +46,17 @@ export const useAuthState = () => {
         // 退出登录
         handleSignout();
       }
+    };
+    const handleConnectionFailure = async (currentToken) => {
+      console.log('【Auth】WebSocket 重试多次失败，检查 token 有效期');
+      const isValid = checkTokenExpiration(currentToken);
+      if (isValid) {
+        console.log('【Auth】Token 仍然有效，继续退避重连');
+        return false;
+      }
+      console.log('【Auth】Token 已过期，调用 Auth.currentSession() 刷新');
+      await checkAuthStatus();
+      return true;
     };
     const authListener = ({ payload }) => {
       const { event, data } = payload;
@@ -80,6 +102,7 @@ export const useAuthState = () => {
     };
     Hub.listen('auth', authListener);
     checkAuthStatus();
+    WebSocketManager.setConnectionFailureCallback(handleConnectionFailure);
     return () => Hub.remove('auth', authListener);
   }, []);
 
