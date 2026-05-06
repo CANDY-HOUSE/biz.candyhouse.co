@@ -19,6 +19,7 @@ export const sesameDeviceModel = {
   bot_2: 'bot_2', // 17
   sesame_face_pro: 'sesame_face_Pro', // 18
   sesame_face: 'sesame_face', // 19
+  sesame_6: 'sesame_6', // 20
   sesame_6_pro: 'sesame_6_pro', // 21
   sesame_face_pro_ai: 'sesame_face_pro_ai', // 22
   sesame_face_ai: 'sesame_face_ai', // 23
@@ -57,6 +58,7 @@ export const modelNameByProductType = {
   17: sesameDeviceModel.bot_2,
   18: sesameDeviceModel.sesame_face_pro,
   19: sesameDeviceModel.sesame_face,
+  20: sesameDeviceModel.sesame_6,
   21: sesameDeviceModel.sesame_6_pro,
   22: sesameDeviceModel.sesame_face_pro_ai,
   23: sesameDeviceModel.sesame_face_ai,
