@@ -125,10 +125,10 @@ const Layout = () => {
                 ) : (
                   <SideBarMenu />
                 )}
-                <WsStatusIndicator />
               </Box>
               <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                 <Typography variant="h4">{gStripe.customerInfo?.name || ''}</Typography>
+                <WsStatusIndicator />
                 <KeyboardArrowDownIcon onClick={(event) => setAnchorEl(event.currentTarget)} />
               </Box>
               <Menu

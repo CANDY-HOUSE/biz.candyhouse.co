@@ -41,6 +41,7 @@ class WebSocketManager {
   private readonly MAX_RETRIES_BEFORE_TOKEN_CHECK = 3;
   private currentStatus: WS_STATUS = WS_STATUS.DISCONNECTED;
   private statusListeners: Set<(_status: WS_STATUS) => void> = new Set();
+  private connectionIdListeners: Set<(_connectionId: string) => void> = new Set();
 
   private constructor() {
     window.addEventListener('beforeunload', () => {
@@ -69,7 +70,13 @@ class WebSocketManager {
     this.startSleepDetector();
 
     this.subscribe(ACTION_TYPES.BIZ3_KEEP_ALIVE, (response: any) => {
-      this.connectionId = response.connectionId || this.connectionId;
+      const newConnectionId = response.connectionId;
+      const isRealChange = this.connectionId !== '' && this.connectionId !== newConnectionId;
+      if (isRealChange) {
+        this.updateConnectionId(newConnectionId);
+      } else if (this.connectionId === '') {
+        this.connectionId = newConnectionId;
+      }
       console.log('【WS】当前连接ID:', this.connectionId);
       this.clearPongTimeout();
       this.updateStatus(WS_STATUS.CONNECTED);
@@ -95,6 +102,17 @@ class WebSocketManager {
     return () => this.statusListeners.delete(callback);
   }
 
+  private updateConnectionId(newConnectionId: string) {
+    this.connectionId = newConnectionId;
+    console.log('【WS】连接ID已更新:', newConnectionId);
+    this.connectionIdListeners.forEach((listener) => listener(newConnectionId));
+  }
+
+  public onConnectionIdChange(callback: (_connectionId: string) => void) {
+    this.connectionIdListeners.add(callback);
+    return () => this.connectionIdListeners.delete(callback);
+  }
+
   public getStatus() {
     return this.currentStatus;
   }
@@ -117,7 +135,7 @@ class WebSocketManager {
     this.sleepDetectorTimer = setInterval(() => {
       const now = Date.now();
       if (now - this.lastTickTime > this.SLEEP_THRESHOLD) {
-        console.warn(`【WS】检测到系统从休眠中唤醒 (停顿了 ${now - this.lastTickTime}ms)`);
+        console.log(`【WS】检测到系统从休眠中唤醒 (停顿了 ${now - this.lastTickTime}ms)`);
         this.wakeUpConnection();
       }
       this.lastTickTime = now;
@@ -235,7 +253,7 @@ class WebSocketManager {
       if (this.connectionTimeoutTimer) clearTimeout(this.connectionTimeoutTimer);
       this.connectionTimeoutTimer = setTimeout(() => {
         if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
-          console.warn('【WS】连接超时未就绪，主动关闭并重连');
+          console.log('【WS】连接超时未就绪，主动关闭并重连');
           this.ws.close();
         }
       }, this.connectionTimeout);
@@ -286,7 +304,7 @@ class WebSocketManager {
     this.clearPongTimeout();
     this.sendMessage({ action: ACTION_TYPES.BIZ3_KEEP_ALIVE });
     this.pongTimeoutTimer = setTimeout(() => {
-      console.warn('【WS】心跳超时未响应，判定假死，尝试重连');
+      console.log('【WS】心跳超时未响应，判定假死，尝试重连');
       this.reconnect();
     }, 3000);
   }
@@ -305,6 +323,7 @@ class WebSocketManager {
         this.triggerHeartbeatCheck();
       }
     }, WS_HEARTBEAT_INTERVAL_MS);
+    this.triggerHeartbeatCheck();
   }
 
   private stopHeartbeat() {

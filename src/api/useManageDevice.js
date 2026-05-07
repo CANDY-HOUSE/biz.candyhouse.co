@@ -4,6 +4,7 @@ import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
+import WebSocketManager from '@/websocket/WebSocketManager.ts';
 
 const PubedCompanyDevice = 'PubedCompanyDevice';
 const PubedUserDevice = 'PubedUserDevice';
@@ -327,7 +328,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       };
       sendMessage(message);
     },
-    [sendMessage, gStripe]
+    [sendMessage, gStripe.customerInfo.companyID]
   );
 
   const subscribeDevices = useCallback(
@@ -345,6 +346,17 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     },
     [subscribeDevicesUpdate]
   );
+
+  useEffect(() => {
+    const unsubscribe = WebSocketManager.onConnectionIdChange((newConnectionId) => {
+      console.log('【Device】检测到 WebSocket connectionId 变化:', newConnectionId);
+      if (companyDevices.length > 0) {
+        console.log('【Device】重新订阅设备，数量:', companyDevices.length);
+        subscribeDevices(companyDevices);
+      }
+    });
+    return () => unsubscribe();
+  }, [companyDevices.length, subscribeDevices]);
 
   const switchRechargebleBattery = useCallback(
     ({ deviceUUID, isRechargeBattery }, cb) => {
