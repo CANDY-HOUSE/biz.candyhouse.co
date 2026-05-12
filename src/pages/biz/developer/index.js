@@ -152,7 +152,10 @@ export default function Developer() {
                 <MenuItem
                   onClick={() => {
                     const url = gDeveloper.firmwares[selectAnchorEl.selectIndex].downloadUrl;
-                    url && (window.location.href = url);
+                    if (url) {
+                      window.open(url, '_blank');
+                    }
+                    setSelectAnchorEl({ anchorEl: null, selectIndex: null });
                   }}
                 >
                   <ListItemText primary="ダウンロード" />

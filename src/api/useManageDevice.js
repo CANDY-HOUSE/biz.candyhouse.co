@@ -251,12 +251,11 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   );
 
   const addSesameDevicesToBiz3 = useCallback(
-    (items, cb, isTouch = false) => {
+    (items, cb) => {
       const message = {
         action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
         op: 'add',
         items,
-        isTouchPro: isTouch,
         companyID: gStripe.customerInfo.companyID,
       };
       handleSendMessage(message);

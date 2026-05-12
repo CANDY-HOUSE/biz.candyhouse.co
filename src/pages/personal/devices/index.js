@@ -61,6 +61,7 @@ const Devices = () => {
     setCustomModalOpen(true);
   }, [
     isBizRoute,
+    isBizDevicesRoute,
     setModalContent,
     setCustomModalOpen,
     gManageDevice.canChoosedSsmDevices,
@@ -69,14 +70,10 @@ const Devices = () => {
 
   const handleCheck = useCallback(
     (is, cb) => {
-      gManageDevice.addSesameDevicesToBiz3(
-        is,
-        (res) => {
-          setCustomModalOpen(false);
-          cb && cb(res);
-        },
-        isBizAccessControlRoute
-      );
+      gManageDevice.addSesameDevicesToBiz3(is, (res) => {
+        setCustomModalOpen(false);
+        cb && cb(res);
+      });
     },
     [gManageDevice, setCustomModalOpen]
   );
