@@ -45,6 +45,8 @@ const MobileWifiModule = () => {
   const [internetSetting, setInternetSetting] = useState(null);
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
+  const [isWifiConnected, setIsWifiConnected] = useState(false);
+  const [isLTEConnected, setIsLTEConnected] = useState(false);
   const { t } = useTranslation();
 
   const currentDevice = useMemo(() => {
@@ -68,6 +70,8 @@ const MobileWifiModule = () => {
       wifiSsid: currentDevice.stateInfo?.wifiSsid,
       wifiPwd: currentDevice.stateInfo?.wifiPwd,
     });
+    setIsWifiConnected(currentDevice.stateInfo?.wifiConnected ?? false);
+    setIsLTEConnected(currentDevice.stateInfo?.lteConnected ?? false);
   }, [currentDevice]);
 
   // 通知Hub3打开配网窗口，成功显示 Matter 码， 失败显示失败信息
@@ -193,6 +197,23 @@ const MobileWifiModule = () => {
     });
   }, []);
 
+  const requestNetworkTypeFromApp = useCallback(() => {
+    const requestId = Date.now().toString();
+    window[`deviceListCallback_${requestId}`] = (data) => {
+      const op = data['op'];
+      if (op === 'onNetworkType') {
+        const { isWifiConnected, isLTEConnected } = data;
+        setIsWifiConnected(isWifiConnected);
+        setIsLTEConnected(isLTEConnected);
+      }
+    };
+    biz3utils.triggerBridge({
+      action: 'requestNetworkType',
+      requestId: requestId,
+      callbackName: `deviceListCallback_${requestId}`,
+    });
+  }, []);
+
   const requestConfigureInternetFromApp = useCallback(({ deviceUUID }) => {
     const requestId = Date.now().toString();
     biz3utils.triggerBridge({
@@ -229,6 +250,7 @@ const MobileWifiModule = () => {
     if (!bleAvailable) return;
     // 监听配网变化
     requestMonitorInternetFromApp();
+    requestNetworkTypeFromApp();
   }, [bleAvailable]);
 
   const internetStatusIndicator = useMemo(() => {
@@ -261,8 +283,8 @@ const MobileWifiModule = () => {
         {hasLteWifiFields ? (
           <>
             {/* 有 lte/wifi 字段：两者都显示，根据各自状态高亮 */}
-            {renderIcon(SignalCellularAlt, false, currentDevice.stateInfo.lteConnected, true, { marginRight: -2.5 })}
-            {renderIcon(Wifi, false, currentDevice.stateInfo.wifiConnected, true)}
+            {renderIcon(SignalCellularAlt, false, isLTEConnected, true, { marginRight: -2.5 })}
+            {renderIcon(Wifi, false, isWifiConnected, true)}
           </>
         ) : (
           <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
@@ -271,7 +293,7 @@ const MobileWifiModule = () => {
         {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
       </Box>
     );
-  }, [internetStatus, currentDevice.stateInfo]);
+  }, [internetStatus, isWifiConnected, isLTEConnected]);
 
   return (
     <Box
