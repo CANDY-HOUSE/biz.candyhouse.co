@@ -211,6 +211,7 @@ const MobileWifiModule = () => {
   }, []);
 
   const requestNetworkTypeFromApp = useCallback(() => {
+    if (!isHub3LTE) return;
     const requestId = Date.now().toString();
     window[`deviceListCallback_${requestId}`] = (data) => {
       const op = data['op'];
@@ -225,7 +226,7 @@ const MobileWifiModule = () => {
       requestId: requestId,
       callbackName: `deviceListCallback_${requestId}`,
     });
-  }, []);
+  }, [isHub3LTE]);
 
   const requestConfigureInternetFromApp = useCallback(({ deviceUUID }) => {
     const requestId = Date.now().toString();
