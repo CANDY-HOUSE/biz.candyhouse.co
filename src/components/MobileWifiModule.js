@@ -15,6 +15,7 @@ import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, us
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircleOutline, Error, Language, QrCode, Remove, Wifi, SignalCellularAlt } from '@mui/icons-material';
+import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import MobileBindDevice from '@/components/MobileBindDevice';
@@ -47,6 +48,7 @@ const MobileWifiModule = () => {
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [isWifiConnected, setIsWifiConnected] = useState(false);
   const [isLTEConnected, setIsLTEConnected] = useState(false);
+  const [isHub3LTE, setIsHub3LTE] = useState(false);
   const { t } = useTranslation();
 
   const currentDevice = useMemo(() => {
@@ -72,6 +74,8 @@ const MobileWifiModule = () => {
     });
     setIsWifiConnected(currentDevice.stateInfo?.wifiConnected ?? false);
     setIsLTEConnected(currentDevice.stateInfo?.lteConnected ?? false);
+    console.log('Current device info updated:', currentDevice);
+    setIsHub3LTE(currentDevice.deviceModel === 'hub_3_lte');
   }, [currentDevice]);
 
   // 通知Hub3打开配网窗口，成功显示 Matter 码， 失败显示失败信息
@@ -138,6 +142,15 @@ const MobileWifiModule = () => {
     },
     [currentDevice]
   );
+
+  const handleClearWiFiSSID = useCallback(() => {
+    gIot.sendCommandToHub3WithConnectionId({
+      device_id: did,
+      cmd: gConfig.cmdCode.HUB3_ITEM_CODE_CLEAR_WIFI_SSID,
+      secretKey: currentDevice.secretKey,
+      iotPayload: {},
+    });
+  }, [currentDevice, did]);
 
   const getLEDBrightness = () => {
     gIot.sendCommandToHub3WithConnectionId({
@@ -229,6 +242,14 @@ const MobileWifiModule = () => {
     });
   }, []);
 
+  const handleDeleteWifiClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      handleClearWiFiSSID();
+    },
+    [handleClearWiFiSSID]
+  );
+
   const showBleStatus = useMemo(() => {
     if (!bleStatus) {
       return false;
@@ -274,13 +295,9 @@ const MobileWifiModule = () => {
       </Box>
     );
 
-    // 检查是否有 lteConnected 和 wifiConnected 字段 (适配Hub3 LTE 设备)
-    const hasLteWifiFields =
-      currentDevice.stateInfo?.lteConnected !== undefined && currentDevice.stateInfo?.wifiConnected !== undefined;
-
     return (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {hasLteWifiFields ? (
+        {isHub3LTE ? (
           <>
             {/* 有 lte/wifi 字段：两者都显示，根据各自状态高亮 */}
             {renderIcon(SignalCellularAlt, false, isLTEConnected, true, { marginRight: -2.5 })}
@@ -293,7 +310,7 @@ const MobileWifiModule = () => {
         {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
       </Box>
     );
-  }, [internetStatus, isWifiConnected, isLTEConnected]);
+  }, [internetStatus, isWifiConnected, isLTEConnected, isHub3LTE]);
 
   return (
     <Box
@@ -346,6 +363,21 @@ const MobileWifiModule = () => {
             }
           />
           <Typography sx={{ color: 'title.other' }}>{internetSetting?.wifiSsid}</Typography>
+          {internetSetting && internetSetting.wifiSsid && isHub3LTE && (
+            <ListItemIcon
+              onClick={handleDeleteWifiClick}
+              sx={{
+                minWidth: 'auto',
+                color: 'title.other',
+                mr: -1,
+                p: 1,
+                cursor: 'pointer',
+                borderRadius: '4px',
+              }}
+            >
+              <ClearOutlinedIcon fontSize="medium" />
+            </ListItemIcon>
+          )}
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem>

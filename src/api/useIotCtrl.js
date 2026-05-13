@@ -209,6 +209,8 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
               payloadArray = newPayloadArray;
             }
             break;
+          case gConfig.cmdCode.HUB3_ITEM_CODE_CLEAR_WIFI_SSID:
+            break;
 
           default:
             console.warn('Unsupported cmd for iotPayload:', cmd);
