@@ -10,6 +10,7 @@ function PrivateRoute({ children }) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const hasFetchedUserInfo = useRef(false);
+  const hasAutoLoginFromApp = useRef(false);
 
   useEffect(() => {
     try {
@@ -33,13 +34,20 @@ function PrivateRoute({ children }) {
   useEffect(() => {
     const spaceID = searchParams.get('spaceID');
     const token = searchParams.get('token');
-    let companyID = localStorage.getItem('curLogin');
-    if (spaceID && token && !companyID && gAuth.loginState === gConfig.loginState.loginOut) {
-      localStorage.setItem('curLogin', spaceID);
-      gAuth.autoLogin(token);
-      gStripe.getCustomerInfo(spaceID);
+    const companyID = localStorage.getItem('curLogin');
+    const isFromApp = gStripe.isFromApp;
+    if (!spaceID || !token || gAuth.loginState !== gConfig.loginState.loginOut) {
+      return;
     }
-  }, [searchParams, gAuth.loginState]);
+    const shouldAutoLogin = isFromApp ? !hasAutoLoginFromApp.current : !companyID;
+    if (!shouldAutoLogin) return;
+    if (isFromApp) {
+      hasAutoLoginFromApp.current = true;
+    }
+    localStorage.setItem('curLogin', spaceID);
+    gAuth.autoLogin(token);
+    gStripe.getCustomerInfo(spaceID);
+  }, [searchParams, gAuth.loginState, gStripe.isFromApp]);
 
   if (loading) {
     return <LoadingPage />;
