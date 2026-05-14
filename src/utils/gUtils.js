@@ -277,6 +277,7 @@ const lockModelDevices = [
   gConfig.sesameDeviceModel.ssmbot_1,
   gConfig.sesameDeviceModel.sesame_6,
   gConfig.sesameDeviceModel.sesame_6_pro,
+  gConfig.sesameDeviceModel.sesame_6_pro_slidingdoor,
   gConfig.sesameDeviceModel.ble_connector,
   gConfig.sesameDeviceModel.ssm_bike2,
   gConfig.sesameDeviceModel.ssm_bike3,
