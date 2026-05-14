@@ -43,7 +43,6 @@ const MobileWifiModule = () => {
     isConnectingNetwork: false,
     isConnectingIoT: false,
   });
-  const [internetSetting, setInternetSetting] = useState(null);
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [isWifiConnected, setIsWifiConnected] = useState(false);
@@ -67,10 +66,6 @@ const MobileWifiModule = () => {
       isBindingAPWork: false,
       isConnectingNetwork: false,
       isConnectingIoT: false,
-    });
-    setInternetSetting({
-      wifiSsid: currentDevice.stateInfo?.wifiSsid,
-      wifiPwd: currentDevice.stateInfo?.wifiPwd,
     });
     setIsWifiConnected(currentDevice.stateInfo?.wifiConnected ?? false);
     setIsLTEConnected(currentDevice.stateInfo?.lteConnected ?? false);
@@ -196,7 +191,13 @@ const MobileWifiModule = () => {
       const op = data['op'];
       if (op === 'onAPSettingChanged') {
         const { wifiSsid, wifiPwd } = data;
-        setInternetSetting({ wifiSsid, wifiPwd });
+        gManageDevice.updateDeviceState({
+          deviceUUID: did,
+          stateInfo: {
+            wifiSsid,
+            wifiPwd,
+          },
+        });
       } else if (op === 'onMechStatus') {
         // eslint-disable-next-line
         const { op, ...others } = data;
@@ -355,7 +356,7 @@ const MobileWifiModule = () => {
             primary={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {t('pages.sesameAccessControlDevice.index.WiFiSSID')}
-                {internetSetting && !internetSetting.wifiSsid && (
+                {currentDevice.stateInfo && !currentDevice.stateInfo?.wifiSsid && (
                   <ListItemIcon sx={{ minWidth: 'auto', color: 'error.main' }}>
                     <Error />
                   </ListItemIcon>
@@ -363,8 +364,8 @@ const MobileWifiModule = () => {
               </Box>
             }
           />
-          <Typography sx={{ color: 'title.other' }}>{internetSetting?.wifiSsid}</Typography>
-          {internetSetting && internetSetting.wifiSsid && isHub3LTE && (
+          <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiSsid}</Typography>
+          {currentDevice.stateInfo?.wifiSsid && isHub3LTE && (
             <ListItemIcon
               onClick={handleDeleteWifiClick}
               sx={{
@@ -383,7 +384,7 @@ const MobileWifiModule = () => {
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.WiFiPWD')} />
-          <Typography sx={{ color: 'title.other' }}>{internetSetting?.wifiPwd}</Typography>
+          <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiPwd}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem>
