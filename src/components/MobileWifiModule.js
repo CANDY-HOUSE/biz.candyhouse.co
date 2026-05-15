@@ -58,15 +58,14 @@ const MobileWifiModule = () => {
     if (!currentDevice.secretKey) {
       return;
     }
-    let isIoTWrok = currentDevice.stateInfo?.wm2State === true;
-    setInternetStatus({
-      isAPWork: isIoTWrok,
-      isNetwork: isIoTWrok,
-      isIoTWork: isIoTWrok,
-      isBindingAPWork: false,
-      isConnectingNetwork: false,
-      isConnectingIoT: false,
-    });
+    let isIoTWork = currentDevice.stateInfo?.wm2State === true;
+    isIoTWork &&
+      setInternetStatus((prev) => ({
+        ...prev,
+        isAPWork: isIoTWork,
+        isNetwork: isIoTWork,
+        isIoTWork: isIoTWork,
+      }));
     setIsWifiConnected(currentDevice.stateInfo?.wifiConnected ?? false);
     setIsLTEConnected(currentDevice.stateInfo?.lteConnected ?? false);
     console.log('Current device info updated:', currentDevice);
