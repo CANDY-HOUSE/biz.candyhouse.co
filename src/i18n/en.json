@@ -187,6 +187,7 @@
     },
     "opt": {
       "revoke": "Revoke",
+      "addContact": "Add Contact",
       "cancel": "Cancel",
       "ok": "OK"
     },

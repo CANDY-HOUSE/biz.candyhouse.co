@@ -42,7 +42,6 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
         history,
         device_id,
       };
-      console.log('==> msgData', msgData);
       sendMessage(msgData);
     },
     [gStripe.customerInfo.subUUID]

@@ -30,6 +30,7 @@ const MobileDeviceUsers = ({
   onModifyGuestTag,
   onShareGuestQRCode,
   gStrip,
+  gManageEmployee,
   showType = 'widget',
   defaultManageMode = false,
 }) => {
@@ -162,6 +163,28 @@ const MobileDeviceUsers = ({
   const me = useMemo(() => {
     return users.find((it) => it.subUUID === gStrip.customerInfo.subUUID);
   }, [users]);
+
+  const handleAddContact = () => {
+    const subUUID = selectedUser.subUUID;
+    if (!subUUID) return;
+    gManageEmployee.addEmployee(
+      [
+        {
+          friendID: subUUID,
+          companyID: gStrip.customerInfo.companyID,
+        },
+      ],
+      (resp) => {
+        resp.success &&
+          biz3utils.triggerScheme(
+            `ssm://UI/webview/notify?${new URLSearchParams({
+              notifyName: 'RefreshList',
+            })}`
+          );
+      }
+    );
+    setDrawerOpen(false);
+  };
 
   const urlParams = new URLSearchParams(window.location.search);
   const isManage = urlParams.get('type') === 'manage';
@@ -322,6 +345,11 @@ const MobileDeviceUsers = ({
               >
                 <Typography color="error.main">{t('deviceMember.opt.revoke')}</Typography>
               </ListItem>
+              {selectedUser.subUUID && (
+                <ListItem onClick={handleAddContact}>
+                  <Typography>{t('deviceMember.opt.addContact')}</Typography>
+                </ListItem>
+              )}
               <ListItem onClick={() => setDrawerOpen(false)}>
                 <Typography>{t('deviceMember.opt.cancel')}</Typography>
               </ListItem>

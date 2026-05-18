@@ -193,6 +193,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
         onRemoveUser={onRemoveUser}
         onModifyGuestTag={onModifyGuestTag}
         onShareGuestQRCode={onShareGuestQRCode}
+        gManageEmployee={gManageEmployee}
         defaultManageMode={defaultManageMode}
       />
       <MobileQRCodeDialog

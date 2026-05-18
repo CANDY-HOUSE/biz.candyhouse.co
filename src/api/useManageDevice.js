@@ -349,13 +349,10 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   useEffect(() => {
     const unsubscribe = WebSocketManager.onConnectionIdChange((newConnectionId) => {
       console.log('【Device】检测到 WebSocket connectionId 变化:', newConnectionId);
-      if (companyDevices.length > 0) {
-        console.log('【Device】重新订阅设备，数量:', companyDevices.length);
-        subscribeDevices(companyDevices);
-      }
+      getCompanyDevices();
     });
     return () => unsubscribe();
-  }, [companyDevices.length, subscribeDevices]);
+  }, [getCompanyDevices]);
 
   const switchRechargebleBattery = useCallback(
     ({ deviceUUID, isRechargeBattery }, cb) => {

@@ -187,6 +187,7 @@
     },
     "opt": {
       "revoke": "撤销",
+      "addContact": "添加联系人",
       "cancel": "取消",
       "ok": "确定"
     },
