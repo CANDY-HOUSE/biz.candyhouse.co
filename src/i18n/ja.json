@@ -187,7 +187,7 @@
     },
     "opt": {
       "revoke": "鍵を取り消す",
-      "addContact": "連絡先の追加",
+      "addContact": "連絡先に追加",
       "cancel": "キャンセル",
       "ok": "決定"
     },
