@@ -9,6 +9,7 @@ import { gConfig } from '@constants/gConfig.js';
 import useOperateIoT from '@/hooks/useOperateIoT';
 
 const PubedDeviceStateChange = 'pubDeviceStateChange';
+const PubedUserDeviceChange = 'pubUserDeviceChange';
 
 export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
   const { sendCmd } = useOperateIoT();
@@ -19,6 +20,8 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
         case ACTION_TYPES.BIZ3_TRIGGER_LOCKER:
           if (message.op === PubedDeviceStateChange) {
             gManageDevice.updateDeviceState(message.data);
+          } else if (message.op === PubedUserDeviceChange) {
+            gManageDevice.getCompanyDevices();
           }
           break;
         default:
