@@ -128,9 +128,11 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
             gIot={gIot}
             defaultState={
               gUtils.isHub3LTE(device.deviceModel)
-                ? device.stateInfo.wm2State === true
-                  ? 'unlocked'
-                  : 'locked'
+                ? device.stateInfo?.wm2State !== true
+                  ? undefined
+                  : device.stateInfo?.relayStatus === 1
+                    ? 'unlocked'
+                    : 'locked'
                 : device.stateInfo.CHSesame2Status
             }
             shareKey={device.secretKey}

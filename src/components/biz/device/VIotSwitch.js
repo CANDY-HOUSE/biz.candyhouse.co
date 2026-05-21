@@ -61,12 +61,12 @@ const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defau
             gIot.sendCommandToHub3WithConnectionId({
               device_id: deviceUUID,
               secretKey: shareKey,
-              cmd: gConfig.cmdCode.HUB3_OS3_RELAY_SWITCH,
+              cmd: gConfig.cmdCode.HUB3_ITEM_CODE_RELAY_SWITCH,
               iotPayload: { op: 0x01 },
             });
           }}
         >
-          {checked === undefined ? <SvgLockDisable /> : checked ? <SvgLock /> : <SvgLockDisable />}
+          {checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
         </IconButton>
       );
     }

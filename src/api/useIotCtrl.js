@@ -189,7 +189,7 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
             }
             break;
 
-          case gConfig.cmdCode.HUB3_OS3_RELAY_SWITCH:
+          case gConfig.cmdCode.HUB3_ITEM_CODE_RELAY_SWITCH:
             {
               // Hub3 LTE 继电器开关命令
               // op 固定为 0x01，代表开关操作
