@@ -149,7 +149,6 @@ export default function DataTable({
   }, [selectedRows]);
 
   useEffect(() => {
-    console.log('初始化数据', refreshTb);
     setAnchorEl(null);
     setGlobalSelectedIndices(new Set());
     setKey(refreshTb);

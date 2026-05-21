@@ -471,7 +471,6 @@ const triggerBridge = (message) => {
     window.AndroidHandler.postMessage(JSON.stringify(message));
     return true;
   } else {
-    console.error('不在 App 环境中');
     return false;
   }
 };

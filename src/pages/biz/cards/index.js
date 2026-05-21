@@ -36,6 +36,12 @@ export default function Cards({ location }) {
   let cardQueue = [];
   let isProcessing = false;
 
+  useEffect(() => {
+    if (gManageDevice.filteredAccessControlDevices.length > 0) {
+      gManageAuthData.fetchNfcCards();
+    }
+  }, [gManageDevice.filteredAccessControlDevices.length]);
+
   const cardModeSetCallback = async (deviceUUID, data) => {
     console.log('cardModeSetCallback', deviceUUID, data, data.op, data.status);
     // 调用 AddIcCard 的 setReadCardContent 方法

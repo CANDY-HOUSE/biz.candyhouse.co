@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useCallbacks } from '../hooks/useCallbacks.js';
@@ -20,12 +20,8 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
   const [devicePasscodes, setDevicePasscodes] = useState({});
   const { sendCmd } = useOperateIoT();
   const { registerCallback, invokeCallbacks } = useCallbacks();
-  const deviceRef = useRef(gManageDevice);
+  const [nfcCardFetchState, setNfcCardFetchState] = useState({ start: false, done: false });
   const [passcodeFetchState, setPasscodeFetchState] = useState({ start: false, done: false });
-
-  useEffect(() => {
-    deviceRef.current = gManageDevice;
-  }, [gManageDevice]);
 
   const accessControlDevicesCount = useMemo(
     () => gManageDevice.filteredAccessControlDevices.length,
@@ -33,7 +29,7 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
   );
 
   const refreshAuthData = useCallback(() => {
-    const validDeviceUUIDs = deviceRef.current.filteredAccessControlDevices.map((it) => it.deviceUUID);
+    const validDeviceUUIDs = gManageDevice.filteredAccessControlDevices.map((it) => it.deviceUUID);
     setDeviceCards((prevDeviceCards) => {
       return Object.fromEntries(
         Object.entries(prevDeviceCards).filter(([deviceUUID]) => validDeviceUUIDs.includes(deviceUUID))
@@ -44,7 +40,12 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
         Object.entries(prevDeviceCards).filter(([deviceUUID]) => validDeviceUUIDs.includes(deviceUUID))
       );
     });
-  }, [deviceRef]);
+  }, [gManageDevice.filteredAccessControlDevices]);
+
+  useEffect(() => {
+    setNfcCardFetchState({ start: false, done: false });
+    setPasscodeFetchState({ start: false, done: false });
+  }, [gStripe.customerInfo.companyID]);
 
   const getAuthenticationData = useCallback(({ op, devices = [] }) => {
     if (!devices.length) {
@@ -70,13 +71,12 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
         });
         return;
       }
-      const devices = deviceRef.current.filteredAccessControlDevices;
-      if (devices.length === 0) {
-        return;
-      }
+      const devices = gManageDevice.filteredAccessControlDevices;
+      if (nfcCardFetchState.start) return;
+      setNfcCardFetchState({ start: true, done: false });
       getAuthenticationData({ op: AuthDataOpType.getCards, devices });
     },
-    [deviceRef, getAuthenticationData]
+    [gManageDevice.filteredAccessControlDevices, nfcCardFetchState, getAuthenticationData]
   );
 
   const fetchPasscodes = useCallback(
@@ -88,14 +88,12 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
         });
         return;
       }
-      const devices = deviceRef.current.filteredAccessControlDevices;
-      if (devices.length === 0 || passcodeFetchState.start) {
-        return;
-      }
+      const devices = gManageDevice.filteredAccessControlDevices;
+      if (passcodeFetchState.start) return;
       setPasscodeFetchState({ start: true, done: false });
       getAuthenticationData({ op: AuthDataOpType.getPasscodes, devices });
     },
-    [deviceRef, passcodeFetchState, getAuthenticationData]
+    [gManageDevice.filteredAccessControlDevices, passcodeFetchState, getAuthenticationData]
   );
 
   useEffect(() => {
@@ -104,7 +102,15 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
       return;
     }
     refreshAuthData();
-    fetchNfcCards();
+    if (nfcCardFetchState.done || passcodeFetchState.done) {
+      const devices = gManageDevice.filteredAccessControlDevices;
+      if (nfcCardFetchState.done) {
+        getAuthenticationData({ op: AuthDataOpType.getCards, devices });
+      }
+      if (passcodeFetchState.done) {
+        getAuthenticationData({ op: AuthDataOpType.getPasscodes, devices });
+      }
+    }
   }, [accessControlDevicesCount]);
 
   const handleDeviceCardData = useCallback((data, op) => {
@@ -175,6 +181,7 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
           setPasscodeFetchState((prev) => ({ ...prev, done: true }));
           break;
         case AuthDataOpType.getCards:
+          setNfcCardFetchState((prev) => ({ ...prev, done: true }));
           break;
         case PubedCardLinkedDeviceIDs:
           handleDeviceCardData(message.data, PubedCardLinkedDeviceIDs);
@@ -707,12 +714,14 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
     updateCardOwner,
     postCards,
     clearCards,
+    fetchNfcCards,
     passcodes,
     postPasscodes,
     fetchPasscodes,
     clearPasswords,
     findPasscodesByPasscodeID,
     updatePasswordName,
+    nfcCardFetchState,
     passcodeFetchState,
 
     sendDelCardsCmd,

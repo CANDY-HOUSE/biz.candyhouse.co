@@ -38,6 +38,13 @@ export default function VCards() {
   const { sendCmd } = useOperateIoT();
 
   const { uploadCardBatch, uploadState } = useNfcCardUploader(sendCmd);
+
+  useEffect(() => {
+    if (gManageDevice.filteredAccessControlDevices.length > 0) {
+      gManageAuthData.fetchNfcCards();
+    }
+  }, [gManageDevice.filteredAccessControlDevices.length]);
+
   // 通过 IOT 获取所有卡片
   useEffect(() => {
     if (state.uuid) {
@@ -52,6 +59,9 @@ export default function VCards() {
   }, [gManageAuthData.nfcCards]);
 
   useEffect(() => {
+    if (!gManageAuthData.nfcCardFetchState.done) {
+      return;
+    }
     const device = gManageDevice.filteredAccessControlDevices.find((item) => item.deviceUUID === state.uuid);
     if (!device) {
       return;
@@ -59,7 +69,7 @@ export default function VCards() {
     if (device.stateInfo?.cards_num !== nfcCards.length) {
       refreshCards();
     }
-  }, []);
+  }, [gManageAuthData.nfcCardFetchState.done]);
 
   const showError = async () => {
     setModalTitle('');

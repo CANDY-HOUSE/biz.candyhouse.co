@@ -35,15 +35,16 @@ export default function Passwords() {
   const { sendCmd } = useOperateIoT();
   const { uploadPasswordBatch, uploadState } = usePasscodeUploader(sendCmd);
   const [manualAdd, setManualAdd] = useState({ passwordID: '', name: '', loading: false });
-  const [shouldCheckSync, setShouldCheckSync] = useState(false);
 
   const isManualAddReady = useMemo(() => {
     return manualAdd.passwordID && manualAdd.name;
   }, [manualAdd]);
 
   useEffect(() => {
-    gManageAuthData.fetchPasscodes();
-  }, [gManageAuthData.nfcCards]);
+    if (gManageDevice.filteredAccessControlDevices.length > 0) {
+      gManageAuthData.fetchPasscodes();
+    }
+  }, [gManageDevice.filteredAccessControlDevices.length]);
 
   useEffect(() => {
     if (state.uuid) {
@@ -61,19 +62,11 @@ export default function Passwords() {
     if (!gManageAuthData.passcodeFetchState.done) {
       return;
     }
-    setShouldCheckSync(true);
-  }, [gManageAuthData.passcodeFetchState.done]);
-
-  useEffect(() => {
-    if (!shouldCheckSync) {
-      return;
-    }
     const device = gManageDevice.filteredAccessControlDevices.find((item) => item.deviceUUID === state.uuid);
     if (device && device.stateInfo?.keyboards_num !== passwords.length) {
       refreshPasswords();
     }
-    setShouldCheckSync(false);
-  }, [shouldCheckSync, gManageDevice.filteredAccessControlDevices, passwords]);
+  }, [gManageAuthData.passcodeFetchState.done]);
 
   const showError = async () => {
     setModalTitle('');
