@@ -22,14 +22,14 @@ import { biz3utils } from '@/utils/biz3utils';
 import { gUtils } from '@/utils/gUtils';
 
 const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
-  const { gManageDevice, gStripe, gMediaType } = useContext(GlobalStateContext);
+  const { gManageDevice, gMediaType } = useContext(GlobalStateContext);
   const [chartData, setChartData] = useState([]);
   const [lastKey, setLastKey] = useState(null);
   const [isRechargeableBattery, setIsRechargeableBattery] = useState(false);
   const [menuState, setMenuState] = useState({ open: false, selectedPoint: null });
   const [searchParams] = useSearchParams();
   const deviceUUID = searchParams.get('deviceUUID') || userDeviceUUID;
-  const isWifiModule = deviceUUID.startsWith('00000000-055A-FD81-0D00');
+  const isWifiModule = gUtils.isWifiModulePrefix(deviceUUID);
   const isFromApp = searchParams.get('fromType') === 'app';
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -102,7 +102,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
             action: 'requestRefreshApp',
           })
         ) {
-          gManageDevice.getCompanyDevices(true);
+          gManageDevice.getCompanyDevices();
           console.log('not in app');
         }
         setChartData([]);
@@ -112,15 +112,12 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   };
 
   useEffect(() => {
-    if (gStripe.isFromApp) {
-      gManageDevice.getCompanyDevices(true);
-      return;
-    }
-  }, [gStripe.isFromApp]);
+    gManageDevice.getDeviceStatus(deviceUUID);
+  }, [deviceUUID]);
 
   const device = useMemo(() => {
-    return gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID);
-  }, [gManageDevice.companyDevices]);
+    return gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
+  }, [gManageDevice.companyDevices, gManageDevice.deviceStatus, deviceUUID]);
 
   useEffect(() => {
     if (device) {

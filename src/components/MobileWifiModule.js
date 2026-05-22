@@ -55,6 +55,12 @@ const MobileWifiModule = () => {
   }, [gManageDevice.filteredSsmDevices, did]);
 
   useEffect(() => {
+    if (gStripe.isFromApp) {
+      gManageDevice.getCompanyDevices(true);
+    }
+  }, [gStripe.customerInfo.companyID]);
+
+  useEffect(() => {
     if (!currentDevice.secretKey) {
       return;
     }
@@ -342,7 +348,7 @@ const MobileWifiModule = () => {
       )}
       <List>
         <ListItem disablePadding>
-          <MobileDeviceSetting />
+          <MobileDeviceSetting disableFetch />
         </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem>

@@ -1,5 +1,5 @@
 // /biz/ir/ir-type-list/index.js
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { Box, Card, CardContent, CardHeader, IconButton, List, ListItem, Typography } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
@@ -13,7 +13,7 @@ export default function IrTypeList() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const hub3DeviceId = searchParams.get('hub3DeviceId') || '';
-  const { gMediaType, gStripe, gManageDevice } = useContext(GlobalStateContext);
+  const { gMediaType, gStripe } = useContext(GlobalStateContext);
   const isMobile = gMediaType.isMobile;
   // 红外设备类型列表
   const irTypes = [
@@ -48,13 +48,6 @@ export default function IrTypeList() {
       icon: <SvgLearn />,
     },
   ];
-
-  useEffect(() => {
-    if (gStripe.isFromApp) {
-      gManageDevice.getCompanyDevices(true);
-      return;
-    }
-  }, [gStripe.isFromApp]);
 
   // 处理类型选择
   const handleTypeSelect = (selectedType) => {

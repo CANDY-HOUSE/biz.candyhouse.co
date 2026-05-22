@@ -258,13 +258,14 @@ const useManageGroup = (gStripe) => {
   useWebSocket(ACTION_TYPES.BIZ3_GET_DEVICEEMOLOYEEKEYS, handleDeviceResponse);
 
   const getDeviceEmployeeKeys = useCallback(
-    (deviceUUID, cb) => {
+    ({ deviceUUID, limit }, cb) => {
       const companyID = gStripe.customerInfo.companyID;
       if (!companyID) return;
       const msgData = {
         action: ACTION_TYPES.BIZ3_GET_DEVICEEMOLOYEEKEYS,
         deviceUUID,
         companyID,
+        limit,
         op: 'get',
       };
       sendMessage(msgData);

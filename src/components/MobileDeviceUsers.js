@@ -44,6 +44,7 @@ const MobileDeviceUsers = ({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isSettingPush = Boolean(searchParams.get('setting')) === true;
+  const isManage = searchParams.get('type') === 'manage';
 
   const groupedUsers = useMemo(() => {
     const result = [];
@@ -108,7 +109,7 @@ const MobileDeviceUsers = ({
 
   useLayoutEffect(() => {
     if (fetchUserAndDevices) {
-      fetchUserAndDevices();
+      fetchUserAndDevices(isManage || defaultManageMode);
     }
   }, []);
 
@@ -186,8 +187,6 @@ const MobileDeviceUsers = ({
     setDrawerOpen(false);
   };
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const isManage = urlParams.get('type') === 'manage';
   if (isManage || defaultManageMode) {
     return (
       <Box sx={{ width: '100%', bgcolor: 'background.paper', pl: 0 }}>
@@ -359,7 +358,6 @@ const MobileDeviceUsers = ({
       </Box>
     );
   }
-  const displayUsers = displayList.slice(0, 5);
   return (
     <Box
       sx={{
@@ -374,7 +372,7 @@ const MobileDeviceUsers = ({
       onClick={handleOpenPage}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        {displayUsers.map((user) => (
+        {displayList.map((user) => (
           <Avatar
             key={user.subUUID || user.guestKeyId}
             sx={{
@@ -387,7 +385,7 @@ const MobileDeviceUsers = ({
           </Avatar>
         ))}
       </Box>
-      {displayUsers.length > 0 && <SvgIcon component={SvgArrow} />}
+      {displayList.length > 0 && <SvgIcon component={SvgArrow} />}
     </Box>
   );
 };

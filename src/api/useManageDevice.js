@@ -15,6 +15,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   const [canChoosedSsmDevices, setCanChoosedSsmDevices] = useState([]); //用户可选择的ssm设备
   const [userDevices, setUserDevices] = useState([]); //个人用户所有设备
   const [companyDevices, setCompanyDevices] = useState([]); //公司用户所有设备
+  const [deviceStatus, setDeviceStatus] = useState(null); //单个设备详情
   const { registerCallback, invokeCallbacks } = useCallbacks();
   const tempCompanyDevicesRef = useRef([]); //临时存储公司设备数据
   const tempUserDevicesRef = useRef([]); //临时个人设备数据
@@ -79,6 +80,9 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
         case 'reorderDevices':
           setCompanyDevices(message.data);
           break;
+        case 'getDeviceStatus':
+          setDeviceStatus(message.data?.length > 0 ? message.data[0] : null);
+          break;
         default:
           break;
       }
@@ -103,6 +107,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       setCanChoosedAccessControlDevices([]);
       setCanChoosedSsmDevices([]);
       setUserDevices([]);
+      setDeviceStatus(null);
     }
   }, [gAuth.loginState]);
 
@@ -367,6 +372,20 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     },
     [registerCallback]
   );
+
+  const getDeviceStatus = useCallback(
+    (deviceUUID) => {
+      if (!deviceUUID || !gStripe.isFromApp) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
+        deviceUUID,
+        op: 'getDeviceStatus',
+      };
+      sendMessage(messageData);
+    },
+    [sendMessage, gStripe.isFromApp]
+  );
+
   return {
     companyDevices,
     getCompanyDevices,
@@ -388,5 +407,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     getDevicesNotifyStatus,
     switchDeviceNotify,
     switchRechargebleBattery,
+    deviceStatus,
+    getDeviceStatus,
   };
 };

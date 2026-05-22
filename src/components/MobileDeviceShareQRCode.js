@@ -21,17 +21,14 @@ const MobileDeviceShareQRCode = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const device = gManageDevice.companyDevices.find((it) => it.deviceUUID === deviceUUID);
+    if (!deviceUUID) return;
+    const device = gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
     if (device) {
       setCurrentDeviceKey(device);
+      return;
     }
-  }, [gManageDevice.companyDevices]);
-
-  useEffect(() => {
-    if (gManageDevice.companyDevices.length < 1) {
-      gManageDevice.getCompanyDevices(true);
-    }
-  }, []);
+    gManageDevice.getDeviceStatus(deviceUUID);
+  }, [deviceUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus]);
 
   useEffect(() => {
     if (!currentDeviceKey) {

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 
-const MobileDeviceSetting = () => {
+const MobileDeviceSetting = ({ disableFetch = false }) => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
   const DeviceMemberChangedName = 'DeviceMemberChanged';
   const [searchParams] = useSearchParams();
@@ -46,17 +46,17 @@ const MobileDeviceSetting = () => {
   };
 
   useEffect(() => {
-    if (gManageDevice.companyDevices.length < 1) {
-      gManageDevice.getCompanyDevices(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    const device = gManageDevice.companyDevices.find((it) => it.deviceUUID === deviceUUID);
-    if (device) {
+    if (!deviceUUID) return;
+    const device =
+      gManageDevice.companyDevices.find((device) => device.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
+    if (device?.deviceName) {
       setDeviceName(device.deviceName);
+      return;
     }
-  }, [gManageDevice.companyDevices]);
+    if (!disableFetch) {
+      gManageDevice.getDeviceStatus(deviceUUID);
+    }
+  }, [deviceUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus, disableFetch]);
 
   useLayoutEffect(() => {
     if (!containerRef.current) {

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useContext, useState, useMemo, useCallback } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { gUtils } from '@/utils/gUtils';
 import CheckTable from './biz/CheckTable';
@@ -24,8 +24,8 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   const { t } = useTranslation();
   const [qrDialog, setQrDialog] = useState({ open: false, url: '' });
 
-  const getDeviceUser = (deviceUUID) => {
-    gManageGroup.getDeviceEmployeeKeys(deviceUUID, (resp) => {
+  const getDeviceUser = (deviceUUID, limit) => {
+    gManageGroup.getDeviceEmployeeKeys({ deviceUUID, limit }, (resp) => {
       let userList = resp.data.map((item) => {
         let data = '常時利用';
         if (item.keyLevel === 2) {
@@ -45,14 +45,18 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   };
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.companyDevices.find((it) => it.deviceUUID === deviceUUID);
-  }, [gManageDevice.companyDevices, deviceUUID]);
+    return (
+      gManageDevice.companyDevices.find((device) => device.deviceUUID === deviceUUID) || gManageDevice.deviceStatus
+    );
+  }, [deviceUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus]);
 
-  useEffect(() => {
-    if (deviceUUID) {
-      getDeviceUser(deviceUUID);
+  const fetchCanSelectUsers = (isManageMode) => {
+    if (isManageMode) {
+      gManageEmployee.getEmployees();
+      gManageDevice.getDeviceStatus(deviceUUID);
     }
-  }, [deviceUUID, gStripe.customerInfo]);
+    getDeviceUser(deviceUUID, isManageMode ? 0 : 5);
+  };
 
   const canSelectedUser = useMemo(() => {
     if (users.length < 1) {
@@ -106,13 +110,6 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
         isMobile={gStripe.isFromApp}
       />
     );
-  };
-
-  const fetchCanSelectUsers = () => {
-    gManageEmployee.getEmployees();
-    if (gManageDevice.companyDevices.length < 1) {
-      gManageDevice.getCompanyDevices(true);
-    }
   };
 
   const onRemoveUser = async (user) => {
@@ -185,7 +182,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   return (
     <BlurOverlay enabled={disableInteraction}>
       <MobileDeviceUsers
-        showType={!gUtils.isWifiModel(currentDevice?.deviceModel) ? 'widget' : ''}
+        showType={!gUtils.isWifiModulePrefix(deviceUUID) ? 'widget' : ''}
         gStrip={gStripe}
         users={users}
         fetchUserAndDevices={fetchCanSelectUsers}
