@@ -23,9 +23,11 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   const keyLevel = searchParams.get('keyLevel');
   const { t } = useTranslation();
   const [qrDialog, setQrDialog] = useState({ open: false, url: '' });
+  const [hasMore, setHasMore] = useState(false);
 
   const getDeviceUser = (deviceUUID, limit) => {
     gManageGroup.getDeviceEmployeeKeys({ deviceUUID, limit }, (resp) => {
+      setHasMore(resp.hasMore);
       let userList = resp.data.map((item) => {
         let data = '常時利用';
         if (item.keyLevel === 2) {
@@ -192,6 +194,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
         onShareGuestQRCode={onShareGuestQRCode}
         gManageEmployee={gManageEmployee}
         defaultManageMode={defaultManageMode}
+        hasMore={hasMore}
       />
       <MobileQRCodeDialog
         open={qrDialog.open}

@@ -145,12 +145,10 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     setCompanyDevices((prevDevices) =>
       prevDevices.map((device) => {
         if (device.deviceUUID === updatedDevice.deviceUUID) {
-          const lockStateChange = updatedDevice.stateInfo.wm2State === false ? { CHSesame2Status: undefined } : {};
           const updatedStateInfo = updatedDevice.stateInfo
             ? {
                 ...(device.stateInfo || {}),
                 ...updatedDevice.stateInfo,
-                ...lockStateChange,
               }
             : device.stateInfo;
           return {

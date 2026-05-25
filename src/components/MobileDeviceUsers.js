@@ -13,7 +13,7 @@ import {
   Collapse,
   SvgIcon,
 } from '@mui/material';
-import { AddCircleOutlineOutlined, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { AddCircleOutlineOutlined, ExpandMore, ExpandLess, MoreHoriz } from '@mui/icons-material';
 import { DataSearch } from '@components/biz/device/DataSearch';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,7 @@ const MobileDeviceUsers = ({
   gManageEmployee,
   showType = 'widget',
   defaultManageMode = false,
+  hasMore = false,
 }) => {
   const [searchResult, setSearchResult] = useState({});
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -371,19 +372,36 @@ const MobileDeviceUsers = ({
       }}
       onClick={handleOpenPage}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0, overflow: 'hidden' }}>
         {displayList.map((user) => (
           <Avatar
             key={user.subUUID || user.guestKeyId}
             sx={{
-              width: 48,
-              height: 48,
+              flex: '1 1 0',
+              minWidth: 0,
+              maxWidth: 48,
+              height: 'auto',
+              aspectRatio: '1 / 1',
               bgcolor: 'info.light',
             }}
           >
             {user.employeeName?.charAt(0)?.toUpperCase() ?? ''}
           </Avatar>
         ))}
+        {hasMore && (
+          <Avatar
+            sx={{
+              flex: '1 1 0',
+              minWidth: 0,
+              maxWidth: 48,
+              height: 'auto',
+              aspectRatio: '1 / 1',
+              bgcolor: 'info.light',
+            }}
+          >
+            <MoreHoriz />
+          </Avatar>
+        )}
       </Box>
       {displayList.length > 0 && <SvgIcon component={SvgArrow} />}
     </Box>

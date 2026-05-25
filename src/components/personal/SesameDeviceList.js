@@ -26,6 +26,16 @@ import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { gUtils } from '@/utils/gUtils';
 import { Error } from '@mui/icons-material';
 
+const getDeviceLockState = (device) => {
+  if (device.stateInfo?.wm2State !== true) {
+    return undefined;
+  }
+  if (gUtils.isHub3LTE(device.deviceModel)) {
+    return device.stateInfo?.relayStatus === 1 ? 'unlocked' : 'locked';
+  }
+  return device.stateInfo.CHSesame2Status;
+};
+
 const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {
   const {
     attributes,
@@ -126,15 +136,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
             model={device.deviceModel}
             deviceUUID={device.deviceUUID}
             gIot={gIot}
-            defaultState={
-              gUtils.isHub3LTE(device.deviceModel)
-                ? device.stateInfo?.wm2State !== true
-                  ? undefined
-                  : device.stateInfo?.relayStatus === 1
-                    ? 'unlocked'
-                    : 'locked'
-                : device.stateInfo.CHSesame2Status
-            }
+            defaultState={getDeviceLockState(device)}
             shareKey={device.secretKey}
           />
         </Box>
