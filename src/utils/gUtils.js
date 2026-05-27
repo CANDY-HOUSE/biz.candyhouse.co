@@ -1,7 +1,7 @@
-import { csvUtils } from './csvutils';
-import { biz3utils } from './biz3utils';
 import { gConfig } from '@constants/gConfig';
 import { modelNameByProductType } from '@constants/sesameDeviceModel';
+import { biz3utils } from './biz3utils';
+import { csvUtils } from './csvutils';
 
 const uuidsToNames = (uuids, alltouchs) => {
   if (!uuids || uuids.length === 0) {
@@ -136,6 +136,7 @@ const pageNames = {
   membersGroup: 'ユーザーグループ',
   membersRole: 'ロール',
   historys: '全体履歴',
+  scheduleList: '予約一覧',
   developer: '開発者向け',
   cards: 'カード管理',
   devices: 'デバイス（ドア・認証機器）',
@@ -208,6 +209,11 @@ const categoriesConf = [
   {
     id: pageNames.historys,
     router: '/biz/history',
+    isRoot: true,
+  },
+  {
+    id: pageNames.scheduleList,
+    router: '/biz/schedule-list',
     isRoot: true,
   },
   {

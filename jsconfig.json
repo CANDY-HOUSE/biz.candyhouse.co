@@ -11,7 +11,8 @@
       "@personal/*": ["src/pages/personal/*"],
       "@biz/*": ["src/pages/biz/*"],
       "@assets/*": ["src/assets/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@api/*": ["src/api/*"]
     },
     "module": "esnext",
     "moduleResolution": "node",

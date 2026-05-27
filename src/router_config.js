@@ -1,23 +1,38 @@
-import SesameAccessControlDeviceRegion from '@biz/access-control/region/region';
-import Passwords from '@biz/access-control/password/passwords';
-import PasswordDetails from '@biz/access-control/password/passworddetails';
-import VCards from '@biz/access-control/cards/cards';
-import EmployeeList from '@biz/employees/list/EmployeeList';
-import EmployeeGroups from '@biz/employees/group/EmployeeGroups';
-import EmployeeRoles from '@biz/employees/role/EmployeeRoles';
-import DeviceGroup from '@biz/devices/group/DeviceGroup';
-import HistoryList from '@biz/history';
-import Cards from '@biz/cards';
-import Developer from '@biz/developer';
-import EmployeeItem from '@biz/employees/list-item/EmployeeItem';
-import DeviceGroupItem from '@biz/devices/group-item/DeviceGroupItem';
-import DeviceShare from '@biz/devices/device-share/DeviceShare';
-import GroupShare from '@biz/devices/group-share/GroupShare';
-import DeviceItem from '@biz/devices/list-item/DeviceItem';
-import EmployeeGroupItem from '@biz/employees/group-item/EmployeeGroupItem';
-import CardDetails from '@biz/cards/details/carddetails';
 import DeviceHistory from '@/components/DeviceHistory';
 import DeviceUserList from '@/components/DeviceUserList';
+import MobileWifiModule from '@/components/MobileWifiModule';
+import WifiModuleIndex from '@/pages/personal/devices/wifi-module';
+import IrTypeList from '@/pages/personal/devices/wifi-module/ir/ir-type-list';
+import Learn from '@/pages/personal/devices/wifi-module/ir/learn';
+import RemoteAir from '@/pages/personal/devices/wifi-module/ir/remote-air';
+import RemoteList from '@/pages/personal/devices/wifi-module/ir/remote-list';
+import RemoteMatch from '@/pages/personal/devices/wifi-module/ir/remote-match';
+import RemoteNonAir from '@/pages/personal/devices/wifi-module/ir/remote-non-air';
+import VCards from '@biz/access-control/cards/cards';
+import PasswordDetails from '@biz/access-control/password/passworddetails';
+import Passwords from '@biz/access-control/password/passwords';
+import SesameAccessControlDeviceRegion from '@biz/access-control/region/region';
+import Cards from '@biz/cards';
+import CardDetails from '@biz/cards/details/carddetails';
+import Developer from '@biz/developer';
+import DeviceShare from '@biz/devices/device-share/DeviceShare';
+import DeviceGroupItem from '@biz/devices/group-item/DeviceGroupItem';
+import GroupShare from '@biz/devices/group-share/GroupShare';
+import DeviceGroup from '@biz/devices/group/DeviceGroup';
+import DeviceItem from '@biz/devices/list-item/DeviceItem';
+import EmployeeGroupItem from '@biz/employees/group-item/EmployeeGroupItem';
+import EmployeeGroups from '@biz/employees/group/EmployeeGroups';
+import EmployeeItem from '@biz/employees/list-item/EmployeeItem';
+import EmployeeList from '@biz/employees/list/EmployeeList';
+import EmployeeRoles from '@biz/employees/role/EmployeeRoles';
+import HistoryList from '@biz/history';
+import BizHomePage from '@biz/home';
+import ScheduleList from '@biz/schedule-list';
+import UpgradeSSMFirmware from '@components/biz/device/UpgradeSSMFirmware';
+import Contacts from '@personal/contacts';
+import Devices from '@personal/devices';
+import Me from '@personal/me';
+import DeviceSetting from './components/DeviceSetting';
 import {
   SesameMobileBatteryChart,
   SesameMobileContactAdd,
@@ -27,20 +42,6 @@ import {
   SesameMobileMeIndex,
   SesameMobileNotifyCenter,
 } from './components/index';
-import Contacts from '@personal/contacts';
-import Me from '@personal/me';
-import Devices from '@personal/devices';
-import BizHomePage from '@biz/home';
-import IrTypeList from '@/pages/personal/devices/wifi-module/ir/ir-type-list';
-import RemoteList from '@/pages/personal/devices/wifi-module/ir/remote-list';
-import RemoteAir from '@/pages/personal/devices/wifi-module/ir/remote-air';
-import RemoteNonAir from '@/pages/personal/devices/wifi-module/ir/remote-non-air';
-import RemoteMatch from '@/pages/personal/devices/wifi-module/ir/remote-match';
-import Learn from '@/pages/personal/devices/wifi-module/ir/learn';
-import UpgradeSSMFirmware from '@components/biz/device/UpgradeSSMFirmware';
-import MobileWifiModule from '@/components/MobileWifiModule';
-import WifiModuleIndex from '@/pages/personal/devices/wifi-module';
-import DeviceSetting from './components/DeviceSetting';
 
 // 与 gUtils.categoriesConf 对应
 const routerComponentMap = [
@@ -115,6 +116,10 @@ const routerComponentMap = [
   {
     router: '/biz/history',
     component: HistoryList,
+  },
+  {
+    router: '/biz/schedule-list',
+    component: ScheduleList,
   },
   {
     router: '/biz/developer',

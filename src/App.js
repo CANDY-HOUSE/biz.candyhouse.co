@@ -1,22 +1,22 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { gUtils } from '@/utils/gUtils';
+import { Amplify } from '@aws-amplify/core';
+import BizHomePage from '@biz/home';
+import Settings from '@biz/settings';
+import Layout from '@components/biz/layout';
+import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
 import { ThemeProvider } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import GlobalContextProvider, { GlobalStateContext } from './context/GlobalContextProvider';
-import theme from './theme/theme';
-import './styles/global.css';
-import './i18n';
-import LoginIndex from '@pages/login';
-import Layout from '@components/biz/layout';
-import HomePage from '@pages/index';
-import { gUtils } from '@/utils/gUtils';
 import NotFoundPage from '@pages/404';
-import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
-import { Amplify } from '@aws-amplify/core';
+import HomePage from '@pages/index';
+import LoginIndex from '@pages/login';
+import { useContext, useEffect, useState } from 'react';
+import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import awsconfig from './aws-exports';
+import GlobalContextProvider, { GlobalStateContext } from './context/GlobalContextProvider';
+import './i18n';
 import { routerComponentMap } from './router_config';
-import Settings from '@biz/settings';
-import BizHomePage from '@biz/home';
+import './styles/global.css';
+import theme from './theme/theme';
 
 Amplify.configure(awsconfig);
 

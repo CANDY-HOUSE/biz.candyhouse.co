@@ -1,38 +1,38 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import PrivateRoute from './Auth/PrivateRoute.js';
-import { useNavigate, Outlet, useLocation } from 'react-router-dom';
+import WsStatusIndicator from '@/components/WsStatusIndicator.js';
+import siteIcon from '@assets/site-icon.png';
+import { URLs } from '@constants/URLs';
+import { GlobalStateContext } from '@context/GlobalContextProvider.js';
+import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
+import { LoadingButton } from '@mui/lab';
 import {
+  AppBar,
+  Box,
+  Button,
+  Drawer,
+  Grid2,
+  IconButton,
+  List,
+  ListItem,
   Menu,
   MenuItem,
   Modal,
-  AppBar,
-  Grid2,
+  TextField,
   Toolbar,
   Typography,
-  Box,
-  Button,
-  TextField,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
 } from '@mui/material';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import AddIcon from '@mui/icons-material/Add';
-import PersonIcon from '@mui/icons-material/Person';
-import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
-import CheckIcon from '@mui/icons-material/Check';
-import MenuIcon from '@mui/icons-material/Menu';
 import Divider from '@mui/material/Divider';
-import { GlobalStateContext } from '@context/GlobalContextProvider.js';
-import Navigator from './Navigator.js';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import LoadingPage from './Auth/LoadingPage.js';
-import { LoadingButton } from '@mui/lab';
-import siteIcon from '@assets/site-icon.png';
-import { URLs } from '@constants/URLs';
-import SideBarMenu from './SideBarMenu.js';
+import PrivateRoute from './Auth/PrivateRoute.js';
 import BuildInfoBar from './BuildInfoBar.js';
-import WsStatusIndicator from '@/components/WsStatusIndicator.js';
+import Navigator from './Navigator.js';
+import SideBarMenu from './SideBarMenu.js';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -347,7 +347,7 @@ const Layout = () => {
               marginTop: isFromApp ? 0 : headerHeight,
               marginLeft: isMobile || isFromApp ? '0' : menuWidth,
               width: isMobile || isFromApp ? '100%' : `calc(100% - ${menuWidth})`,
-              height: '100%',
+              height: '100vh',
             }}
           >
             <Outlet />

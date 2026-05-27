@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 
-import { useAuthState } from '../api/useAuthState';
-import { useStripeInfo } from '../api/useStripeInfo';
-import { useManageEmployee } from '../api/useManageEmployee';
 import GSnackbar from '@/components/SnackBar';
 import CustomModal from '@/components/biz/CustomModal';
-import { useIotCtrl } from '../api/useIotCtrl.js';
-import { useManageDevice } from '../api/useManageDevice';
-import WebSocketManager from '../websocket/WebSocketManager.ts';
-import useManageGroup from '../api/useManageGroup.js';
-import { useDeveloper } from '../api/useDeveloper.js';
-import { useManageAuthData } from '../api/useManageAuthData.js';
+import theme from '@/theme/theme';
 import { useMediaType } from '@hooks/useMediaType.js';
 import { ThemeProvider } from '@mui/material';
-import theme from '@/theme/theme';
+import { useAuthState } from '../api/useAuthState';
+import { useDeveloper } from '../api/useDeveloper.js';
+import { useIotCtrl } from '../api/useIotCtrl.js';
+import { useManageAuthData } from '../api/useManageAuthData.js';
+import { useManageDevice } from '../api/useManageDevice';
+import { useManageEmployee } from '../api/useManageEmployee';
+import useManageGroup from '../api/useManageGroup.js';
+import useManageSchedule from '../api/useManageSchedule.js';
+import { useStripeInfo } from '../api/useStripeInfo';
+import WebSocketManager from '../websocket/WebSocketManager.ts';
 
 export const GlobalStateContext = React.createContext({});
 const GlobalContextProvider = ({ children, location }) => {
@@ -31,6 +32,7 @@ const GlobalContextProvider = ({ children, location }) => {
   const gManageGroup = useManageGroup(gStripe);
   const gDeveloper = useDeveloper(gStripe, gAuth);
   const gIot = useIotCtrl(gAuth, gStripe, gManageDevice);
+  const gSchedule = useManageSchedule(gStripe);
   return (
     <GlobalStateContext.Provider
       value={{
@@ -53,6 +55,7 @@ const GlobalContextProvider = ({ children, location }) => {
         setModalTitle,
         gDeveloper,
         gManageAuthData,
+        gSchedule,
       }}
     >
       {children}
