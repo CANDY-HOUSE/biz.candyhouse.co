@@ -388,6 +388,34 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, registerCallback]
   );
 
+  const queryUserByCS = useCallback(
+    (email, cb) => {
+      if (!email) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
+        email,
+        op: 'queryUserByCS',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [sendMessage, registerCallback]
+  );
+
+  const confirmQueryByCS = useCallback(
+    (email, cb) => {
+      if (!email) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
+        email,
+        op: 'confirmQueryByCS',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [sendMessage, registerCallback]
+  );
+
   useEffect(() => {
     if (gAuth.loginState === gConfig.loginState.loginOut) {
       setEmployees(init);
@@ -427,6 +455,8 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     postEmployeeGroupInfo,
     findEmployeeById,
     reorderEmployees,
+    queryUserByCS,
+    confirmQueryByCS,
   };
 };
 //

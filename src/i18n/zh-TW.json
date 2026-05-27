@@ -31,6 +31,7 @@
         "WiFiPWD": "WiFi 密碼",
         "InternetStatus": "網路狀態",
         "LED": "LED 🔆",
+        "RegisterTime": "註冊時間",
         "UUID": "UUID",
         "Matter": "Matter",
         "BindDeviceToHub3Hint": "添加距離此{{deviceName}} 5公尺內要連接的芝麻設備:",

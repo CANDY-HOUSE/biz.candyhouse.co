@@ -79,6 +79,11 @@ const Me = () => {
           <Box sx={{ ...content }}>{currentUserInfo.email}</Box>
         </ListItem>
 
+        <ListItem sx={{ ...infoItem }}>
+          <Typography sx={{ ...title }}>{'ID'}</Typography>
+          <Box sx={{ ...content }}>{currentUserInfo.sub}</Box>
+        </ListItem>
+
         <ListItem sx={{ ...infoItem, alignItems: 'start' }}>
           <Typography sx={{ ...title }}>{t('deviceMember.qr')}</Typography>
           <Box sx={{ ...content }}>

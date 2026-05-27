@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { LoadingButton } from '@mui/lab';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
+import { gUtils } from '@/utils/gUtils';
 
 const LoginIndex = () => {
   const navigate = useNavigate();
@@ -118,9 +119,7 @@ const LoginIndex = () => {
           }}
           onChange={(e) => {
             setMail(e.target.value);
-            const mailReg =
-              /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{1,}))$/;
-            const mailChk = mailReg.test(e.target.value);
+            const mailChk = gUtils.isValidEmail(e.target.value);
             setBtnState({ ready: mailChk, loading: false });
             setMailChk(mailChk);
           }}

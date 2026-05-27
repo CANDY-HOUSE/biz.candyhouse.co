@@ -406,6 +406,15 @@ const MobileWifiModule = () => {
         />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <BatteryPercent device={currentDevice} />
+        {currentDevice?.stateInfo?.registerTime && (
+          <ListItem>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
+            <Typography sx={{ color: 'title.other' }}>
+              {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
+            </Typography>
+          </ListItem>
+        )}
+        <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.UUID')} />
           <Typography

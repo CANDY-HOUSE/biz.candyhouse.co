@@ -447,9 +447,10 @@ function getStartTimeEndTime(item) {
 
   return startFormatted + ' - ' + endFormatted;
 }
-const touchPro = 'touchpro';
+
 function isValidEmail(strEmail) {
-  const emailRegex = /[a-zA-Z0-9\+\._\%\-\+]{1,256}\@[a-zA-Z0-9][a-zA-Z0-9\-]{0,64}(\.[a-zA-Z0-9][a-zA-Z0-9\-]{0,25})+/;
+  const emailRegex =
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{1,}))$/;
   return emailRegex.test(strEmail);
 }
 
@@ -490,7 +491,6 @@ export const gUtils = {
   isSesameAccessControlDevice,
   isLockModel,
   canPasswordControl,
-  touchPro,
   readQrcode,
   hasListObj,
   hasObj,

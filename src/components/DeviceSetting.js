@@ -180,6 +180,18 @@ export default function DeviceSetting({ showBack = true }) {
         <UpgradeFirmware device={currentDevice} Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID} />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <BatteryPercent device={currentDevice} />
+
+        {currentDevice?.stateInfo?.registerTime && (
+          <>
+            <ListItem>
+              <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
+              <Typography sx={{ color: 'title.other' }}>
+                {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
+              </Typography>
+            </ListItem>
+            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          </>
+        )}
         <ListItem>
           <ListItemText primary="UUID" />
           <Typography

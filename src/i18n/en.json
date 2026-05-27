@@ -31,6 +31,7 @@
         "WiFiPWD": "WiFi Password",
         "InternetStatus": "Internet Status",
         "LED": "LED 🔆",
+        "RegisterTime": "Registration Time",
         "UUID": "UUID",
         "Matter": "Matter",
         "BindDeviceToHub3Hint": "Add Sesame to be connected within 5 meters of this {{deviceName}}:",

@@ -1,4 +1,3 @@
-import WsStatusIndicator from '@/components/WsStatusIndicator.js';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { GlobalStateContext } from '@context/GlobalContextProvider.js';
@@ -33,11 +32,14 @@ import PrivateRoute from './Auth/PrivateRoute.js';
 import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
 import SideBarMenu from './SideBarMenu.js';
+import WsStatusIndicator from '@/components/WsStatusIndicator.js';
+import CSUserSearchDialog from '@/components/biz/device/CSUserSearchDialog';
 
 const Layout = () => {
   const navigate = useNavigate();
-  const { gAuth, gStripe, gMediaType } = useContext(GlobalStateContext);
+  const { gAuth, gStripe, gMediaType, gManageEmployee, setSnackbarValue } = useContext(GlobalStateContext);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [csSearchOpen, setCsSearchOpen] = useState(false);
   const isMobile = gMediaType.isMobile;
   const isFromApp = gStripe.isFromApp;
 
@@ -199,6 +201,18 @@ const Layout = () => {
                   新規会社登録
                 </MenuItem>
                 <Divider />
+                {/* CS */}
+                {!!gStripe.customerInfo?.isCS && (
+                  <MenuItem
+                    sx={{ padding: '10px 50px' }}
+                    onClick={() => {
+                      setAnchorEl(null);
+                      setCsSearchOpen(true);
+                    }}
+                  >
+                    CS Search
+                  </MenuItem>
+                )}
                 {/* 退出 */}
                 <MenuItem
                   sx={{ padding: '10px 50px' }}
@@ -369,6 +383,13 @@ const Layout = () => {
             <LoadingPage />
           </Grid2>
         )}
+        <CSUserSearchDialog
+          open={csSearchOpen}
+          gManageEmployee={gManageEmployee}
+          gAuth={gAuth}
+          setSnackbarValue={setSnackbarValue}
+          onClose={() => setCsSearchOpen(false)}
+        />
       </>
     </PrivateRoute>
   );
