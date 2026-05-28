@@ -80,7 +80,7 @@ const Me = () => {
         </ListItem>
 
         <ListItem sx={{ ...infoItem }}>
-          <Typography sx={{ ...title }}>{'ID'}</Typography>
+          <Typography sx={{ ...title }}>{'sub UUID'}</Typography>
           <Box sx={{ ...content }}>{currentUserInfo.sub}</Box>
         </ListItem>
 
