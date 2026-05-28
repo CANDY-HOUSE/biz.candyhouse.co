@@ -98,13 +98,17 @@ export default function Passwords() {
       console.warn('[passwords][sendDataToSesameTouchPro] Invalid input: list must be a non-empty array');
       return;
     }
-    const uploadedData = await uploadPasswordBatch({
-      deviceUUID: state.uuid,
-      list,
+    const firmwareDataList = biz3utils.buildNameUUIDMappedDataList(list);
+    const uploadedData = await uploadPasswordBatch({ deviceUUID: state.uuid, list: firmwareDataList });
+    const serverList = uploadedData.list.map((item, _index) => {
+      return {
+        ...item,
+        nameUUID: biz3utils.insertUUIDIsolationCharacter(item.nameUUID.toLowerCase()),
+      };
     });
     gManageAuthData.postPasscodes({
       deviceUUID: uploadedData.deviceUUID,
-      list: uploadedData.list,
+      list: serverList,
       cb: (res) => console.log('Passwords saved to database', res),
     });
     floatingAddRef.current?.handleClose();

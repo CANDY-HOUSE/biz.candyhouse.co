@@ -10,7 +10,7 @@ const usePasscodeUploader = (sendCmd) => {
       console.log('[passwordUploader] Preparing password data for upload:', passwordsList);
       let totalLength = 0;
       for (const item of passwordsList) {
-        totalLength += 1 + Buffer.from(item.passwordID, 'hex').length + 1 + Buffer.from(item.nameUUID, 'utf8').length;
+        totalLength += 1 + Buffer.from(item.passwordID, 'hex').length + 1 + Buffer.from(item.nameUUID, 'hex').length;
       }
       console.log('[passwordUploader] Total length of passwords data:', totalLength);
       const dataBuffer = new Uint8Array(totalLength);
@@ -20,7 +20,7 @@ const usePasscodeUploader = (sendCmd) => {
         dataBuffer[dataIndex++] = passwordLength;
         dataBuffer.set(Buffer.from(item.passwordID, 'hex'), dataIndex);
         dataIndex += passwordLength;
-        const nameUUID = Buffer.from(item.nameUUID, 'utf8');
+        const nameUUID = Buffer.from(item.nameUUID, 'hex');
         dataBuffer[dataIndex++] = nameUUID.length;
         dataBuffer.set(nameUUID, dataIndex);
         dataIndex += nameUUID.length;

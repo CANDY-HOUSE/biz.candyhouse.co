@@ -283,6 +283,17 @@ const generateNoDashUUID = () => {
   return generateUUID().replace(/-/g, '');
 };
 
+const buildNameUUIDMappedDataList = (list) => {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.map((item) => ({
+    ...item,
+    name: item.name ?? item.nameUUID ?? '',
+    nameUUID: generateNoDashUUID(),
+  }));
+};
+
 const buildPayloadCardAdd = ({ cardID }) => {
   if (!cardID) {
     return '';
@@ -533,6 +544,7 @@ export const biz3utils = {
   triggerBridge,
   generateUUID,
   generateNoDashUUID,
+  buildNameUUIDMappedDataList,
   getProductTypeFromModelName,
   getMatterProductTypeFromModelName,
   extractCardIDsFromBase64,

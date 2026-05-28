@@ -8,7 +8,7 @@ const useNfcCardUploader = (sendCmd) => {
     prepareData: (cardsList) => {
       let totalLength = 0;
       for (const item of cardsList) {
-        totalLength += 1 + Buffer.from(item.cardID, 'hex').length + 1 + Buffer.from(item.nameUUID, 'utf8').length;
+        totalLength += 1 + Buffer.from(item.cardID, 'hex').length + 1 + Buffer.from(item.nameUUID, 'hex').length;
       }
       const dataBuffer = new Uint8Array(totalLength);
       let dataIndex = 0;
@@ -19,7 +19,7 @@ const useNfcCardUploader = (sendCmd) => {
         dataBuffer.set(cardID, dataIndex);
         dataIndex += cardIDLength;
 
-        const nameUUID = Buffer.from(item.nameUUID, 'utf8');
+        const nameUUID = Buffer.from(item.nameUUID, 'hex');
         dataBuffer[dataIndex++] = nameUUID.length;
         dataBuffer.set(nameUUID, dataIndex);
         dataIndex += nameUUID.length;

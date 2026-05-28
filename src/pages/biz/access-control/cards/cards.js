@@ -102,13 +102,18 @@ export default function VCards() {
       console.warn('[cards][sendDataToSesameTouchPro] Invalid input: list must be a non-empty array');
       return;
     }
+    const firmwareDataList = biz3utils.buildNameUUIDMappedDataList(list);
     const uploadedData = await uploadCardBatch({
       deviceUUID: state.uuid,
-      list,
+      list: firmwareDataList,
     });
+    const serverList = uploadedData.list.map((item) => ({
+      ...item,
+      nameUUID: biz3utils.insertUUIDIsolationCharacter(item.nameUUID.toLowerCase()),
+    }));
     gManageAuthData.postCards({
       deviceUUID: uploadedData.deviceUUID,
-      list: uploadedData.list,
+      list: serverList,
       cb: (res) => console.log('Cards saved to database', res),
     });
   };

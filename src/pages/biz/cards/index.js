@@ -265,14 +265,19 @@ export default function Cards({ location }) {
       try {
         for (const device of devices) {
           console.log(`开始处理设备: ${device.deviceUUID}`);
+          const firmwareDataList = biz3utils.buildNameUUIDMappedDataList(list);
           const uploadedData = await uploadCardBatch({
             deviceUUID: device.deviceUUID,
-            list,
+            list: firmwareDataList,
           });
+          const serverList = uploadedData.list.map((item) => ({
+            ...item,
+            nameUUID: biz3utils.insertUUIDIsolationCharacter(item.nameUUID.toLowerCase()),
+          }));
           await new Promise((resolve, _reject) => {
             gManageAuthData.postCards({
               deviceUUID: uploadedData.deviceUUID,
-              list: uploadedData.list,
+              list: serverList,
               cb: (res) => {
                 console.log(`设备 ${device.deviceUUID} 卡片已保存到数据库`, res);
                 resolve(res);
