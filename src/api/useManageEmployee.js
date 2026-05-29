@@ -388,16 +388,31 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, registerCallback]
   );
 
-  const queryUserByCS = useCallback(
-    (email, cb) => {
-      if (!email) return;
+  const queryByCS = useCallback(
+    (keyword, cb) => {
+      if (!keyword) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
-        email,
-        op: 'queryUserByCS',
+        keyword,
+        op: 'queryByCS',
+      };
+      let rowDatas = [];
+      const handleChunk = (res) => {
+        if (res?.success === false) {
+          cb?.(res);
+          return;
+        }
+        const { data = {}, totalPage } = res.data ?? {};
+        const { list = [], page = 1 } = data;
+        rowDatas = [...rowDatas, ...list];
+        if (page === totalPage) {
+          cb?.({ ...res, data: rowDatas });
+        } else {
+          registerCallback(messageData.action, 'pubQueryByCS', handleChunk);
+        }
       };
       sendMessage(messageData);
-      registerCallback(messageData.action, messageData.op, cb);
+      registerCallback(messageData.action, 'pubQueryByCS', handleChunk);
     },
     [sendMessage, registerCallback]
   );
@@ -455,7 +470,7 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     postEmployeeGroupInfo,
     findEmployeeById,
     reorderEmployees,
-    queryUserByCS,
+    queryByCS,
     confirmQueryByCS,
   };
 };
