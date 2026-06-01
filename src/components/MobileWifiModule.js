@@ -14,7 +14,16 @@ import {
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircleOutline, Error, Language, QrCode, Remove, Wifi, SignalCellularAlt } from '@mui/icons-material';
+import {
+  CheckCircleOutline,
+  Error,
+  Language,
+  QrCode,
+  Remove,
+  Wifi,
+  SignalCellularAlt,
+  LanOutlined,
+} from '@mui/icons-material';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
@@ -45,8 +54,7 @@ const MobileWifiModule = () => {
   });
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
-  const [isWifiConnected, setIsWifiConnected] = useState(false);
-  const [isLTEConnected, setIsLTEConnected] = useState(false);
+  const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
   const [isHub3LTE, setIsHub3LTE] = useState(false);
   const { t } = useTranslation();
 
@@ -64,19 +72,24 @@ const MobileWifiModule = () => {
     if (!currentDevice.secretKey) {
       return;
     }
-    let isIoTWork = currentDevice.stateInfo?.wm2State === true;
-    isIoTWork &&
-      setInternetStatus((prev) => ({
-        ...prev,
-        isAPWork: isIoTWork,
-        isNetwork: isIoTWork,
-        isIoTWork: isIoTWork,
-      }));
-    setIsWifiConnected(currentDevice.stateInfo?.wifiConnected ?? false);
-    setIsLTEConnected(currentDevice.stateInfo?.lteConnected ?? false);
+    setNetworkConnectivity({
+      wifi: currentDevice.stateInfo?.wifiConnected ?? false,
+      lte: currentDevice.stateInfo?.lteConnected ?? false,
+      ethernet: currentDevice.stateInfo?.ethernetConnected ?? false,
+    });
     console.log('Current device info updated:', currentDevice);
     setIsHub3LTE(currentDevice.deviceModel === 'hub_3_lte');
   }, [currentDevice]);
+
+  useEffect(() => {
+    let isIoTWork = currentDevice.stateInfo?.wm2State === true;
+    setInternetStatus((prev) => ({
+      ...prev,
+      isAPWork: isIoTWork,
+      isNetwork: isIoTWork,
+      isIoTWork: isIoTWork,
+    }));
+  }, [currentDevice.stateInfo?.wm2State]);
 
   // 通知Hub3打开配网窗口，成功显示 Matter 码， 失败显示失败信息
   const handleOpenMatter = useCallback(() => {
@@ -223,8 +236,7 @@ const MobileWifiModule = () => {
       const op = data['op'];
       if (op === 'onNetworkType') {
         const { isWifiConnected, isLTEConnected } = data;
-        setIsWifiConnected(isWifiConnected);
-        setIsLTEConnected(isLTEConnected);
+        setNetworkConnectivity((prev) => ({ ...prev, wifi: isWifiConnected, lte: isLTEConnected }));
       }
     };
     biz3utils.triggerBridge({
@@ -306,9 +318,9 @@ const MobileWifiModule = () => {
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         {isHub3LTE ? (
           <>
-            {/* 有 lte/wifi 字段：两者都显示，根据各自状态高亮 */}
-            {renderIcon(SignalCellularAlt, false, isLTEConnected, true, { marginRight: -2.5 })}
-            {renderIcon(Wifi, false, isWifiConnected, true)}
+            {renderIcon(LanOutlined, false, networkConnectivity.ethernet, true, { marginRight: -2.5 })}
+            {renderIcon(SignalCellularAlt, false, networkConnectivity.lte, true, { marginRight: -2.5 })}
+            {renderIcon(Wifi, false, networkConnectivity.wifi, true)}
           </>
         ) : (
           <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
@@ -317,7 +329,7 @@ const MobileWifiModule = () => {
         {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
       </Box>
     );
-  }, [internetStatus, isWifiConnected, isLTEConnected, isHub3LTE]);
+  }, [internetStatus, networkConnectivity, isHub3LTE]);
 
   return (
     <Box
