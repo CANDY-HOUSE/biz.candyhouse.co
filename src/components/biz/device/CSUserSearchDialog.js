@@ -234,7 +234,14 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
           p: 2,
           borderRadius: '5px',
           width: '80vw',
-          maxWidth: 960,
+          height: { xs: 'min(70vh, 420px)', sm: 420 },
+          minWidth: 360,
+          minHeight: { xs: 420, sm: 280 },
+          maxWidth: 'calc(100vw - 32px)',
+          maxHeight: 'calc(100vh - 32px)',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          resize: 'both',
           m: { xs: 2, sm: 4 },
         },
       }}
@@ -242,7 +249,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
       <Box
         sx={{
           width: '100%',
-          height: { xs: 'min(70vh, 420px)', sm: 420 },
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
         }}
