@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Box, Button, Dialog, Divider, Link, List, ListItem, TextField, Typography } from '@mui/material';
+import { Box, Dialog, Divider, Link, List, ListItem, Menu, MenuItem, TextField, Typography } from '@mui/material';
 
 const getItemText = (item) => {
   if (typeof item === 'string') return item;
@@ -64,20 +64,29 @@ const renderHighlightedText = (text, keyword) => {
   return parts;
 };
 
+const initialSearchState = {
+  searching: false,
+  rowDatas: null,
+  totalCount: null,
+};
+
 const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, onClose }) => {
   const [keyword, setKeyword] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [resultKeyword, setResultKeyword] = useState('');
   const [confirming, setConfirming] = useState(false);
-  const [rowDatas, setRowDatas] = useState(null);
+  const [searchState, setSearchState] = useState(initialSearchState);
   const [selectedEmail, setSelectedEmail] = useState('');
+  const [emailMenuAnchor, setEmailMenuAnchor] = useState(null);
+  const { searching, rowDatas, totalCount } = searchState;
 
   useEffect(() => {
     if (!open) {
       setKeyword('');
-      setSearching(false);
+      setResultKeyword('');
       setConfirming(false);
-      setRowDatas(null);
+      setSearchState(initialSearchState);
       setSelectedEmail('');
+      setEmailMenuAnchor(null);
     }
   }, [open]);
 
@@ -86,33 +95,47 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
   }, [rowDatas]);
 
   const isValidKeyword = useMemo(() => {
-    return keyword.trim().length > 0;
+    return keyword.trim().length >= 3;
   }, [keyword]);
 
   useEffect(() => {
     if (keyword.trim().length === 0) {
       setKeyword('');
-      setSearching(false);
+      setResultKeyword('');
       setConfirming(false);
-      setRowDatas(null);
+      setSearchState(initialSearchState);
       setSelectedEmail('');
+      setEmailMenuAnchor(null);
     }
   }, [keyword]);
 
   const handleSearch = () => {
     const keywordStr = keyword.trim();
     if (!keywordStr || searching) return;
-    setSearching(true);
-    setRowDatas(null);
+    setResultKeyword('');
+    setSearchState({
+      searching: true,
+      rowDatas: null,
+      totalCount: null,
+    });
     setSelectedEmail('');
     gManageEmployee.queryByCS(keywordStr, (res) => {
-      setSearching(false);
       if (res?.success === false) {
+        setSearchState((prevState) => ({ ...prevState, searching: false }));
         setSnackbarValue({ open: true, msg: res.message });
         return;
       }
-      setRowDatas(res.data);
+      setSearchState({
+        searching: !res.done,
+        rowDatas: res.data,
+        totalCount: res.totalCount ?? res.data?.length ?? 0,
+      });
     });
+  };
+
+  const handleCloseEmailMenu = () => {
+    setSelectedEmail('');
+    setEmailMenuAnchor(null);
   };
 
   const handleCopyAndConfirm = async () => {
@@ -123,6 +146,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
       setConfirming(false);
       setSnackbarValue({ open: true, msg: res.message });
       if (res?.success === false) return;
+      handleCloseEmailMenu();
       onClose && onClose();
       gAuth.handleSignout();
     });
@@ -130,13 +154,20 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
 
   const isUserRow = (type) => String(type).toLowerCase() === 'user';
 
+  const filteredResultItems = useMemo(() => {
+    const target = resultKeyword.trim().toLowerCase();
+    if (!target) return resultItems;
+    return resultItems.filter((result) => getItemText(result.item).toLowerCase().includes(target));
+  }, [resultItems, resultKeyword]);
+
   const renderResultItem = (result) => {
     const text = getItemText(result.item);
     const email = isUserRow(result.type) ? getUserItemEmail(result.item) : '';
+    const highlightKeyword = resultKeyword.trim() || keyword;
     if (!email) {
       return (
         <Typography variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
-          {renderHighlightedText(text, keyword)}
+          {renderHighlightedText(text, highlightKeyword)}
         </Typography>
       );
     }
@@ -145,7 +176,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
     if (emailIndex < 0) {
       return (
         <Typography variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
-          {renderHighlightedText(text, keyword)}
+          {renderHighlightedText(text, highlightKeyword)}
         </Typography>
       );
     }
@@ -155,7 +186,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
 
     return (
       <Typography component="span" variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
-        {renderHighlightedText(beforeEmail, keyword)}
+        {renderHighlightedText(beforeEmail, highlightKeyword)}
         <Link
           component="button"
           variant="body2"
@@ -168,11 +199,14 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
               textDecoration: 'underline',
             },
           }}
-          onClick={() => setSelectedEmail(email)}
+          onClick={(event) => {
+            setSelectedEmail(email);
+            setEmailMenuAnchor(event.currentTarget);
+          }}
         >
-          {renderHighlightedText(email, keyword)}
+          {renderHighlightedText(email, highlightKeyword)}
         </Link>
-        {renderHighlightedText(afterEmail, keyword)}
+        {renderHighlightedText(afterEmail, highlightKeyword)}
       </Typography>
     );
   };
@@ -233,14 +267,14 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
         </Box>
 
         <Box sx={{ mt: 2, flex: 1, minHeight: 0, overflow: 'auto' }}>
-          {rowDatas && resultItems.length === 0 && (
+          {rowDatas && filteredResultItems.length === 0 && (
             <Typography variant="body2" sx={{ color: 'info.light' }}>
               No information found
             </Typography>
           )}
-          {resultItems.length > 0 && (
+          {filteredResultItems.length > 0 && (
             <List disablePadding>
-              {resultItems.map((result, index) => (
+              {filteredResultItems.map((result, index) => (
                 <React.Fragment key={`${result.type}-${index}`}>
                   <ListItem sx={{ px: 0, py: 1, alignItems: 'flex-start' }}>{renderResultItem(result)}</ListItem>
                   <Divider sx={{ opacity: 0.4 }} />
@@ -250,17 +284,47 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
           )}
         </Box>
 
-        {selectedEmail && (
-          <Button
-            fullWidth
-            variant="contained"
+        <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <TextField
+            size="small"
+            value={resultKeyword}
+            placeholder="Search in results"
+            variant="filled"
+            sx={{
+              width: { xs: '60%', sm: 240 },
+              '& .MuiFilledInput-root': {
+                height: '32px',
+              },
+              '& .MuiFilledInput-input': {
+                py: 0,
+                fontSize: '12px',
+              },
+            }}
+            onChange={(e) => setResultKeyword(e.target.value)}
+          />
+          <Typography variant="caption" sx={{ color: 'info.light' }}>
+            {`Showing ${resultItems.length} / Total ${totalCount ?? 0}`}
+          </Typography>
+        </Box>
+
+        <Menu
+          anchorEl={emailMenuAnchor}
+          open={Boolean(emailMenuAnchor)}
+          onClose={handleCloseEmailMenu}
+          MenuListProps={{ sx: { py: 0 } }}
+          PaperProps={{ sx: { py: 0 } }}
+        >
+          <MenuItem
             onClick={handleCopyAndConfirm}
             disabled={confirming}
-            sx={{ mt: 2, color: 'white' }}
+            sx={{
+              bgcolor: 'white',
+              color: 'primary.main',
+            }}
           >
-            {`Copy "${selectedEmail}" -> Login`}
-          </Button>
-        )}
+            {`Copy -> Login`}
+          </MenuItem>
+        </Menu>
       </Box>
     </Dialog>
   );

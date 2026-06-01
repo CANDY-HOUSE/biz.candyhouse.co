@@ -63,7 +63,6 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
 
   const handleEmployee = useCallback(
     (message) => {
-      invokeCallbacks(message);
       switch (message.op) {
         case 'get':
           break;
@@ -110,7 +109,7 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
           break;
       }
     },
-    [invokeCallbacks, setSnackbarValue, getEmployees]
+    [setSnackbarValue, getEmployees]
   );
 
   const handleRoleResponse = useCallback(
@@ -403,11 +402,12 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
           return;
         }
         const { data = {}, totalPage } = res.data ?? {};
+        const { totalCount = 0 } = res.data ?? {};
         const { list = [], page = 1 } = data;
         rowDatas = [...rowDatas, ...list];
-        if (page === totalPage) {
-          cb?.({ ...res, data: rowDatas });
-        } else {
+        const isDone = page === totalPage;
+        cb?.({ ...res, data: rowDatas, page, totalPage, totalCount, done: isDone });
+        if (!isDone) {
           registerCallback(messageData.action, 'pubQueryByCS', handleChunk);
         }
       };
