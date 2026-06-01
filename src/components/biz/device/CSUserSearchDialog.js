@@ -1,6 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import ClearIcon from '@mui/icons-material/Clear';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Box, Dialog, Divider, Link, List, ListItem, Menu, MenuItem, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Dialog,
+  Divider,
+  IconButton,
+  InputAdornment,
+  Link,
+  List,
+  ListItem,
+  Menu,
+  MenuItem,
+  TextField,
+  Typography,
+} from '@mui/material';
 
 const getItemText = (item) => {
   if (typeof item === 'string') return item;
@@ -254,6 +268,15 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
                 handleSearch();
               }
             }}
+            InputProps={{
+              endAdornment: keyword && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setKeyword('')} edge="end">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <LoadingButton
             variant="contained"
@@ -301,6 +324,15 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
               },
             }}
             onChange={(e) => setResultKeyword(e.target.value)}
+            InputProps={{
+              endAdornment: resultKeyword && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setResultKeyword('')} edge="end">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <Typography variant="caption" sx={{ color: 'info.light' }}>
             {`Showing ${resultItems.length} / Total ${totalCount ?? 0}`}
@@ -318,8 +350,14 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
             onClick={handleCopyAndConfirm}
             disabled={confirming}
             sx={{
-              bgcolor: 'white',
-              color: 'primary.main',
+              bgcolor: 'primary.main',
+              color: 'white',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+              '&.Mui-disabled': {
+                color: 'rgba(255, 255, 255, 0.7)',
+              },
             }}
           >
             {`Copy -> Login`}
