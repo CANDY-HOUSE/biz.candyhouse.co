@@ -431,6 +431,18 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     [sendMessage, registerCallback]
   );
 
+  const getRepairAuthKey = useCallback(
+    (cb) => {
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
+        op: 'getRepairAuthKey',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [sendMessage, registerCallback]
+  );
+
   useEffect(() => {
     if (gAuth.loginState === gConfig.loginState.loginOut) {
       setEmployees(init);
@@ -472,6 +484,7 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     reorderEmployees,
     queryByCS,
     confirmQueryByCS,
+    getRepairAuthKey,
   };
 };
 //

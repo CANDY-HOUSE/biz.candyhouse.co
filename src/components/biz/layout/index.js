@@ -12,6 +12,8 @@ import {
   AppBar,
   Box,
   Button,
+  Dialog,
+  DialogContent,
   Drawer,
   Grid2,
   IconButton,
@@ -33,13 +35,15 @@ import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
 import SideBarMenu from './SideBarMenu.js';
 import WsStatusIndicator from '@/components/WsStatusIndicator.js';
-import CSUserSearchDialog from '@/components/biz/device/CSUserSearchDialog';
+import CSUserSearchDialog from '@/components/cs/CSUserSearchDialog.js';
+import RepairCsv from '@/components/cs/RepairCsv.js';
+import YamatoShippingCsv from '@/components/cs/YamatoShippingCsv.js';
 
 const Layout = () => {
   const navigate = useNavigate();
   const { gAuth, gStripe, gMediaType, gManageEmployee, setSnackbarValue } = useContext(GlobalStateContext);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [csSearchOpen, setCsSearchOpen] = useState(false);
+  const [csTool, setCsTool] = useState(null);
   const isMobile = gMediaType.isMobile;
   const isFromApp = gStripe.isFromApp;
 
@@ -202,17 +206,38 @@ const Layout = () => {
                 </MenuItem>
                 <Divider />
                 {/* CS */}
-                {!!gStripe.customerInfo?.isCS && (
+                {!!gStripe.customerInfo?.isCS && [
                   <MenuItem
+                    key="cs-search"
                     sx={{ padding: '10px 50px' }}
                     onClick={() => {
                       setAnchorEl(null);
-                      setCsSearchOpen(true);
+                      setCsTool('search');
                     }}
                   >
                     CS Search
-                  </MenuItem>
-                )}
+                  </MenuItem>,
+                  <MenuItem
+                    key="cs-repair"
+                    sx={{ padding: '10px 50px' }}
+                    onClick={() => {
+                      setAnchorEl(null);
+                      setCsTool('repair');
+                    }}
+                  >
+                    Repair CSV
+                  </MenuItem>,
+                  <MenuItem
+                    key="cs-yamato"
+                    sx={{ padding: '10px 50px' }}
+                    onClick={() => {
+                      setAnchorEl(null);
+                      setCsTool('yamatoShipping');
+                    }}
+                  >
+                    Yamato Shipping CSV
+                  </MenuItem>,
+                ]}
                 {/* 退出 */}
                 <MenuItem
                   sx={{ padding: '10px 50px' }}
@@ -383,13 +408,40 @@ const Layout = () => {
             <LoadingPage />
           </Grid2>
         )}
-        <CSUserSearchDialog
-          open={csSearchOpen}
-          gManageEmployee={gManageEmployee}
-          gAuth={gAuth}
-          setSnackbarValue={setSnackbarValue}
-          onClose={() => setCsSearchOpen(false)}
-        />
+        <Dialog
+          open={Boolean(csTool)}
+          onClose={() => setCsTool(null)}
+          PaperProps={{
+            sx: {
+              p: 2,
+              borderRadius: '5px',
+              width: '80vw',
+              height: { xs: 'min(70vh, 420px)', sm: 420 },
+              minWidth: 360,
+              minHeight: { xs: 420, sm: 280 },
+              maxWidth: 'calc(100vw - 32px)',
+              maxHeight: 'calc(100vh - 32px)',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              resize: 'both',
+              m: { xs: 2, sm: 4 },
+            },
+          }}
+        >
+          <DialogContent sx={{ p: 0, height: '100%', overflow: 'auto' }}>
+            {csTool === 'search' && (
+              <CSUserSearchDialog
+                open={csTool === 'search'}
+                gManageEmployee={gManageEmployee}
+                gAuth={gAuth}
+                setSnackbarValue={setSnackbarValue}
+                onClose={() => setCsTool(null)}
+              />
+            )}
+            {csTool === 'repair' && <RepairCsv gManageEmployee={gManageEmployee} setSnackbarValue={setSnackbarValue} />}
+            {csTool === 'yamatoShipping' && <YamatoShippingCsv />}
+          </DialogContent>
+        </Dialog>
       </>
     </PrivateRoute>
   );

@@ -3,7 +3,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
-  Dialog,
   Divider,
   IconButton,
   InputAdornment,
@@ -226,152 +225,131 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          p: 2,
-          borderRadius: '5px',
-          width: '80vw',
-          height: { xs: 'min(70vh, 420px)', sm: 420 },
-          minWidth: 360,
-          minHeight: { xs: 420, sm: 280 },
-          maxWidth: 'calc(100vw - 32px)',
-          maxHeight: 'calc(100vh - 32px)',
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          resize: 'both',
-          m: { xs: 2, sm: 4 },
-        },
+    <Box
+      sx={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <Box
-        sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, alignItems: 'stretch' }}>
-          <TextField
-            fullWidth
-            size="small"
-            value={keyword}
-            placeholder="email subUUID deviceUUID deviceName"
-            variant="filled"
-            sx={{
-              '& .MuiFilledInput-root': {
-                height: '40px',
-              },
-              '& .MuiFilledInput-input': {
-                py: 0,
-              },
-            }}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !searching) {
-                handleSearch();
-              }
-            }}
-            InputProps={{
-              endAdornment: keyword && (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setKeyword('')} edge="end">
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <LoadingButton
-            variant="contained"
-            onClick={handleSearch}
-            disabled={!isValidKeyword || searching}
-            loading={searching}
-            sx={{ width: { xs: '100%', sm: 'auto' }, flexShrink: 0, height: '40px', color: 'white' }}
-          >
-            Search
-          </LoadingButton>
-        </Box>
-
-        <Box sx={{ mt: 2, flex: 1, minHeight: 0, overflow: 'auto' }}>
-          {rowDatas && filteredResultItems.length === 0 && (
-            <Typography variant="body2" sx={{ color: 'info.light' }}>
-              No information found
-            </Typography>
-          )}
-          {filteredResultItems.length > 0 && (
-            <List disablePadding>
-              {filteredResultItems.map((result, index) => (
-                <React.Fragment key={`${result.type}-${index}`}>
-                  <ListItem sx={{ px: 0, py: 1, alignItems: 'flex-start' }}>{renderResultItem(result)}</ListItem>
-                  <Divider sx={{ opacity: 0.4 }} />
-                </React.Fragment>
-              ))}
-            </List>
-          )}
-        </Box>
-
-        <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <TextField
-            size="small"
-            value={resultKeyword}
-            placeholder="Search in results"
-            variant="filled"
-            sx={{
-              width: { xs: '60%', sm: 240 },
-              '& .MuiFilledInput-root': {
-                height: '32px',
-              },
-              '& .MuiFilledInput-input': {
-                py: 0,
-                fontSize: '12px',
-              },
-            }}
-            onChange={(e) => setResultKeyword(e.target.value)}
-            InputProps={{
-              endAdornment: resultKeyword && (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setResultKeyword('')} edge="end">
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Typography variant="caption" sx={{ color: 'info.light' }}>
-            {`Showing ${resultItems.length} / Total ${totalCount ?? 0}`}
-          </Typography>
-        </Box>
-
-        <Menu
-          anchorEl={emailMenuAnchor}
-          open={Boolean(emailMenuAnchor)}
-          onClose={handleCloseEmailMenu}
-          MenuListProps={{ sx: { py: 0 } }}
-          PaperProps={{ sx: { py: 0 } }}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, alignItems: 'stretch' }}>
+        <TextField
+          fullWidth
+          size="small"
+          value={keyword}
+          placeholder="email subUUID deviceUUID deviceName"
+          variant="filled"
+          sx={{
+            '& .MuiFilledInput-root': {
+              height: '40px',
+            },
+            '& .MuiFilledInput-input': {
+              py: 0,
+            },
+          }}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !searching) {
+              handleSearch();
+            }
+          }}
+          InputProps={{
+            endAdornment: keyword && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setKeyword('')} edge="end">
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <LoadingButton
+          variant="contained"
+          onClick={handleSearch}
+          disabled={!isValidKeyword || searching}
+          loading={searching}
+          sx={{ width: { xs: '100%', sm: 'auto' }, flexShrink: 0, height: '40px', color: 'white' }}
         >
-          <MenuItem
-            onClick={handleCopyAndConfirm}
-            disabled={confirming}
-            sx={{
-              bgcolor: 'primary.main',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'primary.dark',
-              },
-              '&.Mui-disabled': {
-                color: 'rgba(255, 255, 255, 0.7)',
-              },
-            }}
-          >
-            {`Copy -> Login`}
-          </MenuItem>
-        </Menu>
+          Search
+        </LoadingButton>
       </Box>
-    </Dialog>
+
+      <Box sx={{ mt: 2, flex: 1, minHeight: 0, overflow: 'auto' }}>
+        {rowDatas && filteredResultItems.length === 0 && (
+          <Typography variant="body2" sx={{ color: 'info.light' }}>
+            No information found
+          </Typography>
+        )}
+        {filteredResultItems.length > 0 && (
+          <List disablePadding>
+            {filteredResultItems.map((result, index) => (
+              <React.Fragment key={`${result.type}-${index}`}>
+                <ListItem sx={{ px: 0, py: 1, alignItems: 'flex-start' }}>{renderResultItem(result)}</ListItem>
+                <Divider sx={{ opacity: 0.4 }} />
+              </React.Fragment>
+            ))}
+          </List>
+        )}
+      </Box>
+
+      <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+        <TextField
+          size="small"
+          value={resultKeyword}
+          placeholder="Search in results"
+          variant="filled"
+          sx={{
+            width: { xs: '60%', sm: 240 },
+            '& .MuiFilledInput-root': {
+              height: '32px',
+            },
+            '& .MuiFilledInput-input': {
+              py: 0,
+              fontSize: '12px',
+            },
+          }}
+          onChange={(e) => setResultKeyword(e.target.value)}
+          InputProps={{
+            endAdornment: resultKeyword && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setResultKeyword('')} edge="end">
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Typography variant="caption" sx={{ color: 'info.light' }}>
+          {`Showing ${resultItems.length} / Total ${totalCount ?? 0}`}
+        </Typography>
+      </Box>
+
+      <Menu
+        anchorEl={emailMenuAnchor}
+        open={Boolean(emailMenuAnchor)}
+        onClose={handleCloseEmailMenu}
+        MenuListProps={{ sx: { py: 0 } }}
+        PaperProps={{ sx: { py: 0 } }}
+      >
+        <MenuItem
+          onClick={handleCopyAndConfirm}
+          disabled={confirming}
+          sx={{
+            bgcolor: 'primary.main',
+            color: 'white',
+            '&:hover': {
+              bgcolor: 'primary.dark',
+            },
+            '&.Mui-disabled': {
+              color: 'rgba(255, 255, 255, 0.7)',
+            },
+          }}
+        >
+          {`Copy -> Login`}
+        </MenuItem>
+      </Menu>
+    </Box>
   );
 };
 
