@@ -58,9 +58,9 @@ const Me = () => {
           <Typography sx={{ ...title }}>{t('deviceMember.nickName')}</Typography>
           <Box sx={{ ...content }}>
             <EditableText
-              initialValue={currentUserInfo.nickname}
+              initialValue={currentUserInfo.name || currentUserInfo.email}
               onSave={(newValue, callback) => {
-                gManageEmployee.postEmployeeInfo({ Name: 'nickname', Value: newValue }, (res) => {
+                gManageEmployee.postEmployeeInfo({ Name: 'name', Value: newValue }, (res) => {
                   callback(res.success);
                   res.success &&
                     biz3utils.triggerScheme(
@@ -105,7 +105,7 @@ const Me = () => {
         open={qrDialogOpen}
         qrCodeUrl={dataURL}
         isMobile={gMediaType.isMobile}
-        userName={currentUserInfo.nickname || gStripe.customerInfo.employeeName}
+        userName={currentUserInfo.name || gStripe.customerInfo.employeeName}
         onClose={() => setQrDialogOpen(false)}
       />
     </>

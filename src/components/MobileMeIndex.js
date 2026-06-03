@@ -124,10 +124,7 @@ const MobileMeIndex = () => {
             </>
           ) : (
             <>
-              <ListItemText
-                primary={currentUserInfo.nickname || currentUserInfo.email}
-                secondary={currentUserInfo.email}
-              />
+              <ListItemText primary={currentUserInfo.name || currentUserInfo.email} secondary={currentUserInfo.email} />
               <ListItemIcon sx={{ minWidth: 'auto' }}>
                 <QrCode sx={{ fontSize: 50, color: 'title.light' }} />
               </ListItemIcon>
