@@ -64,6 +64,14 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     }
   }, [updateProgress]);
 
+  const triggerRefreshAppDelay = () => {
+    setTimeout(() => {
+      biz3utils.triggerBridge({
+        action: 'requestRefreshApp',
+      });
+    }, 2000);
+  };
+
   const requestDeviceFWUpgradeFromApp = useCallback(() => {
     const requestId = Date.now().toString();
     window[`deviceListCallback_${requestId}`] = (data) => {
@@ -83,6 +91,8 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
 
           // 版本号写入后，再退出升级状态
           setUpdateProgress(null);
+
+          triggerRefreshAppDelay();
         }, 1000);
         return;
       }
@@ -114,6 +124,8 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
           )
         );
         setUpdateProgress(null);
+
+        triggerRefreshAppDelay();
       } else {
         setUpdateProgress(progress);
       }
