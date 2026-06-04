@@ -82,29 +82,27 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       if (p === 100) {
         setUpdateProgress(DFU_PROGRESS_COMPLETED);
         setTimeout(() => {
-          const latestFwVer = currentDevice?.stateInfo?.latestFwVer;
-
-          if (!latestFwVer) {
-            setUpdateProgress(null);
-            return;
-          }
+          let newFwVer = '';
 
           gManageDevice.setCompanyDevices((prevDevices) =>
-            prevDevices.map((device) =>
-              device.deviceUUID === deviceUUID
-                ? {
-                    ...device,
-                    stateInfo: {
-                      ...device.stateInfo,
-                      currentFwVer: latestFwVer,
-                    },
-                  }
-                : device
-            )
+            prevDevices.map((device) => {
+              if (device.deviceUUID !== deviceUUID) return device;
+
+              newFwVer = device.stateInfo?.latestFwVer ?? '';
+
+              return {
+                ...device,
+                stateInfo: {
+                  ...device.stateInfo,
+                  currentFwVer: newFwVer,
+                },
+              };
+            })
           );
 
+          notifyAppDeviceFWVersionUpdated(deviceUUID, newFwVer);
+
           setUpdateProgress(null);
-          notifyAppDeviceFWVersionUpdated(deviceUUID, latestFwVer);
         }, 1000);
         return;
       }
