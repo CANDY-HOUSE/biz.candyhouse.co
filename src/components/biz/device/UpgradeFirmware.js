@@ -64,12 +64,14 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     }
   }, [updateProgress]);
 
-  const triggerRefreshAppDelay = () => {
-    setTimeout(() => {
-      biz3utils.triggerBridge({
-        action: 'requestRefreshApp',
-      });
-    }, 2000);
+  const notifyAppDeviceFWVersionUpdated = (deviceUUID, currentFwVer) => {
+    if (!deviceUUID || !currentFwVer) return;
+
+    biz3utils.triggerBridge({
+      action: 'requestUpdateDeviceFWVersion',
+      deviceUUID,
+      currentFwVer,
+    });
   };
 
   const requestDeviceFWUpgradeFromApp = useCallback(() => {
@@ -78,21 +80,31 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       const { deviceUUID, percent } = data;
       const p = parseInt(percent, 10);
       if (p === 100) {
-        // 不要立刻 setUpdateProgress(null)，否则会先显示旧版本
         setUpdateProgress(DFU_PROGRESS_COMPLETED);
         setTimeout(() => {
+          const latestFwVer = currentDevice?.stateInfo?.latestFwVer;
+
+          if (!latestFwVer) {
+            setUpdateProgress(null);
+            return;
+          }
+
           gManageDevice.setCompanyDevices((prevDevices) =>
             prevDevices.map((device) =>
               device.deviceUUID === deviceUUID
-                ? { ...device, stateInfo: { ...device.stateInfo, currentFwVer: device.stateInfo.latestFwVer } }
+                ? {
+                    ...device,
+                    stateInfo: {
+                      ...device.stateInfo,
+                      currentFwVer: latestFwVer,
+                    },
+                  }
                 : device
             )
           );
 
-          // 版本号写入后，再退出升级状态
           setUpdateProgress(null);
-
-          triggerRefreshAppDelay();
+          notifyAppDeviceFWVersionUpdated(deviceUUID, latestFwVer);
         }, 1000);
         return;
       }
@@ -116,16 +128,25 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       console.log('ssmOSUpdate callback data: ', iotDeviceUUID, data);
       const { progress, versionTag = '', UUID = '' } = data;
       if (versionTag) {
+        const targetDeviceUUID = UUID || currentDevice.deviceUUID;
         gManageDevice.setCompanyDevices((prevDevices) =>
           prevDevices.map((device) =>
-            device.deviceUUID === UUID
-              ? { ...device, stateInfo: { ...device.stateInfo, currentFwVer: versionTag, latestFwVer: versionTag } }
+            device.deviceUUID === targetDeviceUUID
+              ? {
+                  ...device,
+                  stateInfo: {
+                    ...device.stateInfo,
+                    currentFwVer: versionTag,
+                    latestFwVer: versionTag,
+                  },
+                }
               : device
           )
         );
-        setUpdateProgress(null);
 
-        triggerRefreshAppDelay();
+        notifyAppDeviceFWVersionUpdated(targetDeviceUUID, versionTag);
+
+        setUpdateProgress(null);
       } else {
         setUpdateProgress(progress);
       }
