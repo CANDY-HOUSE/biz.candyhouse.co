@@ -55,7 +55,7 @@ const MobileWifiModule = () => {
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
-  const [isHub3LTE, setIsHub3LTE] = useState(false);
+  const isHub3LTE = searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_lte;
   const { t } = useTranslation();
 
   const currentDevice = useMemo(() => {
@@ -78,7 +78,6 @@ const MobileWifiModule = () => {
       ethernet: currentDevice.stateInfo?.ethernetConnected ?? false,
     });
     console.log('Current device info updated:', currentDevice);
-    setIsHub3LTE(currentDevice.deviceModel === 'hub_3_lte');
   }, [currentDevice]);
 
   useEffect(() => {
