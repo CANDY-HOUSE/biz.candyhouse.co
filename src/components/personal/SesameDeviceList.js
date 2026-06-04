@@ -27,7 +27,7 @@ import { gUtils } from '@/utils/gUtils';
 import { Error } from '@mui/icons-material';
 
 const getDeviceLockState = (device) => {
-  if (device.stateInfo?.wm2State !== true) {
+  if (device.stateInfo?.hasOwnProperty('wm2State') && device.stateInfo.wm2State !== true) {
     return undefined;
   }
   if (gUtils.isHub3LTE(device.deviceModel)) {

@@ -36,7 +36,7 @@ export const useNavigateUtils = () => {
   const navigateToDeviceSetting = (device) => {
     if (!device) return;
     let path = '';
-    if (gUtils.isLockModel(device.deviceModel)) {
+    if (gUtils.isLockModel(device.deviceModel) || gUtils.isOPSModel(device.deviceModel)) {
       path = '/device-setting';
     }
     navigate({

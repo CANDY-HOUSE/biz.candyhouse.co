@@ -233,7 +233,7 @@ function downloadLists(list, isCsv = true) {
       if (item.stateInfo?.batteryPercentage) {
         item.battery = item.stateInfo?.batteryPercentage;
       }
-    } else if (pathname === '/biz/devices/list-item') {
+    } else if (pathname === '/biz/devices/list-item' || pathname === '/biz/access-control/region') {
       headers = headersDeviceHistory;
       item = processDeviceHistoryItem(item);
     } else if (pathname === '/biz/devices/group-item') {

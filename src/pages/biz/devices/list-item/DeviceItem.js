@@ -53,7 +53,7 @@ const DeviceItem = () => {
       </Box>
       <Grid2
         container
-        spacing={3}
+        spacing={2}
         sx={{
           py: 2,
           px: gMediaType.isMobile ? 0 : 4,

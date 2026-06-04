@@ -11,11 +11,15 @@ import MobileBindDevice from '@/components/MobileBindDevice';
 import MobileBatteryChart from '@/components/MobileBatteryChart';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import DeviceSetting from '@/components/DeviceSetting';
+import DeviceHistory from '@/components/DeviceHistory';
+import { useNavigateUtils } from '@/hooks/useNavigateUtils';
+import { MoreHoriz } from '@mui/icons-material';
 
 export default function SesameAccessControlDeviceRegion() {
   const navigate = useNavigate();
   const { gManageDevice, gMediaType } = useContext(GlobalStateContext);
   const { t } = useTranslation();
+  const { navigateToDeviceSetting } = useNavigateUtils();
   const [searchParams] = useSearchParams();
   const did = searchParams.get('deviceUUID') || '';
   const deviceName = searchParams.get('deviceName') || '';
@@ -26,17 +30,32 @@ export default function SesameAccessControlDeviceRegion() {
 
   return (
     <Box sx={{ bgcolor: '#FBFBFB', overscrollBehavior: 'none', minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', px: gMediaType.isMobile ? 0 : 4, pt: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: gMediaType.isMobile ? 0 : 4,
+          pt: 2,
+        }}
+      >
         <IconButton onClick={() => navigate(-1)} disableRipple>
           <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
           <Typography variant="h3" sx={{ color: 'black' }}>
             {deviceName}
           </Typography>
         </IconButton>
+        {gMediaType.isMobile ? (
+          !gUtils.isOPSModel(device.deviceModel) ? null : (
+            <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
+              <MoreHoriz sx={{ color: 'black' }} />
+            </IconButton>
+          )
+        ) : null}
       </Box>
       <Grid2
         container
-        spacing={3}
+        spacing={2}
         sx={{
           py: 2,
           px: gMediaType.isMobile ? 0 : 4,
@@ -55,7 +74,7 @@ export default function SesameAccessControlDeviceRegion() {
       >
         {gMediaType.isMobile ? (
           <Grid2 size={12}>
-            <DeviceSetting showBack={false} />
+            {gUtils.isOPSModel(device.deviceModel) ? <DeviceHistory /> : <DeviceSetting showBack={false} />}
           </Grid2>
         ) : (
           <>
@@ -76,6 +95,14 @@ export default function SesameAccessControlDeviceRegion() {
             <Grid2 size={4} sx={{ height: '500px' }}>
               <DeviceSetting showBack={false} />
             </Grid2>
+            {gUtils.isOPSModel(device.deviceModel) && (
+              <Grid2 size={12} sx={{ height: '560px' }}>
+                <Box>
+                  <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.history', '履歴')}</Typography>
+                  <DeviceHistory deviceUUID={did} showToolBar />
+                </Box>
+              </Grid2>
+            )}
             <Grid2 size={12}>
               <Box>
                 <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.Battery')}</Typography>
