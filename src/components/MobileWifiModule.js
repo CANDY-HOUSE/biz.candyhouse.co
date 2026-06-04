@@ -229,23 +229,6 @@ const MobileWifiModule = () => {
     });
   }, []);
 
-  const requestNetworkTypeFromApp = useCallback(() => {
-    if (!isHub3LTE) return;
-    const requestId = Date.now().toString();
-    window[`deviceListCallback_${requestId}`] = (data) => {
-      const op = data['op'];
-      if (op === 'onNetworkType') {
-        const { isWifiConnected, isLTEConnected } = data;
-        setNetworkConnectivity((prev) => ({ ...prev, wifi: isWifiConnected, lte: isLTEConnected }));
-      }
-    };
-    biz3utils.triggerBridge({
-      action: 'requestNetworkType',
-      requestId: requestId,
-      callbackName: `deviceListCallback_${requestId}`,
-    });
-  }, [isHub3LTE]);
-
   const requestConfigureInternetFromApp = useCallback(({ deviceUUID }) => {
     const requestId = Date.now().toString();
     biz3utils.triggerBridge({
@@ -290,7 +273,6 @@ const MobileWifiModule = () => {
     if (!bleAvailable) return;
     // 监听配网变化
     requestMonitorInternetFromApp();
-    requestNetworkTypeFromApp();
   }, [bleAvailable]);
 
   const internetStatusIndicator = useMemo(() => {
