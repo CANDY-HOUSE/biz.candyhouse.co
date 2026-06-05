@@ -107,7 +107,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     }
     const { device_id: deviceUUID, timestamp } = menuState.item;
     gManageGroup.makeInvisibleHistory({ deviceUUID, timestamp }, (res) => {
-      res.success && setDeviceHistory((prev) => prev.filter((item) => item.record_id !== menuState.item.record_id));
+      res.success && setDeviceHistory((prev) => prev.filter((item) => item.timestamp !== menuState.item.timestamp));
     });
     handleCloseMenu();
   }, [menuState]);
