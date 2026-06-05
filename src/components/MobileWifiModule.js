@@ -62,6 +62,13 @@ const MobileWifiModule = () => {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
   }, [gManageDevice.filteredSsmDevices, did]);
 
+  // 来自 App 时 URL 没有 deviceModel，需要等后台返回 device 后才能确定设备类型，
+  // 在确定之前不要渲染网络图标，避免先显示单 WiFi 再跳到 LAN/LTE/WiFi 的闪动。
+  const isDeviceInfoResolved = useMemo(() => {
+    if (!isFromApp) return true;
+    return !!currentDevice.deviceModel;
+  }, [isFromApp, currentDevice.deviceModel]);
+
   useEffect(() => {
     if (gStripe.isFromApp) {
       gManageDevice.getCompanyDevices(true);
@@ -298,20 +305,26 @@ const MobileWifiModule = () => {
 
     return (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {isHub3LTE ? (
-          <>
-            {renderIcon(LanOutlined, false, networkConnectivity.ethernet, true, { marginRight: -2.5 })}
-            {renderIcon(SignalCellularAlt, false, networkConnectivity.lte, true, { marginRight: -2.5 })}
-            {renderIcon(Wifi, false, networkConnectivity.wifi, true)}
-          </>
+        {!isDeviceInfoResolved ? (
+          <Box sx={{ width: 25, height: 24 }} />
         ) : (
-          <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
+          <>
+            {isHub3LTE ? (
+              <>
+                {renderIcon(LanOutlined, false, networkConnectivity.ethernet, true, { marginRight: -2.5 })}
+                {renderIcon(SignalCellularAlt, false, networkConnectivity.lte, true, { marginRight: -2.5 })}
+                {renderIcon(Wifi, false, networkConnectivity.wifi, true)}
+              </>
+            ) : (
+              <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
+            )}
+            {renderIcon(Language, isNetwork ? false : isConnectingNetwork, isNetwork)}
+            {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
+          </>
         )}
-        {renderIcon(Language, isNetwork ? false : isConnectingNetwork, isNetwork)}
-        {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
       </Box>
     );
-  }, [internetStatus, networkConnectivity, isHub3LTE]);
+  }, [internetStatus, networkConnectivity, isHub3LTE, isDeviceInfoResolved]);
 
   return (
     <Box
