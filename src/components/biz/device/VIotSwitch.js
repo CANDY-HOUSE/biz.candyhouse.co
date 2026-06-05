@@ -48,8 +48,8 @@ const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defau
     }
     if (gUtils.isOPSModel(model)) {
       return (
-        <IconButton icon={<SvgOPS />} variant="text" sx={{ color: 'info.light', fontSize: '1rem' }}>
-          {defaultState}
+        <IconButton>
+          <SvgOPS label={defaultState} />
         </IconButton>
       );
     }
