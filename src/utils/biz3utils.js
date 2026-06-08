@@ -136,7 +136,7 @@ const generateInviteGuestQRCodeByInfo = (deviceKey, guestInfo) => {
 const writeQrcode = (text, call) => {
   if (!text) return call(null);
   const qrcode = new Encoder();
-  qrcode.setErrorCorrectionLevel(ErrorCorrectionLevel.M);
+  qrcode.setErrorCorrectionLevel(ErrorCorrectionLevel.L);
   qrcode.write(text).make();
   call(qrcode);
 };

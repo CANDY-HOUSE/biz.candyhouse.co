@@ -47,8 +47,9 @@ const MobileQRCodeDialog = ({
             src={qrCodeUrl}
             alt="QR Code"
             style={{
-              width: isMobile ? '280px' : '320px',
-              height: isMobile ? '280px' : '320px',
+              /* Face3 的摄像头无法调焦， 小了扫码困难。 */
+              width: isMobile ? '320px' : '380px',
+              height: isMobile ? '320px' : '380px',
               display: 'block',
             }}
           />
