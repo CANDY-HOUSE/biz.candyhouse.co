@@ -77,7 +77,7 @@ const DeviceItem = () => {
           </Grid2>
         ) : (
           <>
-            <Grid2 size={4} sx={{ height: '560px' }}>
+            <Grid2 size={4} sx={{ height: '560px', overflowY: 'auto' }}>
               <Box>
                 <Typography variant="h4">{t('deviceMember.user')}</Typography>
                 <DeviceUserList deviceUUID={did} defaultManageMode />

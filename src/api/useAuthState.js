@@ -156,21 +156,19 @@ export const useAuthState = () => {
   };
 
   const handleChallenge = async ({ pagePwd, cb }) => {
-    Auth.sendCustomChallengeAnswer(user, pagePwd) // 先經過create challenge的lambda
-      .then((user) => {
-        console.log('輸入完驗證碼', user);
-        const {
-          idToken: { jwtToken },
-        } = user.signInUserSession;
-        autoLogin(jwtToken);
-        setIsClearData(false);
-        setTimeout(() => {
-          cb && cb(user);
-        }, 0);
-      })
-      .catch((err) => {
-        cb && cb(err);
-      });
+    try {
+      const challengeAnswerResponse = await Auth.sendCustomChallengeAnswer(user, pagePwd); // 先經過create challenge的lambda
+      const {
+        idToken: { jwtToken },
+      } = challengeAnswerResponse.signInUserSession;
+      autoLogin(jwtToken);
+      setIsClearData(false);
+      setTimeout(() => {
+        cb && cb(user);
+      }, 0);
+    } catch (error) {
+      cb && cb(new Error('Incorrect username or password.'));
+    }
   };
 
   const currentUserInfo = async () => {
