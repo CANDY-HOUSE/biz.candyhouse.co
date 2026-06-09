@@ -78,7 +78,7 @@ export default function SesameAccessControlDeviceRegion() {
           </Grid2>
         ) : (
           <>
-            <Grid2 size={4}>
+            <Grid2 size={4} sx={{ height: '500px', overflowY: 'auto' }}>
               <Box>
                 <Typography variant="h4">{t('deviceMember.user')}</Typography>
                 <DeviceUserList deviceUUID={did} defaultManageMode />

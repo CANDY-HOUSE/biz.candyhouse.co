@@ -433,7 +433,6 @@ const Layout = () => {
               <CSUserSearchDialog
                 open={csTool === 'search'}
                 gManageEmployee={gManageEmployee}
-                gAuth={gAuth}
                 setSnackbarValue={setSnackbarValue}
                 onClose={() => setCsTool(null)}
               />

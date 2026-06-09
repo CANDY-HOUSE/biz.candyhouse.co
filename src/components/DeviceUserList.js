@@ -34,6 +34,8 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
           if (item.startAt && item.endAt) {
             data = gUtils.getStartTimeEndTime(item);
           }
+        } else {
+          data = '';
         }
         return { ...item, msgdata: data };
       });

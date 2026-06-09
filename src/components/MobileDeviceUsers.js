@@ -251,9 +251,18 @@ const MobileDeviceUsers = ({
                     </Box>
                   }
                   secondary={
-                    <Typography component="span" sx={{ color: 'info.light', fontSize: '0.8rem' }}>
-                      {user.msgdata}
-                    </Typography>
+                    <>
+                      {user.employeeEmail && (
+                        <Typography component="span" sx={{ color: 'info.light', fontSize: '0.7rem' }}>
+                          {user.employeeEmail}
+                        </Typography>
+                      )}
+                      {user.msgdata && (
+                        <Typography component="span" sx={{ color: 'info.light', fontSize: '0.7rem' }}>
+                          {user.msgdata}
+                        </Typography>
+                      )}
+                    </>
                   }
                 />
                 {user.guestKeyId?.length > 0 && (
@@ -291,6 +300,15 @@ const MobileDeviceUsers = ({
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <span>{subUser.employeeName}</span>
                           </Box>
+                        }
+                        secondary={
+                          <>
+                            {subUser.employeeEmail && (
+                              <Typography component="span" sx={{ color: 'info.light', fontSize: '0.7rem' }}>
+                                {subUser.employeeEmail}
+                              </Typography>
+                            )}
+                          </>
                         }
                       />
                     </ListItem>

@@ -83,7 +83,7 @@ const initialSearchState = {
   totalCount: null,
 };
 
-const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, onClose }) => {
+const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
   const [keyword, setKeyword] = useState('');
   const [resultKeyword, setResultKeyword] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -154,14 +154,13 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
   const handleCopyAndConfirm = async () => {
     if (!selectedEmail) return;
     setConfirming(true);
-    await navigator.clipboard.writeText(selectedEmail);
-    gManageEmployee.confirmQueryByCS(selectedEmail, (res) => {
+    gManageEmployee.confirmQueryByCS(selectedEmail, async (res) => {
       setConfirming(false);
       setSnackbarValue({ open: true, msg: res.message });
       if (res?.success === false) return;
-      handleCloseEmailMenu();
-      onClose && onClose();
-      gAuth.handleSignout();
+      await navigator.clipboard.writeText(selectedEmail);
+      const { loginUrl = null } = res.data || {};
+      loginUrl && window.open(loginUrl, '_blank');
     });
   };
 
@@ -346,7 +345,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, gAuth, setSnackbarValue, on
             },
           }}
         >
-          {`Copy -> Login`}
+          {`Copy and Login`}
         </MenuItem>
       </Menu>
     </Box>
