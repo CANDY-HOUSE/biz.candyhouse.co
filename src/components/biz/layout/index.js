@@ -215,7 +215,7 @@ const Layout = () => {
                       setCsTool('search');
                     }}
                   >
-                    🔍 🧐
+                    🔍 🧐 🔎
                   </MenuItem>,
                   <MenuItem
                     key="cs-repair"
@@ -235,7 +235,7 @@ const Layout = () => {
                       setCsTool('yamatoShipping');
                     }}
                   >
-                    Yamato 🚛 CSV
+                    🚛 Yamato CSV
                   </MenuItem>,
                 ]}
                 {/* 退出 */}
