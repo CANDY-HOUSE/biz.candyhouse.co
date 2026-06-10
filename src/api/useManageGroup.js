@@ -261,12 +261,13 @@ const useManageGroup = (gStripe) => {
     ({ deviceUUID, limit }, cb) => {
       const companyID = gStripe.customerInfo.companyID;
       if (!companyID) return;
+      const op = limit > 0 ? 'getLimited' : 'get';
       const msgData = {
         action: ACTION_TYPES.BIZ3_GET_DEVICEEMOLOYEEKEYS,
         deviceUUID,
         companyID,
         limit,
-        op: 'get',
+        op,
       };
       sendMessage(msgData);
       registerCallback(msgData.action, msgData.op, cb);
