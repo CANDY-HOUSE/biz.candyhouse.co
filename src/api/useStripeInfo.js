@@ -177,6 +177,16 @@ export const useStripeInfo = (gAuth) => {
             setCompanies((prevState) => [...prevState, message.data]);
           }
           break;
+        case 'delete':
+          if (message.success) {
+            const { deletedCompanyId, curCompanyID } = message.data || {};
+            setCompanies((prevState) => prevState.filter((company) => company.companyID !== deletedCompanyId));
+            if (curCompanyID) {
+              localStorage.setItem('curLogin', curCompanyID);
+              getCustomerInfo(curCompanyID);
+            }
+          }
+          break;
         default:
           break;
       }
@@ -319,6 +329,19 @@ export const useStripeInfo = (gAuth) => {
     [registerCallback]
   );
 
+  const deleteCompany = useCallback(
+    (cb) => {
+      const message = {
+        action: ACTION_TYPES.BIZ3_MANAGE_COMPANY,
+        companyID: priorityCompanyId,
+        op: 'delete',
+      };
+      sendMessage(message);
+      registerCallback(message.action, message.op, cb);
+    },
+    [registerCallback, priorityCompanyId]
+  );
+
   const getLevelConfig = useCallback(
     (cb) => {
       const customerId = priorityCompanyId;
@@ -364,6 +387,7 @@ export const useStripeInfo = (gAuth) => {
 
     isOwner,
     addCompany,
+    deleteCompany,
     companies,
     getCompanies,
     updateCompanyName,

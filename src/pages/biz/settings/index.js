@@ -1,13 +1,17 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { Box, Card, CardContent, CardHeader, IconButton, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, CardHeader, IconButton, Typography } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import { CmPay } from '@/components/biz/payment/CmPay';
 import CreditCardList from '@/components/biz/payment/CreditCardList';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { CmFeeLevel } from '@/components/biz/payment/CmFeeLevel';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { CmLevelUpdate } from '@/components/biz/payment/CmLevelUpdate';
 import { gUtils } from '@/utils/gUtils';
 import EditableText from '@/components/EditableText';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 const leftItemStyle = {
   fontFamily: "'Noto Sans JP', sans-serif",
@@ -54,9 +58,39 @@ const CmTextItem = ({ leftItem, rightItem }) => {
   );
 };
 
+const DeleteConfirm = ({ t, onCancel, onConfirm }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  return (
+    <Box>
+      <Typography sx={{ mt: '8px', lineHeight: 1.6 }}>{t('setting.deleteOrgConfirm')}</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: '16px' }}>
+        <Button size="small" disabled={isLoading} onClick={onCancel}>
+          {t('setting.cancel')}
+        </Button>
+        <LoadingButton
+          size="small"
+          color="error"
+          variant="contained"
+          disableElevation
+          loading={isLoading}
+          sx={{ ml: '8px' }}
+          onClick={() => {
+            setIsLoading(true);
+            onConfirm(() => setIsLoading(false));
+          }}
+        >
+          {t('setting.delete')}
+        </LoadingButton>
+      </Box>
+    </Box>
+  );
+};
+
 export default function Settings() {
   const { gStripe, setCustomModalOpen, setModalContent, setCustomModalKeep, setSnackbarValue, gMediaType } =
     useContext(GlobalStateContext);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [paymentConfig, setPaymentConfig] = useState({
     config: {},
     isYear: false,
@@ -103,6 +137,33 @@ export default function Settings() {
         gStripe={gStripe}
         submit={() => {
           setCustomModalOpen(false);
+        }}
+      />
+    );
+  };
+
+  const confirmDelete = () => {
+    setCustomModalOpen(true);
+    setModalContent(
+      <DeleteConfirm
+        t={t}
+        onCancel={() => {
+          setCustomModalOpen(false);
+        }}
+        onConfirm={(done) => {
+          gStripe.deleteCompany((res) => {
+            done();
+            if (!res.success) {
+              setSnackbarValue({
+                open: true,
+                msg: res.message,
+                severity: 'error',
+              });
+              return;
+            }
+            setCustomModalOpen(false);
+            navigate('/');
+          });
         }}
       />
     );
@@ -202,8 +263,8 @@ export default function Settings() {
                 height: '22px',
               }}
             >
-              <Typography sx={{ ...leftItemStyle }}>会社名</Typography>
-              <Box sx={{ ml: '12px' }}>
+              <Typography sx={{ ...leftItemStyle }}>会社</Typography>
+              <Box sx={{ ml: '20px' }}>
                 <EditableText
                   style={{ ...rightItemStyle, marginLeft: '0' }}
                   initialValue={gStripe.priorityCompany.name}
@@ -228,6 +289,11 @@ export default function Settings() {
                   }
                 />
               </Box>
+              {gStripe.isOwner && (
+                <IconButton color="error" onClick={confirmDelete}>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              )}
             </Box>
             <CmTextItem leftItem={'現在ご契約中のプラン'} rightItem={getNextLevelTitle(gStripe)} />
             {!gStripe.priorityCompany.isRootUser && (

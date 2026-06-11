@@ -207,7 +207,10 @@
     "notificationEnabled": "Notification permission granted",
     "notificationDisabled": "Notification permission not granted",
     "shop": "Shop",
-    "loginRegist": "Log In / Sign Up"
+    "loginRegist": "Log In / Sign Up",
+    "deleteOrgConfirm": "Once deleted, all data in the current organization cannot be recovered (app data is not affected). Are you sure you want to continue?",
+    "cancel": "Cancel",
+    "delete": "OK"
   },
   "navigator": {
     "Home": "Home",

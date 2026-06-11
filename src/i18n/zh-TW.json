@@ -207,7 +207,10 @@
     "notificationEnabled": "已取得通知權限",
     "notificationDisabled": "未取得通知權限",
     "shop": "小店舖",
-    "loginRegist": "登入 / 註冊"
+    "loginRegist": "登入 / 註冊",
+    "deleteOrgConfirm": "刪除後當前組織中所有資料將不可恢復（app資料不受影響），確定繼續嗎？",
+    "cancel": "取消",
+    "delete": "確定"
   },
   "navigator": {
     "Home": "首頁",

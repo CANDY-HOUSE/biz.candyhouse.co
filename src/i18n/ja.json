@@ -207,7 +207,10 @@
     "notificationEnabled": "通知は許可されています",
     "notificationDisabled": "通知は許可されていません",
     "shop": "お店",
-    "loginRegist": "ログイン/登録"
+    "loginRegist": "ログイン/登録",
+    "deleteOrgConfirm": "削除すると、現在の組織内のすべてのデータは復元できません（アプリのデータには影響しません）。続行してもよろしいですか？",
+    "cancel": "キャンセル",
+    "delete": "決定"
   },
   "navigator": {
     "Home": "ホーム",

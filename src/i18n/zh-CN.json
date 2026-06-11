@@ -207,7 +207,10 @@
     "notificationEnabled": "已获得通知权限",
     "notificationDisabled": "未获得通知权限",
     "shop": "小店铺",
-    "loginRegist": "登入 / 注册"
+    "loginRegist": "登入 / 注册",
+    "deleteOrgConfirm": "删除后当前组织中所有数据将不可恢复（app数据不受影响），确定继续吗？",
+    "cancel": "取消",
+    "delete": "确定"
   },
   "navigator": {
     "Home": "首页",
