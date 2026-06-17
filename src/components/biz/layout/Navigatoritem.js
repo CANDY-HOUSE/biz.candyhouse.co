@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ListItemText, ListItemButton, Typography, Collapse, IconButton } from '@mui/material';
+import { Box, ListItemText, ListItemButton, Typography, Collapse, IconButton } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
+import { navIconMap } from './navIcons';
 
 const sxStyle = (matchPath, toPath) => {
   return {
@@ -27,8 +28,9 @@ const externalStyle = () => {
   };
 };
 
-export const NavigatorItem = ({ to, name, location, external = false, onClick }) => {
+export const NavigatorItem = ({ to, name, icon, location, external = false, onClick }) => {
   const [matchPath, setMatchPath] = useState('');
+  const Icon = navIconMap[icon];
 
   useEffect(() => {
     if (location) {
@@ -36,6 +38,8 @@ export const NavigatorItem = ({ to, name, location, external = false, onClick })
       setMatchPath(currentPath);
     }
   }, [location]);
+
+  const isActive = matchPath === (to === '/' ? '/' : to.split('/')[2]);
 
   return (
     <>
@@ -46,7 +50,29 @@ export const NavigatorItem = ({ to, name, location, external = false, onClick })
         target={external ? '_blank' : undefined}
         sx={external ? externalStyle : sxStyle(matchPath, to === '/' ? '/' : to.split('/')[2])}
       >
-        <ListItemText sx={{ '>span': { fontWeight: 'bold' } }}>{name}</ListItemText>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {Icon && (
+            <Icon
+              size={20}
+              sx={{
+                fontSize: 20,
+                flexShrink: 0,
+                color: isActive ? '#28aeb1' : 'inherit',
+              }}
+            />
+          )}
+
+          <ListItemText
+            sx={{
+              '>span': {
+                fontWeight: 'bold',
+                color: isActive ? '#28aeb1' : 'inherit',
+              },
+            }}
+          >
+            {name}
+          </ListItemText>
+        </Box>
       </ListItemButton>
     </>
   );
@@ -68,12 +94,13 @@ const getStyleAttributes = (matchPath, router) => {
 };
 
 const openStates = {};
-export const NavigatorItemTop = ({ id, name, router, items, onClick }) => {
+export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const currentPath = location.pathname;
   const [, forceUpdate] = useState({});
+  const Icon = navIconMap[icon];
   if (openStates[id] === undefined) {
     openStates[id] = currentPath.startsWith(router);
   }
@@ -95,6 +122,8 @@ export const NavigatorItemTop = ({ id, name, router, items, onClick }) => {
       .includes(path);
   };
 
+  const isActive = isRootPath(router) ? currentPath === router : currentPath.startsWith(router);
+
   return (
     <>
       <ListItemButton
@@ -105,7 +134,29 @@ export const NavigatorItemTop = ({ id, name, router, items, onClick }) => {
         onClick={handleToggle}
         sx={isRootPath(router) ? sxStyle(currentPath, router) : sxStyle(currentPath)}
       >
-        <ListItemText sx={{ '>span': { fontWeight: 'bold' } }}>{name ? t(name) : id}</ListItemText>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {Icon && (
+            <Icon
+              size={18}
+              sx={{
+                fontSize: 18,
+                flexShrink: 0,
+                color: isActive ? '#28aeb1' : 'inherit',
+              }}
+            />
+          )}
+
+          <ListItemText
+            sx={{
+              '>span': {
+                fontWeight: 'bold',
+                color: isActive ? '#28aeb1' : 'inherit',
+              },
+            }}
+          >
+            {name ? t(name) : id}
+          </ListItemText>
+        </Box>
         {items && items.length > 0 && (
           <IconButton>{openStates[id] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton>
         )}

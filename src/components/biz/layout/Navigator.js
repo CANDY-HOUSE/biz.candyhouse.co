@@ -21,15 +21,15 @@ export default function Navigator({ location, onClick }) {
     const routerParams = processedAccess
       .map((id) => categoriesConf.find((cat) => cat.id === id))
       .filter(Boolean)
-      .map(({ id, items, router, name }) => ({ id, items, router, name, onClick }));
+      .map(({ id, items, router, name, icon }) => ({ id, items, router, name, icon, onClick }));
     const devIndex = routerParams.findIndex((item) => item.id === pageNames.developer);
     return devIndex === -1 ? [routerParams, []] : [routerParams.slice(0, devIndex), routerParams.slice(devIndex)];
   }, [customerInfo, onClick]);
 
   const renderCategoryItems = (categories) =>
-    categories.map(({ id, items, router, name }) => (
+    categories.map(({ id, items, router, name, icon }) => (
       <Box key={id}>
-        <NavigatorItemTop items={items} id={id} name={name} router={router} onClick={onClick} />
+        <NavigatorItemTop items={items} id={id} name={name} icon={icon} router={router} onClick={onClick} />
       </Box>
     ));
 
@@ -48,7 +48,9 @@ export default function Navigator({ location, onClick }) {
       }}
     >
       <Box>
-        {!isSesameApp && <NavigatorItem to="/biz" name={t('navigator.Home')} location={location} onClick={onClick} />}
+        {!isSesameApp && (
+          <NavigatorItem to="/biz" name={t('navigator.Home')} icon="home" location={location} onClick={onClick} />
+        )}
         {renderCategoryItems(renderCategories[0])}
       </Box>
       <Box>

@@ -154,26 +154,31 @@ const categoriesConf = [
     id: pageNames.appDevices,
     router: '/',
     isRoot: true,
+    icon: 'sesame',
   },
   {
     id: pageNames.appContacts,
     router: '/contacts',
     isRoot: true,
+    icon: 'contacts',
   },
   {
     id: pageNames.appMe,
     router: '/me',
     isRoot: true,
+    icon: 'me',
   },
   {
     id: pageNames.vision,
     name: 'navigator.Vision',
     router: '/vision',
     isRoot: true,
+    icon: 'vision',
   },
   {
     id: pageNames.members,
     router: '/biz/employees',
+    icon: 'members',
     items: [
       {
         id: pageNames.members,
@@ -192,6 +197,7 @@ const categoriesConf = [
   {
     id: pageNames.ssmDevices,
     router: '/biz/devices',
+    icon: 'ssmDevices',
     items: [
       {
         id: pageNames.ssmDevices,
@@ -207,21 +213,25 @@ const categoriesConf = [
     id: pageNames.touchDevices,
     router: '/biz/access-control/index',
     isRoot: true,
+    icon: 'touchDevices',
   },
   {
     id: pageNames.cards,
     router: '/biz/cards',
     isRoot: true,
+    icon: 'cards',
   },
   {
     id: pageNames.historys,
     router: '/biz/history',
     isRoot: true,
+    icon: 'history',
   },
   {
     id: pageNames.scheduleList,
     router: '/biz/schedule-list',
     isRoot: true,
+    icon: 'schedule',
   },
   {
     id: pageNames.developer,
