@@ -28,6 +28,7 @@ import EmployeeRoles from '@biz/employees/role/EmployeeRoles';
 import HistoryList from '@biz/history';
 import BizHomePage from '@biz/home';
 import ScheduleList from '@biz/schedule-list';
+import Vision from '@biz/vision';
 import UpgradeSSMFirmware from '@components/biz/device/UpgradeSSMFirmware';
 import Contacts from '@personal/contacts';
 import Devices from '@personal/devices';
@@ -68,6 +69,10 @@ const routerComponentMap = [
   {
     router: '/biz',
     component: BizHomePage,
+  },
+  {
+    router: '/vision',
+    components: [{ router: '', component: Vision }],
   },
   {
     router: '/biz/employees',

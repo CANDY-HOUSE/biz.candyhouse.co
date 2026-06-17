@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
 
 const sxStyle = (matchPath, toPath) => {
@@ -67,9 +68,10 @@ const getStyleAttributes = (matchPath, router) => {
 };
 
 const openStates = {};
-export const NavigatorItemTop = ({ id, router, items, onClick }) => {
+export const NavigatorItemTop = ({ id, name, router, items, onClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const currentPath = location.pathname;
   const [, forceUpdate] = useState({});
   if (openStates[id] === undefined) {
@@ -103,7 +105,7 @@ export const NavigatorItemTop = ({ id, router, items, onClick }) => {
         onClick={handleToggle}
         sx={isRootPath(router) ? sxStyle(currentPath, router) : sxStyle(currentPath)}
       >
-        <ListItemText sx={{ '>span': { fontWeight: 'bold' } }}>{id}</ListItemText>
+        <ListItemText sx={{ '>span': { fontWeight: 'bold' } }}>{name ? t(name) : id}</ListItemText>
         {items && items.length > 0 && (
           <IconButton>{openStates[id] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton>
         )}

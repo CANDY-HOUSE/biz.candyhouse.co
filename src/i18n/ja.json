@@ -215,7 +215,8 @@
   "navigator": {
     "Home": "ホーム",
     "Support": "サポート",
-    "Settings": "設定"
+    "Settings": "設定",
+    "Vision": "ビジョン"
   },
   "developer": {
     "ForDeveloper": "開発者向け"

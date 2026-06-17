@@ -215,7 +215,8 @@
   "navigator": {
     "Home": "首页",
     "Support": "支持",
-    "Settings": "设置"
+    "Settings": "设置",
+    "Vision": "视觉"
   },
   "developer": {
     "ForDeveloper": "开发者"

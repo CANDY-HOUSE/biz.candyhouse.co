@@ -143,6 +143,7 @@ const pageNames = {
   touchDevices: '認証機器',
   ssmDevices: 'ドア',
   ssmDevicesGroup: 'ドアグループ',
+  vision: 'Vision',
   appDevices: 'セサミ',
   appContacts: '連絡先',
   appMe: '自分',
@@ -162,6 +163,12 @@ const categoriesConf = [
   {
     id: pageNames.appMe,
     router: '/me',
+    isRoot: true,
+  },
+  {
+    id: pageNames.vision,
+    name: 'navigator.Vision',
+    router: '/vision',
     isRoot: true,
   },
   {

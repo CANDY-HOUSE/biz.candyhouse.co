@@ -21,15 +21,15 @@ export default function Navigator({ location, onClick }) {
     const routerParams = processedAccess
       .map((id) => categoriesConf.find((cat) => cat.id === id))
       .filter(Boolean)
-      .map(({ id, items, router }) => ({ id, items, router, onClick }));
+      .map(({ id, items, router, name }) => ({ id, items, router, name, onClick }));
     const devIndex = routerParams.findIndex((item) => item.id === pageNames.developer);
     return devIndex === -1 ? [routerParams, []] : [routerParams.slice(0, devIndex), routerParams.slice(devIndex)];
   }, [customerInfo, onClick]);
 
   const renderCategoryItems = (categories) =>
-    categories.map(({ id, items, router }) => (
+    categories.map(({ id, items, router, name }) => (
       <Box key={id}>
-        <NavigatorItemTop items={items} id={id} router={router} onClick={onClick} />
+        <NavigatorItemTop items={items} id={id} name={name} router={router} onClick={onClick} />
       </Box>
     ));
 
