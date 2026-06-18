@@ -50,7 +50,7 @@ export const NavigatorItem = ({ to, name, icon, location, external = false, onCl
         target={external ? '_blank' : undefined}
         sx={external ? externalStyle : sxStyle(matchPath, to === '/' ? '/' : to.split('/')[2])}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           {Icon && (
             <Icon
               size={20}
@@ -134,12 +134,12 @@ export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => 
         onClick={handleToggle}
         sx={isRootPath(router) ? sxStyle(currentPath, router) : sxStyle(currentPath)}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           {Icon && (
             <Icon
-              size={18}
+              size={20}
               sx={{
-                fontSize: 18,
+                fontSize: 20,
                 flexShrink: 0,
                 color: isActive ? '#28aeb1' : 'inherit',
               }}

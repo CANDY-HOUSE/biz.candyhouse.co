@@ -7,12 +7,12 @@ import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 
-const SvgIcon = ({ children, size = 24, sx = {} }) => {
+const SvgIcon = ({ children, size = 24, viewBox = '0 0 24 24', sx = {} }) => {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox={viewBox}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{
@@ -28,7 +28,7 @@ const SvgIcon = ({ children, size = 24, sx = {} }) => {
 
 export const SesameNavIcon = ({ size = 24, sx = {} }) => {
   return (
-    <SvgIcon size={size} sx={sx}>
+    <SvgIcon size={size} viewBox="0 0 18 20" sx={sx}>
       <path
         d="M5.7889,5.7889m-2.8175,2.1309a3.5326,3.5326 97.8991,1 1,5.635 -4.2618a3.5326,3.5326 97.8991,1 1,-5.635 4.2618"
         stroke="currentColor"
