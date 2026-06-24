@@ -154,13 +154,18 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
   const handleCopyAndConfirm = async () => {
     if (!selectedEmail) return;
     setConfirming(true);
+    // Safari 弹窗与剪贴板都要求在用户手势的同步阶段触发：
+    navigator.clipboard.writeText(selectedEmail).catch(() => {});
+    const loginWindow = window.open('', '_blank');
     gManageEmployee.confirmQueryByCS(selectedEmail, async (res) => {
       setConfirming(false);
       setSnackbarValue({ open: true, msg: res.message });
-      if (res?.success === false) return;
-      await navigator.clipboard.writeText(selectedEmail);
-      const { loginUrl = null } = res.data || {};
-      loginUrl && window.open(loginUrl, '_blank');
+      let { loginUrl = null } = res?.success === false ? {} : res.data || {};
+      if (loginUrl && loginWindow) {
+        loginWindow.location.href = loginUrl;
+      } else if (loginWindow) {
+        loginWindow.close();
+      }
     });
   };
 
