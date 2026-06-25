@@ -281,19 +281,34 @@ export const checkRange = (csvData) => {
   //   afterCheckAndSortData.push(item);
   // }
 
-  const afterCheckAndSortData = sortedData.filter((item) => {
+  // const afterCheckAndSortData = sortedData.filter((item) => {
+  //   const fulfillmentStatus = String(item['Fulfillment Status'] || '').toLowerCase();
+  //   // const lineitemStatus = String(item['Lineitem fulfillment status'] || '').toLowerCase();
+
+  //   const isYamato = isYamatoShipping(item['Shipping Method']);
+
+  //   const isUnfulfilled = fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === '未発送';
+
+  //   // const isPartialUnfulfilled = fulfillmentStatus === 'partial' && lineitemStatus !== 'fulfilled';
+
+  //   return isYamato && isUnfulfilled;
+  //   // return isYamato && (isUnfulfilled || isPartialUnfulfilled);
+  // });
+
+  const targetOrderNames = new Set();
+
+  for (const item of sortedData) {
     const fulfillmentStatus = String(item['Fulfillment Status'] || '').toLowerCase();
-    const lineitemStatus = String(item['Lineitem fulfillment status'] || '').toLowerCase();
 
     const isYamato = isYamatoShipping(item['Shipping Method']);
-
     const isUnfulfilled = fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === '未発送';
 
-    // const isPartialUnfulfilled = fulfillmentStatus === 'partial' && lineitemStatus !== 'fulfilled';
+    if (isYamato && isUnfulfilled) {
+      targetOrderNames.add(item.Name);
+    }
+  }
 
-    return isYamato && isUnfulfilled;
-    // return isYamato && (isUnfulfilled || isPartialUnfulfilled);
-  });
+  const afterCheckAndSortData = sortedData.filter((item) => targetOrderNames.has(item.Name));
 
   return [
     // targetData[0]?.Name ?? '',
