@@ -251,29 +251,53 @@ export const shopifyCSV2ShippingCSV = (csvData) => {
   return [yamatoB2CSV(todayShipping), inStockData, exception, orderChangedList];
 };
 
+// アップロードをしたデータの中で、ステータスが「未発送」の注文をすべてYamato CSVに変換する内容に変更。
 export const checkRange = (csvData) => {
   const sortedData = csvData
-    .map((row) => ({ ...row, name1: Number(row.Name.substring(3)) }))
-    .sort((a, b) => {
-      if (a.name1 < b.name1) return 1;
-      if (a.name1 > b.name1) return -1;
-      return 1;
-    });
-  const csvDataStart = sortedData.findIndex((item) => isYamatoShipping(item['Shipping Method']));
-  const targetData = csvDataStart >= 0 ? sortedData.slice(csvDataStart) : sortedData;
-  const afterCheckAndSortData = [];
-  for (const item of targetData) {
-    const shippedPartialYamato =
-      item['Fulfillment Status'] === 'partial' &&
-      item['Lineitem fulfillment status'] === 'fulfilled' &&
-      isYamatoShipping(item['Shipping Method']);
-    const fulfilledYamato = item['Fulfillment Status'] === 'fulfilled' && isYamatoShipping(item['Shipping Method']);
-    if (shippedPartialYamato || fulfilledYamato) break;
-    afterCheckAndSortData.push(item);
-  }
+    .map((row) => ({
+      ...row,
+      name1: Number(row.Name.substring(3)),
+    }))
+    .sort((a, b) => b.name1 - a.name1);
+  // .map((row) => ({ ...row, name1: Number(row.Name.substring(3)) }))
+  // .sort((a, b) => {
+  //   if (a.name1 < b.name1) return 1;
+  //   if (a.name1 > b.name1) return -1;
+  //   return 1;
+  // });
+
+  // データの中から、Yamato配送が始まる位置を見つけるために入れていた。
+  // const csvDataStart = sortedData.findIndex((item) => isYamatoShipping(item['Shipping Method']));
+  // const targetData = csvDataStart >= 0 ? sortedData.slice(csvDataStart) : sortedData;
+
+  // const afterCheckAndSortData = [];
+  // for (const item of targetData) {
+  //   const shippedPartialYamato =
+  //     item['Fulfillment Status'] === 'partial' &&
+  //     item['Lineitem fulfillment status'] === 'fulfilled' &&
+  //     isYamatoShipping(item['Shipping Method']);
+  //   const fulfilledYamato = item['Fulfillment Status'] === 'fulfilled' && isYamatoShipping(item['Shipping Method']);
+  //   if (shippedPartialYamato || fulfilledYamato) break;
+  //   afterCheckAndSortData.push(item);
+  // }
+
+  const afterCheckAndSortData = sortedData.filter((item) => {
+    const fulfillmentStatus = String(item['Fulfillment Status'] || '').toLowerCase();
+    const lineitemStatus = String(item['Lineitem fulfillment status'] || '').toLowerCase();
+
+    const isYamato = isYamatoShipping(item['Shipping Method']);
+
+    const isUnfulfilled = fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === '未発送';
+
+    // const isPartialUnfulfilled = fulfillmentStatus === 'partial' && lineitemStatus !== 'fulfilled';
+
+    return isYamato && isUnfulfilled;
+    // return isYamato && (isUnfulfilled || isPartialUnfulfilled);
+  });
 
   return [
-    targetData[0]?.Name ?? '',
+    // targetData[0]?.Name ?? '',
+    afterCheckAndSortData[0]?.Name ?? '',
     afterCheckAndSortData[afterCheckAndSortData.length - 1]?.Name ?? '',
     afterCheckAndSortData,
   ];
