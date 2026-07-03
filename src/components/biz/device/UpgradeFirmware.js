@@ -50,7 +50,7 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     if (updateProgress === null) return;
     clearProgressInterval();
     if (updateProgress >= 0 && updateProgress <= 100) {
-      const targetProgress = updateProgress < 100 ? Math.floor(updateProgress / 10) * 10 + 9 : 100;
+      const targetProgress = updateProgress < 100 ? Math.min(updateProgress + 10, 99) : 100;
       if (updateProgress >= targetProgress) return;
       intervalRef.current = setInterval(() => {
         setUpdateProgress((prev) => {
