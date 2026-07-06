@@ -12,6 +12,7 @@ const MobileMeIndex = () => {
   const { gStripe, gManageEmployee } = useContext(GlobalStateContext);
   const [currentUserInfo, setCurrentUserInfo] = useState({});
   const [notificationEnabled, setNotificationEnabled] = useState(null);
+  const [activePromotion, setActivePromotion] = useState(null);
 
   const requestNotificationStatus = useCallback(() => {
     return new Promise((resolve, _reject) => {
@@ -55,11 +56,75 @@ const MobileMeIndex = () => {
     });
   }, []);
 
+  const requestActivePromotion = useCallback(() => {
+    return new Promise((resolve, _reject) => {
+      const requestId = Date.now().toString();
+      window[`promotionCallback_${requestId}`] = (promotion) => {
+        clearTimeout(timeout);
+        delete window[`promotionCallback_${requestId}`];
+        resolve(promotion);
+      };
+      const timeout = setTimeout(() => {
+        delete window[`promotionCallback_${requestId}`];
+        resolve(null);
+      }, 10000);
+      const message = {
+        action: 'requestActivePromotion',
+        requestId: requestId,
+        callbackName: `promotionCallback_${requestId}`,
+      };
+      if (!biz3utils.triggerBridge(message)) {
+        clearTimeout(timeout);
+        delete window[`promotionCallback_${requestId}`];
+        resolve(null);
+      }
+    });
+  }, []);
+
+  const requestMarkPromotionRead = useCallback((promotionId, targetUrl) => {
+    return new Promise((resolve, _reject) => {
+      const requestId = Date.now().toString();
+      window[`promotionCallback_${requestId}`] = (promotion) => {
+        clearTimeout(timeout);
+        delete window[`promotionCallback_${requestId}`];
+        resolve(promotion);
+      };
+      const timeout = setTimeout(() => {
+        delete window[`promotionCallback_${requestId}`];
+        resolve(null);
+      }, 10000);
+      const message = {
+        action: 'requestMarkPromotionRead',
+        requestId: requestId,
+        callbackName: `promotionCallback_${requestId}`,
+        promotionId,
+        targetUrl,
+      };
+      if (!biz3utils.triggerBridge(message)) {
+        clearTimeout(timeout);
+        delete window[`promotionCallback_${requestId}`];
+        resolve(null);
+      }
+    });
+  }, []);
+
   const fetchCurrentUserInfo = async () => {
     gManageEmployee.getCurrentUserInfo((res) => {
       setCurrentUserInfo(res.data);
     });
   };
+
+  useEffect(() => {
+    requestActivePromotion()
+      .then((promotion) => {
+        if (promotion?.success) {
+          setActivePromotion(promotion);
+        }
+      })
+      .catch(() => {
+        setActivePromotion(null);
+      });
+  }, []);
 
   useEffect(() => {
     if (gStripe.customerInfo.isAnonymous) {
@@ -111,6 +176,18 @@ const MobileMeIndex = () => {
     }
   };
 
+  const handleShopClick = () => {
+    const targetUrl = activePromotion?.targetUrl || URLs.shop;
+    if (activePromotion?.promotionId && activePromotion.visible) {
+      setActivePromotion({
+        ...activePromotion,
+        visible: false,
+      });
+      requestMarkPromotionRead(activePromotion.promotionId, targetUrl);
+    }
+    handleOpenPage({ link: targetUrl });
+  };
+
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
       <List disablePadding>
@@ -152,8 +229,28 @@ const MobileMeIndex = () => {
             <SvgIcon component={SvgArrow} />
           </ListItemIcon>
         </ListItem>
-        <ListItem onClick={() => handleOpenPage({ link: URLs.shop })}>
-          <ListItemText primary={t('setting.shop')} />
+        <ListItem onClick={handleShopClick}>
+          <ListItemText
+            primary={
+              <Box component="span" sx={{ position: 'relative', display: 'inline-block', pr: '10px' }}>
+                {t('setting.shop')}
+                {activePromotion?.visible && (
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: 0,
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      bgcolor: '#f44336',
+                    }}
+                  />
+                )}
+              </Box>
+            }
+          />
           <Typography sx={{ color: 'title.other' }}>{''}</Typography>
           <ListItemIcon sx={{ minWidth: 'auto' }}>
             <SvgIcon component={SvgArrow} />
