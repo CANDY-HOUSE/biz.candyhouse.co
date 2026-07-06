@@ -24,7 +24,9 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
   const { gIot, gManageDevice } = useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // updateProgress: UI 实际显示的（动画）值； reportedProgress: 设备上报的原始值/状态码
   const [updateProgress, setUpdateProgress] = useState(null);
+  const [reportedProgress, setReportedProgress] = useState(null);
   const intervalRef = useRef(null);
 
   const DFU_STATUS_MESSAGES = {
@@ -47,22 +49,35 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     }
   };
   useEffect(() => {
-    if (updateProgress === null) return;
-    clearProgressInterval();
-    if (updateProgress >= 0 && updateProgress <= 100) {
-      const targetProgress = updateProgress < 100 ? Math.min(updateProgress + 10, 99) : 100;
-      if (updateProgress >= targetProgress) return;
-      intervalRef.current = setInterval(() => {
-        setUpdateProgress((prev) => {
-          if (prev + 1 >= targetProgress) {
-            clearProgressInterval();
-            return targetProgress;
-          }
-          return prev + 1;
-        });
-      }, 300);
+    if (reportedProgress === null) {
+      clearProgressInterval();
+      setUpdateProgress(null);
+      return;
     }
-  }, [updateProgress]);
+    // 负数为中间状态码：直接显示，不做百分比动画
+    if (reportedProgress < 0 || reportedProgress > 100) {
+      clearProgressInterval();
+      setUpdateProgress(reportedProgress);
+      return;
+    }
+    // 0~100：以「上报值 +10」为目标（封顶 99），从当前显示值平滑递增到目标。
+    // effect 仅依赖 reportedProgress，故动画自身的 +1（只改 updateProgress）不会重新触发；
+    // 而设备每次上报（即使值与当前目标相同/更小）都会重设目标并继续向上动画。
+    const targetProgress = reportedProgress < 100 ? Math.min(reportedProgress + 10, 99) : 100;
+    clearProgressInterval();
+    // 从 null/状态码进入数值阶段时先置 0%，避免短暂显示旧值；已是数值则保持不回退不跳段
+    setUpdateProgress((prev) => (prev === null || prev < 0 ? 0 : prev));
+    intervalRef.current = setInterval(() => {
+      setUpdateProgress((prev) => {
+        const cur = prev === null || prev < 0 ? 0 : prev;
+        if (cur + 1 >= targetProgress) {
+          clearProgressInterval();
+          return Math.max(cur, targetProgress);
+        }
+        return cur + 1;
+      });
+    }, 300);
+  }, [reportedProgress]);
 
   const notifyAppDeviceFWVersionUpdated = (deviceUUID, currentFwVer) => {
     if (!deviceUUID || !currentFwVer) return;
@@ -80,7 +95,7 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       const { deviceUUID, percent } = data;
       const p = parseInt(percent, 10);
       if (p === 100) {
-        setUpdateProgress(DFU_PROGRESS_COMPLETED);
+        setReportedProgress(DFU_PROGRESS_COMPLETED);
         setTimeout(() => {
           let newFwVer = '';
 
@@ -102,11 +117,11 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
 
           notifyAppDeviceFWVersionUpdated(deviceUUID, newFwVer);
 
-          setUpdateProgress(null);
+          setReportedProgress(null);
         }, 1000);
         return;
       }
-      setUpdateProgress(p);
+      setReportedProgress(p);
     };
     biz3utils.triggerBridge({
       action: 'requestDeviceFWUpgrade',
@@ -144,9 +159,9 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
 
         notifyAppDeviceFWVersionUpdated(targetDeviceUUID, versionTag);
 
-        setUpdateProgress(null);
+        setReportedProgress(null);
       } else {
-        setUpdateProgress(progress);
+        setReportedProgress(progress);
       }
     });
   };
