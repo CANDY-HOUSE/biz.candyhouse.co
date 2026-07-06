@@ -15,6 +15,7 @@ import SesameAccessControlDeviceRegion from '@biz/access-control/region/region';
 import Cards from '@biz/cards';
 import CardDetails from '@biz/cards/details/carddetails';
 import Developer from '@biz/developer';
+import EnvSnapshotDetail from '@biz/history/env-snapshot';
 import DeviceShare from '@biz/devices/device-share/DeviceShare';
 import DeviceGroupItem from '@biz/devices/group-item/DeviceGroupItem';
 import GroupShare from '@biz/devices/group-share/GroupShare';
@@ -120,7 +121,10 @@ const routerComponentMap = [
   },
   {
     router: '/biz/history',
-    component: HistoryList,
+    components: [
+      { router: '', component: HistoryList },
+      { router: 'env-snapshot', component: EnvSnapshotDetail },
+    ],
   },
   {
     router: '/biz/schedule-list',

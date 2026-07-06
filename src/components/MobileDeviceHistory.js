@@ -1,10 +1,15 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Box, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
+import { SvgArrow } from '@/assets/svg/svgLock';
+import { useNavigate } from 'react-router-dom';
 import { CmHistoryExt } from './biz/device/CmHistoryExt';
 import { Buffer } from 'buffer';
 import { biz3utils } from '@/utils/biz3utils';
+import { GlobalStateContext } from '@context/GlobalContextProvider';
 
 const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemLongPress }) => {
+  const navigate = useNavigate();
+  const { gStripe } = useContext(GlobalStateContext);
   const [groupedHistories, setGroupedHistories] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollRef = useRef(null);
@@ -14,6 +19,7 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
   const loadMoreTriggerRef = useRef(null);
   const rowHeight = 72;
   const longPressTimer = useRef(null);
+  const longPressFired = useRef(false);
   const longPressThreshold = 500;
 
   // 按日期分组历史记录
@@ -100,7 +106,9 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
   }, [hasMore, isLoading, onLoadMore, isInitialLoad]); // 添加 isInitialLoad 到依赖项
 
   const handleTouchStart = (e, item) => {
+    longPressFired.current = false;
     longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
       if (onItemLongPress) {
         onItemLongPress(item, e);
       }
@@ -118,6 +126,31 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+  };
+
+  const handleEnvSnapshot = (item) => {
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
+    const raw = item.envSnapshot ?? {}; // 无快照时给空对象，交由详情页处理
+    const json = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    openEnvSnapshot(Buffer.from(json, 'utf8').toString('base64'));
+  };
+
+  const openEnvSnapshot = (data) => {
+    const url = new URL(window.location.href);
+    url.pathname = '/biz/history/env-snapshot';
+    url.searchParams.set('data', data);
+    if (gStripe.isFromApp) {
+      const scheme = `ssm://UI/webview/open?${new URLSearchParams({ url: url.href })}`;
+      biz3utils.triggerScheme(scheme);
+    } else {
+      navigate({
+        pathname: url.pathname,
+        search: url.searchParams.toString(),
+      });
     }
   };
 
@@ -193,7 +226,9 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
                     height: rowHeight,
                     py: 0,
                     userSelect: 'none',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => handleEnvSnapshot(item)}
                   onTouchStart={(e) => handleTouchStart(e, item)}
                   onTouchEnd={handleTouchEnd}
                   onTouchMove={handleTouchMove}
@@ -216,16 +251,21 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
                       </Typography>
                     }
                   />
-                  <CmHistoryExt.ViaView
-                    type={item.type}
-                    botViaType={item.botViaType}
-                    botHistoryMode={item.botHistoryMode}
-                  />
                   {item.deviceName?.length > 0 && (
                     <Typography variant="h4" sx={{ color: 'info.light', pl: 2 }}>
                       {item.deviceName}
                     </Typography>
                   )}
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <CmHistoryExt.ViaView
+                      type={item.type}
+                      botViaType={item.botViaType}
+                      botHistoryMode={item.botHistoryMode}
+                    />
+                    <ListItemIcon sx={{ minWidth: 'auto' }}>
+                      <SvgIcon component={SvgArrow} />
+                    </ListItemIcon>
+                  </Box>
                 </ListItem>
               ))}
             </List>

@@ -221,5 +221,29 @@
   "developer": {
     "ForDeveloper": "For Developer"
   },
+  "envSnapshot": {
+    "title": "Environment Snapshot",
+    "bundleId": "Bundle ID",
+    "language": "Language",
+    "region": "Region",
+    "build": "Build",
+    "version": "Version",
+    "displayName": "Name",
+    "collectedAt": "Collected At",
+    "deviceType": "Device Type",
+    "screenWidth": "Screen Width",
+    "screenScale": "Screen Scale",
+    "systemName": "System Name",
+    "screenHeight": "Screen Height",
+    "timeZone": "Time Zone",
+    "model": "Model",
+    "systemVersion": "System Version",
+    "batteryLevel": "Battery Level",
+    "notification": "Notification",
+    "location": "Location",
+    "bluetooth": "Bluetooth",
+    "network": "Network",
+    "noData": "No Data"
+  },
   "CardList": "Card List"
 }

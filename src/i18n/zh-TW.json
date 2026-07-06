@@ -221,5 +221,29 @@
   "developer": {
     "ForDeveloper": "開發者"
   },
+  "envSnapshot": {
+    "title": "環境快照",
+    "bundleId": "應用包名",
+    "language": "語言",
+    "region": "地區",
+    "build": "建置號",
+    "version": "版本",
+    "displayName": "名稱",
+    "collectedAt": "採集時間",
+    "deviceType": "裝置類型",
+    "screenWidth": "螢幕寬度",
+    "screenScale": "螢幕縮放",
+    "systemName": "系統名稱",
+    "screenHeight": "螢幕高度",
+    "timeZone": "時區",
+    "model": "型號",
+    "systemVersion": "系統版本",
+    "batteryLevel": "電量",
+    "notification": "通知",
+    "location": "位置",
+    "bluetooth": "藍牙",
+    "network": "網路",
+    "noData": "暫無資料"
+  },
   "CardList": "卡列表"
 }

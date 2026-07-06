@@ -221,5 +221,29 @@
   "developer": {
     "ForDeveloper": "开发者"
   },
+  "envSnapshot": {
+    "title": "环境快照",
+    "bundleId": "应用包名",
+    "language": "语言",
+    "region": "地区",
+    "build": "构建号",
+    "version": "版本",
+    "displayName": "名称",
+    "collectedAt": "采集时间",
+    "deviceType": "设备类型",
+    "screenWidth": "屏幕宽度",
+    "screenScale": "屏幕缩放",
+    "systemName": "系统名称",
+    "screenHeight": "屏幕高度",
+    "timeZone": "时区",
+    "model": "型号",
+    "systemVersion": "系统版本",
+    "batteryLevel": "电量",
+    "notification": "通知",
+    "location": "位置",
+    "bluetooth": "蓝牙",
+    "network": "网络",
+    "noData": "暂无数据"
+  },
   "CardList": "卡列表"
 }
