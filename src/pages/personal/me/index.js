@@ -1,13 +1,17 @@
-import { List, ListItem, Typography, Box } from '@mui/material';
+import { List, ListItem, ListItemIcon, Typography, Box, SvgIcon } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Buffer } from 'buffer';
 import EditableText from '@/components/EditableText';
 import { biz3utils } from '@/utils/biz3utils';
 import MobileQRCodeDialog from '@/components/MobileQRCodeDialog';
+import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
 
 const Me = () => {
   const { gStripe, gManageEmployee, gMediaType } = useContext(GlobalStateContext);
+  const navigate = useNavigate();
   const [currentUserInfo, setCurrentUserInfo] = useState({});
   const [dataURL, setDataURL] = useState('');
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
@@ -17,23 +21,42 @@ const Me = () => {
   const infoItem = {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: gMediaType.isMobile ? 'space-between' : 'flex-start',
+    justifyContent: 'space-between',
   };
 
   const title = {
-    width: '180px',
+    flexShrink: 0,
+    marginRight: '16px',
   };
 
   const content = {
     display: 'flex',
-    justifyContent: 'flex-start',
-    flex: gMediaType.isMobile ? 'none' : '1',
-    marginLeft: gMediaType.isMobile ? 'auto' : '0',
   };
 
   const fetchCurrentUserInfo = async () => {
     gManageEmployee.getCurrentUserInfo((res) => {
       setCurrentUserInfo(res.data);
+    });
+  };
+
+  const getLoginValue = (login, key) => {
+    const found = (login || []).find((item) => item && key in item);
+    return found ? found[key] : undefined;
+  };
+
+  const recentLogins = (currentUserInfo.recentLogins || [])
+    .map((item) => JSON.parse(item))
+    .sort((a, b) => new Date(getLoginValue(b, 'collectedAt')) - new Date(getLoginValue(a, 'collectedAt')));
+
+  const openLoginDetail = (login) => {
+    // 将单键对象数组合并成一个对象，复用 env-snapshot 详情页
+    const data = Buffer.from(JSON.stringify(login), 'utf8').toString('base64');
+    const url = new URL(window.location.href);
+    url.pathname = '/biz/history/env-snapshot';
+    url.searchParams.set('data', data);
+    navigate({
+      pathname: url.pathname,
+      search: url.searchParams.toString(),
     });
   };
 
@@ -46,7 +69,7 @@ const Me = () => {
   }, []);
 
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
       <List
         sx={{
           '> .css-1samsxy-MuiListItem-root': {
@@ -81,7 +104,18 @@ const Me = () => {
 
         <ListItem sx={{ ...infoItem }}>
           <Typography sx={{ ...title }}>{'sub UUID'}</Typography>
-          <Box sx={{ ...content }}>{currentUserInfo.sub}</Box>
+          <Typography
+            sx={{
+              ...content,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+              minWidth: 0,
+            }}
+          >
+            {currentUserInfo.sub}
+          </Typography>
         </ListItem>
 
         <ListItem sx={{ ...infoItem, alignItems: 'start' }}>
@@ -101,6 +135,25 @@ const Me = () => {
           </Box>
         </ListItem>
       </List>
+      <List sx={{ mt: 'auto' }}>
+        {recentLogins.map((login, index) => (
+          <ListItem
+            key={index}
+            onClick={() => openLoginDetail(login)}
+            sx={{ ...infoItem, justifyContent: 'space-between', cursor: 'pointer' }}
+          >
+            <Box>
+              <Typography>{getLoginValue(login, 'model')}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography sx={{ color: 'text.secondary' }}>{getLoginValue(login, 'collectedAt')}</Typography>
+              <ListItemIcon sx={{ minWidth: 'auto' }}>
+                <SvgIcon component={SvgArrow} />
+              </ListItemIcon>
+            </Box>
+          </ListItem>
+        ))}
+      </List>
       <MobileQRCodeDialog
         open={qrDialogOpen}
         qrCodeUrl={dataURL}
@@ -108,7 +161,7 @@ const Me = () => {
         userName={currentUserInfo.name || gStripe.customerInfo.employeeName}
         onClose={() => setQrDialogOpen(false)}
       />
-    </>
+    </Box>
   );
 };
 

@@ -386,7 +386,7 @@ const Layout = () => {
               marginTop: isFromApp ? 0 : headerHeight,
               marginLeft: isMobile || isFromApp ? '0' : menuWidth,
               width: isMobile || isFromApp ? '100%' : `calc(100% - ${menuWidth})`,
-              height: '100vh',
+              height: isFromApp ? '100vh' : `calc(100vh - ${headerHeight})`,
             }}
           >
             <Outlet />
