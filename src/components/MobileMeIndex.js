@@ -232,17 +232,17 @@ const MobileMeIndex = () => {
         <ListItem onClick={handleShopClick}>
           <ListItemText
             primary={
-              <Box component="span" sx={{ position: 'relative', display: 'inline-block', pr: '10px' }}>
+              <Box component="span" sx={{ position: 'relative', display: 'inline-block', pr: '24px' }}>
                 {t('setting.shop')}
                 {activePromotion?.visible && (
                   <Box
                     component="span"
                     sx={{
                       position: 'absolute',
-                      top: '2px',
-                      right: 0,
-                      width: '7px',
-                      height: '7px',
+                      top: '-4px',
+                      right: '2px',
+                      width: '20px',
+                      height: '20px',
                       borderRadius: '50%',
                       bgcolor: '#f44336',
                     }}
