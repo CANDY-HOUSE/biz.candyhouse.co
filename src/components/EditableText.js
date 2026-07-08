@@ -141,6 +141,7 @@ const EditableText = ({ style = null, initialValue = '', placeHolder = '', onSav
             cursor: isEditing ? 'text' : 'pointer',
             padding: '8px',
             paddingLeft: 0,
+            paddingRight: 0,
             display: 'flex',
             alignItems: 'center',
             ...style,

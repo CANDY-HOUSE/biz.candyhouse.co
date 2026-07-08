@@ -1,6 +1,6 @@
-import { List, ListItem, ListItemIcon, Typography, Box, SvgIcon } from '@mui/material';
+import { List, ListItem, ListItemIcon, Typography, Box, SvgIcon, Divider } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Buffer } from 'buffer';
 import EditableText from '@/components/EditableText';
@@ -96,12 +96,12 @@ const Me = () => {
             />
           </Box>
         </ListItem>
-
+        <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem sx={{ ...infoItem }}>
           <Typography sx={{ ...title }}>{t('pages.login.Email')}</Typography>
           <Box sx={{ ...content }}>{currentUserInfo.email}</Box>
         </ListItem>
-
+        <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem sx={{ ...infoItem }}>
           <Typography sx={{ ...title }}>{'sub UUID'}</Typography>
           <Typography
@@ -117,7 +117,7 @@ const Me = () => {
             {currentUserInfo.sub}
           </Typography>
         </ListItem>
-
+        <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem sx={{ ...infoItem, alignItems: 'start' }}>
           <Typography sx={{ ...title }}>{t('deviceMember.qr')}</Typography>
           <Box sx={{ ...content }}>
@@ -135,23 +135,26 @@ const Me = () => {
           </Box>
         </ListItem>
       </List>
-      <List sx={{ mt: 'auto' }}>
+      <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
+      <List>
         {recentLogins.map((login, index) => (
-          <ListItem
-            key={index}
-            onClick={() => openLoginDetail(login)}
-            sx={{ ...infoItem, justifyContent: 'space-between', cursor: 'pointer' }}
-          >
-            <Box>
-              <Typography>{getLoginValue(login, 'model')}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography sx={{ color: 'text.secondary' }}>{getLoginValue(login, 'collectedAt')}</Typography>
-              <ListItemIcon sx={{ minWidth: 'auto' }}>
-                <SvgIcon component={SvgArrow} />
-              </ListItemIcon>
-            </Box>
-          </ListItem>
+          <Fragment key={index}>
+            <ListItem
+              onClick={() => openLoginDetail(login)}
+              sx={{ ...infoItem, justifyContent: 'space-between', cursor: 'pointer' }}
+            >
+              <Box>
+                <Typography>{getLoginValue(login, 'model')}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ color: 'text.secondary' }}>{getLoginValue(login, 'collectedAt')}</Typography>
+                <ListItemIcon sx={{ minWidth: 'auto' }}>
+                  <SvgIcon component={SvgArrow} />
+                </ListItemIcon>
+              </Box>
+            </ListItem>
+            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          </Fragment>
         ))}
       </List>
       <MobileQRCodeDialog
