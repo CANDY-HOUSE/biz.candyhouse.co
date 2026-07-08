@@ -153,7 +153,7 @@ const Me = () => {
                 </ListItemIcon>
               </Box>
             </ListItem>
-            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            {index < recentLogins.length - 1 && <Divider variant="middle" sx={{ opacity: 0.4 }} />}
           </Fragment>
         ))}
       </List>
