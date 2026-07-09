@@ -231,6 +231,7 @@
     "displayName": "Name",
     "collectedAt": "Collected At",
     "deviceType": "Device Type",
+    "cardType": "Card Type",
     "screenWidth": "Screen Width",
     "screenScale": "Screen Scale",
     "systemName": "System Name",

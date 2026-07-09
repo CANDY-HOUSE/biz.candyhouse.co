@@ -231,6 +231,7 @@
     "displayName": "名稱",
     "collectedAt": "採集時間",
     "deviceType": "裝置類型",
+    "cardType": "卡片類型",
     "screenWidth": "螢幕寬度",
     "screenScale": "螢幕縮放",
     "systemName": "系統名稱",

@@ -231,6 +231,7 @@
     "displayName": "名称",
     "collectedAt": "采集时间",
     "deviceType": "设备类型",
+    "cardType": "卡片类型",
     "screenWidth": "屏幕宽度",
     "screenScale": "屏幕缩放",
     "systemName": "系统名称",

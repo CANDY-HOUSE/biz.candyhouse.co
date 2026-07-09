@@ -231,6 +231,7 @@
     "displayName": "名前",
     "collectedAt": "取得日時",
     "deviceType": "デバイスタイプ",
+    "cardType": "カードタイプ",
     "screenWidth": "画面幅",
     "screenScale": "画面スケール",
     "systemName": "システム名",

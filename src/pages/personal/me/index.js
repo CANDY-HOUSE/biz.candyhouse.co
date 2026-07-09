@@ -136,7 +136,7 @@ const Me = () => {
         </ListItem>
       </List>
       <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-      <List>
+      <List disablePadding>
         {recentLogins.map((login, index) => (
           <Fragment key={index}>
             <ListItem

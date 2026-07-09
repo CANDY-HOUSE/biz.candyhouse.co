@@ -3,6 +3,7 @@ import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
+import { setEnvId } from '@/utils/envIdentity.js';
 
 const PubedEmployees = 'pubEmployees';
 export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
@@ -65,6 +66,11 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     (message) => {
       switch (message.op) {
         case 'get':
+          break;
+        case 'reportEnv':
+          if (message.success && message.data?.environmentId) {
+            setEnvId(message.data.environmentId);
+          }
           break;
         case PubedEmployees:
           const {

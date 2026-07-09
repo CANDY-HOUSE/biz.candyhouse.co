@@ -3,6 +3,7 @@ import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { useCallbacks } from '../hooks/useCallbacks.js';
 import { gUtils } from '@/utils/gUtils.js';
+import { collectEnvInfo, ensureIdentifyId, isEnvReportEnabled } from '@/utils/envIdentity.js';
 import { useSearchParams } from 'react-router-dom';
 
 const INIT_CUSTOMER = {
@@ -81,6 +82,17 @@ export const useStripeInfo = (gAuth) => {
     sendMessage(message);
   }, [isFromApp]);
 
+  // 上报 web 环境信息，后端据此维护账户的 envId 与最近登录列表（仅正式域名）
+  const reportEnv = useCallback(async () => {
+    if (isFromApp || !isEnvReportEnabled()) return;
+    sendMessage({
+      action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
+      op: 'reportEnv',
+      appIdentifyId: await ensureIdentifyId(),
+      env: collectEnvInfo(),
+    });
+  }, [isFromApp]);
+
   // 处理从 AWS API Gateway Hub3WebSocketAPI 响应的消息
   const handleBiz3GetCustomerInfoResponse = useCallback(
     (message) => {
@@ -92,9 +104,10 @@ export const useStripeInfo = (gAuth) => {
         setQuotasInfo(message.data.quotas);
         localStorage.setItem('curLogin', customerInfoData.companyID);
         getCompanies();
+        reportEnv(); // 拿到用户信息后再上报环境信息
       }
     },
-    [newTags, getCompanies]
+    [newTags, getCompanies, reportEnv]
   );
 
   const getCardList = useCallback(() => {

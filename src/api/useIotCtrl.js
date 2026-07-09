@@ -7,6 +7,7 @@ import { biz3utils } from '@/utils/biz3utils.js';
 import { Buffer } from 'buffer';
 import { gConfig } from '@constants/gConfig.js';
 import useOperateIoT from '@/hooks/useOperateIoT';
+import { getEnvId } from '@/utils/envIdentity.js';
 
 const PubedDeviceStateChange = 'pubDeviceStateChange';
 const PubedUserDeviceChange = 'pubUserDeviceChange';
@@ -36,7 +37,7 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
   const sendCommandToWM2 = useCallback(
     async ({ device_id, cmd = 88, sescretKey }) => {
       const sign = await Cmac.cmacTime(sescretKey);
-      const uuid = gStripe.customerInfo.subUUID;
+      const uuid = getEnvId() || gStripe.customerInfo.subUUID;
       const history = biz3utils.uuidBuffer(uuid);
       const msgData = {
         action: ACTION_TYPES.BIZ3_TRIGGER_LOCKER,
