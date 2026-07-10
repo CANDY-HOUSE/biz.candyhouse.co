@@ -156,7 +156,10 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
 
   const getPrimaryTitle = (item) => {
     const userName = item.history_tag
-      ? Buffer.from(item.history_tag, 'base64').toString('utf8')
+      ? Buffer.from(
+          typeof item.history_tag === 'object' ? Object.values(item.history_tag) : item.history_tag,
+          'base64'
+        ).toString('utf8')
       : CmHistoryExt.ManualContent({ type: item.type });
 
     // Bot2/Bot3 script history
