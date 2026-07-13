@@ -17,6 +17,7 @@ import { useNavigate, useSearchParams, createSearchParams } from 'react-router-d
 import { DataSearch } from '@/components/biz/device/DataSearch.js';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
+import { getRemoteSource } from '../utils/irRemoteUtils.js';
 
 export default function RemoteList() {
   const navigate = useNavigate();
@@ -332,6 +333,37 @@ export default function RemoteList() {
     [navigate, hub3DeviceId, irType, searchTerm, searchResults, saveSearchToCache]
   );
 
+  const renderRemoteItem = useCallback(
+    (item, key) => (
+      <ListItem
+        key={key}
+        onClick={() => handleItemClick(item)}
+        sx={{
+          py: 0.5,
+          px: 0,
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: 'action.hover',
+          },
+        }}
+      >
+        <ListItemText
+          primary={item.alias || item.model}
+          secondary={getRemoteSource(item, t)}
+          primaryTypographyProps={{
+            fontSize: '0.95rem',
+            color: 'text.primary',
+          }}
+          secondaryTypographyProps={{
+            fontSize: '0.8rem',
+            color: 'text.disabled',
+          }}
+        />
+      </ListItem>
+    ),
+    [handleItemClick, t]
+  );
+
   const handleReturn = () => {
     localStorage.removeItem(formRemoteControlKey);
     localStorage.removeItem(`${cacheKey}_search`);
@@ -445,33 +477,7 @@ export default function RemoteList() {
               </Box>
             ) : isSearchingMode ? (
               <List disablePadding>
-                {displayData.map((item, index) => (
-                  <ListItem
-                    key={`search-${`${item.alias}-${index}`}`}
-                    onClick={() => handleItemClick(item)}
-                    sx={{
-                      py: 0.5,
-                      px: 0,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      },
-                    }}
-                  >
-                    <ListItemText
-                      primary={item.alias || item.model}
-                      secondary={item.model && item.alias !== item.model ? item.model : undefined}
-                      primaryTypographyProps={{
-                        fontSize: '0.95rem',
-                        color: 'text.primary',
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        color: 'text.secondary',
-                      }}
-                    />
-                  </ListItem>
-                ))}
+                {displayData.map((item, index) => renderRemoteItem(item, `search-${item.alias}-${index}`))}
               </List>
             ) : (
               <>
@@ -492,28 +498,9 @@ export default function RemoteList() {
                     </Typography>
 
                     <List disablePadding>
-                      {groupedData[letter].map((item, _index) => (
-                        <ListItem
-                          key={`${letter}-${item.alias}-${item.index}`}
-                          onClick={() => handleItemClick(item)}
-                          sx={{
-                            py: 1.0,
-                            px: 0,
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: 'action.hover',
-                            },
-                          }}
-                        >
-                          <ListItemText
-                            primary={item.alias}
-                            primaryTypographyProps={{
-                              fontSize: '0.95rem',
-                              color: 'text.primary',
-                            }}
-                          />
-                        </ListItem>
-                      ))}
+                      {groupedData[letter].map((item, _index) =>
+                        renderRemoteItem(item, `${letter}-${item.alias}-${item.index}`)
+                      )}
                     </List>
                   </Box>
                 ))}

@@ -159,7 +159,10 @@
         "tv": "TV",
         "light": "Light",
         "fan": "Fan",
-        "learn": "Learn"
+        "learn": "Learn",
+        "fromHXD": "From HXD",
+        "fromIRremoteESP8266": "From IRremoteESP8266",
+        "fromSB": "From SB"
       }
     }
   },

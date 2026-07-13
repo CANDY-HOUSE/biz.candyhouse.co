@@ -159,7 +159,10 @@
         "tv": "テレビ",
         "light": "照明",
         "fan": "扇風機",
-        "learn": "学習"
+        "learn": "学習",
+        "fromHXD": "提供元: HXD",
+        "fromIRremoteESP8266": "提供元: IRremoteESP8266",
+        "fromSB": "提供元: SB"
       }
     }
   },

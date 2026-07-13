@@ -7,6 +7,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { HXDParametersSwapper } from '../utils/HXDParametersSwapper';
 import { HXDCommandProcessor } from '../utils/HXDCommandProcessor';
+import { getRemoteSource } from '../utils/irRemoteUtils.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import EditableText from '@/components/EditableText.js';
 import { useTranslation } from 'react-i18next';
@@ -799,7 +800,7 @@ const RemoteAir = () => {
               fontSize: '0.7rem',
             }}
           >
-            {remote?.code >= 10000 ? `IRremoteESP8266 ${remote?.alias}` : `HXD ${remote?.alias}`}
+            {`${getRemoteSource(remote, t)} ${remote?.alias ?? ''}`}
           </Typography>
         </Box>
       </CardContent>

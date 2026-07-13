@@ -159,7 +159,10 @@
         "tv": "电视",
         "light": "照明灯",
         "fan": "风扇",
-        "learn": "学习"
+        "learn": "学习",
+        "fromHXD": "来自 HXD",
+        "fromIRremoteESP8266": "来自 IRremoteESP8266",
+        "fromSB": "来自 SB"
       }
     }
   },
