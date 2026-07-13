@@ -221,6 +221,22 @@
   "developer": {
     "ForDeveloper": "開發者"
   },
+  "factoryInfo": {
+    "title": "工廠資訊",
+    "labelStatus": "標籤狀態",
+    "materialCode": "物料編碼",
+    "materialDesc": "物料描述",
+    "packageStatus": "包裝狀態",
+    "printOperator": "列印操作員",
+    "printTime": "列印時間",
+    "productionOrderNo": "生產訂單號",
+    "scrapOperator": "報廢操作員",
+    "scrapTime": "報廢時間",
+    "workOrderNo": "工單號",
+    "avgCurrent": "平均電流",
+    "maxCurrent": "最大電流",
+    "testResult": "測試結果"
+  },
   "envSnapshot": {
     "title": "環境快照",
     "bundleId": "應用包名",

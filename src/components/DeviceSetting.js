@@ -4,7 +4,7 @@ import { Box, Divider, List, ListItem, ListItemText, Typography, Switch, SvgIcon
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import MobileRemoveDevice from './MobileRemoveDevice';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import BatteryPercent from './biz/device/BatteryPercent';
 import UpgradeFirmware from './biz/device/UpgradeFirmware';
@@ -33,6 +33,13 @@ export default function DeviceSetting({ showBack = true }) {
       open: true,
       msg: 'Coming soon',
       severity: 'info',
+    });
+  };
+
+  const openFactoryInfo = () => {
+    navigate({
+      pathname: '/device-setting/factory-info',
+      search: createSearchParams({ deviceUUID: did, deviceName: currentDevice.deviceName || deviceName }).toString(),
     });
   };
 
@@ -192,7 +199,7 @@ export default function DeviceSetting({ showBack = true }) {
             <Divider variant="middle" sx={{ opacity: 0.4 }} />
           </>
         )}
-        <ListItem>
+        <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
           <ListItemText primary="UUID" />
           <Typography
             sx={{
@@ -204,6 +211,7 @@ export default function DeviceSetting({ showBack = true }) {
           >
             {did}
           </Typography>
+          <SvgIcon component={SvgArrow} />
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {gUtils.isShowType(deviceModel, gConfig.sesameTouchProAuthType.face) && (

@@ -21,6 +21,7 @@ import DeviceGroupItem from '@biz/devices/group-item/DeviceGroupItem';
 import GroupShare from '@biz/devices/group-share/GroupShare';
 import DeviceGroup from '@biz/devices/group/DeviceGroup';
 import DeviceItem from '@biz/devices/list-item/DeviceItem';
+import FactoryInfoDetail from '@biz/devices/factory-info';
 import EmployeeGroupItem from '@biz/employees/group-item/EmployeeGroupItem';
 import EmployeeGroups from '@biz/employees/group/EmployeeGroups';
 import EmployeeItem from '@biz/employees/list-item/EmployeeItem';
@@ -153,6 +154,7 @@ const routerComponentMap = [
       { router: 'rename', component: SesameMobileDeviceModifyName },
       { router: 'share', component: SesameMobileDeviceShareQRCode },
       { router: 'battery-trend', component: SesameMobileBatteryChart },
+      { router: 'factory-info', component: FactoryInfoDetail },
     ],
     load: true,
   },

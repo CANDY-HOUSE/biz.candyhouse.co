@@ -221,6 +221,22 @@
   "developer": {
     "ForDeveloper": "For Developer"
   },
+  "factoryInfo": {
+    "title": "Factory Info",
+    "labelStatus": "Label Status",
+    "materialCode": "Material Code",
+    "materialDesc": "Material Desc",
+    "packageStatus": "Package Status",
+    "printOperator": "Print Operator",
+    "printTime": "Print Time",
+    "productionOrderNo": "Production Order No",
+    "scrapOperator": "Scrap Operator",
+    "scrapTime": "Scrap Time",
+    "workOrderNo": "Work Order No",
+    "avgCurrent": "Avg Current",
+    "maxCurrent": "Max Current",
+    "testResult": "Test Result"
+  },
   "envSnapshot": {
     "title": "Environment Snapshot",
     "bundleId": "Bundle ID",

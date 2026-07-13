@@ -221,6 +221,22 @@
   "developer": {
     "ForDeveloper": "開発者向け"
   },
+  "factoryInfo": {
+    "title": "工場情報",
+    "labelStatus": "ラベル状態",
+    "materialCode": "部材コード",
+    "materialDesc": "部材説明",
+    "packageStatus": "梱包状態",
+    "printOperator": "印刷担当者",
+    "printTime": "印刷時間",
+    "productionOrderNo": "製造オーダー番号",
+    "scrapOperator": "廃棄担当者",
+    "scrapTime": "廃棄時間",
+    "workOrderNo": "作業指示番号",
+    "avgCurrent": "平均電流",
+    "maxCurrent": "最大電流",
+    "testResult": "テスト結果"
+  },
   "envSnapshot": {
     "title": "環境スナップショット",
     "bundleId": "バンドルID",

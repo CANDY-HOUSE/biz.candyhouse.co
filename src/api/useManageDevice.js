@@ -384,6 +384,20 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     [sendMessage, gStripe.isFromApp]
   );
 
+  const getFactoryInfo = useCallback(
+    (deviceUUID, cb) => {
+      if (!deviceUUID) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
+        deviceUUID,
+        op: 'getFactoryInfo',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [registerCallback]
+  );
+
   return {
     companyDevices,
     getCompanyDevices,
@@ -407,5 +421,6 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     switchRechargebleBattery,
     deviceStatus,
     getDeviceStatus,
+    getFactoryInfo,
   };
 };

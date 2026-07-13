@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CheckCircleOutline,
   Error,
@@ -57,6 +57,14 @@ const MobileWifiModule = () => {
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
   const [isHub3LTE, setIsHub3LTE] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_lte);
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const openFactoryInfo = () => {
+    navigate({
+      pathname: '/device-setting/factory-info',
+      search: createSearchParams({ deviceUUID: did, deviceName: currentDevice.deviceName || '' }).toString(),
+    });
+  };
 
   const currentDevice = useMemo(() => {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
@@ -422,7 +430,7 @@ const MobileWifiModule = () => {
           </ListItem>
         )}
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem>
+        <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.UUID')} />
           <Typography
             sx={{
@@ -436,6 +444,7 @@ const MobileWifiModule = () => {
           >
             {did}
           </Typography>
+          <SvgIcon component={SvgArrow} />
         </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
