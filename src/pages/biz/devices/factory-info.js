@@ -29,9 +29,10 @@ const flattenFactoryInfo = (data) => {
 const FactoryInfoDetail = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { gStripe, gManageDevice } = useContext(GlobalStateContext);
+  const { gManageDevice } = useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
   const deviceUUID = searchParams.get('deviceUUID');
+  const isFromApp = searchParams.get('fromType') === 'app';
 
   const [rows, setRows] = useState([]);
 
@@ -48,7 +49,7 @@ const FactoryInfoDetail = () => {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper' }}>
-      {!gStripe.isFromApp && (
+      {!isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
           <IconButton onClick={() => navigate(-1)} disableRipple>
             <KeyboardArrowLeftIcon sx={{ ml: -2 }} />

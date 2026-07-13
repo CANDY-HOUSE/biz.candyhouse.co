@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CheckCircleOutline,
   Error,
@@ -60,9 +60,13 @@ const MobileWifiModule = () => {
   const navigate = useNavigate();
 
   const openFactoryInfo = () => {
+    const url = new URL(window.location.href);
+    const newSearchParams = new URLSearchParams(url.searchParams);
+    newSearchParams.set('deviceUUID', did);
+    newSearchParams.set('deviceName', currentDevice.deviceName || '');
     navigate({
       pathname: '/device-setting/factory-info',
-      search: createSearchParams({ deviceUUID: did, deviceName: currentDevice.deviceName || '' }).toString(),
+      search: newSearchParams.toString(),
     });
   };
 

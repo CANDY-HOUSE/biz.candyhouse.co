@@ -4,7 +4,7 @@ import { Box, Divider, List, ListItem, ListItemText, Typography, Switch, SvgIcon
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import MobileRemoveDevice from './MobileRemoveDevice';
-import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import BatteryPercent from './biz/device/BatteryPercent';
 import UpgradeFirmware from './biz/device/UpgradeFirmware';
@@ -37,9 +37,13 @@ export default function DeviceSetting({ showBack = true }) {
   };
 
   const openFactoryInfo = () => {
+    const url = new URL(window.location.href);
+    const newSearchParams = new URLSearchParams(url.searchParams);
+    newSearchParams.set('deviceUUID', did);
+    newSearchParams.set('deviceName', currentDevice.deviceName || deviceName);
     navigate({
       pathname: '/device-setting/factory-info',
-      search: createSearchParams({ deviceUUID: did, deviceName: currentDevice.deviceName || deviceName }).toString(),
+      search: newSearchParams.toString(),
     });
   };
 
