@@ -140,6 +140,7 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     registerIotCallback(gConfig.cmdCode.ssmOSUpdate, (iotDeviceUUID, data) => {
       console.log('ssmOSUpdate callback data: ', iotDeviceUUID, data);
       const { progress, versionTag = '', UUID = '' } = data;
+      if (UUID !== currentDevice.deviceUUID) return;
       if (versionTag) {
         const targetDeviceUUID = UUID || currentDevice.deviceUUID;
         gManageDevice.setCompanyDevices((prevDevices) =>
