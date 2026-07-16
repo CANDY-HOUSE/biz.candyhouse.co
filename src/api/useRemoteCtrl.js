@@ -32,6 +32,10 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
 
     if (!message.success) {
       console.log('Remote request error:', message.message);
+      if (message.code === 406) {
+        // 对于 406 错误，直接返回，静默处理：sb数据某些操作可能为空
+        return;
+      }
       setSnackbarValue({
         open: true,
         msg: message.message || 'リモコンリストの取得に失敗しました。',
