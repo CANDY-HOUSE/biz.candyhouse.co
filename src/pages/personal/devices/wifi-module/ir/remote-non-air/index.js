@@ -167,11 +167,6 @@ const RemoteNonAir = () => {
           }
         } else {
           console.error('IR code send failed:', response.message);
-          setSnackbarValue({
-            open: true,
-            msg: t('pages.ir.remote.sendFail'),
-            severity: 'error',
-          });
         }
       });
     } catch (error) {

@@ -6,6 +6,31 @@ import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils.js';
 
+// 红外遥控器相关的后台操作类型，统一在此声明，避免字符串散落各处
+const IR_OPS = {
+  getRemoteList: 'getRemoteList',
+  searchRemoteList: 'searchRemoteList',
+  sendIR: 'sendIR',
+  updateRemoteState: 'updateRemoteState',
+  addIRRemote: 'addIRRemote',
+  deleteIRRemote: 'deleteIRRemote',
+  updateRemoteAlias: 'updateRemoteAlias',
+  getIRMode: 'getIRMode',
+  setIRMode: 'setIRMode',
+  subscribeIRMode: 'subscribeIRMode',
+  subscribeIRModeRsp: 'subscribeIRModeRsp',
+  subscribeIRData: 'subscribeIRData',
+  subscribeIRDataRsp: 'subscribeIRDataRsp',
+  unsubscribeIRMode: 'unsubscribeIRMode',
+  unsubscribeIRData: 'unsubscribeIRData',
+  matchRemote: 'matchRemote',
+  getIRCodes: 'getIRCodes',
+  addIRCode: 'addIRCode',
+  updateIRCode: 'updateIRCode',
+  deleteIRCode: 'deleteIRCode',
+  addRemoteToMatter: 'addRemoteToMatter',
+};
+
 export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
   const [remoteList, setRemoteList] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -44,7 +69,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
     }
 
     switch (message.op) {
-      case 'getRemoteList':
+      case IR_OPS.getRemoteList:
         const responseData = message.data || {};
         const list = responseData.data || [];
         const paginationInfo = responseData.pagination || {};
@@ -60,13 +85,13 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'searchRemoteList':
+      case IR_OPS.searchRemoteList:
         const searchResponseData = message.data || {};
         const searchList = searchResponseData.data || [];
         console.log('search list len:', searchList.length);
         setSearchResults(searchList);
         break;
-      case 'sendIR':
+      case IR_OPS.sendIR:
         if (message.success) {
           setSnackbarValue({
             open: true,
@@ -83,7 +108,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'updateRemoteState':
+      case IR_OPS.updateRemoteState:
         if (message.success) {
           console.log('device state update success:', message.data);
         } else {
@@ -91,7 +116,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'addIRRemote':
+      case IR_OPS.addIRRemote:
         if (message.success) {
           console.log('infrared remote control saved successfully:', message.data);
         } else {
@@ -99,7 +124,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'deleteIRRemote':
+      case IR_OPS.deleteIRRemote:
         if (message.success) {
           console.log('infrared remote control deleted successfully:', message.data);
         } else {
@@ -107,7 +132,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'updateRemoteAlias':
+      case IR_OPS.updateRemoteAlias:
         if (message.success) {
           console.log('device alias update success:', message.data);
         } else {
@@ -115,11 +140,11 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'getIRMode':
+      case IR_OPS.getIRMode:
         console.log('Received getIRMode response:', message.data);
         break;
 
-      case 'setIRMode':
+      case IR_OPS.setIRMode:
         if (message.success) {
           console.log('IR mode set successfully:', message.data);
         } else {
@@ -127,7 +152,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'subscribeIRMode':
+      case IR_OPS.subscribeIRMode:
         if (message.success) {
           console.log('IR mode subscription successful');
         } else {
@@ -135,17 +160,17 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'subscribeIRModeRsp':
+      case IR_OPS.subscribeIRModeRsp:
         console.log('Received subscribeIRModeRsp response:', message.data);
         handleIRModeSubscriptionResponse(message);
         break;
 
-      case 'subscribeIRDataRsp':
+      case IR_OPS.subscribeIRDataRsp:
         console.log('Received subscribeIRDataRsp response:', message.data);
         handleIRDataSubscriptionResponse(message);
         break;
 
-      case 'subscribeIRData':
+      case IR_OPS.subscribeIRData:
         console.log('Received subscribeIRData response:', message.data);
         if (message.success) {
           console.log('IR data subscription successful');
@@ -154,23 +179,23 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'unsubscribeIRMode':
+      case IR_OPS.unsubscribeIRMode:
         console.log('Received unsubscribeIRMode response:', message.data);
         break;
 
-      case 'unsubscribeIRData':
+      case IR_OPS.unsubscribeIRData:
         console.log('Received unsubscribeIRData response:', message.data);
         break;
 
-      case 'matchRemote':
+      case IR_OPS.matchRemote:
         console.log('Received matchRemote response:', message.data);
         break;
 
-      case 'getIRCodes':
+      case IR_OPS.getIRCodes:
         console.log('Received getIRCodes response:', message.data);
         break;
 
-      case 'addIRCode':
+      case IR_OPS.addIRCode:
         if (message.success) {
           console.log('infrared button added successfully:', message.data);
         } else {
@@ -183,7 +208,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'updateIRCode':
+      case IR_OPS.updateIRCode:
         if (message.success) {
           console.log('infrared button updated successfully:', message.data);
         } else {
@@ -196,7 +221,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'deleteIRCode':
+      case IR_OPS.deleteIRCode:
         if (message.success) {
           console.log('infrared button deleted successfully:', message.data);
         } else {
@@ -209,7 +234,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         }
         break;
 
-      case 'addRemoteToMatter':
+      case IR_OPS.addRemoteToMatter:
         if (message.success) {
           console.log('IR remote added to Matter successfully:', message.data);
         } else {
@@ -364,7 +389,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'getRemoteList',
+        op: IR_OPS.getRemoteList,
         type: type,
         companyID: companyID,
         pagination: {
@@ -407,7 +432,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'searchRemoteList',
+        op: IR_OPS.searchRemoteList,
         type: type,
         companyID: companyID,
         searchTerm: keyword.trim(),
@@ -470,7 +495,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'sendIR',
+        op: IR_OPS.sendIR,
         deviceId: deviceId,
         command: command,
         operation: operation,
@@ -501,7 +526,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'updateRemoteState',
+        op: IR_OPS.updateRemoteState,
         deviceId: hub3DeviceId,
         uuid: remoteId,
         state: state,
@@ -537,7 +562,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'addIRRemote',
+        op: IR_OPS.addIRRemote,
         remote: remoteDevice,
         companyID: companyID,
       };
@@ -563,7 +588,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'deleteIRRemote',
+        op: IR_OPS.deleteIRRemote,
         hub3DeviceId: hub3DeviceId,
         uuid: uuid,
         companyID: companyID,
@@ -591,7 +616,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'updateRemoteAlias',
+        op: IR_OPS.updateRemoteAlias,
         deviceId: hub3DeviceId,
         uuid: uuid,
         alias: alias,
@@ -619,7 +644,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'getIRMode',
+        op: IR_OPS.getIRMode,
         deviceId: deviceId,
         companyID: companyID,
       };
@@ -646,7 +671,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'setIRMode',
+        op: IR_OPS.setIRMode,
         deviceId: deviceId,
         mode: mode,
         companyID: companyID,
@@ -674,7 +699,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'subscribeIRMode',
+        op: IR_OPS.subscribeIRMode,
         topic: topic,
         deviceId: deviceId,
         companyID: companyID,
@@ -686,7 +711,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         setIrModeSubscriptions((prev) => new Map(prev.set(deviceId, cb)));
         console.log(`IR mode subscription callback registered - Device: ${deviceId}`);
       }
-      registerCallback(message.action, 'subscribeIRMode', (response) => {
+      registerCallback(message.action, IR_OPS.subscribeIRMode, (response) => {
         console.log('IR mode subscription confirmed:', response);
       });
     },
@@ -706,7 +731,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'subscribeIRData',
+        op: IR_OPS.subscribeIRData,
         topic: topic,
         deviceId: deviceId,
         companyID: companyID,
@@ -718,7 +743,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         setIrDataSubscriptions((prev) => new Map(prev.set(deviceId, cb)));
       }
 
-      registerCallback(message.action, 'subscribeIRData', (_response) => {});
+      registerCallback(message.action, IR_OPS.subscribeIRData, (_response) => {});
     },
     [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
   );
@@ -741,7 +766,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'unsubscribeIRMode',
+        op: IR_OPS.unsubscribeIRMode,
         deviceId: deviceId,
         topic: topic,
         companyID: companyID,
@@ -769,7 +794,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'unsubscribeIRData',
+        op: IR_OPS.unsubscribeIRData,
         deviceId: deviceId,
         topic: topic,
         companyID: companyID,
@@ -792,7 +817,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'matchRemote',
+        op: IR_OPS.matchRemote,
         irData: irData,
         irWaveLength: irData.length / 2,
         irType: irType,
@@ -823,7 +848,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'getIRCodes',
+        op: IR_OPS.getIRCodes,
         hub3DeviceId: hub3DeviceId,
         remoteId: remoteId,
         companyID: companyID,
@@ -850,7 +875,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'addIRCode',
+        op: IR_OPS.addIRCode,
         irCode: irCode,
         companyID: companyID,
       };
@@ -879,7 +904,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'updateIRCode',
+        op: IR_OPS.updateIRCode,
         hub3DeviceId: hub3DeviceId,
         remoteId: remoteId,
         keyUUID: keyId,
@@ -910,7 +935,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'deleteIRCode',
+        op: IR_OPS.deleteIRCode,
         hub3DeviceId: hub3DeviceId,
         remoteId: remoteId,
         keyUUID: keyUUID,
@@ -939,7 +964,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       const companyID = gStripe.customerInfo.companyID;
       const message = {
         action: ACTION_TYPES.BIZ3_IR_REMOTE,
-        op: 'addRemoteToMatter',
+        op: IR_OPS.addRemoteToMatter,
         hub3DeviceId: hub3DeviceId,
         irDeviceType: irRemote.type,
         cmdOn: onCommand,
