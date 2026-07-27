@@ -62,7 +62,8 @@
         "LockWithOpenSensor": "開門感應器上鎖",
         "AutoLockCountdown": "自動上鎖倒數計時",
         "SiriCustomPhrase": "Siri 自訂短語",
-        "connectedIRDevices": "已連接設備"
+        "connectedIRDevices": "已連接設備",
+        "LoadEarlier": "<< 更早"
       },
       "event": {
         "manualLock": "手轉上鎖",

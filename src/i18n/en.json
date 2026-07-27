@@ -62,7 +62,8 @@
         "LockWithOpenSensor": "Lock with Open Sensor",
         "AutoLockCountdown": "Auto Lock Countdown",
         "SiriCustomPhrase": "Siri Custom Phrase",
-        "connectedIRDevices": "Connected to Sesame IR Device"
+        "connectedIRDevices": "Connected to Sesame IR Device",
+        "LoadEarlier": "<< Earlier"
       },
       "event": {
         "manualLock": "Manually Locked",

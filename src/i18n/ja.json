@@ -62,7 +62,8 @@
         "LockWithOpenSensor": "オープンセンサーで施錠",
         "AutoLockCountdown": "タイマー式のオートロック",
         "SiriCustomPhrase": "Siri音声コマンド",
-        "connectedIRDevices": "追加済みのデバイス"
+        "connectedIRDevices": "追加済みのデバイス",
+        "LoadEarlier": "<< 以前"
       },
       "event": {
         "manualLock": "手動施錠",

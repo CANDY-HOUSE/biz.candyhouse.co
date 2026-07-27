@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, Box, ToggleButtonGroup, ToggleButton, IconButton, Popper } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +16,7 @@ const MobileBatteryTrendChart = ({
   xAxisDataKey = 'time',
   height = 400,
   onLoadMore,
+  lastKey,
   onDeleteItemPress, // 回调函数
   showDeleteButton = false, // 是否显示删除按钮
   isMenuOpen = false,
@@ -23,9 +25,8 @@ const MobileBatteryTrendChart = ({
   const { t } = useTranslation();
   const [brushStartIndex, setBrushStartIndex] = useState(0);
   const [brushEndIndex, setBrushEndIndex] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const containerRef = useRef(null);
-  const startXRef = useRef(0);
-  const isDraggingRef = useRef(false);
   const activePayloadRef = useRef(null); // 存储当前激活的数据点
   const virtualAnchorRef = useRef({
     getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
@@ -82,69 +83,33 @@ const MobileBatteryTrendChart = ({
   useEffect(() => {
     setBrushStartIndex(0);
     setBrushEndIndex(chartData.length - 1);
+    setTimeout(() => {
+      setLoadingMore(false);
+    }, 500);
   }, [chartData]);
 
-  // 拖拽加载更多逻辑（支持鼠标和触摸）
+  const handleLoadMore = (e) => {
+    e.stopPropagation();
+    if (!onLoadMore) return;
+    setLoadingMore(true);
+    onLoadMore();
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
-    const handleStart = (clientX, e) => {
-      isDraggingRef.current = true;
-      startXRef.current = clientX;
-
-      const isMouseEvent = e?.type === 'mousedown';
-
-      if (enablePressDeleteTrigger && isMouseEvent && onDeleteItemPress && activePayloadRef.current) {
-        isDraggingRef.current = false;
+    const handleMouseDown = (e) => {
+      if (e.target?.closest?.('.recharts-brush') || e.target?.closest?.('[data-loadmore-button]')) return;
+      if (enablePressDeleteTrigger && onDeleteItemPress && activePayloadRef.current) {
         setIsTooltipLocked(true);
         onDeleteItemPress(activePayloadRef.current);
-        return;
       }
     };
-
-    const handleMove = (clientX) => {
-      if (!isDraggingRef.current) return;
-      const deltaX = clientX - startXRef.current;
-      // 向右拖拽超过阈值（50px）触发加载更多
-      if (deltaX > 50 && brushStartIndex === 0) {
-        isDraggingRef.current = false;
-        if (onLoadMore) {
-          onLoadMore();
-        }
-      }
-    };
-
-    const handleEnd = () => {
-      isDraggingRef.current = false;
-    };
-
-    // 鼠标事件
-    const handleMouseDown = (e) => handleStart(e.clientX, e);
-    const handleMouseMove = (e) => handleMove(e.clientX);
-    const handleMouseUp = () => handleEnd();
-
-    // 触摸事件
-    const handleTouchStart = (e) => handleStart(e.touches[0].clientX, e);
-    const handleTouchMove = (e) => handleMove(e.touches[0].clientX);
-    const handleTouchEnd = () => handleEnd();
-
     container.addEventListener('mousedown', handleMouseDown);
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove);
-    container.addEventListener('touchend', handleTouchEnd);
-
     return () => {
       container.removeEventListener('mousedown', handleMouseDown);
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseup', handleMouseUp);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [brushStartIndex, onLoadMore, onDeleteItemPress]);
+  }, [enablePressDeleteTrigger, onDeleteItemPress]);
 
   const formatXAxis = (value) => {
     if (value && typeof value === 'string') {
@@ -440,10 +405,10 @@ const MobileBatteryTrendChart = ({
           fill: #666;
         }
         .recharts-layer .recharts-brush-texts text:first-child {
-          transform: translate(50px, -24px);
+          transform: translate(55px, -24px);
         }
         .recharts-layer .recharts-brush-texts text:last-child {
-          transform: translate(-50px, -24px);
+          transform: translate(-55px, -24px);
         }
         .recharts-wrapper {
           user-select: none;
@@ -456,9 +421,45 @@ const MobileBatteryTrendChart = ({
       </style>
       <Card sx={{ p: 0 }}>
         <ChartHeader />
-        <div ref={containerRef} style={{ touchAction: 'pan-y' }}>
+        <div ref={containerRef} style={{ touchAction: 'pan-y', position: 'relative' }}>
+          {onLoadMore && (
+            <Box
+              data-loadmore-button="true"
+              sx={{
+                position: 'absolute',
+                left: 0,
+                top: chartInnerHeight - 45,
+                zIndex: 2,
+              }}
+            >
+              <LoadingButton
+                loading={loadingMore}
+                disabled={!lastKey}
+                disableElevation
+                size="small"
+                variant="outlined"
+                onClick={handleLoadMore}
+                sx={{
+                  height: 30,
+                  minWidth: 56,
+                  p: 0,
+                  fontSize: 12,
+                  whiteSpace: 'nowrap',
+                  borderRadius: 0,
+                  color: '#28aeb1',
+                  borderColor: '#28aeb1',
+                }}
+              >
+                {t('pages.sesameAccessControlDevice.index.LoadEarlier')}
+              </LoadingButton>
+            </Box>
+          )}
           <ResponsiveContainer width="100%" height={chartInnerHeight}>
-            <LineChart key={`${yAxisUnit}-${chartResetKey}`} data={dataSource.main}>
+            <LineChart
+              key={`${yAxisUnit}-${chartResetKey}`}
+              data={dataSource.main}
+              margin={{ left: 20, right: 0, top: 0, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis
                 dataKey={xAxisDataKey}
@@ -498,8 +499,9 @@ const MobileBatteryTrendChart = ({
               />
               <Brush
                 dataKey={xAxisDataKey}
+                alwaysShowText
                 height={30}
-                stroke="lightgray"
+                stroke="#28aeb1"
                 travellerWidth={20}
                 startIndex={brushStartIndex}
                 endIndex={brushEndIndex}

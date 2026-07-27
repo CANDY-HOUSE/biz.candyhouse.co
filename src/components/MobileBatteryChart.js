@@ -153,6 +153,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
         <MobileBatteryTrendChart
           showDeleteButton={gMediaType.isMobile}
           chartData={chartData}
+          lastKey={lastKey}
           onLoadMore={() => {
             lastKey && getBatteryRecord(lastKey);
           }}
