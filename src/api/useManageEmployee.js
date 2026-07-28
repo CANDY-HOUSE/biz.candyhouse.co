@@ -109,6 +109,10 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
           getEmployees();
           break;
         case 'delete':
+          if (!message.success) {
+            setSnackbarValue({ open: true, msg: message.message });
+            return;
+          }
           getEmployees();
           break;
         default:
