@@ -320,13 +320,10 @@ const canNFCCardControl = (model) => {
     gConfig.sesameDeviceModel.ssm_touch_pro,
     gConfig.sesameDeviceModel.sesame_face,
     gConfig.sesameDeviceModel.sesame_face_pro,
-    gConfig.sesameDeviceModel.sesame_face_ai,
-    gConfig.sesameDeviceModel.sesame_face_pro_ai,
     gConfig.sesameDeviceModel.ssm_touch_2,
     gConfig.sesameDeviceModel.ssm_touch_2_pro,
     gConfig.sesameDeviceModel.sesame_face_2,
     gConfig.sesameDeviceModel.sesame_face_2_pro,
-    gConfig.sesameDeviceModel.sesame_face_2_pro_ai,
   ];
   return targetDeviceModels.indexOf(model) !== -1;
 };
@@ -356,6 +353,7 @@ const canFaceControl = (model) => {
     gConfig.sesameDeviceModel.sesame_face_2,
     gConfig.sesameDeviceModel.sesame_face_2_pro,
     gConfig.sesameDeviceModel.sesame_face_2_ai,
+    gConfig.sesameDeviceModel.sesame_face_2_pro_ai,
   ];
   return targetDeviceModels.indexOf(model) !== -1;
 };
