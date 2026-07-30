@@ -731,6 +731,7 @@ const RemoteLearn = () => {
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
+          overflowX: 'hidden',
           padding: 0,
           margin: 0,
           '& .MuiCardContent-root': {
@@ -740,30 +741,43 @@ const RemoteLearn = () => {
       >
         <CardHeader
           title={
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                minWidth: 0,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'hidden' }}>
                 {!isMobile && (
                   <IconButton onClick={() => navigate(-1)}>
                     <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
                   </IconButton>
                 )}
-
-                <EditableText
-                  style={{
-                    fontSize: '1.2em',
-                    fontWeight: 'bold',
-                    lineHeight: '1.3',
-                  }}
-                  initialValue={remote.alias}
-                  onSave={(newValue, callback) => {
-                    if (!newValue || !callback) {
-                      return;
-                    }
-                    handleModify(newValue, (success) => {
-                      callback(success);
-                    });
-                  }}
-                />
+                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                  <EditableText
+                    style={{
+                      fontSize: '1.1em',
+                      fontWeight: 'bold',
+                      lineHeight: '1.3',
+                      width: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    initialValue={remote.alias}
+                    onSave={(newValue, callback) => {
+                      if (!newValue || !callback) {
+                        return;
+                      }
+                      handleModify(newValue, (success) => {
+                        callback(success);
+                      });
+                    }}
+                  />
+                </Box>
               </Box>
 
               {!shouldHideToggleButton && (
@@ -776,6 +790,10 @@ const RemoteLearn = () => {
           sx={{
             pb: 1,
             paddingLeft: '10px',
+            '& .MuiCardHeader-content': {
+              minWidth: 0,
+              overflow: 'hidden',
+            },
           }}
         />
         <Box
@@ -808,7 +826,7 @@ const RemoteLearn = () => {
             )}
 
             {/* 内容区域 */}
-            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
               {irCodes.length === 0 ? (
                 <Box
                   sx={{

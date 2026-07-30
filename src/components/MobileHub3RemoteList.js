@@ -23,6 +23,11 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
   const navigate = useNavigate();
   const { gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const { deleteIRRemote, updateLocalRemoteList } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const singleLineTextSx = {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  };
 
   // 获取设备信息
   useEffect(() => {
@@ -122,7 +127,10 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
                 gotoRemoteControl(remote);
               }}
             >
-              <ListItemText primary={<Typography>{remote.alias || `Remote ${index + 1}`}</Typography>} />
+              <ListItemText
+                sx={{ minWidth: 0 }}
+                primary={<Typography sx={singleLineTextSx}>{remote.alias || `Remote ${index + 1}`}</Typography>}
+              />
               {editable && (
                 <ListItemIcon
                   sx={{ minWidth: 'auto' }}
@@ -141,7 +149,10 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
           <>
             {remoteList?.length > 0 && <Divider sx={{ opacity: 0.4 }} />}
             <ListItem onClick={handleAddRemote} sx={{ px: 0 }}>
-              <ListItemText primary={<Typography>{t('pages.ir.remote.addRemote')}</Typography>} />
+              <ListItemText
+                sx={{ minWidth: 0 }}
+                primary={<Typography sx={singleLineTextSx}>{t('pages.ir.remote.addRemote')}</Typography>}
+              />
               <ListItemIcon sx={{ minWidth: 'auto' }}>
                 <Add />
               </ListItemIcon>
@@ -165,7 +176,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
         <Box sx={{ width: '100%', '& .MuiListItem-root': { justifyContent: 'center' } }}>
           <List>
             <ListItem>
-              <Typography sx={{ color: 'rgb(204, 204, 204)' }}>
+              <Typography sx={{ color: 'rgb(204, 204, 204)', ...singleLineTextSx }}>
                 {selectedRemote?.alias || `Remote ${selectedIndex + 1}`}
               </Typography>
             </ListItem>

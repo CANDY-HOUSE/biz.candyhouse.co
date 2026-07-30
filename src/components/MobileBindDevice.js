@@ -15,6 +15,11 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const singleLineTextSx = {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  };
 
   const devices = useMemo(() => {
     if (!currentDevice || currentDevice.stateInfo?.ssks?.length < 1) return [];
@@ -131,7 +136,10 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
                 handleOSUpdateClick(device);
               }}
             >
-              <ListItemText primary={<Typography>{device.deviceName}</Typography>} />
+              <ListItemText
+                sx={{ minWidth: 0 }}
+                primary={<Typography sx={singleLineTextSx}>{device.deviceName}</Typography>}
+              />
               {editable && (
                 <ListItemIcon
                   sx={{ minWidth: 'auto' }}
@@ -151,7 +159,12 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
           <>
             {devices?.length > 0 && <Divider sx={{ opacity: 0.4 }} />}
             <ListItem onClick={() => onAddSesameButtonClickHandler()} sx={{ px: 0 }}>
-              <ListItemText primary={<Typography>{t('pages.sesameAccessControlDevice.index.AddSesame')}</Typography>} />
+              <ListItemText
+                sx={{ minWidth: 0 }}
+                primary={
+                  <Typography sx={singleLineTextSx}>{t('pages.sesameAccessControlDevice.index.AddSesame')}</Typography>
+                }
+              />
               <ListItemIcon sx={{ minWidth: 'auto' }}>
                 <AddIcon />
               </ListItemIcon>
@@ -174,7 +187,9 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
         <Box sx={{ width: '100%', '& .MuiListItem-root': { justifyContent: 'center' } }}>
           <List>
             <ListItem>
-              <Typography sx={{ color: 'rgb(204, 204, 204)' }}>{selectedDevice?.deviceName}</Typography>
+              <Typography sx={{ color: 'rgb(204, 204, 204)', ...singleLineTextSx }}>
+                {selectedDevice?.deviceName}
+              </Typography>
             </ListItem>
             <ListItem onClick={() => handleOSUpdateClick(selectedDevice)}>
               <Typography>{t('pages.sesameAccessControlDevice.index.OSUpdate')}</Typography>
