@@ -173,12 +173,12 @@ const useManageGroup = (gStripe) => {
     [registerCallback]
   );
 
-  const generateGuestQRCode = useCallback(
+  const generateQRToken = useCallback(
     (data, cb) => {
       const messageData = {
         action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE_DEVICE,
         ...data,
-        op: 'generateGuestQR',
+        op: 'generateQRToken',
       };
       sendMessage(messageData);
       registerCallback(messageData.action, messageData.op, cb);
@@ -343,7 +343,7 @@ const useManageGroup = (gStripe) => {
     getEmployeeDeviceKeys,
     removeEmployeeDeviceKey,
     updateGuestKeyTag,
-    generateGuestQRCode,
+    generateQRToken,
     makeInvisibleHistory,
   };
 };

@@ -14,7 +14,7 @@ const MobileDeviceShareQRCode = () => {
   const deviceName = searchParams.get('deviceName');
   const [selectedRole, setSelectedRole] = useState();
   const { t } = useTranslation();
-  const [dataURL, setDataURL] = useState('');
+  const [dataURL, setDataURL] = useState(null);
   const qrCodeURLs = useRef({});
   const [roleOptions, setRoleOptions] = useState([]);
   const [currentDeviceKey, setCurrentDeviceKey] = useState({});
@@ -50,25 +50,19 @@ const MobileDeviceShareQRCode = () => {
       switch (selectedRole) {
         case 0:
         case 1:
-          qrCodeURL = biz3utils.generateInviteGuestQRCodeByInfo(currentDeviceKey, { keyLevel: selectedRole });
-          break;
         case 2:
           try {
-            const guestKeyId = await new Promise((resolve, reject) => {
-              gManageGroup.generateGuestQRCode(currentDeviceKey, (res) => {
+            qrCodeURL = await new Promise((resolve, reject) => {
+              gManageGroup.generateQRToken({ deviceUUID, keyLevel: selectedRole }, (res) => {
                 if (!res.success) {
-                  reject(new Error('Failed to generate guest QR code'));
+                  reject(new Error('Failed to generate QR token'));
                   return;
                 }
-                resolve(res.data);
+                resolve(res.data?.qrToken);
               });
             });
-            qrCodeURL = biz3utils.generateInviteGuestQRCodeByInfo(currentDeviceKey, {
-              keyLevel: selectedRole,
-              guestKeyId,
-            });
           } catch (error) {
-            console.error('Error generating guest QR code:', error);
+            console.error('Error generating QR token:', error);
             return;
           }
           break;

@@ -77,9 +77,6 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
             });
           }
           break;
-        case 'reorderDevices':
-          setCompanyDevices(message.data);
-          break;
         case 'getDeviceStatus':
           setDeviceStatus(message.data?.length > 0 ? message.data[0] : null);
           break;
@@ -267,16 +264,12 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, handleSendMessage, registerCallback]
   );
 
-  const reorderDevice = useCallback(
-    (items, cb) => {
-      items.forEach((item, index) => {
-        item.rank = 0 - index;
-      });
+  const updateDeviceOrderKey = useCallback(
+    (obj, cb) => {
       const message = {
         action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
-        op: 'reorderDevices',
-        items,
-        companyID: gStripe.customerInfo.companyID,
+        obj,
+        op: 'updateDeviceOrderKey',
       };
       handleSendMessage(message);
       registerCallback(message.action, message.op, cb);
@@ -415,7 +408,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     updateDeviceName,
     updateDeviceState,
     setCompanyDevices,
-    reorderDevice,
+    updateDeviceOrderKey,
     getDevicesNotifyStatus,
     switchDeviceNotify,
     switchRechargebleBattery,

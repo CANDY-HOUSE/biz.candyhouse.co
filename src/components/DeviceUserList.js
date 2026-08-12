@@ -170,13 +170,26 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
 
   const onShareGuestQRCode = useCallback(
     (selectedUser) => {
-      const url = biz3utils.generateInviteGuestQRCodeByInfo(currentDevice, selectedUser);
-      biz3utils.writeQrcode(url, (ins) => {
-        const url = ins.toDataURL(10, 0);
-        setQrDialog({ open: true, url: url });
-      });
+      gManageGroup.generateQRToken(
+        {
+          deviceUUID,
+          keyLevel: selectedUser.keyLevel,
+          guestKeyId: selectedUser.guestKeyId,
+          name: selectedUser.employeeName,
+        },
+        (res) => {
+          if (!res.success) {
+            console.error('Failed to generate QR token');
+            return;
+          }
+          biz3utils.writeQrcode(res.data?.qrToken, (ins) => {
+            const url = ins.toDataURL(10, 0);
+            setQrDialog({ open: true, url: url });
+          });
+        }
+      );
     },
-    [currentDevice]
+    [gManageGroup, deviceUUID]
   );
 
   const disableInteraction = useMemo(() => {

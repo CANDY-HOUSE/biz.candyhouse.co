@@ -111,28 +111,6 @@ const generateUserQRCodeBySubUUID = (userSub) => {
   return `ssm://UI/?t=${qrMode.QR_FRIEND}&${qrMode.QR_FRIEND}=${userSub.toUpperCase()}`;
 };
 
-const generateInviteGuestQRCodeByInfo = (deviceKey, guestInfo) => {
-  if (!deviceKey) {
-    console.error('Device key not found');
-    return null;
-  }
-  const model = Object.entries(modelName).find(([_, name]) => name === deviceKey.deviceModel)?.[0];
-  const deviceModel = parseInt(model, 10).toString(16).padStart(2, '0');
-  const secretKey = guestInfo.guestKeyId || deviceKey.secretKey;
-  const keydata =
-    deviceModel + secretKey + deviceKey.sesame2PublicKey + deviceKey.keyIndex + deviceKey.deviceUUID.replace(/-/g, '');
-  const littleKey = Buffer.from(keydata, 'hex').toString('base64');
-  const sharedKey = 'sk';
-  const baseURL = 'ssm://UI';
-  const name = guestInfo.employeeName || deviceKey.deviceName;
-  const params = [
-    `t=${sharedKey}`,
-    `${sharedKey}=${littleKey}`,
-    `l=${guestInfo.keyLevel}`,
-    `n=${encodeURIComponent(name)}`,
-  ].join('&');
-  return `${baseURL}?${params}`;
-};
 const writeQrcode = (text, call) => {
   if (!text) return call(null);
   const qrcode = new Encoder();
@@ -539,7 +517,6 @@ export const biz3utils = {
   buildPayloadPasscodeAdd,
   convertHexPairsToDecimal,
   generateUserQRCodeBySubUUID,
-  generateInviteGuestQRCodeByInfo,
   triggerScheme,
   triggerBridge,
   generateUUID,

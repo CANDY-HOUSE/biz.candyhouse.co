@@ -50,7 +50,7 @@ const MobileQRCodeDialog = ({
               /* Face3 的摄像头无法调焦， 小了扫码困难。 */
               width: isMobile ? '320px' : '380px',
               height: isMobile ? '320px' : '380px',
-              display: 'block',
+              display: qrCodeUrl ? 'block' : 'none',
             }}
           />
         </Box>

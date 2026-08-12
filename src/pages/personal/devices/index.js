@@ -224,10 +224,20 @@ const Devices = () => {
   );
 
   const handleDragEnd = useCallback(
-    (newData) => {
-      gManageDevice.reorderDevice(newData);
+    (newData, _, newIndex) => {
+      if (!ssmDevices?.[0]?.orderKey) return;
+      const moved = newData[newIndex];
+      if (!moved) return;
+      const prevKey = newData[newIndex - 1]?.orderKey;
+      const nextKey = newData[newIndex + 1]?.orderKey;
+      gManageDevice.updateDeviceOrderKey({
+        subUUID: moved.subUUID,
+        deviceUUID: moved.deviceUUID,
+        prevKey,
+        nextKey,
+      });
     },
-    [gManageDevice]
+    [gManageDevice, ssmDevices]
   );
 
   const handleItemClick = useCallback(
@@ -241,7 +251,8 @@ const Devices = () => {
     return allData.filter((item) => item.deviceName.includes(searchText));
   }, []);
 
-  const dragEndHandler = isBizRoute ? undefined : handleDragEnd;
+  const canDrag = !isBizRoute && Boolean(ssmDevices?.[0]?.orderKey);
+  const dragEndHandler = canDrag ? handleDragEnd : undefined;
 
   return (
     <GenericDeviceListContainer
