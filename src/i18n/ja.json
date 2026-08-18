@@ -197,6 +197,7 @@
       "ok": "決定"
     },
     "qr": "QRコード",
+    "qrEncrypted": "QRコードを暗号化（推奨）",
     "nickName": "ユーザー名",
     "findFriendHint": "相手のメールアドレスを入力してくださいませ",
     "modifyDeviceNameHint": "新しいデバイス名を入力してくださいませ",

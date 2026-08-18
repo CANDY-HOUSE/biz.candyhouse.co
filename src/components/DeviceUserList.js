@@ -22,7 +22,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   const deviceUUID = propDeviceUUID || searchDeviceUUID;
   const keyLevel = searchParams.get('keyLevel');
   const { t } = useTranslation();
-  const [qrDialog, setQrDialog] = useState({ open: false, url: '' });
+  const [qrDialog, setQrDialog] = useState({ open: false, url: '', user: null });
   const [hasMore, setHasMore] = useState(false);
 
   const getDeviceUser = (deviceUUID, limit) => {
@@ -169,13 +169,14 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   };
 
   const onShareGuestQRCode = useCallback(
-    (selectedUser) => {
+    (selectedUser, isSecure = true) => {
       gManageGroup.generateQRToken(
         {
           deviceUUID,
           keyLevel: selectedUser.keyLevel,
           guestKeyId: selectedUser.guestKeyId,
           name: selectedUser.employeeName,
+          ...(!isSecure && { isSecure: false }),
         },
         (res) => {
           if (!res.success) {
@@ -184,12 +185,30 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
           }
           biz3utils.writeQrcode(res.data?.qrToken, (ins) => {
             const url = ins.toDataURL(10, 0);
-            setQrDialog({ open: true, url: url });
+            setQrDialog({ open: true, url, user: selectedUser });
           });
         }
       );
     },
     [gManageGroup, deviceUUID]
+  );
+
+  const handleShareGuestQRCode = useCallback(
+    (selectedUser) => {
+      onShareGuestQRCode(selectedUser, true);
+    },
+    [onShareGuestQRCode]
+  );
+
+  const handleQRCodeSecureChange = useCallback(
+    (event) => {
+      const isSecure = event.target.checked;
+      setQrDialog((preState) => ({ ...preState, url: '' }));
+      if (qrDialog.user) {
+        onShareGuestQRCode(qrDialog.user, isSecure);
+      }
+    },
+    [onShareGuestQRCode, qrDialog.user]
   );
 
   const disableInteraction = useMemo(() => {
@@ -206,7 +225,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
         onAddClickHandler={onAddButtonClickHandler}
         onRemoveUser={onRemoveUser}
         onModifyGuestTag={onModifyGuestTag}
-        onShareGuestQRCode={onShareGuestQRCode}
+        onShareGuestQRCode={handleShareGuestQRCode}
         gManageEmployee={gManageEmployee}
         defaultManageMode={defaultManageMode}
         hasMore={hasMore}
@@ -218,6 +237,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
         title={`${currentDevice?.deviceName}${t('pages.sesameAccessControlDevice.index.AddDeviceKeyByScan')}`}
         subtitle={t('pages.sesameAccessControlDevice.index.AddDeviceKeyByScanHint')}
         userName={currentDevice?.deviceName}
+        onEncryptChange={handleQRCodeSecureChange}
         onClose={() => {
           setQrDialog((preState) => ({ ...preState, open: false }));
           getDeviceUser(deviceUUID);

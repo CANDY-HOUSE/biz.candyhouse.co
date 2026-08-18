@@ -15,6 +15,7 @@ const MobileDeviceShareQRCode = () => {
   const [selectedRole, setSelectedRole] = useState();
   const { t } = useTranslation();
   const [dataURL, setDataURL] = useState(null);
+  const [isQRCodeSecure, setIsQRCodeSecure] = useState(true);
   const qrCodeURLs = useRef({});
   const [roleOptions, setRoleOptions] = useState([]);
   const [currentDeviceKey, setCurrentDeviceKey] = useState({});
@@ -53,13 +54,20 @@ const MobileDeviceShareQRCode = () => {
         case 2:
           try {
             qrCodeURL = await new Promise((resolve, reject) => {
-              gManageGroup.generateQRToken({ deviceUUID, keyLevel: selectedRole }, (res) => {
-                if (!res.success) {
-                  reject(new Error('Failed to generate QR token'));
-                  return;
+              gManageGroup.generateQRToken(
+                {
+                  deviceUUID,
+                  keyLevel: selectedRole,
+                  ...(!isQRCodeSecure && { isSecure: false }),
+                },
+                (res) => {
+                  if (!res.success) {
+                    reject(new Error('Failed to generate QR token'));
+                    return;
+                  }
+                  resolve(res.data?.qrToken);
                 }
-                resolve(res.data?.qrToken);
-              });
+              );
             });
           } catch (error) {
             console.error('Error generating QR token:', error);
@@ -71,7 +79,7 @@ const MobileDeviceShareQRCode = () => {
       }
       cb && cb(qrCodeURL);
     },
-    [selectedRole, currentDeviceKey, deviceUUID]
+    [selectedRole, currentDeviceKey, deviceUUID, isQRCodeSecure]
   );
 
   const writeQrcode = useCallback((qrCodeURL) => {
@@ -87,6 +95,7 @@ const MobileDeviceShareQRCode = () => {
     if (selectedRole === null) {
       return;
     }
+    setDataURL(null);
     const cachedURL = qrCodeURLs.current[selectedRole];
     if (cachedURL) {
       writeQrcode(cachedURL);
@@ -98,10 +107,15 @@ const MobileDeviceShareQRCode = () => {
       }
       writeQrcode(qrCodeURL);
     });
-  }, [selectedRole, currentDeviceKey, generateQRCode, writeQrcode]);
+  }, [selectedRole, currentDeviceKey, isQRCodeSecure, generateQRCode, writeQrcode]);
 
   const handleRoleChange = useCallback((event) => {
     setSelectedRole(event.target.value);
+  }, []);
+
+  const handleQRCodeSecureChange = useCallback((event) => {
+    qrCodeURLs.current = {};
+    setIsQRCodeSecure(event.target.checked);
   }, []);
 
   return selectedRole === undefined ? (
@@ -132,6 +146,7 @@ const MobileDeviceShareQRCode = () => {
         userName={deviceName}
         fullScreen
         title={`${deviceName} ${t('pages.sesameAccessControlDevice.index.AddKeyByScan')}`}
+        onEncryptChange={handleQRCodeSecureChange}
       />
       <Box
         sx={{

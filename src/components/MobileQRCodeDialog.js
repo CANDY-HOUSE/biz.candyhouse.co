@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { Dialog, DialogContent, Typography, Box } from '@mui/material';
+import { Dialog, DialogContent, Typography, Box, Switch } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import siteIcon from '@assets/site-icon.png';
 
 const MobileQRCodeDialog = ({
   open,
@@ -11,9 +12,37 @@ const MobileQRCodeDialog = ({
   title = '私を連絡先に追加してください',
   subtitle = '',
   fullScreen = false,
+  onEncryptChange,
 }) => {
   const { t } = useTranslation();
   subtitle = subtitle || t('pages.sesameAccessControlDevice.index.AddDeviceKeyByScanHint');
+
+  const EncryptSwitch = useMemo(
+    () =>
+      onEncryptChange ? (
+        <Box
+          sx={{
+            width: '100%',
+            minHeight: 56,
+            mt: 2,
+            px: 1,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Typography>{t('deviceMember.qrEncrypted')}</Typography>
+          <Switch
+            defaultChecked
+            onChange={onEncryptChange}
+            inputProps={{ 'aria-label': t('deviceMember.qrEncrypted') }}
+          />
+        </Box>
+      ) : null,
+    [onEncryptChange, t]
+  );
 
   const QRCodeContent = useMemo(
     () => (
@@ -22,7 +51,8 @@ const MobileQRCodeDialog = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: fullScreen ? 'center' : 'flex-start',
+          overflowY: 'auto',
           p: 4,
           textAlign: 'center',
         }}
@@ -41,18 +71,47 @@ const MobileQRCodeDialog = ({
             backgroundColor: '#fff',
             borderRadius: '12px',
             mb: 4,
+            position: 'relative',
           }}
         >
           <img
-            src={qrCodeUrl}
+            src={qrCodeUrl || undefined}
             alt="QR Code"
             style={{
               /* Face3 的摄像头无法调焦， 小了扫码困难。 */
               width: isMobile ? '320px' : '380px',
               height: isMobile ? '320px' : '380px',
-              display: qrCodeUrl ? 'block' : 'none',
+              display: 'block',
+              visibility: qrCodeUrl ? 'visible' : 'hidden',
             }}
           />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: isMobile ? 56 : 64,
+              height: isMobile ? 56 : 64,
+              borderRadius: '50%',
+              bgcolor: '#fff',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.12)',
+              display: qrCodeUrl ? 'flex' : 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 1,
+            }}
+          >
+            <img
+              src={siteIcon}
+              alt="Site Icon"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
         </Box>
 
         <Typography
@@ -75,9 +134,10 @@ const MobileQRCodeDialog = ({
         >
           {subtitle}
         </Typography>
+        {EncryptSwitch}
       </DialogContent>
     ),
-    [userName, qrCodeUrl, isMobile, title, subtitle]
+    [userName, qrCodeUrl, isMobile, title, subtitle, fullScreen, EncryptSwitch]
   );
 
   if (fullScreen) {
