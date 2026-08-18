@@ -186,6 +186,19 @@ const useManageGroup = (gStripe) => {
     [registerCallback]
   );
 
+  const redeemQRToken = useCallback(
+    (qrToken, cb) => {
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE_DEVICE,
+        qrToken,
+        op: 'redeemQRToken',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [registerCallback]
+  );
+
   const getEmployeeGroup = useCallback(
     (gid, cb) => {
       const msgData = {
@@ -344,6 +357,7 @@ const useManageGroup = (gStripe) => {
     removeEmployeeDeviceKey,
     updateGuestKeyTag,
     generateQRToken,
+    redeemQRToken,
     makeInvisibleHistory,
   };
 };

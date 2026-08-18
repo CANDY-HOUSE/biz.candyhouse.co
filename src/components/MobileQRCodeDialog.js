@@ -39,7 +39,8 @@ const MobileQRCodeDialog = ({
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
+            gap: 1,
             bgcolor: 'background.paper',
           }}
         >
@@ -48,15 +49,16 @@ const MobileQRCodeDialog = ({
               flex: 1,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              textOverflow: 'clip',
               textAlign: 'left',
-              fontSize: 'clamp(0.6rem, 1.9vw, 1rem)',
+              fontSize: 'clamp(0.75rem, 2.6vw, 1rem)',
+              lineHeight: 1.2,
               minWidth: 0,
             }}
           >
             {t('deviceMember.qrEncrypted')}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <VerifiedUserIcon
               fontSize="small"
               sx={{

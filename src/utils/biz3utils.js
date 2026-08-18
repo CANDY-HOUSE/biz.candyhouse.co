@@ -142,56 +142,69 @@ const readUserQrcode = (imgUrl, call) => {
     });
 };
 
+// 从二维码 URL（含 sk 参数）解析出设备信息
+const parseDeviceKeyFromUrl = (urlString) => {
+  try {
+    const urlParams = new URLSearchParams(urlString);
+    const skRaw = urlParams.get('sk');
+    if (!skRaw) return null;
+    const sk = skRaw.replace(/ /g, '+');
+    const msk = Buffer.from(sk, 'base64');
+    const data = Buffer.from(msk, 'hex');
+    const productType = parseInt(data.slice(0, 1).toString('hex'), 16); //1
+    let secretKey, sesame2PublicKey, keyIndex, deviceUUID;
+    if (isSesameOs3(productType)) {
+      secretKey = data.slice(1, 1 + 16).toString('hex'); //1-17
+      sesame2PublicKey = data.slice(1 + 16, 1 + 16 + 4).toString('hex');
+      keyIndex = data.slice(1 + 16 + 4, 1 + 16 + 4 + 2).toString('hex');
+      deviceUUID = data.slice(1 + 16 + 4 + 2).toString('hex');
+    } else {
+      secretKey = data.slice(1, 17).toString('hex'); //1-17
+      sesame2PublicKey = data.slice(17, 81).toString('hex');
+      keyIndex = data.slice(81, 83).toString('hex');
+      deviceUUID = data.slice(83, 99).toString('hex');
+    }
+    deviceUUID = deviceUUID.replace(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/, '$1-$2-$3-$4-$5');
+    return {
+      secretKey,
+      keyIndex,
+      sesame2PublicKey,
+      keyLevel: parseInt(urlParams.get('l')),
+      deviceModel: modelName[productType],
+      deviceName: urlParams.get('n'),
+      deviceUUID: deviceUUID.toUpperCase(),
+    };
+  } catch (error) {
+    console.error('parseDeviceKeyFromUrl', error);
+    return null;
+  }
+};
+
+// 解码图片二维码 → 复用 parseDeviceKeyFromUrl 解析出设备信息
 const readQrcode = (imgUrl, call) => {
   if (!imgUrl) return;
   new Decoder()
     .scan(URL.createObjectURL(imgUrl))
     .then((result) => {
-      const urlParams = new URLSearchParams(result.data);
-      const sk = urlParams.get('sk').replace(/ /g, '+');
-      const msk = Buffer.from(sk, 'base64');
-      const data = Buffer.from(msk, 'hex');
-      console.log('数据data', data);
-      const productType = parseInt(data.slice(0, 1).toString('hex'), 16); //1
-      console.log('数据dataOs3', productType);
-      if (isSesameOs3(productType)) {
-        const secretKey = data.slice(1, 1 + 16).toString('hex'); //1-17
-        const sesame2PublicKey = data.slice(1 + 16, 1 + 16 + 4).toString('hex');
-        const keyIndex = data.slice(1 + 16 + 4, 1 + 16 + 4 + 2).toString('hex');
-        let deviceUUID = data.slice(1 + 16 + 4 + 2).toString('hex');
-        deviceUUID = deviceUUID.replace(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/, '$1-$2-$3-$4-$5');
-        const qrKeyInfo = {
-          secretKey: secretKey,
-          keyIndex: keyIndex,
-          sesame2PublicKey: sesame2PublicKey,
-          keyLevel: parseInt(urlParams.get('l')),
-          deviceModel: modelName[productType],
-          deviceName: urlParams.get('n'),
-          deviceUUID: deviceUUID.toUpperCase(),
-        };
-        console.log('数据dataOs3', qrKeyInfo);
-        call(null, qrKeyInfo);
-      } else {
-        const secretKey = data.slice(1, 17).toString('hex'); //1-17
-        const sesame2PublicKey = data.slice(17, 81).toString('hex');
-        const keyIndex = data.slice(81, 83).toString('hex');
-        let deviceUUID = data.slice(83, 99).toString('hex');
-        deviceUUID = deviceUUID.replace(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/, '$1-$2-$3-$4-$5');
-        const qrKeyInfo = {
-          secretKey: secretKey,
-          keyIndex: keyIndex,
-          sesame2PublicKey: sesame2PublicKey,
-          keyLevel: parseInt(urlParams.get('l')),
-          deviceModel: modelName[productType],
-          deviceName: urlParams.get('n'),
-          deviceUUID: deviceUUID.toUpperCase(),
-        };
-        console.log('数据data', qrKeyInfo);
-        call(null, qrKeyInfo);
-      }
+      const qrKeyInfo = parseDeviceKeyFromUrl(result.data);
+      call(qrKeyInfo ? null : new Error('parse failed'), qrKeyInfo);
     })
     .catch((error) => {
-      console.error('数据data', error);
+      console.error('readQrcode', error);
+      call(error);
+    });
+};
+
+// 解码图片二维码 → 只返回原始 URL（供先经服务端 redeem 再解析的流程使用）
+const readQrcodeUrl = (imgUrl, call) => {
+  if (!imgUrl) return;
+  new Decoder()
+    .scan(URL.createObjectURL(imgUrl))
+    .then((result) => {
+      call(null, result.data);
+    })
+    .catch((error) => {
+      console.error('readQrcodeUrl', error);
       call(error);
     });
 };
@@ -500,6 +513,8 @@ export const biz3utils = {
   timestampToTime,
   readUserQrcode,
   readQrcode,
+  readQrcodeUrl,
+  parseDeviceKeyFromUrl,
   writeQrcode,
   hasListObj,
   hasObj,

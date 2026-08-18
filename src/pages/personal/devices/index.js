@@ -20,7 +20,7 @@ const Devices = () => {
   const isBizAccessControlRoute = location.pathname.includes('/biz/access-control/index');
   const isBizRoute = isBizDevicesRoute || isBizAccessControlRoute;
 
-  const { gManageDevice, setSnackbarValue, gIot, gStripe, setModalContent, setCustomModalOpen } =
+  const { gManageDevice, gManageGroup, setSnackbarValue, gIot, gStripe, setModalContent, setCustomModalOpen } =
     useContext(GlobalStateContext);
   const floatingAddRef = useRef(null);
   const { navigateToDeviceDetail, navigateToDeviceShare } = useNavigateUtils();
@@ -117,24 +117,45 @@ const Devices = () => {
                 hidden
                 onChange={(e) => {
                   const fileInput = e.target;
-                  biz3utils.readQrcode(e.target.files[0], (e, qrKeyInfo) => {
+                  const fail = () => {
                     floatingAddRef.current.handleClose();
-                    if (!qrKeyInfo) {
-                      setSnackbarValue({
-                        open: true,
-                        msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
-                      });
+                    setSnackbarValue({
+                      open: true,
+                      msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
+                    });
+                    fileInput.value = '';
+                  };
+                  // 1) 解码图片得到二维码 URL（qrToken）
+                  biz3utils.readQrcodeUrl(e.target.files[0], (err, qrUrl) => {
+                    if (!qrUrl) {
+                      fail();
                       return;
                     }
-                    if (biz3utils.hasListObj(gManageDevice.filteredSsmDevices, [qrKeyInfo], 'deviceUUID')) {
-                      setSnackbarValue({
-                        open: true,
-                        msg: '接続済みです',
-                      });
-                    } else {
+                    // 2) 先去服务端换取真正的二维码内容（对齐 app 的 redeem 流程）
+                    gManageGroup.redeemQRToken(qrUrl, (res) => {
+                      floatingAddRef.current.handleClose();
+                      if (!res.success) {
+                        setSnackbarValue({
+                          open: true,
+                          msg: res.message,
+                        });
+                        fileInput.value = '';
+                        return;
+                      }
+                      const redeemedUrl = res?.success ? res?.data : null;
+                      // 3) 从换取的内容解析设备信息
+                      const qrKeyInfo = redeemedUrl ? biz3utils.parseDeviceKeyFromUrl(redeemedUrl) : null;
+                      if (!qrKeyInfo) {
+                        setSnackbarValue({
+                          open: true,
+                          msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
+                        });
+                        fileInput.value = '';
+                        return;
+                      }
                       gManageDevice.addSesameDevicesToBiz3([qrKeyInfo]);
-                    }
-                    fileInput.value = '';
+                      fileInput.value = '';
+                    });
                   });
                 }}
               />
