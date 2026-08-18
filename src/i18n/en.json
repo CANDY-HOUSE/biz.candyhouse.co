@@ -197,7 +197,7 @@
       "ok": "OK"
     },
     "qr": "QR Code",
-    "qrEncrypted": "QR code encryption (recommended)",
+    "qrEncrypted": "Encrypt QR code, scannable for 10 min",
     "nickName": "Nick name",
     "findFriendHint": "Please enter friend's email address",
     "modifyDeviceNameHint": "Please enter a new device name",

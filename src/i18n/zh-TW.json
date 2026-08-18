@@ -197,7 +197,7 @@
       "ok": "確定"
     },
     "qr": "QR Code",
-    "qrEncrypted": "QR Code 加密（建議開啟）",
+    "qrEncrypted": "加密 QR Code，10分鐘內可掃",
     "nickName": "使用者名稱",
     "findFriendHint": "請輸入對方的郵箱",
     "modifyDeviceNameHint": "請輸入新的設備名稱",

@@ -197,7 +197,7 @@
       "ok": "确定"
     },
     "qr": "二维码",
-    "qrEncrypted": "二维码加密（建议开启）",
+    "qrEncrypted": "加密 二维码，10分钟内可扫",
     "nickName": "用户名",
     "findFriendHint": "请输入对方的邮箱号",
     "modifyDeviceNameHint": "请输入新的设备名称",
