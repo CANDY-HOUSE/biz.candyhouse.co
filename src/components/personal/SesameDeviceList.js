@@ -51,11 +51,11 @@ const getRelayLockState = (device, relayIndex) => {
   return Number(status) === 1 ? 'unlocked' : 'locked';
 };
 
-// Hub3 LTE 某一路是否使能（缺省视为未使能，两路默认关闭/置灰，需在设置页显式打开）
+// Hub3 LTE 某一路是否使能（缺省视为已使能：添加设备时后台已写 enable=1，旧设备缺省也按开启兜底）
 const getRelayEnabled = (device, relayIndex) => {
   const info = device.stateInfo?.relayInfo || {};
   const enable = info[`enable${relayIndex}`];
-  return enable === undefined ? false : Number(enable) === 1;
+  return enable === undefined ? true : Number(enable) === 1;
 };
 
 const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {

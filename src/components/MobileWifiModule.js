@@ -56,7 +56,7 @@ const MobileWifiModule = () => {
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
-  const [relayEnable, setRelayEnable] = useState({ enable1: false, enable2: false });
+  const [relayEnable, setRelayEnable] = useState({ enable1: true, enable2: true });
   const [isHub3LTE, setIsHub3LTE] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_lte);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -98,11 +98,11 @@ const MobileWifiModule = () => {
       lte: currentDevice.stateInfo?.lteConnected ?? false,
       ethernet: currentDevice.stateInfo?.ethernetConnected ?? false,
     });
-    // 继电器使能：缺省视为未使能（两路默认关闭，需用户显式开启）
+    // 继电器使能：缺省视为已使能（添加设备时后台已写 enable=1，旧设备缺省也按开启兜底）
     const relayInfo = currentDevice.stateInfo?.relayInfo || {};
     setRelayEnable({
-      enable1: relayInfo.enable1 === undefined ? false : Number(relayInfo.enable1) === 1,
-      enable2: relayInfo.enable2 === undefined ? false : Number(relayInfo.enable2) === 1,
+      enable1: relayInfo.enable1 === undefined ? true : Number(relayInfo.enable1) === 1,
+      enable2: relayInfo.enable2 === undefined ? true : Number(relayInfo.enable2) === 1,
     });
     console.log('Current device info updated:', currentDevice);
     setIsHub3LTE(currentDevice.deviceModel === gConfig.sesameDeviceModel.hub3_lte);
