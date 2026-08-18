@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Dialog, DialogContent, Typography, Box, Switch } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import siteIcon from '@assets/site-icon.png';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 
 const MobileQRCodeDialog = ({
   open,
@@ -15,7 +16,16 @@ const MobileQRCodeDialog = ({
   onEncryptChange,
 }) => {
   const { t } = useTranslation();
+  const [isEncryptEnabled, setIsEncryptEnabled] = useState(true);
   subtitle = subtitle || t('pages.sesameAccessControlDevice.index.AddDeviceKeyByScanHint');
+
+  const handleEncryptChange = useCallback(
+    (event) => {
+      setIsEncryptEnabled(event.target.checked);
+      onEncryptChange?.(event);
+    },
+    [onEncryptChange]
+  );
 
   const EncryptSwitch = useMemo(
     () =>
@@ -25,7 +35,7 @@ const MobileQRCodeDialog = ({
             width: '100%',
             minHeight: 56,
             mt: 2,
-            px: 1,
+            p: 0,
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
@@ -33,15 +43,37 @@ const MobileQRCodeDialog = ({
             bgcolor: 'background.paper',
           }}
         >
-          <Typography>{t('deviceMember.qrEncrypted')}</Typography>
-          <Switch
-            defaultChecked
-            onChange={onEncryptChange}
-            inputProps={{ 'aria-label': t('deviceMember.qrEncrypted') }}
-          />
+          <Typography
+            sx={{
+              flex: 1,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              textAlign: 'left',
+              fontSize: 'clamp(0.6rem, 1.9vw, 1rem)',
+              minWidth: 0,
+            }}
+          >
+            {t('deviceMember.qrEncrypted')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <VerifiedUserIcon
+              fontSize="small"
+              sx={{
+                color: isEncryptEnabled ? '#4FC372' : 'grey.400',
+                transition: 'color 0.2s ease',
+              }}
+            />
+            <Switch
+              size="small"
+              checked={isEncryptEnabled}
+              onChange={handleEncryptChange}
+              inputProps={{ 'aria-label': t('deviceMember.qrEncrypted') }}
+            />
+          </Box>
         </Box>
       ) : null,
-    [onEncryptChange, t]
+    [handleEncryptChange, isEncryptEnabled, onEncryptChange, t]
   );
 
   const QRCodeContent = useMemo(
@@ -53,7 +85,7 @@ const MobileQRCodeDialog = ({
           alignItems: 'center',
           justifyContent: fullScreen ? 'center' : 'flex-start',
           overflowY: 'auto',
-          p: 4,
+          p: 2,
           textAlign: 'center',
         }}
       >
