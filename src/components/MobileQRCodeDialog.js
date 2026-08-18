@@ -39,14 +39,15 @@ const MobileQRCodeDialog = ({
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-start',
+            justifyContent: 'center',
             gap: 1,
             bgcolor: 'background.paper',
           }}
         >
           <Typography
             sx={{
-              flex: 1,
+              flex: '0 1 auto',
+              maxWidth: 'calc(100% - 88px)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'clip',
