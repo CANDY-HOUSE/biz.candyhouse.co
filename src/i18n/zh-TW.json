@@ -31,6 +31,8 @@
         "WiFiPWD": "WiFi 密碼",
         "InternetStatus": "網路狀態",
         "LED": "LED 🔆",
+        "EnableRelay1": "啟用繼電器一",
+        "EnableRelay2": "啟用繼電器二",
         "RegisterTime": "註冊時間",
         "UUID": "UUID",
         "Matter": "Matter",

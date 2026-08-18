@@ -264,6 +264,25 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, handleSendMessage, registerCallback]
   );
 
+  // Hub3 LTE 继电器使能：把 enable1/enable2 写入后台 hub3_status.relay_info
+  // 只传需要改动的那一路即可（enable1 或 enable2）
+  const updateRelayEnable = useCallback(
+    ({ deviceUUID, enable1, enable2 }, cb) => {
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
+        obj: {
+          deviceUUID,
+          ...(enable1 !== undefined && { enable1 }),
+          ...(enable2 !== undefined && { enable2 }),
+        },
+        op: 'updateRelayEnable',
+      };
+      sendMessage(messageData);
+      registerCallback(messageData.action, messageData.op, cb);
+    },
+    [registerCallback]
+  );
+
   const updateDeviceOrderKey = useCallback(
     (obj, cb) => {
       const message = {
@@ -406,6 +425,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     getWifiState,
     findTouchName,
     updateDeviceName,
+    updateRelayEnable,
     updateDeviceState,
     setCompanyDevices,
     updateDeviceOrderKey,

@@ -31,6 +31,8 @@
         "WiFiPWD": "WiFi Password",
         "InternetStatus": "Internet Status",
         "LED": "LED 🔆",
+        "EnableRelay1": "Enable Relay 1",
+        "EnableRelay2": "Enable Relay 2",
         "RegisterTime": "Registration Time",
         "UUID": "UUID",
         "Matter": "Matter",

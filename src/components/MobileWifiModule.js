@@ -9,6 +9,7 @@ import {
   ListItemIcon,
   ListItemText,
   SvgIcon,
+  Switch,
   Typography,
 } from '@mui/material';
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
@@ -55,6 +56,7 @@ const MobileWifiModule = () => {
   const [LEDBrightness, setLEDBrightness] = useState(0);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
+  const [relayEnable, setRelayEnable] = useState({ enable1: false, enable2: false });
   const [isHub3LTE, setIsHub3LTE] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_lte);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -96,9 +98,27 @@ const MobileWifiModule = () => {
       lte: currentDevice.stateInfo?.lteConnected ?? false,
       ethernet: currentDevice.stateInfo?.ethernetConnected ?? false,
     });
+    // 继电器使能：缺省视为未使能（两路默认关闭，需用户显式开启）
+    const relayInfo = currentDevice.stateInfo?.relayInfo || {};
+    setRelayEnable({
+      enable1: relayInfo.enable1 === undefined ? false : Number(relayInfo.enable1) === 1,
+      enable2: relayInfo.enable2 === undefined ? false : Number(relayInfo.enable2) === 1,
+    });
     console.log('Current device info updated:', currentDevice);
     setIsHub3LTE(currentDevice.deviceModel === gConfig.sesameDeviceModel.hub3_lte);
   }, [currentDevice]);
+
+  // 切换某一路继电器使能，乐观更新本地并写入后台 relay_info
+  const handleToggleRelayEnable = useCallback(
+    (relayIndex, value) => {
+      setRelayEnable((prev) => ({ ...prev, [`enable${relayIndex}`]: value }));
+      gManageDevice.updateRelayEnable({
+        deviceUUID: did,
+        [`enable${relayIndex}`]: value ? 1 : 0,
+      });
+    },
+    [did, gManageDevice]
+  );
 
   useEffect(() => {
     let isIoTWork = currentDevice.stateInfo?.wm2State === true;
@@ -451,13 +471,39 @@ const MobileWifiModule = () => {
           <SvgIcon component={SvgArrow} />
         </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-        <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
-          <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
-            {isRequestMatter ? <CircularProgress size={16} sx={{ color: 'title.other' }} /> : <QrCode />}
-            <SvgIcon component={SvgArrow} />
-          </ListItemIcon>
-        </ListItem>
+        {/* Hub3 LTE 隐藏 Matter 栏；其它机型仍显示 */}
+        {!isHub3LTE && (
+          <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
+            <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+              {isRequestMatter ? <CircularProgress size={16} sx={{ color: 'title.other' }} /> : <QrCode />}
+              <SvgIcon component={SvgArrow} />
+            </ListItemIcon>
+          </ListItem>
+        )}
+        {/* 继电器使能：放在 Matter 栏之后 */}
+        {isHub3LTE && (
+          <>
+            <ListItem>
+              <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay1')} />
+              <Switch
+                edge="end"
+                checked={relayEnable.enable1}
+                onChange={(e) => handleToggleRelayEnable(1, e.target.checked)}
+              />
+            </ListItem>
+            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            <ListItem>
+              <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay2')} />
+              <Switch
+                edge="end"
+                checked={relayEnable.enable2}
+                onChange={(e) => handleToggleRelayEnable(2, e.target.checked)}
+              />
+            </ListItem>
+            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          </>
+        )}
         <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
           <Typography color="info.light" sx={{ lineHeight: '30px' }}>
             {t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: 'Hub3' })}

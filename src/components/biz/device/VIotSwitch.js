@@ -5,7 +5,15 @@ import { PngBotIcon, SvgLock, SvgLockDisable, SvgOPS, SvgUnLock } from '@/assets
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@/constants/gConfig';
 
-const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defaultState = undefined }) => {
+const VIotSwitch = ({
+  gIot,
+  deviceUUID,
+  shareKey,
+  model = 'ssm_touch_pro',
+  defaultState = undefined,
+  relayIndex = gConfig.hub3RelayId.relay1,
+  relayEnabled = true,
+}) => {
   const [checked, setChecked] = useState(undefined);
   const [isShow, setIsShow] = useState(true);
 
@@ -54,24 +62,29 @@ const VIotSwitch = ({ gIot, deviceUUID, shareKey, model = 'ssm_touch_pro', defau
       );
     }
     if (gUtils.isHub3LTE(model)) {
+      const disabled = relayEnabled === false;
       return (
         <IconButton
+          disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();
+            if (disabled) return;
+            // 持续开/关：当前为开(checked=true) -> 发关，否则 -> 发开
+            const action = checked ? gConfig.hub3RelayAction.off : gConfig.hub3RelayAction.on;
             gIot.sendCommandToHub3WithConnectionId({
               device_id: deviceUUID,
               secretKey: shareKey,
               cmd: gConfig.cmdCode.HUB3_ITEM_CODE_RELAY_SWITCH,
-              iotPayload: { op: 0x01 },
+              iotPayload: { relayId: relayIndex, action },
             });
           }}
         >
-          {checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
+          {disabled || checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
         </IconButton>
       );
     }
     return <></>;
-  }, [checked, model, deviceUUID, shareKey, handleChange]);
+  }, [checked, model, deviceUUID, shareKey, handleChange, relayIndex, relayEnabled]);
   return (
     <>
       <Hider show={isShow}>{stateView}</Hider>

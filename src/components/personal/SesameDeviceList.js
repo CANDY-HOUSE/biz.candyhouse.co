@@ -36,6 +36,28 @@ const getDeviceLockState = (device) => {
   return device.stateInfo.CHSesame2Status;
 };
 
+// Hub3 LTE 分路继电器状态：relayIndex = 1 / 2
+const getRelayLockState = (device, relayIndex) => {
+  // 设备离线（wm2State !== true）时置为未知（灰色）
+  if (device.stateInfo?.hasOwnProperty('wm2State') && device.stateInfo.wm2State !== true) {
+    return undefined;
+  }
+  const info = device.stateInfo?.relayInfo || {};
+  let status = info[`status${relayIndex}`];
+  // 兼容旧数据：relayInfo 缺失时，第一路退回旧字段 relayStatus
+  if (status === undefined && relayIndex === 1) {
+    status = device.stateInfo?.relayStatus;
+  }
+  return Number(status) === 1 ? 'unlocked' : 'locked';
+};
+
+// Hub3 LTE 某一路是否使能（缺省视为未使能，两路默认关闭/置灰，需在设置页显式打开）
+const getRelayEnabled = (device, relayIndex) => {
+  const info = device.stateInfo?.relayInfo || {};
+  const enable = info[`enable${relayIndex}`];
+  return enable === undefined ? false : Number(enable) === 1;
+};
+
 const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {
   const {
     attributes,
@@ -132,13 +154,37 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
           </Stack>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }} onClick={handleSwitchClick}>
-          <VIotSwitch
-            model={device.deviceModel}
-            deviceUUID={device.deviceUUID}
-            gIot={gIot}
-            defaultState={getDeviceLockState(device)}
-            shareKey={device.secretKey}
-          />
+          {gUtils.isHub3LTE(device.deviceModel) ? (
+            // Hub3 LTE：分开显示两路继电器 icon
+            <>
+              <VIotSwitch
+                model={device.deviceModel}
+                deviceUUID={device.deviceUUID}
+                gIot={gIot}
+                relayIndex={1}
+                relayEnabled={getRelayEnabled(device, 1)}
+                defaultState={getRelayLockState(device, 1)}
+                shareKey={device.secretKey}
+              />
+              <VIotSwitch
+                model={device.deviceModel}
+                deviceUUID={device.deviceUUID}
+                gIot={gIot}
+                relayIndex={2}
+                relayEnabled={getRelayEnabled(device, 2)}
+                defaultState={getRelayLockState(device, 2)}
+                shareKey={device.secretKey}
+              />
+            </>
+          ) : (
+            <VIotSwitch
+              model={device.deviceModel}
+              deviceUUID={device.deviceUUID}
+              gIot={gIot}
+              defaultState={getDeviceLockState(device)}
+              shareKey={device.secretKey}
+            />
+          )}
         </Box>
       </ListItem>
 

@@ -31,6 +31,8 @@
         "WiFiPWD": "WiFi 密码",
         "InternetStatus": "网络状态",
         "LED": "LED 🔆",
+        "EnableRelay1": "使能继电器一",
+        "EnableRelay2": "使能继电器二",
         "RegisterTime": "注册时间",
         "UUID": "UUID",
         "Matter": "Matter",

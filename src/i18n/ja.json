@@ -31,6 +31,8 @@
         "WiFiPWD": "WiFi パスワード",
         "InternetStatus": "ネット接続状態",
         "LED": "LED 🔆",
+        "EnableRelay1": "リレー1 有効",
+        "EnableRelay2": "リレー2 有効",
         "RegisterTime": "登録時間",
         "UUID": "UUID",
         "Matter": "Matter",

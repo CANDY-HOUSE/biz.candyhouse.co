@@ -192,18 +192,20 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
 
           case gConfig.cmdCode.HUB3_ITEM_CODE_RELAY_SWITCH:
             {
-              // Hub3 LTE 继电器开关命令
-              // op 固定为 0x01，代表开关操作
-              const op = iotPayload.op !== undefined ? iotPayload.op : 0x01;
+              // Hub3 LTE 继电器分路开关命令：payload = [relayId(1B), action(1B)]
+              // relayId: 1=继电器一, 2=继电器二；action: 0=关, 1=开
+              const relayId = iotPayload.relayId !== undefined ? iotPayload.relayId : gConfig.hub3RelayId.relay1;
+              const action = iotPayload.action !== undefined ? iotPayload.action : gConfig.hub3RelayAction.on;
 
               // 边界检查确保值在Uint8范围内
-              if (op < 0 || op > 255) {
-                console.error('Parameter out of range for Uint8Array: op=', op);
+              if (relayId < 0 || relayId > 255 || action < 0 || action > 255) {
+                console.error('Parameters out of range for Uint8Array: relayId=', relayId, ', action=', action);
                 return;
               }
 
-              const iotPayloadArray = new Uint8Array(1);
-              iotPayloadArray[0] = op;
+              const iotPayloadArray = new Uint8Array(2);
+              iotPayloadArray[0] = relayId;
+              iotPayloadArray[1] = action;
 
               // 合并到 payloadArray
               const newPayloadArray = new Uint8Array(payloadArray.length + iotPayloadArray.length);
