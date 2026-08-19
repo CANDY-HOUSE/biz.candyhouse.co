@@ -347,12 +347,17 @@ const MobileMyHomepage = () => {
         <Box sx={{ flexGrow: 1 }} />
         <Typography sx={{ textAlign: 'center', color: 'rgba(0,0,25,0.22)' }}>{authState?.state ?? ''}</Typography>
         <Typography
-          onClick={() =>
+          onClick={() => {
+            let url = 'https://testflight.apple.com/join/Rok4GOFD';
+            if (window.AndroidHandler) {
+              url =
+                'https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp/releases/latest/download/Sesame_android_release.apk';
+            }
             biz3utils.triggerBridge({
               action: 'requestOpenExternalURL',
-              url: 'https://testflight.apple.com/join/Rok4GOFD',
-            })
-          }
+              url,
+            });
+          }}
           sx={{ textAlign: 'center', pb: 2, color: 'rgba(0,0,25,0.22)' }}
         >
           {appVersion?.display ?? ''}
