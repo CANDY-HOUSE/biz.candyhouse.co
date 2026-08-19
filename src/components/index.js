@@ -10,3 +10,4 @@ export { default as SesameMobileHistory } from './MobileDeviceHistory';
 export { default as SesameMobileMeIndex } from './MobileMeIndex';
 export { default as SesameMobileNotifyCenter } from './MobileDeviceNotifyCenter';
 export { default as SesameMobileUserDevices } from './MobileUserDevices';
+export { default as SesameMobileMyHomepage } from './MobileMyHomepage';

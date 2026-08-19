@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '../context/GlobalContextProvider';
-import loginStyles from '../styles/login.module.css';
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { LoadingButton } from '@mui/lab';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { gUtils } from '@/utils/gUtils';
+import { biz3utils } from '@/utils/biz3utils';
 
 const LoginIndex = () => {
   const navigate = useNavigate();
@@ -50,6 +49,10 @@ const LoginIndex = () => {
             });
             return;
           }
+          // App 内登录成功由 native 接管（关闭 webview + 刷新），无需 Web 侧跳转
+          if (resp && resp.appLogin) {
+            return;
+          }
           gStripe.getCustomerInfo(loginMail);
           navigate(redirectPath);
         },
@@ -83,6 +86,16 @@ const LoginIndex = () => {
     });
   };
 
+  const handleOpenExternalUrl = useCallback((event, url) => {
+    const openedByApp = biz3utils.triggerBridge({
+      action: 'requestOpenExternalURL',
+      url,
+    });
+    if (openedByApp) {
+      event.preventDefault();
+    }
+  }, []);
+
   return (
     <Box
       sx={{
@@ -110,8 +123,12 @@ const LoginIndex = () => {
             margin: '16px auto',
           }}
         />
-        <input
-          className={loginStyles.loginBox}
+        <TextField
+          type="email"
+          inputMode="email"
+          variant="standard"
+          fullWidth
+          InputProps={{ disableUnderline: true }}
           placeholder={t('pages.login.Email')}
           value={loginMail}
           onKeyDown={(e) => {
@@ -123,7 +140,23 @@ const LoginIndex = () => {
             setBtnState({ ready: mailChk, loading: false });
             setMailChk(mailChk);
           }}
-          style={{ display: isVerifyCode ? 'none' : 'block' }}
+          sx={{
+            display: isVerifyCode ? 'none' : 'block',
+            my: 1,
+            '& .MuiInputBase-root': {
+              py: '12px',
+              borderBottom: '1px solid lightgray',
+            },
+            '& .MuiInputBase-input': {
+              textAlign: 'center',
+              fontSize: '20px',
+              p: 0,
+              outline: 'none',
+            },
+            '& .MuiInputBase-root.Mui-focused': {
+              borderBottomColor: 'lightgray',
+            },
+          }}
         />
         <Typography
           variant="h6"
@@ -142,6 +175,7 @@ const LoginIndex = () => {
             <a
               href={URLs.terms}
               target="_blank"
+              onClick={(event) => handleOpenExternalUrl(event, URLs.appTerms)}
               style={{
                 color: '#28aeb1',
                 fontWeight: 'bold',
@@ -156,6 +190,7 @@ const LoginIndex = () => {
             <a
               href={URLs.privacy}
               target="_blank"
+              onClick={(event) => handleOpenExternalUrl(event, URLs.appPrivacy)}
               style={{
                 color: '#28aeb1',
                 fontWeight: 'bold',
@@ -209,17 +244,34 @@ const LoginIndex = () => {
             {t('pages.login.EnterVerificationCode')}
           </Typography>
 
-          <input
+          <TextField
             placeholder="1234"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            variant="standard"
+            fullWidth
+            InputProps={{ disableUnderline: true }}
             value={pagePwd}
             disabled={!isVerifyCode}
-            className={loginStyles.loginBox}
             onChange={(e) => {
-              const currentPWD = e.target.value;
-              if (e.target.value.length <= 4) {
-                setPagePwd(currentPWD);
-              }
+              const currentPWD = e.target.value.replace(/\D/g, '').slice(0, 4);
+              setPagePwd(currentPWD);
+            }}
+            sx={{
+              my: 1,
+              '& .MuiInputBase-root': {
+                py: '12px',
+                borderBottom: '1px solid lightgray',
+              },
+              '& .MuiInputBase-input': {
+                textAlign: 'center',
+                fontSize: '20px',
+                p: 0,
+                outline: 'none',
+              },
+              '& .MuiInputBase-root.Mui-focused': {
+                borderBottomColor: 'lightgray',
+              },
             }}
           />
 
@@ -258,7 +310,6 @@ const LoginIndex = () => {
                 cursor: 'pointer',
               }}
             >
-              <KeyboardArrowLeftIcon />
               {t('pages.login.ReturnToMailInput')}
             </Button>
           </Typography>

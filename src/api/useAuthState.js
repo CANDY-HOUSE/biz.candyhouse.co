@@ -3,6 +3,30 @@ import { gConfig } from '@constants/gConfig.js';
 import WebSocketManager from '../websocket/WebSocketManager.ts';
 import { Auth } from '@aws-amplify/auth';
 import { Hub } from '@aws-amplify/core';
+import { biz3utils } from '../utils/biz3utils';
+
+// App 内桥接调用：复用 biz3utils.triggerBridge + window[callbackName] 回调机制
+// 返回 false 表示不在 App 内（无 bridge），object 为 native 回调结果，null 为超时
+const callAppBridge = (action, payload = {}) =>
+  new Promise((resolve) => {
+    const requestId = Date.now().toString();
+    const callbackName = `authCallback_${requestId}`;
+    const timer = setTimeout(() => {
+      delete window[callbackName];
+      resolve(null);
+    }, 30000);
+    window[callbackName] = (res) => {
+      clearTimeout(timer);
+      delete window[callbackName];
+      resolve(res || {});
+    };
+    const sent = biz3utils.triggerBridge({ action, ...payload, callbackName, requestId });
+    if (!sent) {
+      clearTimeout(timer);
+      delete window[callbackName];
+      resolve(false);
+    }
+  });
 
 const AUTH_EVENTS = {
   SIGN_IN: 'signIn',
@@ -107,6 +131,17 @@ export const useAuthState = () => {
   }, []);
 
   const handleSign = async ({ loginMail, cb }) => {
+    // App 内：交给 native 走 SDK 发送验证码（复用 App 的 Cognito 会话）
+    const appRes = await callAppBridge('requestSignIn', { email: loginMail });
+    if (appRes !== false) {
+      if (appRes && appRes.success) {
+        cb && cb({ appLogin: true });
+      } else {
+        cb && cb(new Error((appRes && appRes.error) || 'Sign in failed'));
+      }
+      return;
+    }
+
     await Auth.signUp({
       username: loginMail,
       password: 'Aa123456',
@@ -137,7 +172,7 @@ export const useAuthState = () => {
       await Auth.forgetDevice();
       await Auth.signOut();
     } catch (error) {
-      console.error('Error during sign out:', error);
+      // console.error('Error during sign out:', error);
     } finally {
       clearCache();
       setIsClearData(true);
@@ -156,6 +191,18 @@ export const useAuthState = () => {
   };
 
   const handleChallenge = async ({ pagePwd, cb }) => {
+    // App 内：交给 native 走 SDK 提交验证码完成登录，登录成功后由 native 关闭 webview
+    const appRes = await callAppBridge('requestConfirmSignIn', { code: pagePwd });
+    if (appRes !== false) {
+      if (appRes && appRes.success && appRes.signedIn) {
+        setIsClearData(false);
+        cb && cb({ appLogin: true });
+      } else {
+        cb && cb(new Error((appRes && appRes.error) || 'Incorrect username or password.'));
+      }
+      return;
+    }
+
     try {
       const challengeAnswerResponse = await Auth.sendCustomChallengeAnswer(user, pagePwd); // 先經過create challenge的lambda
       const {

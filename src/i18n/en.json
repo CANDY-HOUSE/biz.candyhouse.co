@@ -215,6 +215,10 @@
     "notificationDisabled": "Notification permission not granted",
     "shop": "Shop",
     "loginRegist": "Log In / Sign Up",
+    "logout": "Log Out",
+    "deleteAccount": "Delete account",
+    "logoutConfirm": "Are you sure you want to log out?",
+    "deleteAccountConfirm": "Are you sure you want to delete your account?",
     "deleteOrgConfirm": "Once deleted, all data in the current organization cannot be recovered (app data is not affected). Are you sure you want to continue?",
     "cancel": "Cancel",
     "delete": "OK"

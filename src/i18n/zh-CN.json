@@ -215,6 +215,10 @@
     "notificationDisabled": "未获得通知权限",
     "shop": "小店铺",
     "loginRegist": "登入 / 注册",
+    "logout": "登出",
+    "deleteAccount": "删除账号",
+    "logoutConfirm": "确定要登出吗？",
+    "deleteAccountConfirm": "确定要删除账号吗？",
     "deleteOrgConfirm": "删除后当前组织中所有数据将不可恢复（app数据不受影响），确定继续吗？",
     "cancel": "取消",
     "delete": "确定"

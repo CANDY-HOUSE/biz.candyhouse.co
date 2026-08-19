@@ -44,6 +44,7 @@ import {
   SesameMobileDeviceShareQRCode,
   SesameMobileMeIndex,
   SesameMobileNotifyCenter,
+  SesameMobileMyHomepage,
 } from './components/index';
 
 // 与 gUtils.categoriesConf 对应
@@ -65,6 +66,7 @@ const routerComponentMap = [
     router: '/me',
     components: [
       { router: 'index', component: SesameMobileMeIndex },
+      { router: 'homepage', component: SesameMobileMyHomepage },
       { router: '', component: Me },
     ],
   },
