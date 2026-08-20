@@ -345,7 +345,6 @@ const MobileMyHomepage = () => {
           </ListItem>
         </List>
         <Box sx={{ flexGrow: 1 }} />
-        <Typography sx={{ textAlign: 'center', color: 'rgba(0,0,25,0.22)' }}>{authState?.state ?? ''}</Typography>
         <Typography
           onClick={() => {
             let url = 'https://testflight.apple.com/join/Rok4GOFD';
