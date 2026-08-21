@@ -281,6 +281,9 @@ const MobileMyHomepage = () => {
                 <ListItemText
                   primary={t('setting.loginRegist')}
                   secondary={t('pages.sesameAccessControlDevice.index.Email')}
+                  primaryTypographyProps={{
+                    sx: { fontWeight: 'bold' },
+                  }}
                 />
               </>
             ) : (
@@ -288,6 +291,9 @@ const MobileMyHomepage = () => {
                 <ListItemText
                   primary={currentUserInfo.name || currentUserInfo.email}
                   secondary={currentUserInfo.email}
+                  primaryTypographyProps={{
+                    sx: { fontWeight: 'bold' },
+                  }}
                 />
                 <ListItemIcon sx={{ minWidth: 'auto' }}>
                   <QrCode sx={{ fontSize: 50, color: 'title.light' }} />

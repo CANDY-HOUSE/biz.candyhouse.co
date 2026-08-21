@@ -135,7 +135,7 @@ const Me = () => {
           </Box>
         </ListItem>
       </List>
-      <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
+      <Box sx={{ bgcolor: 'secondary.main', height: 10, flexShrink: 0 }} />
       <List disablePadding>
         {recentLogins.map((login, index) => (
           <Fragment key={index}>

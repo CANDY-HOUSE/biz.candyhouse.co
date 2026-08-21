@@ -210,10 +210,12 @@ const LoginIndex = () => {
           fullWidth
           sx={{
             color: '#fff',
-            height: '35px',
             marginTop: '16px',
             display: isVerifyCode ? 'none' : 'block',
-            fontSize: '12px',
+            '& .MuiLoadingButton-loadingIndicator': {
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+            },
           }}
           variant="contained"
           color="primary"
@@ -231,6 +233,7 @@ const LoginIndex = () => {
             sx={{
               display: isSigning ? 'block' : 'none',
               margin: '0 auto',
+              mb: 3,
             }}
           />
           <Typography
