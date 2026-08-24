@@ -131,6 +131,14 @@ export const useAuthState = () => {
   }, []);
 
   const handleSign = async ({ loginMail, cb }) => {
+    await Auth.signUp({
+      username: loginMail,
+      password: 'Aa123456',
+    })
+      .then((_user) => {})
+      .catch((err) => {
+        console.log(err);
+      });
     // App 内：交给 native 走 SDK 发送验证码（复用 App 的 Cognito 会话）
     const appRes = await callAppBridge('requestSignIn', { email: loginMail });
     if (appRes !== false) {
@@ -141,16 +149,6 @@ export const useAuthState = () => {
       }
       return;
     }
-
-    await Auth.signUp({
-      username: loginMail,
-      password: 'Aa123456',
-    })
-      .then((_user) => {})
-      .catch((err) => {
-        console.log(err);
-      });
-
     // [aws用戶登入-2(客製化驗證)]拿註冊好的aws用戶登入
     // 並經過sign up challenge =>define auth challenge => verify auth challange的lambda
     await Auth.signIn(loginMail)
