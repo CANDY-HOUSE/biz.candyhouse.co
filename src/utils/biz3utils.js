@@ -477,6 +477,22 @@ const triggerBridge = (message) => {
   }
 };
 
+// 打开环境快照详情页：App 内走 scheme，网页内走路由跳转
+const openEnvSnapshot = (data, isFromApp, navigate) => {
+  const url = new URL(window.location.href);
+  url.pathname = '/biz/history/env-snapshot';
+  url.searchParams.set('data', data);
+  if (isFromApp) {
+    const scheme = `ssm://UI/webview/open?${new URLSearchParams({ url: url.href })}`;
+    triggerScheme(scheme);
+  } else {
+    navigate({
+      pathname: url.pathname,
+      search: url.searchParams.toString(),
+    });
+  }
+};
+
 const extractCardIDsFromBase64 = (base64Payload) => {
   const buffer = Buffer.from(base64Payload, 'base64');
   // 第一个字节是操作码，跳过
@@ -534,6 +550,7 @@ export const biz3utils = {
   generateUserQRCodeBySubUUID,
   triggerScheme,
   triggerBridge,
+  openEnvSnapshot,
   generateUUID,
   generateNoDashUUID,
   buildNameUUIDMappedDataList,

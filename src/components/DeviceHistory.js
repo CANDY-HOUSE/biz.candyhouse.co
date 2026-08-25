@@ -13,7 +13,9 @@ import {
   ListItemText,
 } from '@mui/material';
 import { gUtils } from '@/utils/gUtils';
-import { useSearchParams } from 'react-router-dom';
+import { biz3utils } from '@/utils/biz3utils';
+import { Buffer } from 'buffer';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import MobileDeviceHistory from './MobileDeviceHistory';
 import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
@@ -22,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false }) {
   const { gManageGroup, gStripe } = useContext(GlobalStateContext);
+  const navigate = useNavigate();
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [timestamp, setTimestamp] = useState(undefined);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -100,6 +103,17 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     setMenuState({ open: false, item: null });
   };
 
+  const handleItemClick = useCallback(
+    (item) => {
+      gManageGroup.getHistoryEnv({ deviceUUID: item.device_id, timestamp: item.timestamp }, (resp) => {
+        const raw = resp?.data ?? {};
+        const json = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        biz3utils.openEnvSnapshot(Buffer.from(json, 'utf8').toString('base64'), gStripe.isFromApp, navigate);
+      });
+    },
+    [gManageGroup, gStripe.isFromApp, navigate]
+  );
+
   const handleItemDetails = useCallback(() => {
     if (!menuState.item) {
       handleCloseMenu();
@@ -121,6 +135,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
         });
       }}
       onItemLongPress={handleItemLongPress}
+      onItemClick={handleItemClick}
     />
   ) : (
     <>
@@ -153,6 +168,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
               });
             }}
             onItemLongPress={handleItemLongPress}
+            onItemClick={handleItemClick}
           />
         </Box>
       </Box>

@@ -1,15 +1,11 @@
-import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
 import { SvgArrow } from '@/assets/svg/svgLock';
-import { useNavigate } from 'react-router-dom';
 import { CmHistoryExt } from './biz/device/CmHistoryExt';
 import { Buffer } from 'buffer';
 import { biz3utils } from '@/utils/biz3utils';
-import { GlobalStateContext } from '@context/GlobalContextProvider';
 
-const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemLongPress }) => {
-  const navigate = useNavigate();
-  const { gStripe } = useContext(GlobalStateContext);
+const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemLongPress, onItemClick }) => {
   const [groupedHistories, setGroupedHistories] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollRef = useRef(null);
@@ -129,29 +125,12 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
     }
   };
 
-  const handleEnvSnapshot = (item) => {
+  const handleItemClick = (item) => {
     if (longPressFired.current) {
       longPressFired.current = false;
       return;
     }
-    const raw = item.envSnapshot ?? {}; // 无快照时给空对象，交由详情页处理
-    const json = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    openEnvSnapshot(Buffer.from(json, 'utf8').toString('base64'));
-  };
-
-  const openEnvSnapshot = (data) => {
-    const url = new URL(window.location.href);
-    url.pathname = '/biz/history/env-snapshot';
-    url.searchParams.set('data', data);
-    if (gStripe.isFromApp) {
-      const scheme = `ssm://UI/webview/open?${new URLSearchParams({ url: url.href })}`;
-      biz3utils.triggerScheme(scheme);
-    } else {
-      navigate({
-        pathname: url.pathname,
-        search: url.searchParams.toString(),
-      });
-    }
+    onItemClick?.(item);
   };
 
   const getPrimaryTitle = (item) => {
@@ -231,7 +210,7 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
                     userSelect: 'none',
                     cursor: 'pointer',
                   }}
-                  onClick={() => handleEnvSnapshot(item)}
+                  onClick={() => handleItemClick(item)}
                   onTouchStart={(e) => handleTouchStart(e, item)}
                   onTouchEnd={handleTouchEnd}
                   onTouchMove={handleTouchMove}

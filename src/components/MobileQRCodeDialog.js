@@ -112,12 +112,17 @@ const MobileQRCodeDialog = ({
           <img
             src={qrCodeUrl || undefined}
             alt="QR Code"
+            draggable={false}
             style={{
               /* Face3 的摄像头无法调焦， 小了扫码困难。 */
               width: isMobile ? '320px' : '380px',
               height: isMobile ? '320px' : '380px',
               display: 'block',
               visibility: qrCodeUrl ? 'visible' : 'hidden',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
             }}
           />
           <Box
@@ -140,10 +145,15 @@ const MobileQRCodeDialog = ({
             <img
               src={siteIcon}
               alt="Site Icon"
+              draggable={false}
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
               }}
             />
           </Box>

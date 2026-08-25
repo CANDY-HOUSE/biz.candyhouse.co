@@ -27,4 +27,4 @@ export const STATUS_TYPES = {
 };
 
 // webSocket 心跳包定时器间隔, 单位: 毫秒
-export const WS_HEARTBEAT_INTERVAL_MS = 60000;
+export const WS_HEARTBEAT_INTERVAL_MS = 60000 * 5; // 5分钟

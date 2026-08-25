@@ -1,11 +1,15 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { biz3utils } from '@/utils/biz3utils';
+import { Buffer } from 'buffer';
 import CmDropdownSelect from '@components/biz/device/CmDropdownSelect';
 import MobileDeviceHistory from '@components/MobileDeviceHistory';
 
 const HistoryList = () => {
-  const { gManageGroup, gManageDevice } = useContext(GlobalStateContext);
+  const { gManageGroup, gManageDevice, gStripe } = useContext(GlobalStateContext);
+  const navigate = useNavigate();
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [lastKeys, setLastKeys] = useState(undefined);
   const [selectedDeviceId, setSelectedDeviceId] = useState('0'); // '0' 表示全部
@@ -67,6 +71,17 @@ const HistoryList = () => {
     [gManageDevice.filteredSsmDevices, loadAllDevicesHistory]
   );
 
+  const handleItemClick = useCallback(
+    (item) => {
+      gManageGroup.getHistoryEnv({ deviceUUID: item.device_id, timestamp: item.timestamp }, (resp) => {
+        const raw = resp?.data ?? {};
+        const json = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        biz3utils.openEnvSnapshot(Buffer.from(json, 'utf8').toString('base64'), gStripe.isFromApp, navigate);
+      });
+    },
+    [gManageGroup, gStripe.isFromApp, navigate]
+  );
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ px: 0, pb: 2 }}>
@@ -84,6 +99,7 @@ const HistoryList = () => {
               loadHistory(selectedDeviceId, lastKeys[selectedDeviceId], cb);
             }
           }}
+          onItemClick={handleItemClick}
         />
       </Box>
     </Box>
