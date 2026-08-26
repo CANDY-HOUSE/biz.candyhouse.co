@@ -173,7 +173,7 @@ const MobileMyHomepage = () => {
   const fetchCurrentUserInfo = async () => {
     gManageEmployee.getCurrentUserInfo((res) => {
       setCurrentUserInfo(res.data);
-    });
+    }, true);
   };
 
   useEffect(() => {

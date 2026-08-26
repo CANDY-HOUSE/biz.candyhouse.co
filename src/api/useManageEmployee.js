@@ -194,10 +194,11 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
   );
 
   const getCurrentUserInfo = useCallback(
-    (cb) => {
+    (cb, excludeLogins = false) => {
       const msgData = {
         action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
         op: 'currentInfo',
+        ...(excludeLogins ? { excludeLogins: true } : {}),
       };
       sendMessage(msgData);
       registerCallback(msgData.action, msgData.op, cb);
