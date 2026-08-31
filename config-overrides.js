@@ -17,6 +17,23 @@ const plugins = [
   }),
 ];
 
+// KVS webrtc 的 npm 包发布了 lib/*.js 却没随包带 src/*.ts，source-map-loader
+// 找不到对应源码映射就每次编译刷一堆告警。纯噪音，不影响功能。
+// 只按"这个包 + Failed to parse source map"精确过滤——我们自己代码里真出源码
+// 映射问题时照样会报出来，不会被一起吞掉。
+const ignoreKvsSourceMapWarnings = (config) => {
+  config.ignoreWarnings = [
+    ...(config.ignoreWarnings || []),
+    (warning) => {
+      const msg = warning?.message || '';
+      const res = warning?.module?.resource || '';
+      return /Failed to parse source map/.test(msg) && /amazon-kinesis-video-streams-webrtc/.test(res + msg);
+    },
+  ];
+  return config;
+};
+plugins.push(ignoreKvsSourceMapWarnings);
+
 if (process.env.REMOVE_CONSOLE === 'true') {
   plugins.push(addBabelPlugin(['babel-plugin-transform-remove-console', { exclude: ['error', 'warn'] }]));
 }

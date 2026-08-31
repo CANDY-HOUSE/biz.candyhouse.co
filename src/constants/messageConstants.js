@@ -19,6 +19,7 @@ export const ACTION_TYPES = {
   BIZ3_GET_BATTERY_RECORD: 'biz3GetDeviceBatteryRecord',
   BIZ3_IR_REMOTE: 'biz3IRRemote',
   BIZ3_SCHEDULE: 'biz3Schedule',
+  BIZ3_FACE3_QR: 'biz3Face3Qr',
 };
 
 export const STATUS_TYPES = {

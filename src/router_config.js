@@ -77,6 +77,11 @@ const routerComponentMap = [
   {
     router: '/vision',
     components: [{ router: '', component: Vision }],
+    // App 扫 Face3 二维码后要落到这个页面完成绑定，而此时用户名下还没有
+    // 任何 Face3，access 里自然没有 Vision，按 access 过滤会被判成 404。
+    // load 让这条路由对已登录用户无条件可达；侧边菜单是另一套（Navigator.js
+    // 直接读 customerInfo.access），所以不会因此给谁多出一个 Vision 图标。
+    load: true,
   },
   {
     router: '/biz/employees',

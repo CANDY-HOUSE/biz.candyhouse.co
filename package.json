@@ -60,6 +60,7 @@
     "@stripe/stripe-js": "^5.2.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.1",
+    "amazon-kinesis-video-streams-webrtc": "^2.9.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "buffer": "^6.0.3",
     "cross-env": "^7.0.3",
