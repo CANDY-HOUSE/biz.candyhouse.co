@@ -100,6 +100,9 @@
     "typescript": "5.1.6",
     "yarn": "^1.22.22"
   },
+  "resolutions": {
+    "amazon-kinesis-video-streams-webrtc/jsdom": "^29.1.1"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
