@@ -14,6 +14,7 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  *     op: 'list'    本 hook 调用，列出我绑过的设备
  *     op: 'wake'    本 hook 调用，唤醒设备去推流
  *     op: 'viewer'  本 hook 调用，取观看端临时凭证
+ *     op: 'unbind'  本 hook 调用，解绑（把设备从我的列表移除）
  *
  * 刻意不在消息体里带 subUUID：云端从 face3_ws_connections[connectionId]
  * 取当前登录用户，请求体里报什么都不作数。这样"我是谁"由已鉴权的连接决定，
@@ -125,6 +126,30 @@ const useFace3Qr = () => {
     [registerCallback]
   );
 
+  /**
+   * 解绑一台设备：把它从"我"的绑定列表里移除。
+   *
+   * 只会解自己名下的绑定（云端按已鉴权连接的主体删除，键含主体），删不到别人的。
+   * owner 解绑也只移除自己，不影响其他已绑用户。撤权即时生效：解绑后对这台设备
+   * 的唤醒/观看都会被云端拒绝。
+   *
+   * @param {string} deviceId
+   * @param {Function} cb 回调，收到 {success, code, message, data:{deviceId, unbound}}
+   */
+  const unbindFace3Device = useCallback(
+    (deviceId, cb) => {
+      if (!deviceId) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_FACE3_QR,
+        op: 'unbind',
+        deviceId,
+      };
+      sendMessage(messageData);
+      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
+    },
+    [registerCallback]
+  );
+
   const handleFace3QrResponse = useCallback(
     (message) => {
       invokeCallbacks(message);
@@ -140,6 +165,12 @@ const useFace3Qr = () => {
               if (message.success) {
                 setFace3Devices(message.data?.devices || []);
                 setFace3DevicesLoaded(true);
+              }
+              break;
+            case 'unbind':
+              /* 解绑成功就把这台设备从本地列表摘掉，列表立即刷新，不必再拉一次 list。 */
+              if (message.success && message.data?.deviceId) {
+                setFace3Devices((prev) => prev.filter((d) => d.deviceId !== message.data.deviceId));
               }
               break;
             default:
@@ -164,6 +195,7 @@ const useFace3Qr = () => {
     listFace3Devices,
     wakeFace3Device,
     viewFace3Device,
+    unbindFace3Device,
   };
 };
 

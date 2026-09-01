@@ -328,6 +328,12 @@
     "errPeerFailed": "視訊通道沒能建立。裝置與手機之間可能被網路阻斷，換個網路再試試",
     "errSignaling": "無法連接到視訊服務，請檢查網路後重試",
     "errSignalingClosed": "連接被中斷，請重試",
-    "errInsecureContext": "目前頁面不是 HTTPS，瀏覽器停用了加密介面，無法播放。請用 https 或 localhost 開啟"
+    "errInsecureContext": "目前頁面不是 HTTPS，瀏覽器停用了加密介面，無法播放。請用 https 或 localhost 開啟",
+    "moreActions": "更多操作",
+    "unbind": "解除綁定",
+    "unbindConfirmTitle": "解除綁定這台設備？",
+    "unbindConfirmBody": "解除後將把「{{name}}」從你的清單中移除，你將無法再喚醒或觀看它。之後可隨時重新掃碼綁定。",
+    "unbindSuccess": "已解除綁定",
+    "unbindFailed": "解除綁定失敗，請稍後再試"
   }
 }

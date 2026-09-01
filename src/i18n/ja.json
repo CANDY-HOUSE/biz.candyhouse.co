@@ -328,6 +328,12 @@
     "errPeerFailed": "映像の接続を確立できませんでした。ネットワークが遮断している可能性があります。別のネットワークでお試しください。",
     "errSignaling": "映像サービスに接続できませんでした。ネットワークをご確認ください。",
     "errSignalingClosed": "接続が中断されました。もう一度お試しください。",
-    "errInsecureContext": "このページは HTTPS ではないため、再生に必要な暗号 API が使えません。https または localhost で開いてください。"
+    "errInsecureContext": "このページは HTTPS ではないため、再生に必要な暗号 API が使えません。https または localhost で開いてください。",
+    "moreActions": "その他の操作",
+    "unbind": "解除",
+    "unbindConfirmTitle": "この端末を解除しますか？",
+    "unbindConfirmBody": "「{{name}}」をリストから削除します。今後は起動や視聴ができなくなります。QRコードを再度スキャンすれば、いつでも再登録できます。",
+    "unbindSuccess": "解除しました",
+    "unbindFailed": "解除に失敗しました。しばらくしてから再試行してください"
   }
 }

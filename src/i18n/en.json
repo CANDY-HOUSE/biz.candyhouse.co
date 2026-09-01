@@ -328,6 +328,12 @@
     "errPeerFailed": "Couldn't establish the video connection. Your network may be blocking it — try a different network.",
     "errSignaling": "Couldn't reach the video service. Check your network and try again.",
     "errSignalingClosed": "The connection was interrupted. Please try again.",
-    "errInsecureContext": "This page is not served over HTTPS, so the browser disables the crypto API needed for playback. Open it over https or localhost."
+    "errInsecureContext": "This page is not served over HTTPS, so the browser disables the crypto API needed for playback. Open it over https or localhost.",
+    "moreActions": "More actions",
+    "unbind": "Unbind",
+    "unbindConfirmTitle": "Unbind this device?",
+    "unbindConfirmBody": "This removes “{{name}}” from your list; you will no longer be able to wake or view it. You can bind it again anytime by scanning its QR code.",
+    "unbindSuccess": "Unbound",
+    "unbindFailed": "Unbind failed, please try again later"
   }
 }

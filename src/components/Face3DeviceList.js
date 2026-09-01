@@ -11,12 +11,23 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
@@ -60,11 +71,12 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, waking }) => {
+const DeviceCard = ({ device, onOpen, onWake, onUnbind, waking }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.displayName || device.deviceId;
   const roleKey = ['owner', 'manager', 'guest'].includes(device.role) ? device.role : null;
+  const [menuAnchor, setMenuAnchor] = useState(null);
 
   return (
     <Card
@@ -223,6 +235,48 @@ const DeviceCard = ({ device, onOpen, onWake, waking }) => {
           {waking ? <CircularProgress size={20} sx={{ color: 'inherit' }} /> : <PlayArrowIcon />}
         </IconButton>
       </Box>
+
+      {/* 右上角"更多操作"菜单（目前只有解绑）。
+       *
+       * 同 wake 按钮，必须放在 CardActionArea 外面：否则点击会冒泡成"打开设备"，
+       * 且按钮套按钮是非法 DOM 嵌套。stopPropagation 再兜一道。 */}
+      <Box sx={{ position: 'absolute', top: 4, right: 4 }}>
+        <IconButton
+          size="small"
+          aria-label={t('face3.moreActions')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuAnchor(e.currentTarget);
+          }}
+          sx={{
+            bgcolor: 'rgba(0,0,0,0.45)',
+            color: 'white',
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
+          }}
+        >
+          <MoreVertIcon fontSize="small" />
+        </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              onUnbind?.(device);
+            }}
+            sx={{ color: 'error.main' }}
+          >
+            <ListItemIcon sx={{ color: 'error.main' }}>
+              <DeleteOutlineIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('face3.unbind')}</ListItemText>
+          </MenuItem>
+        </Menu>
+      </Box>
     </Card>
   );
 };
@@ -248,7 +302,7 @@ export default function Face3DeviceList({ onOpen }) {
    *
    * 项目里既有页面（schedule-list）也是这个写法：effect 里直接调，
    * 依赖放具体的值而不是 hook 对象。 */
-  const { listFace3Devices, wakeFace3Device } = gFace3Qr;
+  const { listFace3Devices, wakeFace3Device, unbindFace3Device } = gFace3Qr;
   /* 第二道防线：两次请求至少隔 1 秒。
    *
    * 注意不能用"在途标志"来挡 —— React 在依赖变化时会先跑 cleanup 再跑新的
@@ -324,6 +378,9 @@ export default function Face3DeviceList({ onOpen }) {
      直接开只会转圈然后超时。 */
   const [viewing, setViewing] = useState(null);
   const [toast, setToast] = useState(null); // { severity, text }
+  /* 解绑确认弹窗的目标设备；非空即打开弹窗。unbinding 标记请求在途，防连点。 */
+  const [unbindTarget, setUnbindTarget] = useState(null);
+  const [unbinding, setUnbinding] = useState(false);
 
   /* 唤醒失败的原因要说清楚，否则用户只知道"没反应"。
      云端的 message 见 Face3_qr.mjs 的 wakeDevice。 */
@@ -372,6 +429,40 @@ export default function Face3DeviceList({ onOpen }) {
       } else {
         finish('error', wakeErrorText(message?.message));
       }
+    });
+  };
+
+  /* 解绑：点菜单项先弹确认框（破坏性操作），确认后才发请求。 */
+  const handleUnbindRequest = (device) => {
+    if (!device?.deviceId) return;
+    setUnbindTarget(device);
+  };
+
+  const handleUnbindConfirm = () => {
+    const device = unbindTarget;
+    if (!device?.deviceId || unbinding) return;
+    setUnbinding(true);
+
+    let settled = false;
+    const finish = (severity, text) => {
+      if (settled) return;
+      settled = true;
+      setUnbinding(false);
+      setUnbindTarget(null);
+      setToast({ severity, text });
+    };
+
+    /* 同 wake：断网时 sendMessage 静默丢弃、无回包，靠超时收尾 */
+    const timer = setTimeout(() => finish('error', t('face3.errTimeout')), WAKE_TIMEOUT_MS);
+
+    unbindFace3Device(device.deviceId, (message) => {
+      clearTimeout(timer);
+      /* 成功后这台设备由 hook 从列表里摘除（见 useFace3Qr 的 unbind 分支），
+         这里只负责提示与收尾。 */
+      finish(
+        message?.success ? 'success' : 'error',
+        message?.success ? t('face3.unbindSuccess') : t('face3.unbindFailed')
+      );
     });
   };
 
@@ -493,12 +584,39 @@ export default function Face3DeviceList({ onOpen }) {
             device={d}
             onOpen={onOpen}
             onWake={handleWake}
+            onUnbind={handleUnbindRequest}
             waking={wakingId === d.deviceId}
           />
         ))}
       </Box>
       {addDialog}
       <Face3LiveView open={Boolean(viewing)} device={viewing} onClose={() => setViewing(null)} />
+
+      {/* 解绑确认。破坏性操作，先确认再发。 */}
+      <Dialog
+        open={Boolean(unbindTarget)}
+        onClose={() => {
+          if (!unbinding) setUnbindTarget(null);
+        }}
+      >
+        <DialogTitle>{t('face3.unbindConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('face3.unbindConfirmBody', {
+              name: unbindTarget?.displayName || unbindTarget?.deviceId || '',
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnbindTarget(null)} disabled={unbinding}>
+            {t('face3.cancel')}
+          </Button>
+          <Button onClick={handleUnbindConfirm} color="error" disabled={unbinding}>
+            {unbinding ? <CircularProgress size={18} sx={{ color: 'inherit' }} /> : t('face3.unbind')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={Boolean(toast)}
         autoHideDuration={4000}

@@ -328,6 +328,12 @@
     "errPeerFailed": "视频通道没能建立。设备与手机之间可能被网络阻断，换个网络再试试",
     "errSignaling": "无法连接到视频服务，请检查网络后重试",
     "errSignalingClosed": "连接被中断，请重试",
-    "errInsecureContext": "当前页面不是 HTTPS，浏览器禁用了加密接口，无法播放。请用 https 或 localhost 打开"
+    "errInsecureContext": "当前页面不是 HTTPS，浏览器禁用了加密接口，无法播放。请用 https 或 localhost 打开",
+    "moreActions": "更多操作",
+    "unbind": "解绑",
+    "unbindConfirmTitle": "解绑这台设备？",
+    "unbindConfirmBody": "解绑后将把「{{name}}」从你的列表中移除，你将无法再唤醒或观看它。之后可随时重新扫码绑定。",
+    "unbindSuccess": "已解绑",
+    "unbindFailed": "解绑失败，请稍后重试"
   }
 }
