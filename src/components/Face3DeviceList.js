@@ -5,7 +5,6 @@ import {
   Card,
   CardActionArea,
   Chip,
-  Skeleton,
   IconButton,
   Button,
   CircularProgress,
@@ -22,8 +21,6 @@ import {
   DialogActions,
 } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -33,9 +30,6 @@ import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import Face3AddDevice from '@/components/Face3AddDevice';
 import Face3LiveView from '@/components/Face3LiveView';
-
-/** 列表拉不回来时不能一直转圈 —— sendMessage 断网是静默丢弃的 */
-const LIST_TIMEOUT_MS = 15000;
 
 /** 在线状态的刷新间隔。
  *
@@ -298,7 +292,6 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
 export default function Face3DeviceList({ onOpen }) {
   const { t } = useTranslation();
   const { gFace3Qr } = useContext(GlobalStateContext);
-  const [state, setState] = useState('loading'); // loading | ready | error
   const [attempt, setAttempt] = useState(0);
 
   /* 只取出要用的那个函数，不要把 gFace3Qr 整个放进依赖。
@@ -318,42 +311,20 @@ export default function Face3DeviceList({ onOpen }) {
    *
    * 代价是 1 秒内连点两次重试只会发一次，这个可以接受。 */
   const lastReqAt = useRef(0);
-  /* 是否已经成功拿过一次数据。决定"要不要显示骨架屏" */
-  const hasLoaded = useRef(false);
 
   useEffect(() => {
+    /* 节流：两次请求至少隔 1 秒，挡住 gFace3Qr 引用变化导致的自我喂食循环
+       （见上方 provider 说明）。 */
     const now = Date.now();
-    if (now - lastReqAt.current < 1000) {
-      return undefined;
-    }
+    if (now - lastReqAt.current < 1000) return undefined;
     lastReqAt.current = now;
 
-    let settled = false;
-    /* 定时刷新时不要退回 loading —— 否则每 30 秒列表闪一下。
-       只有首次才显示骨架屏。用 ref 而不是读 gFace3Qr：effect 里读到的是
-       创建那一刻捕获的引用，拿它判断会失准。 */
-    if (!hasLoaded.current) {
-      setState('loading');
-    }
-
-    const finish = (next) => {
-      if (settled) return;
-      settled = true;
-      setState(next);
-    };
-
-    /* sendMessage 断网时是静默丢弃、未连接时入队等待，两种都不会有回包，
-       所以超时必须由这里兜住，否则一直转圈 */
-    const timer = setTimeout(() => finish('error'), LIST_TIMEOUT_MS);
-
-    listFace3Devices((message) => {
-      clearTimeout(timer);
-      if (message?.success) hasLoaded.current = true;
-      finish(message?.success ? 'ready' : 'error');
-    });
-
-    return () => clearTimeout(timer);
-    // attempt 变化 = 用户点了重试
+    /* 只负责触发一次 list，把 face3Devices 灌进 provider。渲染只看 face3Devices
+       的数量：0 → 猫头鹰，>0 → 列表，不再用 loading/error 状态机（Face3 未发布，
+       没设备的用户只见猫头鹰、不打扰）。断网/失败时 face3Devices 保持原样不变。 */
+    listFace3Devices(() => {});
+    return undefined;
+    // attempt 变化 = 定时刷新 / 用户重试
   }, [listFace3Devices, attempt]);
 
   /* 定时刷新，让在线/离线自己变。
@@ -507,75 +478,27 @@ export default function Face3DeviceList({ onOpen }) {
     />
   );
 
-  /* 已经有数据就别退回骨架屏 —— 手动刷新时列表不该整块闪没 */
-  if (state === 'loading' && face3Devices.length === 0) {
-    return (
-      <Box>
-        {header}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
-          {[0, 1].map((i) => (
-            <Skeleton key={i} variant="rounded" height={220} sx={{ borderRadius: 2 }} />
-          ))}
-        </Box>
-        {addDialog}
-      </Box>
-    );
-  }
-
-  if (state === 'error' && face3Devices.length === 0) {
-    return (
-      <Box>
-        {header}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 1.5,
-            py: 6,
-            px: 3,
-            textAlign: 'center',
-          }}
-        >
-          <WarningAmberIcon sx={{ fontSize: 48, color: 'warning.main' }} />
-          <Typography variant="body2">{t('face3.listFailed')}</Typography>
-          <IconButton onClick={() => setAttempt((n) => n + 1)} aria-label={t('face3.retry')}>
-            <RefreshIcon />
-          </IconButton>
-        </Box>
-        {addDialog}
-      </Box>
-    );
-  }
-
+  /* 未添加 Face3 设备时（加载中 / 空 / 首次加载失败，凡是没有设备可展示）只显示一个
+     猫头鹰，不摆 Face3 的标题 / 说明 / 添加按钮 —— Face3 未发布，别打扰没有该设备的用户。
+     点猫头鹰 = 原来那个 "+" 的添加设备行为。有设备的用户才看到完整列表（下方 return）。 */
   if (face3Devices.length === 0) {
     return (
-      <Box>
-        {header}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+        }}
+      >
         <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 1.5,
-            py: 6,
-            px: 3,
-            textAlign: 'center',
-          }}
+          onClick={() => setAdding(true)}
+          role="button"
+          aria-label={t('face3.addFace3Device')}
+          sx={{ color: 'text.disabled', display: 'flex', cursor: 'pointer' }}
         >
-          <Box sx={{ color: 'text.disabled', display: 'flex' }}>
-            <VisionIcon width={72} height={72} />
-          </Box>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            {t('face3.noFace3Devices')}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-            {t('face3.noFace3DevicesHint')}
-          </Typography>
-          {/* 空列表也要有明确的下一步动作，光有提示文字用户会以为功能没做 */}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAdding(true)} sx={{ mt: 1 }}>
-            {t('face3.addFace3Device')}
-          </Button>
+          <VisionIcon width={96} height={96} />
         </Box>
         {addDialog}
       </Box>
