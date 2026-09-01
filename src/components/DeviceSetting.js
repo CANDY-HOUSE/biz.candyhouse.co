@@ -17,7 +17,10 @@ import SliderItem from './SliderItem';
 export default function DeviceSetting({ showBack = true }) {
   const { gStripe, gManageDevice, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
   const { t } = useTranslation();
-  const [autoLockEnabled, setAutoLockEnabled] = useState(false);
+  /* 这个开关的 onChange 走 onClickSetAngle(导航到设置页)，从不改自身状态，
+     所以只读 autoLockEnabled、不需要 setter。留着未用的 setter 会被
+     CRA 生产构建(CI=true 视警告为错误)判成 no-unused-vars 而编译失败。 */
+  const [autoLockEnabled] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const did = searchParams.get('deviceUUID') || '';

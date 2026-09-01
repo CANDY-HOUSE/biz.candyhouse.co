@@ -71,7 +71,7 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onUnbind, waking }) => {
+const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.displayName || device.deviceId;
@@ -277,6 +277,14 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, waking }) => {
           </MenuItem>
         </Menu>
       </Box>
+
+      {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/⋮菜单。
+          Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
+      {isViewing && (
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: '16 / 9' }}>
+          <Face3LiveView device={device} onClose={onCloseView} />
+        </Box>
+      )}
     </Card>
   );
 };
@@ -585,12 +593,13 @@ export default function Face3DeviceList({ onOpen }) {
             onOpen={onOpen}
             onWake={handleWake}
             onUnbind={handleUnbindRequest}
+            onCloseView={() => setViewing(null)}
             waking={wakingId === d.deviceId}
+            isViewing={viewing?.deviceId === d.deviceId}
           />
         ))}
       </Box>
       {addDialog}
-      <Face3LiveView open={Boolean(viewing)} device={viewing} onClose={() => setViewing(null)} />
 
       {/* 解绑确认。破坏性操作，先确认再发。 */}
       <Dialog

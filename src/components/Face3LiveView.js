@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Box, Dialog, IconButton, Typography, CircularProgress, Button } from '@mui/material';
+import { Box, IconButton, Typography, CircularProgress, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
@@ -38,13 +38,17 @@ const VIEWER_ERROR_TEXT = {
 };
 
 /**
- * Face3 实时画面。
+ * Face3 实时画面（就地播放）。
  *
- * 设备是 MASTER，这里是 VIEWER。开播前提是设备已被唤醒并开始推流 ——
- * 唤醒是异步的，T32 冷启动加上 KVS 信令握手要好几秒，所以拿不到画面时
- * 优先提示"设备正在启动"而不是直接报错。
+ * 直接铺满父容器——列表卡片里那块 16:9 预览框，不再用独立居中弹窗，所以视频就
+ * 出现在占位框原本的位置。父组件只在观看该设备时挂载本组件，**卸载即触发清理**
+ * （关 RTCPeerConnection 和信令 WebSocket），所以不需要 open 开关。
+ *
+ * 设备是 MASTER，这里是 VIEWER。开播前提是设备已被唤醒并开始推流 —— 唤醒是异步的，
+ * T32 冷启动加上 KVS 信令握手要好几秒，所以拿不到画面时优先提示"设备正在启动"
+ * 而不是直接报错。
  */
-export default function Face3LiveView({ open, device, onClose }) {
+export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3Qr } = useContext(GlobalStateContext);
   const { viewFace3Device } = gFace3Qr;
@@ -53,7 +57,7 @@ export default function Face3LiveView({ open, device, onClose }) {
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
      state 的闭包会拿到旧值。 */
   const viewerRef = useRef(null);
-  const [phase, setPhase] = useState('idle'); // idle | connecting | playing | error
+  const [phase, setPhase] = useState('connecting'); // connecting | playing | error
   const [errorKey, setErrorKey] = useState('');
   const [attempt, setAttempt] = useState(0);
   /* 自动起播被拦时置上，用来提示用户点一下。WebView 里
@@ -63,7 +67,7 @@ export default function Face3LiveView({ open, device, onClose }) {
   const deviceId = device?.deviceId;
 
   useEffect(() => {
-    if (!open || !deviceId) return undefined;
+    if (!deviceId) return undefined;
 
     let cancelled = false;
     setPhase('connecting');
@@ -141,12 +145,12 @@ export default function Face3LiveView({ open, device, onClose }) {
       cancelled = true;
       clearTimeout(timer);
       /* 必须显式关：不关的话 RTCPeerConnection 和信令 WebSocket 会一直活着，
-         反复开关弹窗就会攒下一堆连接，设备侧也会被多个 viewer 占住。 */
+         反复开关就会攒下一堆连接，设备侧也会被多个 viewer 占住。 */
       viewerRef.current?.close();
       viewerRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [open, deviceId, viewFace3Device, attempt]);
+  }, [deviceId, viewFace3Device, attempt]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;
@@ -221,116 +225,109 @@ export default function Face3LiveView({ open, device, onClose }) {
 
   const retry = () => setAttempt((n) => n + 1);
 
+  /* 铺满父容器（卡片的 16:9 预览框）。父级已是 position:relative + overflow:hidden，
+     所以这里 inset:0 就正好落在占位框的位置和尺寸上。 */
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <Box sx={{ position: 'relative', bgcolor: '#000' }}>
-        {/* 16:9 与摄像头出图比例一致，避免出画瞬间跳版 */}
-        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '16 / 9' }}>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            onClick={() => {
-              /* 点击是真手势：解除静音并起播，让用户听到声音。muted 不写成 JSX
-                 属性(React 老 bug 不生效)，这里命令式设。失败必须记下来——之前
-                 吞掉异常，用户点了没反应而控制台一片空白，线索也一起丢了。 */
-              const el = videoRef.current;
-              if (!el) return;
-              el.muted = false;
-              el.play()
-                .then(() => setNeedsTap(false))
-                .catch((err) => {
-                  // eslint-disable-next-line no-console
-                  console.warn('[face3Viewer] tap play failed:', err?.name || err);
-                });
-            }}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              display: phase === 'playing' ? 'block' : 'none',
-            }}
-          />
+    <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#000' }}>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        onClick={() => {
+          /* 点击是真手势：解除静音并起播，让用户听到声音。muted 不写成 JSX
+             属性(React 老 bug 不生效)，这里命令式设。失败必须记下来——之前
+             吞掉异常，用户点了没反应而控制台一片空白，线索也一起丢了。 */
+          const el = videoRef.current;
+          if (!el) return;
+          el.muted = false;
+          el.play()
+            .then(() => setNeedsTap(false))
+            .catch((err) => {
+              // eslint-disable-next-line no-console
+              console.warn('[face3Viewer] tap play failed:', err?.name || err);
+            });
+        }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: phase === 'playing' ? 'block' : 'none',
+        }}
+      />
 
-          {phase === 'playing' && needsTap && (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                {t('face3.liveTapToPlay')}
-              </Typography>
-            </Box>
-          )}
-
-          {phase !== 'playing' && (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1.5,
-                px: 3,
-                textAlign: 'center',
-              }}
-            >
-              {phase === 'error' ? (
-                <>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
-                    {t(errorKey)}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<RefreshIcon />}
-                    onClick={retry}
-                    sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
-                  >
-                    {t('face3.retry')}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <CircularProgress size={28} sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {t('face3.liveConnecting')}
-                  </Typography>
-                </>
-              )}
-            </Box>
-          )}
-
-          <IconButton
-            onClick={onClose}
-            aria-label={t('face3.cancel')}
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              bgcolor: 'rgba(0,0,0,0.5)',
-              color: 'white',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-        </Box>
-
-        <Box sx={{ px: 2, py: 1.25, bgcolor: 'white' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {device?.displayName || deviceId}
+      {phase === 'playing' && needsTap && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+            {t('face3.liveTapToPlay')}
           </Typography>
         </Box>
-      </Box>
-    </Dialog>
+      )}
+
+      {phase !== 'playing' && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1.5,
+            px: 3,
+            textAlign: 'center',
+          }}
+        >
+          {phase === 'error' ? (
+            <>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+                {t(errorKey)}
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<RefreshIcon />}
+                onClick={retry}
+                sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+              >
+                {t('face3.retry')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <CircularProgress size={28} sx={{ color: 'rgba(255,255,255,0.7)' }} />
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                {t('face3.liveConnecting')}
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
+
+      <IconButton
+        onClick={onClose}
+        aria-label={t('face3.cancel')}
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          bgcolor: 'rgba(0,0,0,0.5)',
+          color: 'white',
+          '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+        }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </Box>
   );
 }
