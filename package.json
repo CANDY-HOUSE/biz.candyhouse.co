@@ -4,6 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "predev": "node verify-prebuild.js",
     "dev": "react-app-rewired start",
     "build": "npx cross-env REMOVE_CONSOLE=true react-app-rewired build",
     "test": "react-app-rewired test",
