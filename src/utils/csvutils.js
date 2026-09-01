@@ -151,7 +151,7 @@ function downloadExcelTemp() {
   downloadTemplate('excel');
 }
 
-function downloadLists(list, isCsv = true) {
+function downloadLists(list, isCsv = true, fileName = 'sesamebiz') {
   console.log('hey下载数据', list);
 
   // 定義各header
@@ -284,16 +284,16 @@ function downloadLists(list, isCsv = true) {
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    saveAs(blob, 'sesamebiz.csv');
+    saveAs(blob, `${fileName}.csv`);
   } else {
-    downloadExcel(newList, pathname);
+    downloadExcel(newList, pathname, fileName);
   }
   // 取得第一項的標題並當成CSV標題
 }
 
-const downloadExcel = (data, pathname) => {
+const downloadExcel = (data, pathname, fileName = 'sesamebiz') => {
   let processedData = {};
-  if (pathname === '/access-control/cards' || pathname === '/cards') {
+  if (pathname === '/biz/access-control/cards' || pathname === '/biz/cards') {
     processedData = data.map((item) => ({
       ...item,
 
@@ -315,7 +315,7 @@ const downloadExcel = (data, pathname) => {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
   // 生成 Excel 文件并触发下载
-  XLSX.writeFile(workbook, 'sesamebiz.xlsx');
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
 };
 export const csvUtils = {
   downloadCsv,

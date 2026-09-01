@@ -78,6 +78,7 @@ export default function DataTable({
   isDel = true,
   isCsv = true,
   onCsvClick = null,
+  toolbarActions = null,
   isBind = true,
   isBack = false,
   isHideToolBar = false,
@@ -379,11 +380,14 @@ export default function DataTable({
 
               <Box
                 sx={{
-                  display: callAdd || isBind || isKey || isCsv || isDel || callSearch || isShowFooter ? 'flex' : 'none',
+                  display:
+                    callAdd || isBind || isKey || isCsv || isDel || callSearch || isShowFooter || toolbarActions
+                      ? 'flex'
+                      : 'none',
                   justifyContent: 'space-between',
                 }}
               >
-                {isBind || callAdd || isKey || isCsv || isDel || callSearch ? (
+                {isBind || callAdd || isKey || isCsv || isDel || callSearch || toolbarActions ? (
                   <Box
                     sx={{
                       display: 'flex',
@@ -456,6 +460,7 @@ export default function DataTable({
                         </Tooltip>
                       </>
                     )}
+                    {toolbarActions}
                     {isDel && (
                       <Tooltip title="削除">
                         <IconButton

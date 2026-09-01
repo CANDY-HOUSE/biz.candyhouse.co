@@ -14,6 +14,7 @@ const PubedPasscodeLinkedDeviceIDs = 'pubPasscodeLinkedIDs';
 const AuthDataOpType = {
   getCards: 'getCards',
   getPasscodes: 'getPasscodes',
+  getCardsByStpDevice: 'getCardsByStpDevice',
 };
 export const useManageAuthData = (gManageDevice, gStripe) => {
   const [deviceCards, setDeviceCards] = useState({});
@@ -182,6 +183,9 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
           break;
         case AuthDataOpType.getCards:
           setNfcCardFetchState((prev) => ({ ...prev, done: true }));
+          break;
+        case AuthDataOpType.getCardsByStpDevice:
+          invokeCallbacks(message);
           break;
         case PubedCardLinkedDeviceIDs:
           handleDeviceCardData(message.data, PubedCardLinkedDeviceIDs);
@@ -707,9 +711,44 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
     [getPasswordsDataSize, sendCmd]
   );
 
+  /**
+   * 查询某台 stpDevice 上曾经用过的全部卡片。
+   *
+   * 与 getCards 的区别：getCards 只回传当前与设备关联的卡片（读 candyhouse_sesame_card，
+   * 会被 clearCards / delCards 清掉）；这里按 nfc_card 表的 stpDeviceUUID 索引检索，
+   * 那张表只写不删，所以能拿到设备上曾经登録过的卡片。
+   *
+   * 请求：{ action, op: 'getCardsByStpDevice', obj: { stpDeviceUUID, lastKey, pageSize } }
+   * 响应：{ action, op: 'getCardsByStpDevice', data: { list, lastKey, total } }
+   *
+   * 后端已按 cardID 去重（同一张卡每次改名/登録都会新增一条记录），
+   * lastKey 是去重后列表上的不透明游标，为空表示已取完。
+   */
+  const getCardsByStpDevice = useCallback(
+    ({ stpDeviceUUID, lastKey = null, pageSize = 500 }, cb) => {
+      if (!stpDeviceUUID) {
+        console.log('getCardsByStpDevice stpDeviceUUID is empty');
+        return;
+      }
+      let message = {
+        action: ACTION_TYPES.BIZ3_MANAGE_AC_AUTHDATA,
+        obj: {
+          stpDeviceUUID,
+          lastKey,
+          pageSize,
+        },
+        op: AuthDataOpType.getCardsByStpDevice,
+      };
+      sendMessage(message);
+      registerCallback(message.action, message.op, cb);
+    },
+    [registerCallback]
+  );
+
   return {
     nfcCards,
     findCardsByCardID,
+    getCardsByStpDevice,
     updateCardName,
     updateCardOwner,
     postCards,
