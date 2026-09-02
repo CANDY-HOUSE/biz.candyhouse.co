@@ -63,22 +63,19 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
         case 'updateName':
           const context = message.reqContext;
           if (context && context.deviceUUID) {
-            setCompanyDevices((prevDevices) => {
-              const updatedDevices = prevDevices.map((device) => {
-                if (device.deviceUUID === context.deviceUUID) {
-                  return {
-                    ...device,
-                    deviceName: context.deviceName,
-                  };
-                }
-                return device;
-              });
-              return updatedDevices;
-            });
+            updateDeviceState({ deviceUUID: context.deviceUUID, deviceName: context.deviceName });
           }
           break;
         case 'getDeviceStatus':
-          setDeviceStatus(message.data?.length > 0 ? message.data[0] : null);
+          const device = message.data?.length > 0 ? message.data[0] : null;
+          setDeviceStatus(device);
+          if (gUtils.isWifiModel(device?.deviceModel)) {
+            const subDeviceInfos = [{ deviceUUID: device.deviceUUID, deviceModel: device.deviceModel }];
+            (device.stateInfo?.sesameDevices ?? []).forEach((sub) => {
+              subDeviceInfos.push({ deviceUUID: sub.deviceUUID, deviceModel: sub.deviceModel });
+            });
+            subscribeDevices(subDeviceInfos);
+          }
           break;
         default:
           break;
@@ -139,23 +136,18 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   }, [userDevices, filteredAccessControlDevices, filteredSsmDevices]);
 
   const updateDeviceState = useCallback((updatedDevice) => {
-    setCompanyDevices((prevDevices) =>
-      prevDevices.map((device) => {
-        if (device.deviceUUID === updatedDevice.deviceUUID) {
-          const updatedStateInfo = updatedDevice.stateInfo
-            ? {
-                ...(device.stateInfo || {}),
-                ...updatedDevice.stateInfo,
-              }
-            : device.stateInfo;
-          return {
+    const mergeStateInfo = (device) =>
+      device?.deviceUUID === updatedDevice.deviceUUID
+        ? {
             ...device,
-            stateInfo: updatedStateInfo,
-          };
-        }
-        return device;
-      })
-    );
+            ...updatedDevice,
+            stateInfo: updatedDevice.stateInfo
+              ? { ...(device.stateInfo || {}), ...updatedDevice.stateInfo }
+              : device.stateInfo,
+          }
+        : device;
+    setCompanyDevices((prevDevices) => prevDevices.map(mergeStateInfo));
+    setDeviceStatus((prevDevice) => mergeStateInfo(prevDevice));
   }, []);
 
   useEffect(() => {
@@ -385,7 +377,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
 
   const getDeviceStatus = useCallback(
     (deviceUUID) => {
-      if (!deviceUUID || !gStripe.isFromApp) return;
+      if (!deviceUUID) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
         deviceUUID,
@@ -427,7 +419,6 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     updateDeviceName,
     updateRelayEnable,
     updateDeviceState,
-    setCompanyDevices,
     updateDeviceOrderKey,
     getDevicesNotifyStatus,
     switchDeviceNotify,

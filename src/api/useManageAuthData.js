@@ -530,30 +530,25 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
     console.log('updateMechStatus', deviceUUID, data);
     // 在 companyDevices 里找到对应的设备， 更新设备状态
     // 创建新数组，避免直接修改原始数组
-    const updatedCompanyDevices = gManageDevice.companyDevices.map((device) => {
-      if (device.deviceUUID === deviceUUID) {
-        // 如果卡片数量发生变化，重新获取卡片列表
-        if (device.stateInfo?.cards_num !== data.cards_num) {
-          debouncedFetchNfcCards([device.deviceUUID]);
-        }
-        if (device.stateInfo?.keyboards_num !== data.keyboards_num) {
-          debouncedFetchPasscodes([device.deviceUUID]);
-        }
-        return {
-          ...device,
-          stateInfo: {
-            ...device.stateInfo,
-            wm2State: data.wifi_state,
-            cards_num: data.cards_num,
-            fingerprints_num: data.fingerprints_num,
-            keyboards_num: data.keyboards_num,
-          },
-        };
+    const target = gManageDevice.companyDevices.find((device) => device.deviceUUID === deviceUUID);
+    if (target) {
+      // 如果卡片数量发生变化，重新获取卡片列表
+      if (target.stateInfo?.cards_num !== data.cards_num) {
+        debouncedFetchNfcCards([deviceUUID]);
       }
-      return device;
+      if (target.stateInfo?.keyboards_num !== data.keyboards_num) {
+        debouncedFetchPasscodes([deviceUUID]);
+      }
+    }
+    gManageDevice.updateDeviceState({
+      deviceUUID,
+      stateInfo: {
+        wm2State: data.wifi_state,
+        cards_num: data.cards_num,
+        fingerprints_num: data.fingerprints_num,
+        keyboards_num: data.keyboards_num,
+      },
     });
-    // 更新状态，触发组件重新渲染
-    gManageDevice.setCompanyDevices(updatedCompanyDevices);
   });
 
   const buildPaylodToFetch = useCallback((uuid, code) => {

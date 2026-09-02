@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 
-const MobileDeviceSetting = ({ disableFetch = false }) => {
+const MobileDeviceSetting = () => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
   const DeviceMemberChangedName = 'DeviceMemberChanged';
   const [searchParams] = useSearchParams();
@@ -26,7 +26,7 @@ const MobileDeviceSetting = ({ disableFetch = false }) => {
       const currentUrl = window.location.href;
       const url = new URL(currentUrl);
       url.searchParams.delete('displayType');
-      url.searchParams.append('deviceName', deviceName);
+      url.searchParams.set('deviceName', deviceName);
       url.pathname = url.pathname.replace('/index', targetPath);
       const scheme = `ssm://UI/webview/open?${new URLSearchParams({
         notifyName: DeviceMemberChangedName,
@@ -36,8 +36,8 @@ const MobileDeviceSetting = ({ disableFetch = false }) => {
     } else {
       const url = new URL(window.location.href);
       url.searchParams.delete('displayType');
-      url.searchParams.append('deviceName', deviceName);
-      url.searchParams.append('notifyType', 'bridge');
+      url.searchParams.set('deviceName', deviceName);
+      url.searchParams.set('notifyType', 'bridge');
       navigate({
         pathname: `/device-setting${targetPath}`,
         search: url.searchParams.toString(),
@@ -47,16 +47,13 @@ const MobileDeviceSetting = ({ disableFetch = false }) => {
 
   useEffect(() => {
     if (!deviceUUID) return;
-    const device =
-      gManageDevice.companyDevices.find((device) => device.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
+    const device = gManageDevice.deviceStatus;
     if (device?.deviceName) {
       setDeviceName(device.deviceName);
-      return;
-    }
-    if (!disableFetch) {
+    } else {
       gManageDevice.getDeviceStatus(deviceUUID);
     }
-  }, [deviceUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus, disableFetch]);
+  }, [deviceUUID, gManageDevice.deviceStatus]);
 
   useLayoutEffect(() => {
     if (!containerRef.current) {

@@ -31,7 +31,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
 
   // 获取设备信息
   useEffect(() => {
-    const foundDevice = gManageDevice.companyDevices.find((item) => item.deviceUUID === deviceUUID);
+    const foundDevice = gManageDevice.deviceStatus;
     if (foundDevice) {
       const deviceWithSafeRemoteList = {
         ...foundDevice,
@@ -42,7 +42,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
       };
       setDevice(deviceWithSafeRemoteList);
     }
-  }, [deviceUUID, gManageDevice.companyDevices]);
+  }, [deviceUUID, gManageDevice.deviceStatus]);
 
   // 添加遥控器的处理函数
   const handleAddRemote = () => {

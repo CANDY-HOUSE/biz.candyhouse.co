@@ -15,9 +15,11 @@ const UpgradeSSMFirmware = () => {
   const hub3UUID = searchParams.get('deviceUUID');
 
   const device = useMemo(() => {
-    if (!ssmUUID) return {};
-    return gManageDevice.companyDevices.find((d) => d.deviceUUID === ssmUUID);
-  }, [gManageDevice.companyDevices]);
+    const companyDevice = gManageDevice.companyDevices.find((d) => d.deviceUUID === ssmUUID);
+    if (companyDevice) return companyDevice;
+    const sesameDevices = gManageDevice.deviceStatus?.stateInfo?.sesameDevices ?? [];
+    return sesameDevices.find((d) => d.deviceUUID === ssmUUID) || {};
+  }, [ssmUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus]);
 
   return (
     <>

@@ -97,26 +97,14 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       if (p === 100) {
         setReportedProgress(DFU_PROGRESS_COMPLETED);
         setTimeout(() => {
-          let newFwVer = '';
-
-          gManageDevice.setCompanyDevices((prevDevices) =>
-            prevDevices.map((device) => {
-              if (device.deviceUUID !== deviceUUID) return device;
-
-              newFwVer = device.stateInfo?.latestFwVer ?? '';
-
-              return {
-                ...device,
-                stateInfo: {
-                  ...device.stateInfo,
-                  currentFwVer: newFwVer,
-                },
-              };
-            })
-          );
-
+          const target =
+            gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
+          const newFwVer = target?.stateInfo?.latestFwVer ?? '';
+          gManageDevice.updateDeviceState({
+            deviceUUID,
+            stateInfo: { currentFwVer: newFwVer },
+          });
           notifyAppDeviceFWVersionUpdated(deviceUUID, newFwVer);
-
           setReportedProgress(null);
         }, 1000);
         return;
@@ -143,23 +131,14 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       if (UUID !== currentDevice.deviceUUID) return;
       if (versionTag) {
         const targetDeviceUUID = UUID || currentDevice.deviceUUID;
-        gManageDevice.setCompanyDevices((prevDevices) =>
-          prevDevices.map((device) =>
-            device.deviceUUID === targetDeviceUUID
-              ? {
-                  ...device,
-                  stateInfo: {
-                    ...device.stateInfo,
-                    currentFwVer: versionTag,
-                    latestFwVer: versionTag,
-                  },
-                }
-              : device
-          )
-        );
-
+        gManageDevice.updateDeviceState({
+          deviceUUID: targetDeviceUUID,
+          stateInfo: {
+            currentFwVer: versionTag,
+            latestFwVer: versionTag,
+          },
+        });
         notifyAppDeviceFWVersionUpdated(targetDeviceUUID, versionTag);
-
         setReportedProgress(null);
       } else {
         setReportedProgress(progress);

@@ -19,8 +19,8 @@ const WifiModuleIndex = () => {
   const deviceName = searchParams.get('deviceName') || '';
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
-  }, [gManageDevice.filteredSsmDevices, did]);
+    return gManageDevice.deviceStatus || {};
+  }, [gManageDevice.deviceStatus]);
 
   return (
     <Box sx={{ bgcolor: '#FBFBFB', overscrollBehavior: 'none', minHeight: '100vh' }}>

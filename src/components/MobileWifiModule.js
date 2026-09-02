@@ -73,8 +73,8 @@ const MobileWifiModule = () => {
   };
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
-  }, [gManageDevice.filteredSsmDevices, did]);
+    return gManageDevice.deviceStatus || {};
+  }, [gManageDevice.deviceStatus]);
 
   // 来自 App 时 URL 没有 deviceModel，需要等后台返回 device 后才能确定设备类型，
   // 在确定之前不要渲染网络图标，避免先显示单 WiFi 再跳到 LAN/LTE/WiFi 的闪动。
@@ -82,12 +82,6 @@ const MobileWifiModule = () => {
     if (!isFromApp) return true;
     return !!currentDevice.deviceModel;
   }, [isFromApp, currentDevice.deviceModel]);
-
-  useEffect(() => {
-    if (gStripe.isFromApp) {
-      gManageDevice.getCompanyDevices(true);
-    }
-  }, [gStripe.customerInfo.companyID]);
 
   useEffect(() => {
     if (!currentDevice.secretKey) {
@@ -387,7 +381,7 @@ const MobileWifiModule = () => {
       )}
       <List>
         <ListItem disablePadding>
-          <MobileDeviceSetting disableFetch />
+          <MobileDeviceSetting />
         </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem>

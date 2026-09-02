@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Divider, List, ListItem, ListItemText, ListItemIcon, Drawer } from '@mui/material';
 import { MoreHoriz, Add as AddIcon } from '@mui/icons-material';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -10,9 +10,11 @@ import { gUtils } from '@/utils/gUtils';
 import { useNavigate } from 'react-router-dom';
 
 const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
-  const { gIot, gManageDevice, setCustomModalOpen, setModalContent, gStripe } = useContext(GlobalStateContext);
+  const { gIot, gManageDevice, setCustomModalOpen, setModalContent, gStripe, customModalOpen } =
+    useContext(GlobalStateContext);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const singleLineTextSx = {
@@ -21,29 +23,22 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
     whiteSpace: 'nowrap',
   };
 
+  const sourceDevices = useMemo(
+    () => (gManageDevice.companyDevices.length > 0 ? gManageDevice.companyDevices : gManageDevice.userDevices),
+    [gManageDevice.companyDevices, gManageDevice.userDevices]
+  );
+
   const devices = useMemo(() => {
-    if (!currentDevice || currentDevice.stateInfo?.ssks?.length < 1) return [];
-    //[eddy todo] hub3 与 touch 返回的 bindSSM 应该格式一致
-    let ssmDeviceUUIDs = currentDevice.stateInfo?.sesameDevices ?? [];
-    let ssks = currentDevice.stateInfo?.ssks;
-    if (ssmDeviceUUIDs.length < 1 && ssks?.length > 0) {
-      const uuidLength = 36;
-      for (let i = 0; i < ssks.length; i += uuidLength + 2) {
-        const uuid = ssks.substr(i, uuidLength);
-        if (uuid.length === uuidLength) {
-          ssmDeviceUUIDs.push(uuid);
-        }
-      }
-      if (!ssks || ssks.length < 36) {
-        ssmDeviceUUIDs = [];
-      }
+    const sesameDevices = currentDevice?.stateInfo?.sesameDevices ?? [];
+    if (sesameDevices.length < 1) return [];
+    if (typeof sesameDevices[0] === 'object') {
+      return sesameDevices;
     }
-    if (ssmDeviceUUIDs.length < 1) return [];
-    return gManageDevice.companyDevices.filter((it) => ssmDeviceUUIDs.includes(it.deviceUUID));
+    return gManageDevice.companyDevices.filter((it) => sesameDevices.includes(it.deviceUUID));
   }, [currentDevice, gManageDevice.companyDevices]);
 
   const canAddSesameDevice = useMemo(() => {
-    return gManageDevice.companyDevices.filter((it) => {
+    return sourceDevices.filter((it) => {
       if (!gUtils.canWifiModuleControl(it.deviceModel) || parseInt(it.keyLevel) > 1) {
         return false;
       }
@@ -52,9 +47,21 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
       }
       return !devices.some((d) => d.deviceUUID === it.deviceUUID);
     });
-  }, [devices, gManageDevice.companyDevices]);
+  }, [devices, sourceDevices]);
 
   const onAddSesameButtonClickHandler = () => {
+    setAddOpen(true);
+    if (gManageDevice.userDevices.length < 1) {
+      gManageDevice.getUserDevices(true);
+    }
+    setCustomModalOpen(true);
+  };
+  useEffect(() => {
+    if (!customModalOpen && addOpen) setAddOpen(false);
+  }, [customModalOpen, addOpen]);
+
+  useEffect(() => {
+    if (!addOpen) return;
     setModalContent(
       <CheckTable
         loadingAble
@@ -63,14 +70,13 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
         enableFilter={!gStripe.isFromApp}
         selectableRows={'single'}
         useCustomSelection={true}
-        handleClose={setCustomModalOpen(false)}
+        handleClose={() => setCustomModalOpen(false)}
         data={canAddSesameDevice}
         handleCheck={handleCheck}
         isMobile={gStripe.isFromApp}
       />
     );
-    setCustomModalOpen(true);
-  };
+  }, [addOpen, canAddSesameDevice]);
 
   const performSesameOperation = (cmdCode, deviceData, onSuccess) => {
     gIot.sendCommandToHub3WithConnectionId({
@@ -86,13 +92,10 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
     });
     registerIotCallback(cmdCode, (iotDeviceUUID, data) => {
       console.log(`[${cmdCode}]`, iotDeviceUUID, data);
-      gManageDevice.setCompanyDevices((prevDevices) =>
-        prevDevices.map((device) =>
-          device.deviceUUID === currentDevice.deviceUUID
-            ? { ...device, stateInfo: { ...device.stateInfo, ssks: data.ssks } }
-            : device
-        )
-      );
+      //调查 iot 时序，为何立即取状态不对应
+      setTimeout(() => {
+        gManageDevice.getDeviceStatus(currentDevice.deviceUUID);
+      }, 3000);
       onSuccess && onSuccess(data);
     });
   };

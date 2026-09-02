@@ -258,7 +258,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         // 自学习遥控器不受限制
         return true;
       }
-      const foundDevice = gManageDevice?.companyDevices?.find((item) => item.deviceUUID === remoteDevice.deviceUUID);
+      const foundDevice = gManageDevice.devicceStatus;
       if (!foundDevice) {
         console.warn(`Device with ID ${remoteDevice.deviceUUID} not found`);
         return true;
@@ -280,7 +280,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       }
       return counts < 3;
     },
-    [gManageDevice?.companyDevices, setSnackbarValue, t]
+    [gManageDevice.devicceStatus, setSnackbarValue, t]
   );
   /**
    * 更新本地遥控器列表
@@ -293,8 +293,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       biz3utils.triggerBridge({
         action: 'requestRefreshApp',
       });
-
-      const foundDevice = gManageDevice?.companyDevices?.find((item) => item.deviceUUID === hub3DeviceId);
+      const foundDevice = gManageDevice?.deviceStatus;
       if (!foundDevice) {
         console.warn(`Device with ID ${hub3DeviceId} not found`);
         return;
@@ -314,21 +313,12 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
           newRemoteList = [updateRemote, ...currentRemoteList];
         }
       }
-
-      const updatedCompanyDevices = gManageDevice.companyDevices.map((device) =>
-        device.deviceUUID === hub3DeviceId
-          ? {
-              ...device,
-              stateInfo: {
-                ...device.stateInfo,
-                remoteList: newRemoteList,
-              },
-            }
-          : device
-      );
-      gManageDevice.setCompanyDevices(updatedCompanyDevices);
+      gManageDevice.updateDeviceState({
+        deviceUUID: hub3DeviceId,
+        stateInfo: { remoteList: newRemoteList },
+      });
     },
-    [gManageDevice, gManageDevice?.companyDevices]
+    [gManageDevice, gManageDevice?.deviceStatus]
   );
 
   // 处理 IR 模式订阅响应
