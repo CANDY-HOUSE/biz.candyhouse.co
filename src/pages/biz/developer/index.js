@@ -30,8 +30,16 @@ import { gConfig } from '@constants/gConfig';
 
 export default function Developer() {
   const { t } = useTranslation(); // i18n
-  const { gManageDevice, gStripe, setModalContent, setCustomModalOpen, gDeveloper, setSnackbarValue, gMediaType } =
-    useContext(GlobalStateContext);
+  const {
+    gManageDevice,
+    gManageGroup,
+    gStripe,
+    setModalContent,
+    setCustomModalOpen,
+    gDeveloper,
+    setSnackbarValue,
+    gMediaType,
+  } = useContext(GlobalStateContext);
   const [sesameKey, setSesameKey] = useState({ UUID: '', secretKey: '', deviceModel: '' });
   const [apiResponse, setApiResponse] = useState({});
   const [isKeyRefresing, setIsKeyRefresing] = useState(false);
@@ -73,9 +81,26 @@ export default function Developer() {
     alignItems: 'center',
   };
 
-  const readQrcode = (imgUrl) => {
-    biz3utils.readQrcode(imgUrl, (e, d) => {
-      if (d) {
+  const readQrcode = (imgFile) => {
+    // 1) 解码图片得到二维码 URL（qrToken）
+    biz3utils.readQrcodeUrl(imgFile, (err, qrUrl) => {
+      if (!qrUrl) {
+        setSnackbarValue({ open: true, msg: '読み取りに失敗しました。QRコードが正しいか確認してください。' });
+        return;
+      }
+      // 2) 先去服务端换取真正的二维码内容（对齐 app 的 redeem 流程）
+      gManageGroup.redeemQRToken(qrUrl, (res) => {
+        if (!res.success) {
+          setSnackbarValue({ open: true, msg: res.message });
+          return;
+        }
+        const redeemedUrl = res?.success ? res?.data : null;
+        // 3) 从换取的内容解析设备信息
+        const d = redeemedUrl ? biz3utils.parseDeviceKeyFromUrl(redeemedUrl) : null;
+        if (!d) {
+          setSnackbarValue({ open: true, msg: '読み取りに失敗しました。QRコードが正しいか確認してください。' });
+          return;
+        }
         if (d.keyLevel !== 0) {
           setSnackbarValue({ open: true, msg: '登録失敗、デバイスの"オーナー"権限が必要です' });
           return;
@@ -85,7 +110,7 @@ export default function Developer() {
         } else {
           setSesameKey({ deviceUUID: d.deviceUUID, secretKey: d.secretKey, deviceModel: d.deviceModel });
         }
-      }
+      });
     });
   };
 
