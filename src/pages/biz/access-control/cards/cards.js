@@ -14,8 +14,7 @@ import useNfcCardUploader from '@/hooks/TouchProDataBufferUploader/useNfcCardUpl
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { sesameTouchProAuthType } from '@constants/sesameTouchProAuthType';
 import { gUtils } from '@/utils/gUtils';
-import { Backdrop, CircularProgress, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
-import HistoryIcon from '@mui/icons-material/History';
+import { Backdrop, CircularProgress } from '@mui/material';
 import useStpDeviceCardsExport from '@hooks/useStpDeviceCardsExport';
 
 export default function VCards() {
@@ -39,7 +38,6 @@ export default function VCards() {
   const { title } = state || '';
   const [recentAddedCards, setRecentAddedCards] = useState([]);
   const { sendCmd } = useOperateIoT();
-  const [exportMenuAnchor, setExportMenuAnchor] = useState(null);
 
   const { uploadCardBatch, uploadState } = useNfcCardUploader(sendCmd);
   const { isExporting, exportCards } = useStpDeviceCardsExport();
@@ -94,10 +92,9 @@ export default function VCards() {
   };
 
   // 导出该认证机器上曾经用过的全部卡片（数据来自 nfc_card 表，不是设备当前的卡片列表）
-  const handleExportAllCards = async (isCsv) => {
-    setExportMenuAnchor(null);
+  const handleExportAllCards = async (format) => {
     try {
-      const count = await exportCards(state.uuid, isCsv);
+      const count = await exportCards(state.uuid, format);
       if (count === 0) {
         showMessage('この認証機器で使用されたカードのデータがありません。');
       }
@@ -106,33 +103,6 @@ export default function VCards() {
       showMessage('カードデータの取得に失敗しました。時間をおいて再度お試しください。');
     }
   };
-
-  const exportAllCardsAction = (
-    <>
-      <Tooltip title="過去に使用した全カードをダウンロード">
-        <IconButton
-          disabled={isExporting}
-          onClick={(event) => {
-            event.stopPropagation();
-            setExportMenuAnchor(event.currentTarget);
-          }}
-          onMouseDown={(event) => event.stopPropagation()}
-          onMouseUp={(event) => event.stopPropagation()}
-        >
-          <HistoryIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-        </IconButton>
-      </Tooltip>
-      <Menu
-        anchorEl={exportMenuAnchor}
-        open={Boolean(exportMenuAnchor)}
-        onClose={() => setExportMenuAnchor(null)}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <MenuItem onClick={() => handleExportAllCards(true)}>CSV</MenuItem>
-        <MenuItem onClick={() => handleExportAllCards(false)}>Excel</MenuItem>
-      </Menu>
-    </>
-  );
 
   const cardModeSetCallback = async (deviceUUID, data) => {
     console.log('cardModeSetCallback', deviceUUID, data, data.op, data.status);
@@ -311,7 +281,7 @@ export default function VCards() {
         <DataTable
           isMobile={gMediaType.isMobile}
           isAdd={false}
-          toolbarActions={exportAllCardsAction}
+          credentialExport={{ type: 'cards', onExportAll: handleExportAllCards, isExporting }}
           data={tableData}
           isBind={false}
           isBack={true}

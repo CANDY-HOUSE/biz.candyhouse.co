@@ -13,6 +13,7 @@ import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import { DataSearch } from './DataSearch';
 import TablePagination from '@mui/material/TablePagination';
 import { Box, Stack, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
+import CredentialExportMenu from './CredentialExportMenu';
 
 const CustomPagination = ({
   hasNext,
@@ -79,6 +80,7 @@ export default function DataTable({
   isCsv = true,
   onCsvClick = null,
   toolbarActions = null,
+  credentialExport = null,
   isBind = true,
   isBack = false,
   isHideToolBar = false,
@@ -430,7 +432,8 @@ export default function DataTable({
                         </IconButton>
                       </Tooltip>
                     )}
-                    {isCsv && (
+                    {isCsv && credentialExport && <CredentialExportMenu data={sortableData} {...credentialExport} />}
+                    {isCsv && !credentialExport && (
                       <>
                         <Tooltip title="CSVダウンロード">
                           <IconButton

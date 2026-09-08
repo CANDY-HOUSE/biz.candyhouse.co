@@ -342,6 +342,7 @@ export default function Passwords() {
       <DataTable
         isMobile={gMediaType.isMobile}
         isAdd={false}
+        credentialExport={{ type: 'passcodes' }}
         data={tableData}
         isBind={false}
         isBack={true}

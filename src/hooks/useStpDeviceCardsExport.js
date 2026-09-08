@@ -1,6 +1,6 @@
 import { useCallback, useContext, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { gUtils } from '@/utils/gUtils';
+import { downloadCredentials } from '@/utils/credentialExport';
 
 // 后端已按 cardID 去重，一页 500 张卡约 46KB，远低于 API Gateway 单条消息 128KB 的上限
 const PAGE_SIZE = 500;
@@ -8,7 +8,7 @@ const PAGE_SIZE = 500;
 const MAX_PAGES = 100;
 const RESPONSE_TIMEOUT_MS = 30000;
 
-// 与页面上另一组「当前列表」下载按钮区分开：文件名带 all-history 标志 + 设备 UUID + 导出时刻
+// 与「当前数据」导出区分开：文件名带 all-history 标志 + 设备 UUID + 导出时刻
 const buildFileName = (stpDeviceUUID) => {
   const now = new Date();
   const p2 = (n) => String(n).padStart(2, '0');
@@ -90,7 +90,7 @@ export default function useStpDeviceCardsExport() {
    * @returns {Promise<number>} 实际导出的卡片数；为 0 时不会触发下载
    */
   const exportCards = useCallback(
-    async (stpDeviceUUID, isCsv = true) => {
+    async (stpDeviceUUID, format = 'csv') => {
       if (!stpDeviceUUID || isExporting) {
         return 0;
       }
@@ -102,7 +102,7 @@ export default function useStpDeviceCardsExport() {
         if (list.length < 1) {
           return 0;
         }
-        gUtils.csvUtils.downloadLists(list, isCsv, buildFileName(stpDeviceUUID));
+        downloadCredentials(list, 'cards', format, buildFileName(stpDeviceUUID));
         return list.length;
       } finally {
         setIsExporting(false);
