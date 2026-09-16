@@ -64,10 +64,10 @@ export default function Face3LiveView({ device, onClose }) {
      mediaPlaybackRequiresUserGesture 默认拦截连静音媒体也不放过。 */
   const [needsTap, setNeedsTap] = useState(false);
 
-  const deviceId = device?.deviceId;
+  const deviceUUID = device?.deviceUUID;
 
   useEffect(() => {
-    if (!deviceId) return undefined;
+    if (!deviceUUID) return undefined;
 
     let cancelled = false;
     setPhase('connecting');
@@ -82,7 +82,7 @@ export default function Face3LiveView({ device, onClose }) {
 
     const timer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
 
-    viewFace3Device(deviceId, (message) => {
+    viewFace3Device(deviceUUID, (message) => {
       clearTimeout(timer);
       if (cancelled) return;
       if (!message?.success) {
@@ -150,7 +150,7 @@ export default function Face3LiveView({ device, onClose }) {
       viewerRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [deviceId, viewFace3Device, attempt]);
+  }, [deviceUUID, viewFace3Device, attempt]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;

@@ -68,8 +68,10 @@ const useRelativeTime = () => {
 const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
-  const name = device.displayName || device.deviceId;
-  const roleKey = ['owner', 'manager', 'guest'].includes(device.role) ? device.role : null;
+  const name = device.deviceName || device.deviceUUID;
+  const roleKey = device.stateInfo?.isOwner ? 'owner' : null;
+  const online = device.stateInfo?.wm2State === true;
+  const lastSeenAt = device.stateInfo?.lastSeenAt;
   const [menuAnchor, setMenuAnchor] = useState(null);
 
   return (
@@ -99,7 +101,7 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
           </Box>
 
           {/* 时间戳压在右下角，和参考图一致 */}
-          {device.lastSeenAt > 0 && (
+          {lastSeenAt > 0 && (
             <Typography
               variant="caption"
               sx={{
@@ -110,12 +112,12 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {rel(device.lastSeenAt)}
+              {rel(lastSeenAt)}
             </Typography>
           )}
 
           {/* 离线时压一层灰，一眼能和在线的区分开 */}
-          {!device.online && (
+          {!online && (
             <Box
               sx={{
                 position: 'absolute',
@@ -167,7 +169,7 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
             )}
           </Box>
 
-          {device.online && (
+          {online && (
             <Chip
               size="small"
               label={t('face3.live')}
@@ -205,7 +207,7 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
         }}
       >
         <IconButton
-          disabled={!device.online || waking}
+          disabled={!online || waking}
           onClick={() => onWake?.(device)}
           aria-label={t('face3.wake')}
           sx={{
@@ -383,8 +385,8 @@ export default function Face3DeviceList({ onOpen }) {
   };
 
   const handleWake = (device) => {
-    if (!device?.deviceId || wakingId) return;
-    setWakingId(device.deviceId);
+    if (!device?.deviceUUID || wakingId) return;
+    setWakingId(device.deviceUUID);
 
     let settled = false;
     const finish = (severity, text) => {
@@ -397,7 +399,7 @@ export default function Face3DeviceList({ onOpen }) {
     /* 断网时 sendMessage 静默丢弃，不会有回包 —— 转圈必须由这里收尾 */
     const timer = setTimeout(() => finish('error', t('face3.errTimeout')), WAKE_TIMEOUT_MS);
 
-    wakeFace3Device(device.deviceId, (message) => {
+    wakeFace3Device(device.deviceUUID, (message) => {
       clearTimeout(timer);
       if (message?.success) {
         /* 唤醒只代表命令递到了 WiFi 模块，T32 还要冷启动几秒。直接开播放窗，
@@ -413,13 +415,13 @@ export default function Face3DeviceList({ onOpen }) {
 
   /* 解绑：点菜单项先弹确认框（破坏性操作），确认后才发请求。 */
   const handleUnbindRequest = (device) => {
-    if (!device?.deviceId) return;
+    if (!device?.deviceUUID) return;
     setUnbindTarget(device);
   };
 
   const handleUnbindConfirm = () => {
     const device = unbindTarget;
-    if (!device?.deviceId || unbinding) return;
+    if (!device?.deviceUUID || unbinding) return;
     setUnbinding(true);
 
     let settled = false;
@@ -434,7 +436,7 @@ export default function Face3DeviceList({ onOpen }) {
     /* 同 wake：断网时 sendMessage 静默丢弃、无回包，靠超时收尾 */
     const timer = setTimeout(() => finish('error', t('face3.errTimeout')), WAKE_TIMEOUT_MS);
 
-    unbindFace3Device(device.deviceId, (message) => {
+    unbindFace3Device(device.deviceUUID, (message) => {
       clearTimeout(timer);
       /* 成功后这台设备由 hook 从列表里摘除（见 useFace3Qr 的 unbind 分支），
          这里只负责提示与收尾。 */
@@ -511,14 +513,14 @@ export default function Face3DeviceList({ onOpen }) {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
         {face3Devices.map((d) => (
           <DeviceCard
-            key={d.deviceId}
+            key={d.deviceUUID}
             device={d}
             onOpen={onOpen}
             onWake={handleWake}
             onUnbind={handleUnbindRequest}
             onCloseView={() => setViewing(null)}
-            waking={wakingId === d.deviceId}
-            isViewing={viewing?.deviceId === d.deviceId}
+            waking={wakingId === d.deviceUUID}
+            isViewing={viewing?.deviceUUID === d.deviceUUID}
           />
         ))}
       </Box>
@@ -535,7 +537,7 @@ export default function Face3DeviceList({ onOpen }) {
         <DialogContent>
           <DialogContentText>
             {t('face3.unbindConfirmBody', {
-              name: unbindTarget?.displayName || unbindTarget?.deviceId || '',
+              name: unbindTarget?.deviceName || unbindTarget?.deviceUUID || '',
             })}
           </DialogContentText>
         </DialogContent>

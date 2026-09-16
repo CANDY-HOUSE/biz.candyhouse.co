@@ -82,16 +82,16 @@ const useFace3Qr = () => {
    *
    * 鉴权在云端做：只有绑过这台设备的人才能唤醒它，请求体里报什么都不作数。
    *
-   * @param {string} deviceId 设备编号
+   * @param {string} deviceUUID 设备编号
    * @param {Function} cb     回调，收到 {success, code, message, data}
    */
   const wakeFace3Device = useCallback(
-    (deviceId, cb) => {
-      if (!deviceId) return;
+    (deviceUUID, cb) => {
+      if (!deviceUUID) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_FACE3_QR,
         op: 'wake',
-        deviceId,
+        deviceId: deviceUUID,
       };
       sendMessage(messageData);
       registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
@@ -109,16 +109,16 @@ const useFace3Qr = () => {
    * 先决条件：设备得先被唤醒并把流推上来，否则频道存在但没人发画面。
    * 频道尚未创建时云端回 channel_not_ready。
    *
-   * @param {string} deviceId
+   * @param {string} deviceUUID
    * @param {Function} cb 回调，收到 {success, code, message, data}
    */
   const viewFace3Device = useCallback(
-    (deviceId, cb) => {
-      if (!deviceId) return;
+    (deviceUUID, cb) => {
+      if (!deviceUUID) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_FACE3_QR,
         op: 'viewer',
-        deviceId,
+        deviceId: deviceUUID,
       };
       sendMessage(messageData);
       registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
@@ -133,16 +133,16 @@ const useFace3Qr = () => {
    * owner 解绑也只移除自己，不影响其他已绑用户。撤权即时生效：解绑后对这台设备
    * 的唤醒/观看都会被云端拒绝。
    *
-   * @param {string} deviceId
-   * @param {Function} cb 回调，收到 {success, code, message, data:{deviceId, unbound}}
+   * @param {string} deviceUUID
+   * @param {Function} cb 回调，收到 {success, code, message, data:{deviceUUID|deviceId, unbound}}
    */
   const unbindFace3Device = useCallback(
-    (deviceId, cb) => {
-      if (!deviceId) return;
+    (deviceUUID, cb) => {
+      if (!deviceUUID) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_FACE3_QR,
         op: 'unbind',
-        deviceId,
+        deviceId: deviceUUID,
       };
       sendMessage(messageData);
       registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
@@ -169,8 +169,9 @@ const useFace3Qr = () => {
               break;
             case 'unbind':
               /* 解绑成功就把这台设备从本地列表摘掉，列表立即刷新，不必再拉一次 list。 */
-              if (message.success && message.data?.deviceId) {
-                setFace3Devices((prev) => prev.filter((d) => d.deviceId !== message.data.deviceId));
+              if (message.success && (message.data?.deviceUUID || message.data?.deviceId)) {
+                const deviceUUID = message.data.deviceUUID || message.data.deviceId;
+                setFace3Devices((prev) => prev.filter((d) => d.deviceUUID !== deviceUUID));
               }
               break;
             default:

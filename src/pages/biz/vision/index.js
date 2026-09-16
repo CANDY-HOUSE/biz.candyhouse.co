@@ -162,14 +162,15 @@ export default function Vision() {
   }
 
   if (state === 'done') {
-    const roleText = result?.role ? t(`deviceMember.role.${result.role}`) : '';
+    const role = result?.stateInfo?.isOwner ? 'owner' : result?.role;
+    const roleText = role ? t(`deviceMember.role.${role}`) : '';
     return frame(
       <>
         <CheckCircleOutlineIcon sx={{ fontSize: 72, color: 'success.main' }} />
         <Typography variant="h3">{t('face3.success')}</Typography>
         {roleText && <Typography variant="body1">{t('face3.boundAs', { role: roleText })}</Typography>}
         <Typography variant="caption" sx={{ color: 'text.secondary', wordBreak: 'break-all' }}>
-          {t('face3.deviceId')}: {result?.deviceId || parsed.did}
+          {t('face3.deviceId')}: {result?.deviceUUID || result?.deviceId || parsed.did}
         </Typography>
         {/* 绑定成功后给个去处，不然用户停在这一页不知道下一步 */}
         <Button variant="outlined" onClick={() => setState('listing')} sx={{ mt: 2 }}>
