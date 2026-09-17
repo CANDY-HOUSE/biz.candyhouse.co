@@ -24,7 +24,35 @@ const LoginIndex = () => {
   const redirectPath = searchParams.get('redirect') || '/';
   const loginBtn = useRef(null);
 
+  const handleAutoLogin = async () => {
+    setMail(searchParams.get('email').trim());
+    setMailChk(true);
+    setBtnState({ ready: true, loading: true });
+    if (localStorage.getItem('curLogin')) await gAuth.handleSignout();
+    gAuth.handleSign({
+      loginMail: searchParams.get('email').trim(),
+      cb: (resp) => {
+        if (resp instanceof Error) {
+          setSnackbarValue({
+            open: true,
+            msg: resp.message,
+          });
+          return;
+        }
+        setVerifying(true);
+        setBtnState({ ready: true, loading: false });
+        setTimeout(() => {
+          setPagePwd(searchParams.get('code').trim());
+        }, 200);
+      },
+    });
+  };
+
   useEffect(() => {
+    if (searchParams.get('email') && searchParams.get('code')) {
+      handleAutoLogin();
+      return;
+    }
     let loginStripe = localStorage.getItem('curLogin');
     if (loginStripe) {
       navigate('/'); // 如果已经登录，直接跳转到首页

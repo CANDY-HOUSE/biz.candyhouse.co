@@ -14,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { gUtils } from '@/utils/gUtils';
 
 const getItemText = (item) => {
   if (typeof item === 'string') return item;
@@ -25,23 +26,13 @@ const getItemText = (item) => {
   }
 };
 
-const getUserItemEmail = (item) => {
-  if (item && typeof item === 'object' && typeof item.email === 'string') {
-    return item.email;
-  }
-
-  const text = getItemText(item);
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed.email === 'string') {
-      return parsed.email;
-    }
-  } catch {
-    // Fall back to matching text formats like email: foo@example.com.
-  }
-
-  return text.match(/["']?email["']?\s*[:=]\s*["']?([^"',}\s]+@[^"',}\s]+)/)?.[1] ?? '';
-};
+const getEmailMatches = (text) =>
+  [...text.matchAll(/[^"'{}[\]\s,:;<>]+@[^"'{}[\]\s,:;<>]+/g)]
+    .map((match) => {
+      const email = match[0].replace(/[.!?]+$/, '');
+      return { email, index: match.index };
+    })
+    .filter(({ email }) => gUtils.isValidEmail(email));
 
 const renderHighlightedText = (text, keyword) => {
   const target = keyword.trim();
@@ -169,8 +160,6 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
     });
   };
 
-  const isUserRow = (type) => String(type).toLowerCase() === 'user';
-
   const filteredResultItems = useMemo(() => {
     const target = resultKeyword.trim().toLowerCase();
     if (!target) return resultItems;
@@ -179,9 +168,9 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
 
   const renderResultItem = (result) => {
     const text = getItemText(result.item);
-    const email = isUserRow(result.type) ? getUserItemEmail(result.item) : '';
+    const emailMatches = getEmailMatches(text);
     const highlightKeyword = resultKeyword.trim() || keyword;
-    if (!email) {
+    if (emailMatches.length === 0) {
       return (
         <Typography variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
           {renderHighlightedText(text, highlightKeyword)}
@@ -189,22 +178,21 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
       );
     }
 
-    const emailIndex = text.indexOf(email);
-    if (emailIndex < 0) {
-      return (
-        <Typography variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
-          {renderHighlightedText(text, highlightKeyword)}
-        </Typography>
-      );
-    }
-
-    const beforeEmail = text.slice(0, emailIndex);
-    const afterEmail = text.slice(emailIndex + email.length);
-
-    return (
-      <Typography component="span" variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
-        {renderHighlightedText(beforeEmail, highlightKeyword)}
+    let cursor = 0;
+    const content = [];
+    emailMatches.forEach((match, index) => {
+      const { email } = match;
+      const emailIndex = match.index;
+      if (emailIndex > cursor) {
+        content.push(
+          <React.Fragment key={`text-${cursor}`}>
+            {renderHighlightedText(text.slice(cursor, emailIndex), highlightKeyword)}
+          </React.Fragment>
+        );
+      }
+      content.push(
         <Link
+          key={`email-${emailIndex}-${index}`}
           component="button"
           variant="body2"
           sx={{
@@ -223,7 +211,20 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
         >
           {renderHighlightedText(email, highlightKeyword)}
         </Link>
-        {renderHighlightedText(afterEmail, highlightKeyword)}
+      );
+      cursor = emailIndex + email.length;
+    });
+    if (cursor < text.length) {
+      content.push(
+        <React.Fragment key={`text-${cursor}`}>
+          {renderHighlightedText(text.slice(cursor), highlightKeyword)}
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <Typography component="span" variant="body2" sx={{ color: 'info.main', wordBreak: 'break-all' }}>
+        {content}
       </Typography>
     );
   };
@@ -350,7 +351,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
             },
           }}
         >
-          {`Copy and Login`}
+          {`Auto Login`}
         </MenuItem>
       </Menu>
     </Box>
