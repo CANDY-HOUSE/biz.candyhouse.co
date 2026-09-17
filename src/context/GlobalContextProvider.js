@@ -13,7 +13,7 @@ import { useManageDevice } from '../api/useManageDevice';
 import { useManageEmployee } from '../api/useManageEmployee';
 import useManageGroup from '../api/useManageGroup.js';
 import useManageSchedule from '../api/useManageSchedule.js';
-import useFace3Qr from '../api/useFace3Qr.js';
+import useFace3 from '../api/useFace3.js';
 import { useStripeInfo } from '../api/useStripeInfo';
 import WebSocketManager from '../websocket/WebSocketManager.ts';
 
@@ -34,7 +34,7 @@ const GlobalContextProvider = ({ children, location }) => {
   const gDeveloper = useDeveloper(gStripe, gAuth);
   const gIot = useIotCtrl(gAuth, gStripe, gManageDevice);
   const gSchedule = useManageSchedule(gStripe);
-  const gFace3Qr = useFace3Qr();
+  const gFace3 = useFace3();
   return (
     <GlobalStateContext.Provider
       value={{
@@ -58,7 +58,7 @@ const GlobalContextProvider = ({ children, location }) => {
         gDeveloper,
         gManageAuthData,
         gSchedule,
-        gFace3Qr,
+        gFace3,
       }}
     >
       {children}

@@ -4,32 +4,21 @@ import {
   Typography,
   Card,
   CardActionArea,
-  Chip,
   IconButton,
   Button,
   CircularProgress,
   Snackbar,
   Alert,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import AddIcon from '@mui/icons-material/Add';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
-import Face3AddDevice from '@/components/Face3AddDevice';
 import Face3LiveView from '@/components/Face3LiveView';
+import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
+import { biz3utils } from '@/utils/biz3utils';
 
 /** 在线状态的刷新间隔。
  *
@@ -65,25 +54,29 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isViewing }) => {
+const DeviceCard = ({ device, onOpen, onWake, onCloseView, waking, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
   const roleKey = device.stateInfo?.isOwner ? 'owner' : null;
   const online = device.stateInfo?.wm2State === true;
   const lastSeenAt = device.stateInfo?.lastSeenAt;
-  const [menuAnchor, setMenuAnchor] = useState(null);
 
   return (
     <Card
       sx={{
         position: 'relative',
+        p: 0,
         borderRadius: 2,
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
       }}
     >
-      <CardActionArea onClick={() => onOpen?.(device)}>
+      <CardActionArea
+        disableRipple
+        onClick={() => onOpen?.(device)}
+        sx={{ '& .MuiCardActionArea-focusHighlight': { opacity: '0 !important' } }}
+      >
         {/* 预览区。16:9 与摄像头出图比例一致，将来换成真截图不会跳版 */}
         <Box
           sx={{
@@ -141,7 +134,8 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            px: 1.5,
+            pl: 1.5,
+            pr: 0,
             py: 1,
             bgcolor: 'white',
           }}
@@ -151,17 +145,27 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
           </Box>
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {name}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  minWidth: 0,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {name}
+              </Typography>
+              {online && (
+                <Box
+                  component="span"
+                  aria-label={t('face3.live')}
+                  sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }}
+                />
+              )}
+            </Box>
             {roleKey && (
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {t(`deviceMember.role.${roleKey}`)}
@@ -169,20 +173,7 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
             )}
           </Box>
 
-          {online && (
-            <Chip
-              size="small"
-              label={t('face3.live')}
-              sx={{
-                height: 22,
-                bgcolor: '#FDECEC',
-                color: '#D32F2F',
-                fontWeight: 600,
-                '& .MuiChip-label': { px: 1 },
-              }}
-            />
-          )}
-          <KeyboardArrowRightIcon sx={{ color: 'text.disabled' }} />
+          <KeyboardArrowRightIcon sx={{ color: 'text.disabled', mr: -0.5 }} />
         </Box>
       </CardActionArea>
 
@@ -232,49 +223,7 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
         </IconButton>
       </Box>
 
-      {/* 右上角"更多操作"菜单（目前只有解绑）。
-       *
-       * 同 wake 按钮，必须放在 CardActionArea 外面：否则点击会冒泡成"打开设备"，
-       * 且按钮套按钮是非法 DOM 嵌套。stopPropagation 再兜一道。 */}
-      <Box sx={{ position: 'absolute', top: 4, right: 4 }}>
-        <IconButton
-          size="small"
-          aria-label={t('face3.moreActions')}
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuAnchor(e.currentTarget);
-          }}
-          sx={{
-            bgcolor: 'rgba(0,0,0,0.45)',
-            color: 'white',
-            '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' },
-          }}
-        >
-          <MoreVertIcon fontSize="small" />
-        </IconButton>
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={() => setMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <MenuItem
-            onClick={() => {
-              setMenuAnchor(null);
-              onUnbind?.(device);
-            }}
-            sx={{ color: 'error.main' }}
-          >
-            <ListItemIcon sx={{ color: 'error.main' }}>
-              <DeleteOutlineIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('face3.unbind')}</ListItemText>
-          </MenuItem>
-        </Menu>
-      </Box>
-
-      {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/⋮菜单。
+      {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/设置按钮。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
       {isViewing && (
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: '16 / 9' }}>
@@ -293,19 +242,20 @@ const DeviceCard = ({ device, onOpen, onWake, onUnbind, onCloseView, waking, isV
  */
 export default function Face3DeviceList({ onOpen }) {
   const { t } = useTranslation();
-  const { gFace3Qr } = useContext(GlobalStateContext);
+  const { gFace3, gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const [attempt, setAttempt] = useState(0);
+  const floatingAddRef = useRef(null);
 
-  /* 只取出要用的那个函数，不要把 gFace3Qr 整个放进依赖。
+  /* 只取出要用的那个函数，不要把 gFace3 整个放进依赖。
    *
-   * useFace3Qr() 每次 render 都返回新的对象字面量，而 list 成功会 setFace3Devices
-   * -> provider 重渲染 -> gFace3Qr 换新引用 -> effect 重跑 -> 再发一次 list，
+   * useFace3() 每次 render 都返回新的对象字面量，而 list 成功会 setFace3Devices
+   * -> provider 重渲染 -> gFace3 换新引用 -> effect 重跑 -> 再发一次 list，
    * 自己喂自己，秒级刷屏。listFace3Devices 本身是 useCallback([registerCallback])，
    * 而 registerCallback 的依赖是空数组，所以它跨渲染稳定，可以安全地作依赖。
    *
    * 项目里既有页面（schedule-list）也是这个写法：effect 里直接调，
    * 依赖放具体的值而不是 hook 对象。 */
-  const { listFace3Devices, wakeFace3Device, unbindFace3Device } = gFace3Qr;
+  const { listFace3Devices, wakeFace3Device } = gFace3;
   /* 第二道防线：两次请求至少隔 1 秒。
    *
    * 注意不能用"在途标志"来挡 —— React 在依赖变化时会先跑 cleanup 再跑新的
@@ -315,7 +265,7 @@ export default function Face3DeviceList({ onOpen }) {
   const lastReqAt = useRef(0);
 
   useEffect(() => {
-    /* 节流：两次请求至少隔 1 秒，挡住 gFace3Qr 引用变化导致的自我喂食循环
+    /* 节流：两次请求至少隔 1 秒，挡住 gFace3 引用变化导致的自我喂食循环
        （见上方 provider 说明）。 */
     const now = Date.now();
     if (now - lastReqAt.current < 1000) return undefined;
@@ -350,8 +300,7 @@ export default function Face3DeviceList({ onOpen }) {
     };
   }, []);
 
-  const face3Devices = gFace3Qr.face3Devices || [];
-  const [adding, setAdding] = useState(false);
+  const face3Devices = gFace3.face3Devices || [];
 
   /* 正在唤醒的设备。同一时刻只允许一台在途，避免连点发一串命令。 */
   const [wakingId, setWakingId] = useState(null);
@@ -359,9 +308,6 @@ export default function Face3DeviceList({ onOpen }) {
      直接开只会转圈然后超时。 */
   const [viewing, setViewing] = useState(null);
   const [toast, setToast] = useState(null); // { severity, text }
-  /* 解绑确认弹窗的目标设备；非空即打开弹窗。unbinding 标记请求在途，防连点。 */
-  const [unbindTarget, setUnbindTarget] = useState(null);
-  const [unbinding, setUnbinding] = useState(false);
 
   /* 唤醒失败的原因要说清楚，否则用户只知道"没反应"。
      云端的 message 见 Face3_qr.mjs 的 wakeDevice。 */
@@ -413,160 +359,104 @@ export default function Face3DeviceList({ onOpen }) {
     });
   };
 
-  /* 解绑：点菜单项先弹确认框（破坏性操作），确认后才发请求。 */
-  const handleUnbindRequest = (device) => {
-    if (!device?.deviceUUID) return;
-    setUnbindTarget(device);
-  };
-
-  const handleUnbindConfirm = () => {
-    const device = unbindTarget;
-    if (!device?.deviceUUID || unbinding) return;
-    setUnbinding(true);
-
-    let settled = false;
-    const finish = (severity, text) => {
-      if (settled) return;
-      settled = true;
-      setUnbinding(false);
-      setUnbindTarget(null);
-      setToast({ severity, text });
-    };
-
-    /* 同 wake：断网时 sendMessage 静默丢弃、无回包，靠超时收尾 */
-    const timer = setTimeout(() => finish('error', t('face3.errTimeout')), WAKE_TIMEOUT_MS);
-
-    unbindFace3Device(device.deviceUUID, (message) => {
-      clearTimeout(timer);
-      /* 成功后这台设备由 hook 从列表里摘除（见 useFace3Qr 的 unbind 分支），
-         这里只负责提示与收尾。 */
-      finish(
-        message?.success ? 'success' : 'error',
-        message?.success ? t('face3.unbindSuccess') : t('face3.unbindFailed')
-      );
-    });
-  };
-
-  /* 顶栏：设备数 + 右侧的加号。参考图右上角就是这个位置。
-     空列表时也要有，否则用户没有任何入口去绑第一台设备 —— 这次就栽在这。 */
-  const header = (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 2,
-        pt: 2,
-      }}
-    >
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-        {t('face3.myFace3Devices')}
+  const addDeviceMenu = (
+    <Box>
+      <Typography variant="h2" sx={{ px: 1 }}>
+        新規デバイスを追加
       </Typography>
-      <IconButton onClick={() => setAdding(true)} aria-label={t('face3.addFace3Device')}>
-        <AddIcon />
-      </IconButton>
+      <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <Button variant="text" component="label" startIcon={<QrCodeIcon />} sx={{ justifyContent: 'flex-start' }}>
+          QRコードで追加
+          <input
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={(event) => {
+              const fileInput = event.target;
+              biz3utils.readQrcodeUrl(fileInput.files[0], (error, qrUrl) => {
+                if (error || !qrUrl) {
+                  floatingAddRef.current?.handleClose();
+                  setSnackbarValue({ open: true, msg: t('face3.errInvalidQr') });
+                  fileInput.value = '';
+                  return;
+                }
+                gManageGroup.redeemQRToken(qrUrl, (response) => {
+                  floatingAddRef.current?.handleClose();
+                  if (!response?.success) {
+                    setSnackbarValue({ open: true, msg: response?.message || t('face3.errUnknown') });
+                    fileInput.value = '';
+                    return;
+                  }
+                  const device = biz3utils.parseDeviceKeyFromUrl(response.data);
+                  if (!device) {
+                    setSnackbarValue({ open: true, msg: t('face3.errInvalidQr') });
+                    fileInput.value = '';
+                    return;
+                  }
+                  gManageDevice.addSesameDevicesToBiz3([device], () => setAttempt((n) => n + 1));
+                  fileInput.value = '';
+                });
+              });
+            }}
+          />
+        </Button>
+      </Box>
     </Box>
   );
 
-  const addDialog = (
-    <Face3AddDevice
-      open={adding}
-      onClose={() => setAdding(false)}
-      onBound={() => {
-        setAdding(false);
-        /* 绑完立刻重拉，新设备马上出现在列表里 */
-        setAttempt((n) => n + 1);
-      }}
-    />
-  );
-
-  /* 未添加 Face3 设备时（加载中 / 空 / 首次加载失败，凡是没有设备可展示）只显示一个
-     猫头鹰，不摆 Face3 的标题 / 说明 / 添加按钮 —— Face3 未发布，别打扰没有该设备的用户。
-     点猫头鹰 = 原来那个 "+" 的添加设备行为。有设备的用户才看到完整列表（下方 return）。 */
+  /* 未添加 Face3 设备时（加载中 / 空 / 首次加载失败，凡是没有设备可展示）只显示猫头鹰，
+     添加设备统一使用设备页同款的悬浮 "+"。 */
   if (face3Devices.length === 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60vh',
-        }}
-      >
+      <SesameFloatingAdd ref={floatingAddRef} isMobile={!gStripe.isFromApp} popupComponent={addDeviceMenu}>
         <Box
-          onClick={() => setAdding(true)}
-          role="button"
-          aria-label={t('face3.addFace3Device')}
-          sx={{ color: 'text.disabled', display: 'flex', cursor: 'pointer' }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '60vh',
+            color: 'text.disabled',
+          }}
         >
           <VisionIcon width={96} height={96} />
         </Box>
-        {addDialog}
-      </Box>
+      </SesameFloatingAdd>
     );
   }
 
   return (
-    <Box>
-      {header}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
-        {face3Devices.map((d) => (
-          <DeviceCard
-            key={d.deviceUUID}
-            device={d}
-            onOpen={onOpen}
-            onWake={handleWake}
-            onUnbind={handleUnbindRequest}
-            onCloseView={() => setViewing(null)}
-            waking={wakingId === d.deviceUUID}
-            isViewing={viewing?.deviceUUID === d.deviceUUID}
-          />
-        ))}
-      </Box>
-      {addDialog}
-
-      {/* 解绑确认。破坏性操作，先确认再发。 */}
-      <Dialog
-        open={Boolean(unbindTarget)}
-        onClose={() => {
-          if (!unbinding) setUnbindTarget(null);
-        }}
-      >
-        <DialogTitle>{t('face3.unbindConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('face3.unbindConfirmBody', {
-              name: unbindTarget?.deviceName || unbindTarget?.deviceUUID || '',
-            })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUnbindTarget(null)} disabled={unbinding}>
-            {t('face3.cancel')}
-          </Button>
-          <Button onClick={handleUnbindConfirm} color="error" disabled={unbinding}>
-            {unbinding ? <CircularProgress size={18} sx={{ color: 'inherit' }} /> : t('face3.unbind')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={4000}
-        onClose={() => setToast(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {/* Snackbar 要求 children 恒定存在，toast 为空时给个空壳撑着 */}
-        <Alert
-          severity={toast?.severity || 'info'}
-          variant="filled"
+    <SesameFloatingAdd ref={floatingAddRef} isMobile={!gStripe.isFromApp} popupComponent={addDeviceMenu}>
+      <Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
+          {face3Devices.map((d) => (
+            <DeviceCard
+              key={d.deviceUUID}
+              device={d}
+              onOpen={onOpen}
+              onWake={handleWake}
+              onCloseView={() => setViewing(null)}
+              waking={wakingId === d.deviceUUID}
+              isViewing={viewing?.deviceUUID === d.deviceUUID}
+            />
+          ))}
+        </Box>
+        <Snackbar
+          open={Boolean(toast)}
+          autoHideDuration={4000}
           onClose={() => setToast(null)}
-          sx={{ width: '100%' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {toast?.text || ''}
-        </Alert>
-      </Snackbar>
-    </Box>
+          {/* Snackbar 要求 children 恒定存在，toast 为空时给个空壳撑着 */}
+          <Alert
+            severity={toast?.severity || 'info'}
+            variant="filled"
+            onClose={() => setToast(null)}
+            sx={{ width: '100%' }}
+          >
+            {toast?.text || ''}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </SesameFloatingAdd>
   );
 }

@@ -50,8 +50,8 @@ const VIEWER_ERROR_TEXT = {
  */
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
-  const { gFace3Qr } = useContext(GlobalStateContext);
-  const { viewFace3Device } = gFace3Qr;
+  const { gFace3 } = useContext(GlobalStateContext);
+  const { viewFace3Device } = gFace3;
 
   const videoRef = useRef(null);
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
