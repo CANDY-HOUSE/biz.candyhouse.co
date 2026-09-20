@@ -57,7 +57,7 @@ const MobileWifiModule = () => {
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
   const [relayEnable, setRelayEnable] = useState({ enable1: true, enable2: true });
-  const [isHub3LTE, setIsHub3LTE] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_lte);
+  const [isHub3Pro, setIsHub3Pro] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_pro);
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -99,7 +99,7 @@ const MobileWifiModule = () => {
       enable2: relayInfo.enable2 === undefined ? true : Number(relayInfo.enable2) === 1,
     });
     console.log('Current device info updated:', currentDevice);
-    setIsHub3LTE(currentDevice.deviceModel === gConfig.sesameDeviceModel.hub3_lte);
+    setIsHub3Pro(currentDevice.deviceModel === gConfig.sesameDeviceModel.hub3_pro);
   }, [currentDevice]);
 
   // 切换某一路继电器使能，乐观更新本地并写入后台 relay_info
@@ -335,7 +335,7 @@ const MobileWifiModule = () => {
           <Box sx={{ width: 25, height: 24 }} />
         ) : (
           <>
-            {isHub3LTE ? (
+            {isHub3Pro ? (
               <>
                 {renderIcon(LanOutlined, false, networkConnectivity.ethernet, true, { marginRight: -2.5 })}
                 {renderIcon(SignalCellularAlt, false, networkConnectivity.lte, true, { marginRight: -2.5 })}
@@ -350,7 +350,7 @@ const MobileWifiModule = () => {
         )}
       </Box>
     );
-  }, [internetStatus, networkConnectivity, isHub3LTE, isDeviceInfoResolved]);
+  }, [internetStatus, networkConnectivity, isHub3Pro, isDeviceInfoResolved]);
 
   return (
     <Box
@@ -403,7 +403,7 @@ const MobileWifiModule = () => {
             }
           />
           <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiSsid}</Typography>
-          {currentDevice.stateInfo?.wifiSsid && isHub3LTE && (
+          {currentDevice.stateInfo?.wifiSsid && isHub3Pro && (
             <ListItemIcon
               onClick={handleDeleteWifiClick}
               sx={{
@@ -465,8 +465,8 @@ const MobileWifiModule = () => {
           <SvgIcon component={SvgArrow} />
         </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-        {/* Hub3 LTE 隐藏 Matter 栏；其它机型仍显示 */}
-        {!isHub3LTE && (
+        {/* Hub3 Pro 隐藏 Matter 栏；其它机型仍显示 */}
+        {!isHub3Pro && (
           <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
             <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
             <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
@@ -476,7 +476,7 @@ const MobileWifiModule = () => {
           </ListItem>
         )}
         {/* 继电器使能：放在 Matter 栏之后 */}
-        {isHub3LTE && (
+        {isHub3Pro && (
           <>
             <ListItem>
               <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay1')} />

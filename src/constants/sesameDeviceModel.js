@@ -34,7 +34,7 @@ export const sesameDeviceModel = {
   sesame_6_pro_slidingdoor: 'sesame_6_pro_slidingdoor', // 32
   ssm_bike3: 'bike_3', // 33
   bot_3: 'bot_3', // 35
-  hub3_lte: 'hub_3_lte', // 36
+  hub3_pro: 'hub_3_pro', // 36 —— Hub 3 Pro(esp32s31);旧 Hub 3(esp32c3)是上面的 hub_3 // 13
   sesame_face_3: 'sesame_face_3', // 37
 };
 
@@ -74,6 +74,6 @@ export const modelNameByProductType = {
   32: sesameDeviceModel.sesame_6_pro_slidingdoor,
   33: sesameDeviceModel.ssm_bike3,
   35: sesameDeviceModel.bot_3,
-  36: sesameDeviceModel.hub3_lte,
+  36: sesameDeviceModel.hub3_pro,
   37: sesameDeviceModel.sesame_face_3,
 };

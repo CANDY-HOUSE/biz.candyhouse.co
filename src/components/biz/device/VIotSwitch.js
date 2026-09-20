@@ -61,7 +61,7 @@ const VIotSwitch = ({
         </IconButton>
       );
     }
-    if (gUtils.isHub3LTE(model)) {
+    if (gUtils.isHub3Pro(model)) {
       const disabled = relayEnabled === false;
       return (
         <IconButton

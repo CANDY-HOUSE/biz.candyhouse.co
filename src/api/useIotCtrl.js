@@ -113,8 +113,8 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
       if (!hub3_id) {
         hub3_id = device_id;
       }
-      const lastSegment = hub3_id.split('-').pop();
-      const topic = `wm2${lastSegment}cmd`;
+      // 旧 Hub 3 用末段 MAC, Hub 3 Pro 用完整 uuid —— 与固件订阅的 topic 一致
+      const topic = `wm2${biz3utils.hub3TopicId(hub3_id)}cmd`;
       console.log('==> topic', topic);
 
       console.log('==> secretKey', secretKey);

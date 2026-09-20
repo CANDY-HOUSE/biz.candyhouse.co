@@ -525,6 +525,24 @@ const extractCardIDsFromBase64 = (base64Payload) => {
   return cardIDs.map((item) => item.cardID);
 };
 
+// 旧 Hub 3 的 uuid 由固定前缀 + MAC 组成, 对应 IoT topic 只带末段 MAC;
+// Hub 3 Pro 的 uuid 没有前缀, 固件订阅的是完整 uuid。
+// 与后台 lambda 的 hub3TopicId() 保持同一套约定。
+const HUB3_LEGACY_UUID_PREFIX = '00000000-055A-FD81-0D00-';
+
+/**
+ * 取 Hub3 IoT topic 里使用的设备标识
+ * @param {string} deviceUuid 带连字符的设备 uuid
+ * @returns {string} 旧 Hub 3 返回末段 MAC; Hub 3 Pro 原样返回完整 uuid
+ */
+const hub3TopicId = (deviceUuid) => {
+  const raw = String(deviceUuid || '');
+  // 判定必须大小写无关, 否则小写的旧 uuid 会认不出是旧机而走错分支;
+  // 这里只用大写副本做判断, 不改变返回值。
+  const isLegacy = raw.toUpperCase().startsWith(HUB3_LEGACY_UUID_PREFIX);
+  return isLegacy ? raw.split('-').pop() : raw;
+};
+
 export const biz3utils = {
   timestampToTime,
   readUserQrcode,
@@ -557,4 +575,5 @@ export const biz3utils = {
   getProductTypeFromModelName,
   getMatterProductTypeFromModelName,
   extractCardIDsFromBase64,
+  hub3TopicId,
 };

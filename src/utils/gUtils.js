@@ -266,7 +266,7 @@ const isWifiModel = (model) => {
   const targetDeviceModels = [
     gConfig.sesameDeviceModel.wm_2,
     gConfig.sesameDeviceModel.hub_3,
-    gConfig.sesameDeviceModel.hub3_lte,
+    gConfig.sesameDeviceModel.hub3_pro,
   ];
   return targetDeviceModels.indexOf(model) !== -1;
 };
@@ -401,8 +401,8 @@ const isOPSModel = (model) => {
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
-const isHub3LTE = (model) => {
-  const targetDeviceModels = [gConfig.sesameDeviceModel.hub3_lte];
+const isHub3Pro = (model) => {
+  const targetDeviceModels = [gConfig.sesameDeviceModel.hub3_pro];
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
@@ -511,7 +511,7 @@ export const gUtils = {
   hasObj,
   isBotModel,
   isOPSModel,
-  isHub3LTE,
+  isHub3Pro,
   getStartTimeEndTime,
   isValidEmail,
   isShowType,

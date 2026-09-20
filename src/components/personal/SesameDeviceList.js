@@ -30,13 +30,13 @@ const getDeviceLockState = (device) => {
   if (device.stateInfo?.hasOwnProperty('wm2State') && device.stateInfo.wm2State !== true) {
     return undefined;
   }
-  if (gUtils.isHub3LTE(device.deviceModel)) {
+  if (gUtils.isHub3Pro(device.deviceModel)) {
     return device.stateInfo?.relayStatus === 1 ? 'unlocked' : 'locked';
   }
   return device.stateInfo.CHSesame2Status;
 };
 
-// Hub3 LTE 分路继电器状态：relayIndex = 1 / 2
+// Hub3 Pro 分路继电器状态：relayIndex = 1 / 2
 const getRelayLockState = (device, relayIndex) => {
   // 设备离线（wm2State !== true）时置为未知（灰色）
   if (device.stateInfo?.hasOwnProperty('wm2State') && device.stateInfo.wm2State !== true) {
@@ -51,7 +51,7 @@ const getRelayLockState = (device, relayIndex) => {
   return Number(status) === 1 ? 'unlocked' : 'locked';
 };
 
-// Hub3 LTE 某一路是否使能（缺省视为已使能：添加设备时后台已写 enable=1，旧设备缺省也按开启兜底）
+// Hub3 Pro 某一路是否使能（缺省视为已使能：添加设备时后台已写 enable=1，旧设备缺省也按开启兜底）
 const getRelayEnabled = (device, relayIndex) => {
   const info = device.stateInfo?.relayInfo || {};
   const enable = info[`enable${relayIndex}`];
@@ -154,8 +154,8 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
           </Stack>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }} onClick={handleSwitchClick}>
-          {gUtils.isHub3LTE(device.deviceModel) ? (
-            // Hub3 LTE：分开显示两路继电器 icon
+          {gUtils.isHub3Pro(device.deviceModel) ? (
+            // Hub3 Pro：分开显示两路继电器 icon
             <>
               <VIotSwitch
                 model={device.deviceModel}
