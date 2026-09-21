@@ -20,6 +20,7 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  */
 const useFace3 = () => {
   const [face3Devices, setFace3Devices] = useState([]);
+  const [face3StreamStates, setFace3StreamStates] = useState({});
   const { registerCallback, invokeCallbacks } = useCallbacks();
 
   /**
@@ -53,13 +54,14 @@ const useFace3 = () => {
   const wakeFace3Device = useCallback(
     (deviceUUID, cb) => {
       if (!deviceUUID) return;
+      setFace3StreamStates((states) => ({ ...states, [deviceUUID]: null }));
       const messageData = {
         action: ACTION_TYPES.BIZ3_FACE3_QR,
         op: 'wake',
         deviceId: deviceUUID,
       };
       sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
+      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
     },
     [registerCallback]
   );
@@ -86,17 +88,30 @@ const useFace3 = () => {
         deviceId: deviceUUID,
       };
       sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
+      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
     },
     [registerCallback]
   );
 
   const handleFace3Response = useCallback(
     (message) => {
-      invokeCallbacks(message);
+      const callbackDeviceId = message.data?.deviceId;
+      invokeCallbacks(
+        callbackDeviceId && (message.op === 'wake' || message.op === 'viewer')
+          ? { ...message, op: `${message.op}:${callbackDeviceId}` }
+          : message
+      );
       switch (message.action) {
         case ACTION_TYPES.BIZ3_FACE3_QR:
           switch (message.op) {
+            case 'streamState':
+              if (message.data?.deviceId) {
+                setFace3StreamStates((states) => ({
+                  ...states,
+                  [message.data.deviceId]: message.data.state,
+                }));
+              }
+              break;
             case 'list':
               /* 失败时不要把已有列表清空 —— 断网重连的瞬间会拿到一次失败，
                  清空会让页面闪一下空状态。保留旧数据，交给调用方处理错误。 */
@@ -119,6 +134,7 @@ const useFace3 = () => {
 
   return {
     face3Devices,
+    face3StreamStates,
     listFace3Devices,
     wakeFace3Device,
     viewFace3Device,

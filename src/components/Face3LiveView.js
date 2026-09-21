@@ -51,7 +51,7 @@ const VIEWER_ERROR_TEXT = {
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
-  const { viewFace3Device } = gFace3;
+  const { viewFace3Device, face3StreamStates } = gFace3;
 
   const videoRef = useRef(null);
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
@@ -65,9 +65,11 @@ export default function Face3LiveView({ device, onClose }) {
   const [needsTap, setNeedsTap] = useState(false);
 
   const deviceUUID = device?.deviceUUID;
+  const streamState = face3StreamStates?.[deviceUUID];
+  const streamReady = streamState === 'master_ready' || streamState === 'already_streaming';
 
   useEffect(() => {
-    if (!deviceUUID) return undefined;
+    if (!deviceUUID || !streamReady) return undefined;
 
     let cancelled = false;
     setPhase('connecting');
@@ -150,7 +152,7 @@ export default function Face3LiveView({ device, onClose }) {
       viewerRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, [deviceUUID, viewFace3Device, attempt]);
+  }, [deviceUUID, streamReady, viewFace3Device, attempt]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;

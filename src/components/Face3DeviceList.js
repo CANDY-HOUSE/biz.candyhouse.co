@@ -302,11 +302,8 @@ export default function Face3DeviceList({ onOpen }) {
 
   const face3Devices = gFace3.face3Devices || [];
 
-  /* 正在唤醒的设备。同一时刻只允许一台在途，避免连点发一串命令。 */
-  const [wakingId, setWakingId] = useState(null);
-  /* 正在观看的设备。唤醒成功后才打开播放弹窗 —— 设备没醒的话频道里没人推流，
-     直接开只会转圈然后超时。 */
-  const [viewing, setViewing] = useState(null);
+  const [wakingIds, setWakingIds] = useState(() => new Set());
+  const [viewingIds, setViewingIds] = useState(() => new Set());
   const [toast, setToast] = useState(null); // { severity, text }
 
   /* 唤醒失败的原因要说清楚，否则用户只知道"没反应"。
@@ -331,14 +328,20 @@ export default function Face3DeviceList({ onOpen }) {
   };
 
   const handleWake = (device) => {
-    if (!device?.deviceUUID || wakingId) return;
-    setWakingId(device.deviceUUID);
+    if (!device?.deviceUUID || wakingIds.has(device.deviceUUID)) return;
+    setWakingIds((ids) => new Set(ids).add(device.deviceUUID));
+    /* 立即挂载播放 UI 监听 streamState；它只在固件就绪后发送 viewer。 */
+    setViewingIds((ids) => new Set(ids).add(device.deviceUUID));
 
     let settled = false;
     const finish = (severity, text) => {
       if (settled) return;
       settled = true;
-      setWakingId(null);
+      setWakingIds((ids) => {
+        const next = new Set(ids);
+        next.delete(device.deviceUUID);
+        return next;
+      });
       setToast({ severity, text });
     };
 
@@ -348,12 +351,13 @@ export default function Face3DeviceList({ onOpen }) {
     wakeFace3Device(device.deviceUUID, (message) => {
       clearTimeout(timer);
       if (message?.success) {
-        /* 唤醒只代表命令递到了 WiFi 模块，T32 还要冷启动几秒。直接开播放窗，
-           让它自己转圈等 —— 比先弹一个"已发送"提示、再让用户手动点一次顺。
-           播放端本身有 20 秒超时和重试按钮兜底。 */
         finish('success', t('face3.wakeSent'));
-        setViewing(device);
       } else {
+        setViewingIds((ids) => {
+          const next = new Set(ids);
+          next.delete(device.deviceUUID);
+          return next;
+        });
         finish('error', wakeErrorText(message?.message));
       }
     });
@@ -434,9 +438,15 @@ export default function Face3DeviceList({ onOpen }) {
               device={d}
               onOpen={onOpen}
               onWake={handleWake}
-              onCloseView={() => setViewing(null)}
-              waking={wakingId === d.deviceUUID}
-              isViewing={viewing?.deviceUUID === d.deviceUUID}
+              onCloseView={() =>
+                setViewingIds((ids) => {
+                  const next = new Set(ids);
+                  next.delete(d.deviceUUID);
+                  return next;
+                })
+              }
+              waking={wakingIds.has(d.deviceUUID)}
+              isViewing={viewingIds.has(d.deviceUUID)}
             />
           ))}
         </Box>
