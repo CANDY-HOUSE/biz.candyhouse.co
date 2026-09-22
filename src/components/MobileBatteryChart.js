@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Card,
@@ -29,11 +29,18 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const [menuState, setMenuState] = useState({ open: false, selectedPoint: null });
   const [searchParams] = useSearchParams();
   const deviceUUID = searchParams.get('deviceUUID') || userDeviceUUID;
-  const isWifiModule = gUtils.isWifiModulePrefix(deviceUUID);
   const isFromApp = searchParams.get('fromType') === 'app';
   const navigate = useNavigate();
   const { t } = useTranslation();
   const isSettingPush = Boolean(searchParams.get('setting')) === true;
+
+  const device = useMemo(() => {
+    return gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
+  }, [gManageDevice.companyDevices, gManageDevice.deviceStatus, deviceUUID]);
+
+  // 通过机型来判断是否是 WiFi 模块，不再仅通过 UUID 前缀判断。
+  const deviceModel = device?.deviceModel || searchParams.get('deviceModel') || '';
+  const isWifiModule = gUtils.isWifiModel(deviceModel);
 
   const getBatteryRecordCallback = useCallback((message) => {
     if (message.action !== ACTION_TYPES.BIZ3_GET_BATTERY_RECORD) return;
@@ -78,7 +85,13 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
     sendMessage(msgData);
   };
 
+  // 机种未知时等 deviceModel 到位再初始化，用 ref 保证只初始化一次。
+  const chartInitedRef = useRef(false);
   useEffect(() => {
+    if (chartInitedRef.current || !deviceModel) {
+      return;
+    }
+    chartInitedRef.current = true;
     if (isWifiModule) {
       setChartData([
         { time: '', timestamp: 1, light: 5, heavy: 5, lightPercentage: 100, heavyPercentage: 100 },
@@ -87,7 +100,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
     } else {
       getBatteryRecord();
     }
-  }, []);
+  }, [deviceModel, isWifiModule]);
 
   const handleSwitchChange = (event) => {
     const newValue = event.target.checked;
@@ -114,10 +127,6 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   useEffect(() => {
     gManageDevice.getDeviceStatus(deviceUUID);
   }, [deviceUUID]);
-
-  const device = useMemo(() => {
-    return gManageDevice.companyDevices.find((d) => d.deviceUUID === deviceUUID) || gManageDevice.deviceStatus;
-  }, [gManageDevice.companyDevices, gManageDevice.deviceStatus, deviceUUID]);
 
   useEffect(() => {
     if (device) {

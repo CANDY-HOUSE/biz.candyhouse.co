@@ -271,10 +271,6 @@ const isWifiModel = (model) => {
   return targetDeviceModels.indexOf(model) !== -1;
 };
 
-const isWifiModulePrefix = (deviceUUID) => {
-  return deviceUUID.startsWith('00000000-055A-FD81-0D00');
-};
-
 const isSesameAccessControlDevice = (model) => {
   const targetDeviceModels = [
     gConfig.sesameDeviceModel.ssm_touch,
@@ -520,5 +516,4 @@ export const gUtils = {
   formatTimestampToMonthDayLocal,
   isSupportRechargeableBattery,
   authText,
-  isWifiModulePrefix,
 };

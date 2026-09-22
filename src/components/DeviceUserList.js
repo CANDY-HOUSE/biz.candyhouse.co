@@ -54,6 +54,10 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
     );
   }, [deviceUUID, gManageDevice.companyDevices, gManageDevice.deviceStatus]);
 
+  // 通过机型来判断是否显示用户小部件，不再仅通过uuid（Hub3 pro UUID 格式与旧 Hub 3 不同）
+  const deviceModel = currentDevice?.deviceModel || searchParams.get('deviceModel') || '';
+  const showUserWidget = Boolean(deviceModel) && !gUtils.isWifiModel(deviceModel);
+
   const fetchCanSelectUsers = (isManageMode) => {
     if (isManageMode) {
       gManageEmployee.getEmployees();
@@ -218,7 +222,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   return (
     <BlurOverlay enabled={disableInteraction}>
       <MobileDeviceUsers
-        showType={!gUtils.isWifiModulePrefix(deviceUUID) ? 'widget' : ''}
+        showType={showUserWidget ? 'widget' : ''}
         gStrip={gStripe}
         users={users}
         fetchUserAndDevices={fetchCanSelectUsers}
