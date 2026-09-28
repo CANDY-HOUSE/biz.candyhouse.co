@@ -9,10 +9,13 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  * 走的是与设备取码同一条 WebSocket 路由 biz3Face3Qr（云端函数 Face3_qr），
  * 靠 op 区分两端：
  *
- *     op: 'issue'   设备侧调用，签发一张券        —— 手机不会用到
- *     op: 'list'    本 hook 调用，列出我绑过的设备
- *     op: 'wake'    本 hook 调用，唤醒设备去推流
- *     op: 'viewer'  本 hook 调用，取观看端临时凭证
+ *     op: 'issue'    设备侧调用，签发一张券        —— 手机不会用到
+ *     op: 'list'     本 hook 调用，列出我绑过的设备
+ *     op: 'command'  本 hook 调用，给设备下发一条命令（cmd 决定做什么，通用入口）
+ *     op: 'viewer'   本 hook 调用，取观看端临时凭证
+ *
+ * 唤醒（wake）只是 op:'command' 的一个特例（cmd='face3Wake'）：今后所有发给
+ * face3 的命令都走 sendFace3Command，由 H5 通过 cmd 决定是哪个 action。
  *
  * 刻意不在消息体里带 subUUID：云端从 face3_ws_connections[connectionId]
  * 取当前登录用户，请求体里报什么都不作数。这样"我是谁"由已鉴权的连接决定，
@@ -22,6 +25,32 @@ const useFace3 = () => {
   const [face3Devices, setFace3Devices] = useState([]);
   const [face3StreamStates, setFace3StreamStates] = useState({});
   const { registerCallback, invokeCallbacks } = useCallbacks();
+
+  /**
+   * 给一台设备下发一条命令（通用入口）。
+   *
+   * 今后所有发给 face3 设备的命令都走这里，由 H5 通过 cmd 决定是哪个 action，
+   * 云端据此签名并推给设备。鉴权在云端做：只有绑过这台设备的人才能下发，
+   * 请求体里报什么主体都不作数。
+   *
+   * @param {string} deviceUUID 设备编号
+   * @param {string} cmd        下行命令名（设备侧 action，如 'face3Wake'）
+   * @param {Function} cb       回调，收到 {success, code, message, data}
+   */
+  const sendFace3Command = useCallback(
+    (deviceUUID, cmd, cb) => {
+      if (!deviceUUID || !cmd) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_FACE3_QR,
+        op: 'command',
+        deviceId: deviceUUID,
+        cmd,
+      };
+      sendMessage(messageData);
+      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
+    },
+    [registerCallback]
+  );
 
   /**
    * 拉取当前登录用户绑定的 Face3 列表。
@@ -55,15 +84,10 @@ const useFace3 = () => {
     (deviceUUID, cb) => {
       if (!deviceUUID) return;
       setFace3StreamStates((states) => ({ ...states, [deviceUUID]: null }));
-      const messageData = {
-        action: ACTION_TYPES.BIZ3_FACE3_QR,
-        op: 'wake',
-        deviceId: deviceUUID,
-      };
-      sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
+      /* 唤醒 = 下发 face3Wake 命令，复用通用入口 */
+      sendFace3Command(deviceUUID, 'face3Wake', cb);
     },
-    [registerCallback]
+    [sendFace3Command]
   );
 
   /**
@@ -97,7 +121,7 @@ const useFace3 = () => {
     (message) => {
       const callbackDeviceId = message.data?.deviceId;
       invokeCallbacks(
-        callbackDeviceId && (message.op === 'wake' || message.op === 'viewer')
+        callbackDeviceId && (message.op === 'command' || message.op === 'viewer')
           ? { ...message, op: `${message.op}:${callbackDeviceId}` }
           : message
       );
@@ -136,6 +160,7 @@ const useFace3 = () => {
     face3Devices,
     face3StreamStates,
     listFace3Devices,
+    sendFace3Command,
     wakeFace3Device,
     viewFace3Device,
   };
