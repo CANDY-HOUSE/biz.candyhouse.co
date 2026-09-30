@@ -6,7 +6,7 @@ import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
  * 设备是 MASTER（推流），H5 是 VIEWER（收流）。流程：
  *
  *   1. 连信令通道（WSS，用云端签发的受限临时凭证签名）
- *   2. 建 RTCPeerConnection，只收不发（recvonly）
+ *   2. 建 RTCPeerConnection，接收设备音视频并把 Viewer 麦克风发给 Master
  *   3. 发 SDP offer → 设备回 answer
  *   4. 双向交换 ICE candidate
  *   5. ontrack 拿到远端流，挂到 <video>
@@ -97,6 +97,7 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
 
   let signalingClient = null;
   let peer = null;
+  let microphoneStream = null;
   let closed = false;
   let timer = null;
   let offerTimer = null;
@@ -158,6 +159,8 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     } catch {
       /* 已关就算了 */
     }
+    microphoneStream?.getTracks().forEach((track) => track.stop());
+    microphoneStream = null;
     try {
       if (signalingClient) {
         signalingClient.close();
@@ -352,6 +355,9 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
         if (r.type === 'inbound-rtp' && kind === 'audio') {
           out.audio = { bytes: r.bytesReceived, packets: r.packetsReceived };
         }
+        if (r.type === 'outbound-rtp' && kind === 'audio') {
+          out.microphone = { bytes: r.bytesSent, packets: r.packetsSent };
+        }
         if (r.type === 'candidate-pair' && r.state === 'succeeded' && r.nominated) {
           const lc = byId.get(r.localCandidateId);
           const rc = byId.get(r.remoteCandidateId);
@@ -424,10 +430,32 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     logi('signaling open');
     say('signaling');
     try {
-      /* recvonly：观看端不发画面也不发声音。
-         必须在 createOffer 之前声明，否则 offer 里没有 m= 行，设备无从回应。 */
+      /* 不发视频；音频优先用 sendrecv，把 Viewer 麦克风送给设备，同时继续接收
+         设备声音。用户拒绝权限或运行环境没有麦克风时，降级为只收音频，不影响观看。 */
       const videoTr = peer.addTransceiver('video', { direction: 'recvonly' });
-      const audioTr = peer.addTransceiver('audio', { direction: 'recvonly' });
+      let audioTr;
+      try {
+        microphoneStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: false,
+        });
+        if (closed) {
+          microphoneStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        const microphoneTrack = microphoneStream.getAudioTracks()[0];
+        audioTr = microphoneTrack
+          ? peer.addTransceiver(microphoneTrack, { direction: 'sendrecv', streams: [microphoneStream] })
+          : peer.addTransceiver('audio', { direction: 'recvonly' });
+        logi('microphone ' + (microphoneTrack ? 'enabled' : 'track unavailable'));
+      } catch (err) {
+        logi('microphone unavailable, receive-only audio', err);
+        audioTr = peer.addTransceiver('audio', { direction: 'recvonly' });
+      }
       /* rtx 要留着：H264 的丢包重传靠它，去掉会明显掉画质 */
       preferCodecs(videoTr, 'video', ['video/h264', 'video/rtx']);
       preferCodecs(audioTr, 'audio', ['audio/pcma', 'audio/pcmu']);

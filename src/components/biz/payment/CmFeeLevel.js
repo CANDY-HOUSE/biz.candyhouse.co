@@ -21,7 +21,7 @@ const levelData = () => [
     isUpgrade: false,
     users: '20 ユーザー',
     doors: '2 ドア',
-    apis: 'APIリクエスト上限\n 30,000 回',
+    apis: 'APIリクエスト上限\n 20,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
   {
@@ -32,7 +32,7 @@ const levelData = () => [
     isUpgrade: false,
     users: '50 ユーザー',
     doors: '5 ドア',
-    apis: 'APIリクエスト上限\n 100,000 回',
+    apis: 'APIリクエスト上限\n 50,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
   {
@@ -43,7 +43,7 @@ const levelData = () => [
     isUpgrade: false,
     users: '100 ユーザー',
     doors: '10 ドア',
-    apis: 'APIリクエスト上限\n 500,000 回',
+    apis: 'APIリクエスト上限\n 200,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
   {
@@ -54,7 +54,7 @@ const levelData = () => [
     isUpgrade: false,
     users: '200 ユーザー',
     doors: '50 ドア',
-    apis: 'APIリクエスト上限\n 無制限',
+    apis: 'APIリクエスト上限\n 1,000,000 回',
     cfpUse: '認証機器・カード管理ページの利用可能',
   },
 ];
