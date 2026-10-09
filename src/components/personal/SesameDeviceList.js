@@ -72,7 +72,8 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
   });
 
   const isExpanded = expandedDevices.includes(device.deviceUUID);
-  const isHub3 = device.deviceModel === 'hub_3';
+  // Hub3 与 Hub3 Pro 都有遥控器列表，共用展开箭头逻辑
+  const isHub3 = device.deviceModel === 'hub_3' || gUtils.isHub3Pro(device.deviceModel);
 
   const style = {
     transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
@@ -192,7 +193,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
       {isHub3 && !sortableIsDragging && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
           <Box sx={{ pl: 2, pr: 2, pb: 1 }}>
-            <MobileHub3RemoteList deviceUUID={device.deviceUUID} editable={false} />
+            <MobileHub3RemoteList deviceUUID={device.deviceUUID} device={device} editable={false} />
           </Box>
         </Collapse>
       )}

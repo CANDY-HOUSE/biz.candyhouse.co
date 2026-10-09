@@ -7,7 +7,7 @@ import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import { useRemoteCtrl } from '../api/useRemoteCtrl.js';
 
-export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
+export default function MobileHub3RemoteList({ deviceUUID, editable = true, device: listDevice }) {
   const { gManageDevice } = useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [device, setDevice] = useState({
@@ -31,7 +31,8 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
 
   // 获取设备信息
   useEffect(() => {
-    const foundDevice = gManageDevice.deviceStatus;
+    const status = gManageDevice.deviceStatus;
+    const foundDevice = listDevice || (status?.deviceUUID === deviceUUID ? status : null);
     if (foundDevice) {
       const deviceWithSafeRemoteList = {
         ...foundDevice,
@@ -42,7 +43,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true }) {
       };
       setDevice(deviceWithSafeRemoteList);
     }
-  }, [deviceUUID, gManageDevice.deviceStatus]);
+  }, [deviceUUID, listDevice, gManageDevice.deviceStatus]);
 
   // 添加遥控器的处理函数
   const handleAddRemote = () => {
