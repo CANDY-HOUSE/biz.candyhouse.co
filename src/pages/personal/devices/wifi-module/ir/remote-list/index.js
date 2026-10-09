@@ -18,6 +18,22 @@ import { DataSearch } from '@/components/biz/device/DataSearch.js';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { getRemoteSource } from '../utils/irRemoteUtils.js';
+import {
+  getRemoteListCache,
+  putRemoteListCache,
+  deleteRemoteListCache,
+  getSearchCache,
+  putSearchCache,
+  deleteSearchCache,
+  purgeRemoteListCache,
+  removeLegacyLocalStorageLists,
+  markRemoteListVerified,
+  isRemoteListVerified,
+} from '../utils/remoteListCache.js';
+
+// 列表和搜索结果都缓存在 IndexedDB（见 remoteListCache.js），只存列表页和遥控器页实际用到的字段
+const slimRemote = ({ code, model, alias, direction }) => ({ code, model, alias, direction });
+const INITIAL_PAGINATION = { currentPage: 1, pageSize: 200, totalCount: 0, hasMore: true };
 
 export default function RemoteList() {
   const navigate = useNavigate();
@@ -29,7 +45,6 @@ export default function RemoteList() {
   const irType = searchParams.get('irType');
   const formRemoteControlKey = 'formRemoteControlKey';
   console.info('RemoteList initialized with  irType:', irType);
-  const cacheKey = `remoteList_${irType}`;
   const [searchTerm, setSearchTerm] = useState('');
   const { gMediaType } = useContext(GlobalStateContext);
   const isMobile = gMediaType.isMobile;
@@ -47,10 +62,10 @@ export default function RemoteList() {
     isLoadingMore,
     isSearching,
     getRemoteList,
+    getRemoteListVersion,
     searchRemoteList,
     loadMoreRemotes,
     setRemoteList,
-    setIsLoading,
     clearSearchResults,
     setSearchResults,
   } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
@@ -60,139 +75,175 @@ export default function RemoteList() {
   const hasRequestedRef = useRef(false);
   const isLoadingMoreRef = useRef(false);
   const hasRestoredFromCache = useRef(false);
+  // 列表是否已和后台核对过数据版本：核对前不写缓存、不加载下一页
+  const versionCheckedRef = useRef(false);
+  const [dataVersion, setDataVersion] = useState(null);
+  // IndexedDB 读缓存是异步的，读完之前显示加载中
+  const [restoring, setRestoring] = useState(true);
 
   const saveListToCache = useCallback(
-    (listData, paginationData) => {
-      try {
-        const state = {
-          remoteList: listData,
-          pagination: paginationData,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(state));
-      } catch (error) {
-        console.warn('save list to cache failed:', error);
-      }
+    (listData, paginationData, version) => {
+      // 没有数据版本就不缓存：无法判断是否过期的缓存宁可不要
+      if (!version || !listData?.length) return;
+      putRemoteListCache({
+        irType,
+        dataVersion: version,
+        remoteList: listData.map(slimRemote),
+        pagination: paginationData,
+      });
     },
-    [cacheKey]
+    [irType]
   );
 
+  // 点进下一级页面时保存当前搜索，返回时恢复。带数据版本，与列表缓存版本不符就不恢复
   const saveSearchToCache = useCallback(
-    (searchTerm, searchResults) => {
-      try {
-        const searchState = {
-          searchTerm,
-          searchResults,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(`${cacheKey}_search`, JSON.stringify(searchState));
-        localStorage.setItem(`${cacheKey}_searchTerm`, searchTerm);
-      } catch (error) {
-        console.warn('save search to cache failed:', error);
-      }
+    (term, results) => {
+      if (!dataVersion) return;
+      putSearchCache({
+        irType,
+        dataVersion,
+        searchTerm: term,
+        searchResults: (results || []).map(slimRemote),
+      });
     },
-    [cacheKey]
+    [irType, dataVersion]
   );
 
-  const restoreListFromCache = useCallback(() => {
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (error) {
-      console.warn('restore list from cache failed:', error);
+  const clearSearchState = useCallback(() => {
+    deleteSearchCache(irType);
+    setSearchTerm('');
+    if (clearSearchResults) {
+      clearSearchResults();
     }
-    return null;
-  }, [cacheKey]);
+  }, [irType, clearSearchResults]);
 
-  const restoreSearchFromCache = useCallback(() => {
-    try {
-      const cached = localStorage.getItem(`${cacheKey}_search`);
-      if (cached) {
-        return JSON.parse(cached);
+  // 采用后台刚返回的第 1 页：记下版本；版本不同的旧缓存（所有品类）一并清掉，没有版本号则全部清掉
+  const applyFreshFirstPage = useCallback(
+    (data) => {
+      const version = data.dataVersion || null;
+      purgeRemoteListCache(version);
+      markRemoteListVerified(irType, version);
+      versionCheckedRef.current = true;
+      setPagination(data.pagination);
+      setDataVersion(version);
+    },
+    [irType]
+  );
+
+  const fetchFirstPage = useCallback(() => {
+    setPagination({ ...INITIAL_PAGINATION });
+    getRemoteList(irType, 1, 200, (response) => {
+      if (response?.success && response.data?.pagination) {
+        applyFreshFirstPage(response.data);
       }
-    } catch (error) {
-      console.warn('restore search from cache failed:', error);
-    }
-    return null;
-  }, [cacheKey]);
+    });
+  }, [irType, getRemoteList, applyFreshFirstPage]);
+
+  // 后台数据版本变了（或拿不到版本号）：删掉本品类缓存，从第 1 页重新加载；新数据到之前仍显示当前列表。
+  // 其他品类的旧版本缓存在 applyFreshFirstPage 里按新版本一并清掉
+  const discardCacheAndReload = useCallback(() => {
+    hasRestoredFromCache.current = true;
+    versionCheckedRef.current = false;
+    deleteRemoteListCache(irType);
+    clearSearchState();
+    fetchFirstPage();
+  }, [irType, clearSearchState, fetchFirstPage]);
 
   useEffect(() => {
-    if (irType && !hasRequestedRef.current) {
-      hasRequestedRef.current = true;
+    if (!irType || hasRequestedRef.current) return;
+    hasRequestedRef.current = true;
+    removeLegacyLocalStorageLists();
+    const isBackNavigation = localStorage.getItem(formRemoteControlKey) === 'true';
 
-      const cachedListState = restoreListFromCache();
+    Promise.all([getRemoteListCache(irType), isBackNavigation ? getSearchCache(irType) : null]).then(
+      ([cached, cachedSearch]) => {
+        setRestoring(false);
 
-      if (cachedListState && cachedListState.remoteList?.length > 0) {
-        console.log('restore list from cache, skip network request');
+        if (!cached?.dataVersion || !cached.remoteList?.length) {
+          // 本地没有数据（或旧数据没有版本号，无法判断是否过期）：清掉，直接请求服务器数据
+          if (cached) {
+            deleteRemoteListCache(irType);
+          }
+          deleteSearchCache(irType);
+          fetchFirstPage();
+          return;
+        }
+
+        // 本地有数据：立即显示
         hasRestoredFromCache.current = true;
-
-        // Restore list data
         if (setRemoteList) {
-          setRemoteList(cachedListState.remoteList);
+          setRemoteList(cached.remoteList);
+        }
+        if (cached.pagination) {
+          setPagination({ ...cached.pagination });
         }
 
-        if (cachedListState.pagination) {
-          setPagination({ ...cachedListState.pagination });
-          console.log('restore pagination state:', cachedListState.pagination);
-        }
-
-        // Only restore search state on back navigation
-        const isBackNavigation = localStorage.getItem(formRemoteControlKey) === 'true';
-        if (isBackNavigation) {
-          const cachedSearchState = restoreSearchFromCache();
-          if (cachedSearchState && cachedSearchState.searchTerm) {
-            console.log('back navigation - restore search state:', cachedSearchState.searchTerm);
-            setSearchTerm(cachedSearchState.searchTerm);
-
-            if (cachedSearchState.searchResults?.length > 0 && setSearchResults) {
-              setSearchResults(cachedSearchState.searchResults);
-            }
+        // 搜索状态只在从下一级页面返回时恢复，且必须与列表是同一数据版本
+        if (isBackNavigation && cachedSearch?.searchTerm && cachedSearch.dataVersion === cached.dataVersion) {
+          console.log('back navigation - restore search state:', cachedSearch.searchTerm);
+          setSearchTerm(cachedSearch.searchTerm);
+          if (cachedSearch.searchResults?.length > 0 && setSearchResults) {
+            setSearchResults(cachedSearch.searchResults);
           }
         } else {
-          // Forward navigation, clear search state
+          if (cachedSearch) {
+            deleteSearchCache(irType);
+          }
           setSearchTerm('');
           if (clearSearchResults) {
             clearSearchResults();
           }
         }
 
-        if (setIsLoading) {
-          setIsLoading(false);
+        // 从下一级页面返回、且本次会话已核对过这份缓存的版本：直接显示，不再请求
+        if (isBackNavigation && isRemoteListVerified(irType, cached.dataVersion)) {
+          versionCheckedRef.current = true;
+          setDataVersion(cached.dataVersion);
+          return;
         }
-      } else {
-        // Cache is invalid or does not exist, re-request data
-        setPagination({
-          currentPage: 1,
-          pageSize: 200,
-          totalCount: 0,
-          hasMore: true,
-        });
 
-        getRemoteList(irType, 1, 200, (response) => {
-          if (response && response.data) {
-            const responsePagination = response.data.pagination;
-            setPagination(responsePagination);
-            saveListToCache(response.data.data, responsePagination);
+        // 进入列表：显示本地数据的同时只请求版本号核对
+        getRemoteListVersion(irType, (response) => {
+          const latestVersion = response?.data?.dataVersion || null;
+          if (latestVersion && latestVersion === cached.dataVersion) {
+            markRemoteListVerified(irType, latestVersion);
+            versionCheckedRef.current = true;
+            setDataVersion(latestVersion);
+            return;
           }
+          // 没拿到版本号（含请求报错）或版本变了：清掉旧数据，重新请求第 1 页
+          console.log('remote list data version changed:', cached.dataVersion, '->', latestVersion);
+          discardCacheAndReload();
         });
       }
-    }
+    );
   }, [
     irType,
-    getRemoteList,
-    restoreListFromCache,
-    restoreSearchFromCache,
     setRemoteList,
-    setIsLoading,
     setSearchResults,
     clearSearchResults,
-    saveListToCache,
+    getRemoteListVersion,
+    discardCacheAndReload,
+    fetchFirstPage,
   ]);
 
+  // 列表或分页变化后写缓存。放在 effect 里，读到的一定是追加完新一页的最新列表
+  // （原先在加载下一页的回调里写，拿到的是回调创建时的旧 remoteList，缓存会少最新一页）
+  useEffect(() => {
+    if (versionCheckedRef.current) {
+      saveListToCache(remoteList, pagination, dataVersion);
+    }
+  }, [remoteList, pagination, dataVersion, saveListToCache]);
+
   const handleScroll = useCallback(() => {
-    if (!listRef.current || isLoadingMore || !pagination?.hasMore || isLoadingMoreRef.current || searchTerm.trim()) {
+    if (
+      !listRef.current ||
+      isLoadingMore ||
+      !pagination?.hasMore ||
+      isLoadingMoreRef.current ||
+      searchTerm.trim() ||
+      !versionCheckedRef.current
+    ) {
       console.log(
         'current state:',
         '!listRef.current =',
@@ -217,17 +268,16 @@ export default function RemoteList() {
 
       loadMoreRemotes(irType, pagination, (response) => {
         isLoadingMoreRef.current = false;
-        if (response) {
-          const updatedPagination = response.data.pagination;
-          setPagination(updatedPagination);
-
-          setTimeout(() => {
-            saveListToCache(remoteList, updatedPagination);
-          }, 100);
+        if (!response?.success || !response.data?.pagination) return;
+        // 翻页途中后台数据更新了：前后页不是同一版本，整体重载
+        if ((response.data.dataVersion || null) !== dataVersion) {
+          discardCacheAndReload();
+          return;
         }
+        setPagination(response.data.pagination);
       });
     }
-  }, [isLoadingMore, pagination?.hasMore, loadMoreRemotes, irType, searchTerm, remoteList, saveListToCache]);
+  }, [isLoadingMore, pagination, loadMoreRemotes, irType, searchTerm, dataVersion, discardCacheAndReload]);
 
   useEffect(() => {
     const listElement = listRef.current;
@@ -248,19 +298,13 @@ export default function RemoteList() {
   const handleSearch = useCallback(
     (value) => {
       setSearchTerm(value);
-      try {
-        localStorage.setItem(`${cacheKey}_searchTerm`, value);
-      } catch (error) {
-        console.warn('save search term failed:', error);
-      }
 
       // If the search term is empty, clear the search results
       if (!value.trim()) {
         if (clearSearchResults) {
           clearSearchResults();
         }
-        localStorage.removeItem(`${cacheKey}_search`);
-        localStorage.removeItem(`${cacheKey}_searchTerm`);
+        deleteSearchCache(irType);
         return;
       }
 
@@ -268,7 +312,7 @@ export default function RemoteList() {
         console.log('search finish:', response);
       });
     },
-    [irType, searchRemoteList, clearSearchResults, cacheKey]
+    [irType, searchRemoteList, clearSearchResults]
   );
 
   const { displayData, groupedData, alphabetList, isSearchingMode } = useMemo(() => {
@@ -283,7 +327,12 @@ export default function RemoteList() {
       };
     }
 
-    const grouped = (remoteList || []).reduce((acc, item) => {
+    // 13 个品类的真实数据已于 2026-09-23 导入 ir_remotes（77,356 条），
+    // 原先「后台没数据就塞一条演示遥控器」的兜底已移除 —— 列表为空就该显示为空，
+    // 否则请求失败时冒出假条目会让人误以为后台有数据。
+    const effectiveList = remoteList || [];
+
+    const grouped = effectiveList.reduce((acc, item) => {
       const key = (item.direction || 'OTHER').toUpperCase();
       if (!acc[key]) {
         acc[key] = [];
@@ -295,7 +344,7 @@ export default function RemoteList() {
     const alphabetList = Object.keys(grouped).sort();
 
     return {
-      displayData: remoteList || [],
+      displayData: effectiveList,
       groupedData: grouped,
       alphabetList,
       isSearchingMode: false,
@@ -366,13 +415,12 @@ export default function RemoteList() {
 
   const handleReturn = () => {
     localStorage.removeItem(formRemoteControlKey);
-    localStorage.removeItem(`${cacheKey}_search`);
-    localStorage.removeItem(`${cacheKey}_searchTerm`);
+    deleteSearchCache(irType);
     navigate(-1);
   };
 
   // Loading State
-  if (isLoading && !hasRestoredFromCache.current) {
+  if (restoring || (isLoading && !hasRestoredFromCache.current)) {
     return (
       <Card sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CardHeader

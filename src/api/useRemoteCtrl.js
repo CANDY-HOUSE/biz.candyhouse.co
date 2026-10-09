@@ -10,6 +10,7 @@ import { biz3utils } from '@/utils/biz3utils.js';
 const IR_OPS = {
   getRemoteList: 'getRemoteList',
   searchRemoteList: 'searchRemoteList',
+  getRemoteListVersion: 'getRemoteListVersion',
   sendIR: 'sendIR',
   updateRemoteState: 'updateRemoteState',
   addIRRemote: 'addIRRemote',
@@ -50,6 +51,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
   const handleRemoteResponse = (message) => {
     if (message.action !== ACTION_TYPES.BIZ3_IR_REMOTE) return;
     invokeCallbacks(message);
+    // 静默请求（getRemoteListVersion）只交给回调处理，不动列表和加载状态、失败也不弹提示
+    if (message.reqContext?.silent) return;
 
     setIsLoading(false);
     setIsLoadingMore(false);
@@ -395,6 +398,27 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       }
     },
     [handleSendMessage, registerCallback, setSnackbarValue, gStripe.customerInfo.companyID]
+  );
+
+  /**
+   * 只查遥控器列表的数据版本（本地有缓存时用它核对是否过期），回调里读 response.data.dataVersion。
+   * 静默请求：不显示加载状态、不改 remoteList、失败不弹提示（见 handleRemoteResponse 的 silent 分支）。
+   * @param {string} type - 红外类型
+   * @param {function} cb - 回调函数
+   */
+  const getRemoteListVersion = useCallback(
+    (type, cb) => {
+      const message = {
+        action: ACTION_TYPES.BIZ3_IR_REMOTE,
+        op: IR_OPS.getRemoteListVersion,
+        type: type,
+        companyID: gStripe.customerInfo.companyID,
+        silent: true,
+      };
+      handleSendMessage(message);
+      registerCallback(message.action, message.op, cb);
+    },
+    [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
   );
 
   /**
@@ -983,6 +1007,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
 
     // 方法
     getRemoteList,
+    getRemoteListVersion,
     searchRemoteList,
     loadMoreRemotes,
     clearSearchResults,

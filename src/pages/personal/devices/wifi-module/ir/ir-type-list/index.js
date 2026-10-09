@@ -6,6 +6,18 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
 import { SvgAir, SvgFan, SvgLearn, SvgLight, SvgTV } from '@assets/svg/ir/svgIR';
+// 新增品类暂用 MUI 自带图标（已是项目依赖，Apache-2.0）；待设计出图后替换为 png_*.png
+import LiveTvIcon from '@mui/icons-material/LiveTv';
+import DvrIcon from '@mui/icons-material/Dvr';
+import AlbumIcon from '@mui/icons-material/Album';
+import SlideshowIcon from '@mui/icons-material/Slideshow';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import AirIcon from '@mui/icons-material/Air';
+import SpeakerIcon from '@mui/icons-material/Speaker';
+import ShowerIcon from '@mui/icons-material/Shower';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { IR_TYPE } from '../utils/irTypes.js';
+import { deleteSearchCache } from '../utils/remoteListCache.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 
 export default function IrTypeList() {
@@ -15,6 +27,9 @@ export default function IrTypeList() {
   const hub3DeviceId = searchParams.get('hub3DeviceId') || '';
   const { gMediaType, gStripe } = useContext(GlobalStateContext);
   const isMobile = gMediaType.isMobile;
+  // 新增品类的 MUI 图标尺寸，与既有 32x32 的 png 图标对齐
+  const svgIconStyle = { width: 32, height: 32, color: 'text.primary' };
+
   // 红外设备类型列表
   const irTypes = [
     {
@@ -42,6 +57,61 @@ export default function IrTypeList() {
       icon: <SvgFan />,
     },
     {
+      id: 'iptv',
+      type: IR_TYPE.IPTV,
+      name: t('pages.ir.list.iptv'),
+      icon: <LiveTvIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'stb',
+      type: IR_TYPE.STB,
+      name: t('pages.ir.list.stb'),
+      icon: <DvrIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'dvd',
+      type: IR_TYPE.DVD,
+      name: t('pages.ir.list.dvd'),
+      icon: <AlbumIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'projector',
+      type: IR_TYPE.PJT,
+      name: t('pages.ir.list.projector'),
+      icon: <SlideshowIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'audio',
+      type: IR_TYPE.AUDIO,
+      name: t('pages.ir.list.audio'),
+      icon: <SpeakerIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'airPurifier',
+      type: IR_TYPE.AP,
+      name: t('pages.ir.list.airPurifier'),
+      icon: <AirIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'waterHeater',
+      type: IR_TYPE.HW,
+      name: t('pages.ir.list.waterHeater'),
+      icon: <ShowerIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'robot',
+      type: IR_TYPE.ROBOT,
+      name: t('pages.ir.list.robot'),
+      icon: <CleaningServicesIcon sx={svgIconStyle} />,
+    },
+    {
+      id: 'camera',
+      type: IR_TYPE.DC,
+      name: t('pages.ir.list.camera'),
+      icon: <PhotoCameraIcon sx={svgIconStyle} />,
+    },
+    // 学习始终排在最后
+    {
       id: 'learn',
       type: 0xfeff,
       name: t('pages.ir.list.learn'),
@@ -52,8 +122,7 @@ export default function IrTypeList() {
   // 处理类型选择
   const handleTypeSelect = (selectedType) => {
     localStorage.removeItem('formRemoteControlKey');
-    localStorage.removeItem(`remoteList_${selectedType.type}_search`);
-    localStorage.removeItem(`remoteList_${selectedType.type}_searchTerm`);
+    deleteSearchCache(selectedType.type);
     let pathname = '/biz/access-control/remotes';
     if (selectedType.id === 'learn') {
       pathname = '/biz/access-control/learn';

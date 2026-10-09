@@ -7,7 +7,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { HXDParametersSwapper } from '../utils/HXDParametersSwapper';
 import { HXDCommandProcessor } from '../utils/HXDCommandProcessor';
-import { getRemoteSource } from '../utils/irRemoteUtils.js';
+import { getRemoteSource, getAirTempRange, clampAirTemp } from '../utils/irRemoteUtils.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import EditableText from '@/components/EditableText.js';
 import { useTranslation } from 'react-i18next';
@@ -113,6 +113,15 @@ const RemoteAir = () => {
       restoreStateFromRemote(remote);
     }
   }, [remote]);
+
+  // 换了遥控器（例如自动匹配结果里切换）时，把当前温度收进新遥控器的可调范围
+  useEffect(() => {
+    if (remote?.code == null) return;
+    setCurrentState((s) => {
+      const t = clampAirTemp(s.temperature, remote);
+      return t === s.temperature ? s : { ...s, temperature: t };
+    });
+  }, [remote?.code]);
 
   // 构建命令的函数
   const buildCommand = useCallback(
@@ -353,6 +362,8 @@ const RemoteAir = () => {
         default:
           break;
       }
+      // 发出去的温度一定在该遥控器的可调范围内（旧版本保存的状态可能是 31/32℃）
+      newState.temperature = clampAirTemp(newState.temperature, remote);
       setCurrentState(newState);
       let cmd = buildCommand(item.type, remote, newState);
       setCommand(cmd);
@@ -414,12 +425,12 @@ const RemoteAir = () => {
   };
   // 温度增加
   const handleTemperatureAdd = (newState) => {
-    newState.temperature = Math.min(32, newState.temperature + 1);
+    newState.temperature = Math.min(getAirTempRange(remote).max, newState.temperature + 1);
   };
 
   // 温度减少
   const handleTemperatureReduce = (newState) => {
-    newState.temperature = Math.max(16, newState.temperature - 1);
+    newState.temperature = Math.max(getAirTempRange(remote).min, newState.temperature - 1);
   };
 
   // 模式切换
@@ -581,7 +592,7 @@ const RemoteAir = () => {
           console.warn('Failed to convert to UI state');
           return;
         }
-        setCurrentState(uiState);
+        setCurrentState({ ...uiState, temperature: clampAirTemp(uiState.temperature, remote) });
         console.log('Successfully restored state:', uiState);
       } catch (error) {
         console.error('Error restoring state from remote:', error);

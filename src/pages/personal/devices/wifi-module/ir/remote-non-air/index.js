@@ -4,13 +4,14 @@ import { KeyboardArrowLeft as KeyboardArrowLeftIcon } from '@mui/icons-material'
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
-import { HXDParametersSwapper } from '../utils/HXDParametersSwapper';
 import { HXDCommandProcessor } from '../utils/HXDCommandProcessor';
 import EditableText from '@/components/EditableText.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
-import { fanConfig, lightConfig, tvConfig } from './config.js';
+import { getRemotePanel } from './panels/index.js';
+import { IR_TYPE } from '../utils/irTypes.js';
+import { getNonAirKeyId, isNonAirKeyAvailable, getNonAirPowerOnKeyId, getNonAirPowerOffKeyId } from './keyIds.js';
 
 const RemoteNonAir = () => {
   const navigate = useNavigate();
@@ -20,7 +21,6 @@ const RemoteNonAir = () => {
   const hub3DeviceId = searchParams.get('hub3DeviceId');
   const [remote, setRemote] = useState({});
 
-  const parametersSwapper = useMemo(() => new HXDParametersSwapper(), []);
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
   const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
   const { sendIR, updateRemoteState, addIRRemote, modifyIRRemote, addRemoteToMatter, updateLocalRemoteList } =
@@ -82,39 +82,43 @@ const RemoteNonAir = () => {
     console.log('remote update :', remote);
   }, [remote]);
 
-  const getDeviceConfig = () => {
-    console.log('getDeviceConfig for irType:', remote.type);
-    const irTypeNum = parseInt(remote.type);
-    switch (irTypeNum) {
-      case 0x8000: // 风扇
-        return fanConfig(t);
-      case 0xe000: // 灯光
-        return lightConfig(t);
-      case 0x2000: // 电视
-        return tvConfig(t);
-      default:
-        return fanConfig(t);
-    }
-  };
-
-  const deviceConfig = useMemo(() => getDeviceConfig(), [remote.type]);
+  // 按遥控器来源加载按键面板：HXD（code < 30000）用 panels/hxdPanels.js，SwitchBot 用 panels/switchbotPanels.js。
+  // 遥控器数据还没加载（没有 code，判断不了来源）时先不画按钮。
+  const deviceConfig = useMemo(
+    () => (remote.code === undefined || remote.code === null ? [] : getRemotePanel(remote.type, remote.code, t)),
+    [remote.type, remote.code, t]
+  );
 
   // 获取设备类型显示名称
   const getDeviceTypeName = () => {
     const irTypeNum = parseInt(remote.type);
     const typeNames = {
-      0x8000: t('pages.ir.list.fan'),
-      0xe000: t('pages.ir.list.light'),
-      0x2000: t('pages.ir.list.tv'),
+      [IR_TYPE.FANS]: t('pages.ir.list.fan'),
+      [IR_TYPE.LIGHT]: t('pages.ir.list.light'),
+      [IR_TYPE.TV]: t('pages.ir.list.tv'),
+      [IR_TYPE.IPTV]: t('pages.ir.list.iptv'),
+      [IR_TYPE.STB]: t('pages.ir.list.stb'),
+      [IR_TYPE.DVD]: t('pages.ir.list.dvd'),
+      [IR_TYPE.PJT]: t('pages.ir.list.projector'),
+      [IR_TYPE.DC]: t('pages.ir.list.camera'),
+      [IR_TYPE.AP]: t('pages.ir.list.airPurifier'),
+      [IR_TYPE.AUDIO]: t('pages.ir.list.audio'),
+      [IR_TYPE.HW]: t('pages.ir.list.waterHeater'),
+      [IR_TYPE.ROBOT]: t('pages.ir.list.robot'),
     };
     return typeNames[irTypeNum];
   };
 
   // 构建命令的函数
+  // 键号按 keyIds.js 取（1..N = HXD 码表列号，64 起 = SwitchBot 独有键），后端用同一份映射找码。
+  // 返回 null 表示这台遥控器没有这个键（码源里就没有这一列），不发；返回 '' 表示构建出错。
   const buildCommand = (item, remoteDevice) => {
     try {
-      console.log('buildCommand item:', item, 'remoteDevice:', remoteDevice, 'irType:', remote.type);
-      const key = parametersSwapper.getKeyByDeviceType(remote.type, item.type);
+      const key = getNonAirKeyId(remote.type, item.id);
+      console.log('buildCommand item:', item.id, 'key:', key, 'code:', remoteDevice.code, 'irType:', remote.type);
+      if (!isNonAirKeyAvailable(remote.type, remoteDevice.code, key)) {
+        return null;
+      }
       const command = commandProcessor.setKey(key).setCode(remoteDevice.code).buildNonAirCommand();
       return commandProcessor.toHexString(command);
     } catch (error) {
@@ -138,6 +142,14 @@ const RemoteNonAir = () => {
     try {
       // 构建并发送红外码
       let cmd = buildCommand(item, remote);
+      if (cmd === null) {
+        setSnackbarValue({
+          open: true,
+          // msg: t('pages.ir.remote.keyNotAvailable'),
+          severity: 'info',
+        });
+        return;
+      }
       setCommand(cmd);
       if (!cmd) {
         console.error('handleItemClick buildCommand is empty!');
@@ -165,6 +177,15 @@ const RemoteNonAir = () => {
               }
             });
           }
+        } else if (response.code === 406) {
+          // 后端找不到这台遥控器这个键的码（HXD 码表该列为空 / SwitchBot 数据里没有）。
+          // useRemoteCtrl 对 406 是全局静默的（空调页依赖这点），所以在这里单独提示。
+          console.warn('IR key not available:', response.message);
+          setSnackbarValue({
+            open: true,
+            // msg: t('pages.ir.remote.keyNotAvailable'),
+            severity: 'info',
+          });
         } else {
           console.error('IR code send failed:', response.message);
         }
@@ -240,13 +261,15 @@ const RemoteNonAir = () => {
       console.log('addRemoteToMatter callback response:', response);
     });
   };
+  // Matter 桥接只有「开」「关」两个动作：按码源挑覆盖率最高的电源键（如投影仪 HXD 用开机/关机两列，
+  // SwitchBot 用单一电源键），见 keyIds.js 的 POWER_KEYS。
   const getPowerOffCommand = (remoteToSave) => {
-    const key = parametersSwapper.getPowerOffKeyByDeviceType(remoteToSave.type);
+    const key = getNonAirPowerOffKeyId(remoteToSave.type, remoteToSave.code) ?? 0x01;
     return commandProcessor.toHexString(commandProcessor.setKey(key).setCode(remoteToSave.code).buildNonAirCommand());
   };
 
   const getPowerOnCommand = (remoteToSave) => {
-    const key = parametersSwapper.getPowerOnKeyByDeviceType(remoteToSave.type);
+    const key = getNonAirPowerOnKeyId(remoteToSave.type, remoteToSave.code) ?? 0x01;
     return commandProcessor.toHexString(commandProcessor.setKey(key).setCode(remoteToSave.code).buildNonAirCommand());
   };
 
@@ -366,8 +389,11 @@ const RemoteNonAir = () => {
       <CardContent
         sx={{
           display: 'flex',
-          overflow: 'hidden',
-          height: '100vh',
+          // 按键多的品类（如音响 29 键、DVD 31 键）内容会超出一屏，需可滚动
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+          minHeight: 0,
           width: '100%',
           padding: 0,
           margin: 0,
@@ -383,6 +409,8 @@ const RemoteNonAir = () => {
             display: 'flex',
             padding: 0,
             margin: 0,
+            // 给底部固定的「自动匹配」提示条留出空间，避免压住最后一行按键
+            pb: '104px',
             justifyContent: 'center',
           }}
         >
@@ -458,9 +486,12 @@ const RemoteNonAir = () => {
         </Box>
         <Box
           sx={{
-            position: 'absolute',
-            bottom: 20,
+            position: 'fixed',
+            // 贴到视口底边：若留出间隙，滚动内容会从底部缝隙里透出来
+            bottom: 0,
             pt: 4,
+            pb: '20px',
+            backgroundColor: 'background.paper',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-start',
