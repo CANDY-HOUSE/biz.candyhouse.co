@@ -6,6 +6,7 @@ import Layout from '@components/biz/layout';
 import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
 import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import NotFoundPage from '@pages/404';
 import HomePage from '@pages/index';
 import LoginIndex from '@pages/login';
@@ -191,6 +192,18 @@ const App = () => {
     <Router>
       <NativePageTheme>
         <CssBaseline />
+        {isAppHome && (
+          <GlobalStyles
+            styles={{
+              // Include dialogs rendered into body through portals; keep text editing available.
+              body: { WebkitUserSelect: 'none', userSelect: 'none' },
+              'input, textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]': {
+                WebkitUserSelect: 'text',
+                userSelect: 'text',
+              },
+            }}
+          />
+        )}
         <AppFrame>
           <AppBootstrap>
             <GlobalContextProvider>

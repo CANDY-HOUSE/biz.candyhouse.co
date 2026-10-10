@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { bleStateLabel } from '@/services/blePresentation';
 import { logOperationFailure } from '@/services/operationFailure';
 import { reportDeviceLocation } from '@/services/deviceLocation';
+import { cancelAppPullRefresh } from '@/services/appPullRefresh';
 import { useBotScripts } from '@/hooks/useBotScripts';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -329,6 +330,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
   );
 
   const handleDragStart = (_event) => {
+    cancelAppPullRefresh();
     setIsDragging(true);
     setExpandedDevices([]);
   };
@@ -358,6 +360,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => setIsDragging(false)}
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={sortableData.map((device) => device.deviceUUID)} strategy={verticalListSortingStrategy}>

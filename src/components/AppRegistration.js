@@ -13,13 +13,15 @@ import { Alert, Box, CircularProgress, List, ListItemButton, Divider, Stack, Typ
 import { Bluetooth, BluetoothConnected, BluetoothDisabled } from '@mui/icons-material';
 import { deviceService } from '@/services/deviceService';
 import BleStatusBar from './BleStatusBar';
+import AppRefreshIndicator from './AppRefreshIndicator';
 
 export default function AppRegistration() {
   const { t } = useTranslation();
   const { gManageDevice, gStripe } = useContext(GlobalStateContext);
   const navigate = useNavigate();
   const active = useRef(false);
-  const pullStart = useRef(null);
+  const container = useRef(null);
+  const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [discovery, setDiscovery] = useState({ devices: [] });
   const [busy, setBusy] = useState('');
@@ -45,6 +47,54 @@ export default function AppRegistration() {
       deviceService.notify('scanStop');
     };
   }, []);
+  useEffect(() => {
+    const element = container.current;
+    setPullDistance(0);
+    let origin = null;
+    let distance = 0;
+    const reset = () => {
+      origin = null;
+      distance = 0;
+      setPullDistance(0);
+    };
+    const begin = (event) => {
+      reset();
+      if (busy || refreshing || event.touches.length !== 1 || window.scrollY > 0) return;
+      for (let node = event.target; node instanceof Element; node = node.parentElement) {
+        if (node.scrollTop > 0) return;
+      }
+      origin = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    };
+    const move = (event) => {
+      if (event.touches.length !== 1 || event.defaultPrevented) return reset();
+      if (!origin) return;
+      const dy = event.touches[0].clientY - origin.y;
+      const dx = Math.abs(event.touches[0].clientX - origin.x);
+      if (dy < 0 || dx > Math.max(12, dy)) return reset();
+      distance = Math.min(dy, 100);
+      if (distance > 12) {
+        if (event.cancelable) event.preventDefault();
+        setPullDistance(distance);
+      } else {
+        setPullDistance(0);
+      }
+    };
+    const end = () => {
+      const refresh = distance > 70;
+      reset();
+      if (refresh) start();
+    };
+    element.addEventListener('touchstart', begin, { passive: true });
+    element.addEventListener('touchmove', move, { passive: false });
+    element.addEventListener('touchend', end);
+    element.addEventListener('touchcancel', reset);
+    return () => {
+      element.removeEventListener('touchstart', begin);
+      element.removeEventListener('touchmove', move);
+      element.removeEventListener('touchend', end);
+      element.removeEventListener('touchcancel', reset);
+    };
+  }, [busy, refreshing]);
   const register = async (device) => {
     setBusy(device.deviceUUID);
     setError('');
@@ -88,23 +138,8 @@ export default function AppRegistration() {
     }
   };
   return (
-    <Box
-      sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}
-      onTouchStart={(event) => {
-        pullStart.current = window.scrollY === 0 ? event.touches[0].clientY : null;
-      }}
-      onTouchEnd={(event) => {
-        if (
-          pullStart.current !== null &&
-          event.changedTouches[0].clientY - pullStart.current > 70 &&
-          !busy &&
-          !refreshing
-        )
-          start();
-        pullStart.current = null;
-      }}
-    >
-      {refreshing && <CircularProgress size={20} />}
+    <Box ref={container} sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}>
+      <AppRefreshIndicator distance={pullDistance} refreshing={refreshing} />
       {(error || discovery.error) && <Alert severity="error">{error || discovery.error}</Alert>}
       <BleStatusBar bluetoothOff={discovery.bluetoothOff} />
       <List sx={{ px: 2, display: discovery.devices.length ? 'block' : 'none' }}>

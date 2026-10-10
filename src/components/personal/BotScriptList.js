@@ -19,6 +19,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { cancelAppPullRefresh } from '@/services/appPullRefresh';
 
 function ScriptRow({ script, onRun, disabled }) {
   const { setNodeRef, attributes, listeners, transform, transition } = useSortable({ id: script.id, disabled });
@@ -65,7 +66,8 @@ function ScriptRow({ script, onRun, disabled }) {
 
 export default function BotScriptList({ scripts, onRun, onError, onReorder }) {
   const [busy, setBusy] = useState(false);
-  const orderedScripts = scripts;
+  const [pendingScripts, setPendingScripts] = useState(null);
+  const orderedScripts = pendingScripts ?? scripts;
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 350, tolerance: 8 } }),
@@ -85,13 +87,19 @@ export default function BotScriptList({ scripts, onRun, onError, onReorder }) {
   const reorder = async ({ active, over }) => {
     if (!over || active.id === over.id || busy) return;
     const ids = orderedScripts.map((script) => script.id);
+    const from = ids.indexOf(active.id);
+    const to = ids.indexOf(over.id);
+    if (from < 0 || to < 0) return;
+    const next = arrayMove(orderedScripts, from, to);
+    // Keep the dropped order visible while the existing save request completes.
+    setPendingScripts(next);
     setBusy(true);
     try {
-      const next = arrayMove(ids, ids.indexOf(active.id), ids.indexOf(over.id));
-      await onReorder(next);
+      await onReorder(next.map((script) => script.id));
     } catch (error) {
       onError(error);
     } finally {
+      setPendingScripts(null);
       setBusy(false);
     }
   };
@@ -102,6 +110,7 @@ export default function BotScriptList({ scripts, onRun, onError, onReorder }) {
         collisionDetection={closestCenter}
         modifiers={[restrictToVerticalAxis]}
         onDragEnd={reorder}
+        onDragStart={cancelAppPullRefresh}
       >
         <SortableContext items={orderedScripts.map((script) => script.id)} strategy={verticalListSortingStrategy}>
           {orderedScripts.map((script) => (

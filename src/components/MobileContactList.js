@@ -20,6 +20,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { cancelAppPullRefresh } from '@/services/appPullRefresh';
 
 const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -91,7 +92,7 @@ const MobileContactList = ({ contacts, callRowClick, callSearch, onDragEnd }) =>
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = sortableData.findIndex((user) => user.subUUID === active.id);
       const newIndex = sortableData.findIndex((user) => user.subUUID === over.id);
       const updatedContacts = arrayMove(sortableData, oldIndex, newIndex);
@@ -104,6 +105,7 @@ const MobileContactList = ({ contacts, callRowClick, callSearch, onDragEnd }) =>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={cancelAppPullRefresh}
       onDragEnd={handleDragEnd}
       modifiers={[restrictToVerticalAxis]}
     >

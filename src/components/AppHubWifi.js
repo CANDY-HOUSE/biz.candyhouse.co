@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -21,6 +20,7 @@ import { Close, Wifi, Wifi1Bar, Wifi2Bar } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { deviceService } from '@/services/deviceService';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
+import AppRefreshIndicator from './AppRefreshIndicator';
 
 export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword = false }) {
   const { t } = useTranslation();
@@ -67,16 +67,7 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
       </Box>
       {(failed || device?.hub?.wifiScanFailed) && <Alert severity="error">{t('lockSettings.failed')}</Alert>}
       {!device?.bleConnected && <Alert severity="info">{t('bleStatus.noSignal')}</Alert>}
-      {(scanning || pullDistance > 0) && (
-        <Box sx={{ textAlign: 'center', py: 1, transform: `translateY(${scanning ? 0 : pullDistance / 4}px)` }}>
-          <CircularProgress
-            size={24}
-            aria-label={t('appHome.refreshing')}
-            variant={scanning ? 'indeterminate' : 'determinate'}
-            value={Math.min((pullDistance / 70) * 100, 100)}
-          />
-        </Box>
-      )}
+      <AppRefreshIndicator distance={pullDistance} refreshing={scanning} />
       <Box
         sx={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}
         onTouchStart={(e) => {

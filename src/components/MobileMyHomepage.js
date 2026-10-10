@@ -1,4 +1,6 @@
 import { appPromotion } from '@/services/appPromotion';
+import { appPageRefreshEvent, requestAppRefreshData } from '@/services/appTabRefresh';
+import { ACTION_TYPES } from '@/constants/messageConstants';
 import { isAndroidShell } from '@/services/appBridge';
 import { isAppHome } from '@/services/deviceService';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
@@ -24,14 +26,16 @@ const MobileMyHomepage = () => {
   const [actionSheet, setActionSheet] = useState(null); // { title, onConfirm }
 
   const requestNotificationStatus = useCallback(() => {
-    return new Promise((resolve, _reject) => {
+    return new Promise((resolve, reject) => {
       const requestId = Date.now().toString();
       window[`deviceListCallback_${requestId}`] = (deviceList) => {
+        clearTimeout(timeout);
         delete window[`deviceListCallback_${requestId}`];
         resolve(deviceList);
       };
       const timeout = setTimeout(() => {
         delete window[`deviceListCallback_${requestId}`];
+        reject(new Error('Notification status timed out'));
       }, 10000);
       const message = {
         action: 'requestNotificationStatus',
@@ -40,6 +44,8 @@ const MobileMyHomepage = () => {
       };
       if (!biz3utils.triggerBridge(message)) {
         clearTimeout(timeout);
+        delete window[`deviceListCallback_${requestId}`];
+        reject(new Error('Notification status unavailable'));
       }
     });
   }, []);
@@ -123,6 +129,7 @@ const MobileMyHomepage = () => {
       const requestId = Date.now().toString();
       const cb = `requestAuthState_${requestId}`;
       window[cb] = (res) => {
+        clearTimeout(timeout);
         delete window[cb];
         resolve(res);
       };
@@ -144,6 +151,7 @@ const MobileMyHomepage = () => {
       const requestId = Date.now().toString();
       const cb = `requestAppVersion_${requestId}`;
       window[cb] = (res) => {
+        clearTimeout(timeout);
         delete window[cb];
         resolve(res);
       };
@@ -180,6 +188,39 @@ const MobileMyHomepage = () => {
       setCurrentUserInfo(res.data);
     }, true);
   };
+
+  useEffect(() => {
+    if (!isAppHome) return;
+    const refresh = ({ detail: { tasks, signal } }) => {
+      const apply = (setter) => (value) => {
+        if (!value || value.success === false) throw new Error('Page refresh failed');
+        if (!signal.aborted) setter(value);
+      };
+      tasks.push(
+        requestAuthState().then(apply(setAuthState)),
+        requestAppVersion().then(apply(setAppVersion)),
+        requestNotificationStatus().then(apply((response) => setNotificationEnabled(Boolean(response.enabled)))),
+        appPromotion.refresh(gStripe.customerInfo.subUUID)
+      );
+      if (!gStripe.customerInfo.isAnonymous) {
+        tasks.push(
+          requestAppRefreshData(
+            { action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE, op: 'currentInfo', excludeLogins: true },
+            (message) => (message.op === 'currentInfo' ? true : null),
+            signal
+          ).then(apply(setCurrentUserInfo))
+        );
+      }
+    };
+    window.addEventListener(appPageRefreshEvent, refresh);
+    return () => window.removeEventListener(appPageRefreshEvent, refresh);
+  }, [
+    gStripe.customerInfo.subUUID,
+    gStripe.customerInfo.isAnonymous,
+    requestAuthState,
+    requestAppVersion,
+    requestNotificationStatus,
+  ]);
 
   useEffect(() => {
     if (isAppHome) return;
