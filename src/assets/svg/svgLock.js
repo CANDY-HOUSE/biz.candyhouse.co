@@ -40,10 +40,10 @@ export const SvgBattery = ({ opacity = 1 }) => {
   return <img src={batteryIcon} alt="battery icon" style={{ opacity: opacity, width: '25px', height: '18px' }} />;
 };
 
-export const SvgOPS = ({ opacity = 1, label }) => {
+export const SvgOPS = ({ opacity = 1, label, size = 51 }) => {
   return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', width: 51, height: 51 }}>
-      <img src={opensensorBgIcon} alt="ops icon" style={{ opacity, width: 51, height: 51 }} />
+    <Box sx={{ position: 'relative', display: 'inline-flex', width: size, height: size }}>
+      <img src={opensensorBgIcon} alt="ops icon" style={{ opacity, width: size, height: size }} />
       {label != null && label !== '' && (
         <Box
           sx={{

@@ -1,11 +1,11 @@
+import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { Box, Card, CardHeader, IconButton, Typography } from '@mui/material';
+import { Box, Card, CardHeader, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CheckTable from '@/components/biz/CheckTable';
 import { wordConfig } from '@constants/wordConfig';
 import { useTranslation } from 'react-i18next';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { biz3utils } from '@/utils/biz3utils';
 import useOperateIoT from '@hooks/useOperateIoT';
 import CardInfoDisplay from '@/components/biz/device/CardDeviceInfo';
@@ -197,9 +197,7 @@ export default function PasswordDetails() {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate(-1)}>
-                <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
-              </IconButton>
+              <BackButton onClick={() => navigate(-1)}></BackButton>
               <Typography variant="h3">{t('pages.login.ReturnToMailInput')}</Typography>
             </Box>
           }
@@ -235,6 +233,8 @@ export default function PasswordDetails() {
           gManageAuthData.updatePasswordName(param, (resp) => {
             if (resp.errMsg) {
               setSnackbarValue({
+                logScope: 'pages/biz/access-control/password/passworddetails',
+                severity: 'error',
                 open: true,
                 msg: resp.errMsg,
               });

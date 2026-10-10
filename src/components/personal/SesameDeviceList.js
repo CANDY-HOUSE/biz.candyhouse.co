@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Box, List, ListItem, ListItemText, Stack, Collapse } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { bleStateLabel } from '@/services/blePresentation';
+import { logOperationFailure } from '@/services/operationFailure';
+import { reportDeviceLocation } from '@/services/deviceLocation';
+import { useBotScripts } from '@/hooks/useBotScripts';
+import { deviceService, isAppHome } from '@/services/deviceService';
+import { GlobalStateContext } from '@/context/GlobalContextProvider';
+import BotScriptList from './BotScriptList';
+import BluetoothIcon from '@mui/icons-material/Bluetooth';
+import React, { useState, useEffect, useSyncExternalStore, useContext } from 'react';
+import { Box, List, ListItem, ListItemText, Stack, Collapse, Typography } from '@mui/material';
 import WifiIcon from '@mui/icons-material/Wifi';
 import { BatteryLevel } from '../biz/device/BatteryLevel';
 import VIotSwitch from '../biz/device/VIotSwitch';
@@ -58,7 +67,16 @@ const getRelayEnabled = (device, relayIndex) => {
   return enable === undefined ? true : Number(enable) === 1;
 };
 
-const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, expandedDevices, toggleExpanded }) => {
+const SortableItemComponent = ({
+  index,
+  device,
+  callRowClick,
+  gIot,
+  enableDrag,
+  expandedDevices,
+  toggleExpanded,
+  localOnly,
+}) => {
   const {
     attributes,
     listeners,
@@ -71,6 +89,31 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
     disabled: !enableDrag,
   });
 
+  const { t } = useTranslation();
+  const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
+  const native = isAppHome ? nativeDevices[device.deviceUUID.toUpperCase()] : null;
+  const { setSnackbarValue, gStripe } = useContext(GlobalStateContext);
+  const bot = useBotScripts(device.deviceUUID, device.deviceModel, localOnly);
+  const isScriptBot = bot.enabled;
+  const reportError = (error) => {
+    if (localOnly) return logOperationFailure('SesameDeviceList', 'localCommand');
+    setSnackbarValue({
+      logScope: 'components/personal/SesameDeviceList.reportError',
+      severity: 'error',
+      open: true,
+      msg: error.message,
+    });
+  };
+  const runNative = (scriptIndex) =>
+    deviceService
+      .request('command', { deviceUUID: device.deviceUUID, ...(scriptIndex === undefined ? {} : { scriptIndex }) })
+      .catch(reportError);
+  const shownDevice = native?.bleConnected
+    ? {
+        ...device,
+        stateInfo: { ...device.stateInfo, wm2State: true, CHSesame2Status: native.bleState.toLowerCase() },
+      }
+    : device;
   const isExpanded = expandedDevices.includes(device.deviceUUID);
   // Hub3 与 Hub3 Pro 都有遥控器列表，共用展开箭头逻辑
   const isHub3 = device.deviceModel === 'hub_3' || gUtils.isHub3Pro(device.deviceModel);
@@ -85,6 +128,8 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
     e.stopPropagation();
     if (sortableIsDragging) return;
     toggleExpanded(device.deviceUUID);
+    if (isScriptBot && !isExpanded)
+      deviceService.request('scripts', { deviceUUID: device.deviceUUID }).catch(reportError);
   };
 
   // 处理整个 item 点击事件
@@ -94,7 +139,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
     if (isHub3 && isExpanded) {
       toggleExpanded(device.deviceUUID);
     }
-    callRowClick(index);
+    callRowClick?.(index);
   };
 
   const handleSwitchClick = (e) => {
@@ -105,31 +150,40 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
     <Box>
       <ListItem
         ref={setNodeRef}
-        {...attributes}
-        {...listeners}
+        {...(enableDrag ? attributes : {})}
+        {...(enableDrag ? listeners : {})}
         onClick={handleItemClick}
         style={style}
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: '5rem',
+          height: isAppHome ? '7rem' : '5rem',
           ...style,
         }}
       >
         <Box sx={{ flexGrow: 1 }}>
           <Stack direction="row" spacing="5px" alignItems="center">
+            {native?.showBle && (
+              <BluetoothIcon fontSize="small" sx={{ color: native.bleConnected ? 'primary.main' : 'info.light' }} />
+            )}
             <WifiIcon
               fontSize="small"
               sx={{ color: device.stateInfo.wm2State === true ? 'primary.main' : 'info.light' }}
             />
-            <BatteryLevel level={device.stateInfo.batteryPercentage} />
+            <BatteryLevel
+              level={
+                native?.bleConnected
+                  ? (native.batteryPercentage ?? device.stateInfo.batteryPercentage)
+                  : device.stateInfo.batteryPercentage
+              }
+            />
             {device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer && (
               <Error sx={{ color: 'error.main', fontSize: 16 }} />
             )}
           </Stack>
-          <Stack direction="row" spacing="5px" alignItems="center">
-            {isHub3 && (
+          <Stack direction="row" spacing="0px" alignItems="center">
+            {!localOnly && (isHub3 || isScriptBot) && (
               <Box
                 onClick={handleArrowClick}
                 sx={{
@@ -142,8 +196,9 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
                 <ArrowDropUpIcon
                   fontSize="small"
                   sx={{
-                    width: '26px',
-                    height: '26px',
+                    width: '32px',
+                    height: '32px',
+                    marginRight: '-4px',
                     marginLeft: '-8px',
                     transform: isExpanded ? 'rotate(180deg)' : 'rotate(90deg)',
                     transition: 'transform 0.2s ease-in-out',
@@ -153,6 +208,11 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
             )}
             <ListItemText primary={device.deviceName} />
           </Stack>
+          {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
+            <Typography variant="caption" color="text.disabled">
+              {bleStateLabel(native.bleState, t)}
+            </Typography>
+          )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }} onClick={handleSwitchClick}>
           {gUtils.isHub3Pro(device.deviceModel) ? (
@@ -163,7 +223,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
                 deviceUUID={device.deviceUUID}
                 gIot={gIot}
                 relayIndex={1}
-                relayEnabled={getRelayEnabled(device, 1)}
+                relayEnabled={!localOnly && getRelayEnabled(device, 1)}
                 defaultState={getRelayLockState(device, 1)}
                 shareKey={device.secretKey}
               />
@@ -172,7 +232,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
                 deviceUUID={device.deviceUUID}
                 gIot={gIot}
                 relayIndex={2}
-                relayEnabled={getRelayEnabled(device, 2)}
+                relayEnabled={!localOnly && getRelayEnabled(device, 2)}
                 defaultState={getRelayLockState(device, 2)}
                 shareKey={device.secretKey}
               />
@@ -182,15 +242,56 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
               model={device.deviceModel}
               deviceUUID={device.deviceUUID}
               gIot={gIot}
-              defaultState={getDeviceLockState(device)}
+              defaultState={getDeviceLockState(shownDevice)}
+              onCommandStart={
+                isAppHome && !localOnly
+                  ? () => {
+                      reportDeviceLocation(device, gStripe.customerInfo.subUUID);
+                    }
+                  : undefined
+              }
+              disabled={localOnly && !native?.bleConnected}
+              onCommand={
+                native?.bleConnected
+                  ? () => runNative(isScriptBot ? (localOnly ? native.scriptIndex : bot.selected) : undefined)
+                  : undefined
+              }
+              position={
+                native?.bleConnected
+                  ? native.position
+                  : device.stateInfo?.wm2State === true && Number.isFinite(device.stateInfo?.position)
+                    ? Math.trunc((device.stateInfo.position * 360) / 1024)
+                    : undefined
+              }
+              large={isAppHome}
+              botIndex={isScriptBot && !localOnly ? bot.selected : native?.scriptIndex}
               shareKey={device.secretKey}
             />
           )}
         </Box>
       </ListItem>
 
+      {!localOnly && isScriptBot && !sortableIsDragging && (
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <BotScriptList
+            deviceUUID={device.deviceUUID}
+            scripts={bot.scripts}
+            onReorder={bot.reorder}
+            onError={reportError}
+            onRun={(scriptIndex) =>
+              native.bleConnected
+                ? runNative(scriptIndex)
+                : gIot.sendCommandToWM2({
+                    device_id: device.deviceUUID,
+                    sescretKey: device.secretKey,
+                    cmd: 170 + scriptIndex,
+                  })
+            }
+          />
+        </Collapse>
+      )}
       {/* Hub3 设备的遥控器列表 - 拖拽时不显示 */}
-      {isHub3 && !sortableIsDragging && (
+      {!localOnly && isHub3 && !sortableIsDragging && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
           <Box sx={{ pl: 2, pr: 2, pb: 1 }}>
             <MobileHub3RemoteList deviceUUID={device.deviceUUID} device={device} editable={false} />
@@ -201,7 +302,7 @@ const SortableItemComponent = ({ index, device, callRowClick, gIot, enableDrag, 
   );
 };
 
-const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch }) => {
+const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, localOnly = false }) => {
   const [sortableData, setSortableData] = useState(devices);
   const [expandedDevices, setExpandedDevices] = useState([]); // 存储展开的设备 UUID
   const [isDragging, setIsDragging] = useState(false);
@@ -236,7 +337,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch }
     setIsDragging(false);
 
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = sortableData.findIndex((device) => device.deviceUUID === active.id);
       const newIndex = sortableData.findIndex((device) => device.deviceUUID === over.id);
       const updatedDevices = arrayMove(sortableData, oldIndex, newIndex);
@@ -264,10 +365,16 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch }
           <Box sx={{ p: '16px', pb: '8px' }}>
             <DataSearch callSearch={callSearch} />
           </Box>
-          <List disablePadding>
+          <List
+            disablePadding
+            onTouchMoveCapture={() => {
+              if (isAppHome && document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
+            }}
+          >
             {sortableData.map((device, index) => (
               <SortableItemComponent
                 key={device.deviceUUID}
+                localOnly={localOnly}
                 index={index}
                 device={device}
                 callRowClick={callRowClick}

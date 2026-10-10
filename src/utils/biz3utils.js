@@ -450,6 +450,10 @@ const uuidBuffer = (uuid, prefix = '000c') => {
 };
 
 const triggerScheme = (scheme) => {
+  if (new URLSearchParams(window.location.search).get('appHome') === '1') {
+    window.dispatchEvent(new CustomEvent('app-scheme', { detail: scheme }));
+    return;
+  }
   try {
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -466,6 +470,10 @@ const triggerScheme = (scheme) => {
 };
 
 const triggerBridge = (message) => {
+  if (new URLSearchParams(window.location.search).get('appHome') === '1') {
+    window.dispatchEvent(new CustomEvent('app-command', { detail: message }));
+    return true;
+  }
   if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iOSHandler) {
     window.webkit.messageHandlers.iOSHandler.postMessage(message);
     return true;

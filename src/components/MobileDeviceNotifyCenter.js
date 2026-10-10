@@ -1,3 +1,5 @@
+import { isAppHome } from '@/services/deviceService';
+import { requestNative } from '@/services/appBridge';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Box, Divider, List, ListItem, ListItemText, Switch, Typography } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
@@ -6,24 +8,52 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 
 const MobileDeviceNotifyCenter = () => {
-  const { gManageDevice } = useContext(GlobalStateContext);
+  const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const pushToken = searchParams.get('pushToken');
+  const [pushToken, setPushToken] = useState(isAppHome ? null : searchParams.get('pushToken'));
+  useEffect(() => {
+    if (isAppHome)
+      requestNative('pushInfo')
+        .then(({ data }) => setPushToken(data.pushToken))
+        .catch((error) =>
+          setSnackbarValue({
+            logScope: 'components/MobileDeviceNotifyCenter.MobileDeviceNotifyCenter',
+            severity: 'error',
+            open: true,
+            msg: error.message,
+          })
+        );
+  }, []);
   const [devices, setDevices] = useState([]);
 
   useEffect(() => {
+    if (!pushToken) return;
     gManageDevice.getDevicesNotifyStatus({ pushToken }, (res) => {
       if (!res.success) {
+        setSnackbarValue({
+          logScope: 'components/MobileDeviceNotifyCenter.MobileDeviceNotifyCenter',
+          logReason: 'appHome.networkError',
+          severity: 'error',
+          open: true,
+          msg: res.message || t('appHome.networkError'),
+        });
         return;
       }
       setDevices(res.data);
     });
-  }, []);
+  }, [pushToken]);
 
   const handleEnablePush = useCallback(({ pushToken, deviceUUID, enablePush }) => {
     gManageDevice.switchDeviceNotify({ pushToken, deviceUUID, enablePush }, (res) => {
       if (!res.success) {
+        setSnackbarValue({
+          logScope: 'components/MobileDeviceNotifyCenter.handleEnablePush',
+          logReason: 'appHome.networkError',
+          severity: 'error',
+          open: true,
+          msg: res.message || t('appHome.networkError'),
+        });
         return;
       }
       setDevices((preState) => {

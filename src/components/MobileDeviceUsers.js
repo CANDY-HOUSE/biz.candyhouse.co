@@ -1,3 +1,5 @@
+import BackButton from '@/components/BackButton';
+import { isAppHome } from '@/services/deviceService';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -15,7 +17,6 @@ import {
 } from '@mui/material';
 import { AddCircleOutlineOutlined, ExpandMore, ExpandLess, MoreHoriz } from '@mui/icons-material';
 import { DataSearch } from '@components/biz/device/DataSearch';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { SvgArrow } from '@/assets/svg/svgLock';
@@ -130,7 +131,7 @@ const MobileDeviceUsers = ({
   }, [users]);
 
   const handleOpenPage = () => {
-    if (gStrip.isFromApp && showType === 'widget') {
+    if (!isAppHome && gStrip.isFromApp && showType === 'widget') {
       const currentUrl = window.location.href;
       const url = new URL(currentUrl);
       url.searchParams.delete('displayType');
@@ -191,14 +192,13 @@ const MobileDeviceUsers = ({
   if (isManage || defaultManageMode) {
     return (
       <Box sx={{ width: '100%', bgcolor: 'background.paper', pl: 0 }}>
-        {!gStrip.isFromApp && isSettingPush && (
+        {!isAppHome && !gStrip.isFromApp && isSettingPush && (
           <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-            <IconButton onClick={() => navigate(-1)} disableRipple>
-              <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
+            <BackButton onClick={() => navigate(-1)} disableRipple>
               <Typography variant="h3" sx={{ color: 'title.main' }}>
                 {t('pages.login.ReturnToMailInput')}
               </Typography>
-            </IconButton>
+            </BackButton>
           </Box>
         )}
         <Box sx={{ p: 2, pb: 1, display: 'flex' }}>

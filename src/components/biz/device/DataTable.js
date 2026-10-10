@@ -1,3 +1,5 @@
+import theme from '@/theme/theme';
+import BackButton from '@/components/BackButton';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import MUIDataTable from 'mui-datatables';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -5,7 +7,6 @@ import LinkIcon from '@mui/icons-material/Link';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { gUtils } from '@/utils/gUtils';
 import KeyIcon from '@mui/icons-material/Key';
 import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
@@ -208,6 +209,7 @@ export default function DataTable({
         },
       },
       components: {
+        MuiCircularProgress: theme.components.MuiCircularProgress,
         MuiCheckbox: {
           styleOverrides: {
             root: {
@@ -354,15 +356,13 @@ export default function DataTable({
                     }}
                   >
                     {isBack && (
-                      <IconButton
+                      <BackButton
                         size="small"
                         onClick={() => {
                           window.history.back();
                         }}
                         sx={{ color: 'rgba(0, 0, 0, 0.87)' }}
-                      >
-                        <KeyboardArrowLeftIcon />
-                      </IconButton>
+                      ></BackButton>
                     )}
 
                     {text && (

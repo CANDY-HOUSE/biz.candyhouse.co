@@ -1,7 +1,10 @@
+import PageHeader from '@/components/PageHeader';
+import BackButton from '@/components/BackButton';
+import { isAppHome } from '@/services/deviceService';
+import { deviceDetailFor } from '@/services/deviceDetail';
 import React, { useContext, useMemo } from 'react';
-import { Box, IconButton, Typography, Grid2, List, ListItem } from '@mui/material';
+import { Box, Typography, Grid2, List, ListItem } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import DeviceUserList from '@/components/DeviceUserList';
 import { useTranslation } from 'react-i18next';
@@ -19,19 +22,29 @@ const WifiModuleIndex = () => {
   const deviceName = searchParams.get('deviceName') || '';
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.deviceStatus || {};
-  }, [gManageDevice.deviceStatus]);
+    return deviceDetailFor(did, gManageDevice.deviceStatus, gManageDevice.companyDevices);
+  }, [did, gManageDevice.deviceStatus, gManageDevice.companyDevices]);
+
+  // The mobile H5 page owns its header so the WiFi drawer can cover it.
+  if (isAppHome || currentDevice.deviceModel === 'wm_2' || searchParams.get('deviceModel') === 'wm_2')
+    return <MobileWifiModule />;
 
   return (
-    <Box sx={{ bgcolor: '#FBFBFB', overscrollBehavior: 'none', minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', px: gMediaType.isMobile ? 0 : 4, pt: 2 }}>
-        <IconButton onClick={() => navigate(-1)} disableRipple>
-          <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
+    <Box sx={{ bgcolor: 'background.paper', overscrollBehavior: 'none', minHeight: '100vh' }}>
+      <PageHeader
+        sx={{
+          position: gMediaType.isMobile ? 'sticky' : 'static',
+          zIndex: gMediaType.isMobile ? 1100 : 'auto',
+          top: 'var(--page-header-offset, 0px)',
+          px: gMediaType.isMobile ? 0 : 4,
+        }}
+      >
+        <BackButton onClick={() => navigate(-1)} disableRipple>
           <Typography variant="h3" sx={{ color: 'black' }}>
             {deviceName}
           </Typography>
-        </IconButton>
-      </Box>
+        </BackButton>
+      </PageHeader>
       <Grid2
         container
         spacing={2}

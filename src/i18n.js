@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { isAppHome } from './services/deviceService';
 
 // 导入语言文件
 import en from './i18n/en.json';
@@ -41,8 +42,8 @@ i18n
       escapeValue: false, // React 已经自动防止了 XSS
     },
     detection: {
-      order: ['cookie', 'navigator', 'querystring', 'localStorage'],
-      caches: ['localStorage', 'cookie'],
+      order: isAppHome ? ['navigator'] : ['cookie', 'navigator', 'querystring', 'localStorage'],
+      caches: isAppHome ? [] : ['localStorage', 'cookie'],
     },
   });
 

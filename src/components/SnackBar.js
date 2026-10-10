@@ -1,12 +1,8 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { Snackbar } from '@mui/material';
-import { GlobalStateContext } from '@context/GlobalContextProvider';
+import React, { useEffect, useState } from 'react';
+import { Portal, Snackbar } from '@mui/material';
 
 const GSnackbar = ({ value }) => {
   const [data, setData] = useState(value);
-  const { gMediaType, gStripe } = useContext(GlobalStateContext);
-  const isMobile = gMediaType.isMobile;
-  const isFromApp = gStripe.isFromApp;
 
   useEffect(() => {
     setData(value);
@@ -19,67 +15,38 @@ const GSnackbar = ({ value }) => {
     }));
   };
 
-  // 根据设备类型决定样式
-  const isFullWidth = isMobile || isFromApp;
-
   return (
-    <Snackbar
-      style={
-        isFullWidth
-          ? {
-              position: 'fixed',
-              left: '0',
-              right: '0',
-              width: '100vw',
-              maxWidth: '100vw',
-              margin: 0,
-              padding: '0 2.5vw',
-              boxSizing: 'border-box',
-              zIndex: 9999,
-            }
-          : {
-              position: 'fixed',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 9999,
-            }
-      }
-      container={document.body}
-      disablePortal={false}
-      sx={{
-        whiteSpace: 'pre-line',
-        wordBreak: 'break-word',
-        ...(isFullWidth && {
+    <Portal>
+      <Snackbar
+        sx={{
+          bottom: { xs: 'calc(72px + env(safe-area-inset-bottom))', sm: 'calc(72px + env(safe-area-inset-bottom))' },
+          left: { xs: '50%', sm: '50%' },
+          right: 'auto',
+          transform: 'translateX(-50%)',
+          width: 'max-content',
+          maxWidth: '90vw',
+          zIndex: 9999,
+          whiteSpace: 'pre-line',
+          wordBreak: 'break-word',
           '& .MuiSnackbarContent-root': {
-            width: '100%',
+            minWidth: 0,
             maxWidth: '100%',
-            margin: '0',
-            borderRadius: 10,
-            backgroundColor: 'rgba(255, 255, 255, 0.80)',
-            color: '#000000',
+            flexGrow: 0,
+            borderRadius: '20px',
+            bgcolor: 'rgba(50, 50, 50, 0.9)',
+            color: '#fff',
+            px: 2,
+            py: 0.5,
           },
-          '& .MuiSnackbarContent-message': {
-            color: '#000000',
-          },
-        }),
-        ...(!isFullWidth && {
-          '& .MuiSnackbarContent-root': {
-            borderRadius: 10,
-            backgroundColor: 'rgba(255, 255, 255, 0.80)',
-            color: '#000000',
-          },
-          '& .MuiSnackbarContent-message': {
-            color: '#000000',
-          },
-        }),
-      }}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      open={data.open}
-      autoHideDuration={1500}
-      onClose={closeSnackbar}
-      message={data.msg || '未知信息'}
-      onClick={() => closeSnackbar()}
-    />
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        open={data.open}
+        autoHideDuration={1500}
+        onClose={closeSnackbar}
+        message={data.msg || '未知信息'}
+        onClick={() => closeSnackbar()}
+      />
+    </Portal>
   );
 };
 

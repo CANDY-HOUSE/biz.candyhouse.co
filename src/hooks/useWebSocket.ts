@@ -5,7 +5,7 @@ import WebSocketManager from '../websocket/WebSocketManager.ts';
 export const useWebSocket = (key: string, handler: Function) => {
   useEffect(() => {
     WebSocketManager.subscribe(key, handler);
-    return () => WebSocketManager.unsubscribe(key);
+    return () => WebSocketManager.unsubscribe(key, handler);
   }, [key, handler]);
 };
 

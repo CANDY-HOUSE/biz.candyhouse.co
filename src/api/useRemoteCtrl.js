@@ -65,6 +65,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         return;
       }
       setSnackbarValue({
+        logScope: 'api/useRemoteCtrl.handleRemoteResponse',
+        severity: 'error',
         open: true,
         msg: message.message || 'リモコンリストの取得に失敗しました。',
       });
@@ -104,6 +106,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         } else {
           console.error('红外码发送失败:', message.message);
           setSnackbarValue({
+            logScope: 'api/useRemoteCtrl.handleRemoteResponse',
+            logReason: 'pages.ir.remote.sendFail',
             open: true,
             msg: message.message || t('pages.ir.remote.sendFail'),
             severity: 'error',
@@ -204,6 +208,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         } else {
           console.error('infrared button add failed:', message.message);
           setSnackbarValue({
+            logScope: 'api/useRemoteCtrl.handleRemoteResponse',
+            logReason: 'pages.ir.remote.addIRCodeFail',
             open: true,
             msg: message.message || t('pages.ir.remote.addIRCodeFail'),
             severity: 'error',
@@ -217,6 +223,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         } else {
           console.error('infrared button update failed:', message.message);
           setSnackbarValue({
+            logScope: 'api/useRemoteCtrl.handleRemoteResponse',
+            logReason: 'pages.ir.remote.updateIRCodeFail',
             open: true,
             msg: message.message || t('pages.ir.remote.updateIRCodeFail'),
             severity: 'error',
@@ -230,6 +238,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         } else {
           console.error('infrared button delete failed:', message.message);
           setSnackbarValue({
+            logScope: 'api/useRemoteCtrl.handleRemoteResponse',
+            logReason: 'pages.ir.remote.deleteIRCodeFail',
             open: true,
             msg: message.message || t('pages.ir.remote.deleteIRCodeFail'),
             severity: 'error',

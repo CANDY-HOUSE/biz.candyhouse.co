@@ -91,7 +91,12 @@ export default function Developer() {
       // 2) 先去服务端换取真正的二维码内容（对齐 app 的 redeem 流程）
       gManageGroup.redeemQRToken(qrUrl, (res) => {
         if (!res.success) {
-          setSnackbarValue({ open: true, msg: res.message });
+          setSnackbarValue({
+            logScope: 'pages/biz/developer/index.readQrcode',
+            severity: 'error',
+            open: true,
+            msg: res.message,
+          });
           return;
         }
         const redeemedUrl = res?.success ? res?.data : null;
@@ -261,6 +266,7 @@ export default function Developer() {
                         size="small"
                         sx={{
                           animation: isKeyRefresing ? 'rotate 1.5s linear infinite' : 'none',
+                          color: isKeyRefresing ? 'primary.main' : undefined,
                           '@keyframes rotate': {
                             '0%': {
                               transform: 'rotate(0deg)',

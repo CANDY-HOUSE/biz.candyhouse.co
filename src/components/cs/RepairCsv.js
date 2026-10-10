@@ -74,7 +74,12 @@ const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
     gManageEmployee.getRepairAuthKey(async (res) => {
       if (res?.success === false) {
         setLoading(false);
-        setSnackbarValue?.({ open: true, msg: res.message });
+        setSnackbarValue?.({
+          logScope: 'components/cs/RepairCsv.handleCreateRepairCsv',
+          severity: 'error',
+          open: true,
+          msg: res.message,
+        });
         return;
       }
       try {
@@ -83,8 +88,12 @@ const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
         setCsvData([row]);
         setTableData(nextTableData);
       } catch (error) {
-        console.error(error);
-        setSnackbarValue?.({ open: true, msg: String(error?.message ?? error) });
+        setSnackbarValue?.({
+          logScope: 'components/cs/RepairCsv.handleCreateRepairCsv',
+          severity: 'error',
+          open: true,
+          msg: String(error?.message ?? error),
+        });
       } finally {
         setLoading(false);
       }

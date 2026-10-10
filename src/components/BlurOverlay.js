@@ -7,10 +7,11 @@ import React from 'react';
  * @param {number} opacity - 透明度，默认 0.6
  * @param {React.ReactNode} children - 子组件
  */
-export default function BlurOverlay({ enabled = false, blurAmount = 10, opacity = 0.6, children }) {
+export default function BlurOverlay({ enabled = false, blurAmount = 10, opacity = 0.6, children, style }) {
   return (
     <div
       style={{
+        ...style,
         filter: enabled ? `blur(${blurAmount}px)` : 'none',
         opacity: enabled ? opacity : 1,
         pointerEvents: enabled ? 'none' : 'auto',

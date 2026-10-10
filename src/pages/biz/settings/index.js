@@ -155,6 +155,7 @@ export default function Settings() {
             done();
             if (!res.success) {
               setSnackbarValue({
+                logScope: 'pages/biz/settings/index.confirmDelete',
                 open: true,
                 msg: res.message,
                 severity: 'error',
@@ -198,6 +199,8 @@ export default function Settings() {
                   callback && callback();
                   if (!_res.success) {
                     setSnackbarValue({
+                      logScope: 'pages/biz/settings/index.callUpdate',
+                      severity: 'error',
                       open: true,
                       msg: _res.message,
                     });

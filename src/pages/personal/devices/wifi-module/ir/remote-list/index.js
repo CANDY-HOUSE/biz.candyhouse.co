@@ -1,17 +1,16 @@
+import BackButton from '@/components/BackButton';
 import React, { useContext, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
   CardHeader,
   CardContent,
-  IconButton,
   Typography,
   List,
   ListItem,
   ListItemText,
   CircularProgress,
 } from '@mui/material';
-import { KeyboardArrowLeft as KeyboardArrowLeftIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import { DataSearch } from '@/components/biz/device/DataSearch.js';
@@ -426,11 +425,7 @@ export default function RemoteList() {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && (
-                <IconButton onClick={() => handleReturn()}>
-                  <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-                </IconButton>
-              )}
+              {!isMobile && <BackButton onClick={() => handleReturn()}></BackButton>}
               <Typography
                 variant="h6"
                 sx={{
@@ -463,11 +458,7 @@ export default function RemoteList() {
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && (
-              <IconButton onClick={() => handleReturn()}>
-                <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-              </IconButton>
-            )}
+            {!isMobile && <BackButton onClick={() => handleReturn()}></BackButton>}
             <Typography
               variant="h6"
               sx={{

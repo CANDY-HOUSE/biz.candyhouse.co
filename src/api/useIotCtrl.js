@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { Cmac } from '@/utils/Cmac';
-import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
+import { useWebSocket } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { biz3utils } from '@/utils/biz3utils.js';
-// import WebSocketManager from '../websocket/WebSocketManager.ts';
+import WebSocketManager from '../websocket/WebSocketManager.ts';
+import { isAppHome } from '@/services/deviceService';
 import { Buffer } from 'buffer';
 import { gConfig } from '@constants/gConfig.js';
 import useOperateIoT from '@/hooks/useOperateIoT';
@@ -46,7 +47,7 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
         history,
         device_id,
       };
-      sendMessage(msgData);
+      await WebSocketManager.sendMessage(msgData, !isAppHome);
     },
     [gStripe.customerInfo.subUUID]
   );
@@ -223,11 +224,7 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
         }
       }
       const payload = Buffer.from(payloadArray).toString('base64');
-      sendCmd({
-        topic,
-        payload,
-        op: 'cmd',
-      });
+      await sendCmd({ topic, payload, op: 'cmd' }, !isAppHome);
     },
     [sendCmd, handleSesameItemOperation]
   );

@@ -1,21 +1,10 @@
+import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Card,
-  IconButton,
-  Typography,
-  Switch,
-  List,
-  ListItem,
-  ListItemText,
-  Drawer,
-  ListItemButton,
-} from '@mui/material';
+import { Box, Card, Typography, Switch, List, ListItem, ListItemText, Drawer, ListItemButton } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import MobileBatteryTrendChart from './MobileBatteryTrendChart';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils';
@@ -150,12 +139,11 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
     <>
       {!isFromApp && isSettingPush && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <IconButton onClick={() => navigate(-1)} disableRipple>
-            <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
+          <BackButton onClick={() => navigate(-1)} disableRipple>
             <Typography variant="h3" sx={{ color: 'title.main' }}>
               {t('pages.login.ReturnToMailInput')}
             </Typography>
-          </IconButton>
+          </BackButton>
         </Box>
       )}
       <Card>

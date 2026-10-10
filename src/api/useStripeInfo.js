@@ -1,3 +1,4 @@
+import { isAppHome } from '@/services/deviceService';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
@@ -16,8 +17,8 @@ const INIT_CUSTOMER = {
 };
 export const useStripeInfo = (gAuth) => {
   const [searchParams] = useSearchParams();
-  const isFromApp = searchParams.get('fromType') === 'app';
-  const [isPending, setIsPending] = useState(true);
+  const isFromApp = isAppHome || searchParams.get('fromType') === 'app';
+  const [isPending, setIsPending] = useState(!isAppHome);
   const [customerInfo, setCustomerInfo] = useState(INIT_CUSTOMER);
   const [apiKey, setApiKey] = useState({ apiKeyValue: '', apiKeyId: '', usedCount: 0 });
   const [cardList, setCardList] = useState([]);

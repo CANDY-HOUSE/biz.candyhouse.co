@@ -1,5 +1,6 @@
+import { logOperationFailure } from '@/services/operationFailure';
 import React, { useState } from 'react';
-import { Alert, Divider, IconButton, ListSubheader, Menu, MenuItem, Snackbar, Tooltip } from '@mui/material';
+import { Divider, IconButton, ListSubheader, Menu, MenuItem, Tooltip } from '@mui/material';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { downloadCredentials } from '@/utils/credentialExport';
 
@@ -7,7 +8,6 @@ const formats = ['csv', 'excel', 'json'];
 
 export default function CredentialExportMenu({ data, type, onExportAll, isExporting = false }) {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [hasError, setHasError] = useState(false);
 
   const handleExport = async (format, all = false) => {
     setAnchorEl(null);
@@ -18,7 +18,7 @@ export default function CredentialExportMenu({ data, type, onExportAll, isExport
         downloadCredentials(data, type, format);
       }
     } catch {
-      setHasError(true);
+      logOperationFailure('CredentialExportMenu.export');
     }
   };
 
@@ -63,11 +63,6 @@ export default function CredentialExportMenu({ data, type, onExportAll, isExport
             </MenuItem>
           ))}
       </Menu>
-      <Snackbar open={hasError} autoHideDuration={6000} onClose={() => setHasError(false)}>
-        <Alert severity="error" onClose={() => setHasError(false)}>
-          エクスポートに失敗しました。データをご確認のうえ、再度お試しください。
-        </Alert>
-      </Snackbar>
     </>
   );
 }

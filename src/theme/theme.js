@@ -57,6 +57,11 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiCircularProgress: {
+      styleOverrides: {
+        root: ({ theme }) => ({ color: theme.palette.primary.main }),
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         '.ptr--ptr': {
@@ -125,18 +130,6 @@ const theme = createTheme({
       styleOverrides: {
         asterisk: {
           color: '#d32f2f',
-        },
-      },
-    },
-    MuiSvgIcon: {
-      styleOverrides: {
-        root: {
-          '&[data-testid="KeyboardArrowLeftIcon"]': {
-            color: 'rgba(0, 0, 0, 0.87)',
-          },
-          '&.keyboard-arrow-left': {
-            color: 'rgba(0, 0, 0, 0.87)',
-          },
         },
       },
     },

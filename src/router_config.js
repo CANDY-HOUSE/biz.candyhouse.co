@@ -1,3 +1,5 @@
+import AppCredentials from './components/AppCredentials';
+import AppBotScript from '@/components/AppBotScript';
 import DeviceHistory from '@/components/DeviceHistory';
 import DeviceUserList from '@/components/DeviceUserList';
 import MobileWifiModule from '@/components/MobileWifiModule';
@@ -36,6 +38,8 @@ import Contacts from '@personal/contacts';
 import Devices from '@personal/devices';
 import Me from '@personal/me';
 import DeviceSetting from './components/DeviceSetting';
+import AppAutoUnlock from './components/AppAutoUnlock';
+import AppLockAngle from './components/AppLockAngle';
 import {
   SesameMobileBatteryChart,
   SesameMobileContactAdd,
@@ -152,6 +156,10 @@ const routerComponentMap = [
     router: '/device-setting',
     components: [
       { router: '', component: DeviceSetting },
+      { router: 'angle', component: AppLockAngle },
+      { router: 'credentials', component: AppCredentials },
+      { router: 'bot-script', component: AppBotScript },
+      { router: 'auto-unlock', component: AppAutoUnlock },
       { router: 'index', component: SesameMobileDeviceSetting },
       { router: 'user', component: DeviceUserList },
       { router: 'rename', component: SesameMobileDeviceModifyName },

@@ -1,11 +1,11 @@
-import { Box, IconButton, Typography } from '@mui/material';
+import BackButton from '@/components/BackButton';
+import { Box, Typography } from '@mui/material';
 import { useContext, useState, useEffect, useMemo } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import CmChooseRadio from '@/components/biz/device/CmChooseRadio';
 import { CmDataPicker } from '@/components/biz/device/CmDataPicker';
 import DataTable from '@/components/biz/device/DataTable';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { LoadingButton } from '@mui/lab';
 
 const GroupShare = () => {
@@ -106,12 +106,11 @@ const GroupShare = () => {
               p: '10px 5px',
             }}
           >
-            <IconButton size="small" onClick={() => window.history.back()}>
-              <KeyboardArrowLeftIcon />
+            <BackButton size="small" onClick={() => window.history.back()}>
               <Typography variant="h2" sx={{ ml: '5px', color: 'black' }}>
                 選択済デバイス
               </Typography>
-            </IconButton>
+            </BackButton>
           </Box>
 
           <DataTable

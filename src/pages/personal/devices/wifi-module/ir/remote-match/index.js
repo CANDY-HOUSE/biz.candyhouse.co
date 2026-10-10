@@ -1,17 +1,6 @@
+import BackButton from '@/components/BackButton';
 import React, { useState, useEffect, useContext } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  Box,
-  Typography,
-  IconButton,
-  List,
-  ListItem,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import { KeyboardArrowLeft as KeyboardArrowLeftIcon } from '@mui/icons-material';
+import { Card, CardHeader, CardContent, Box, Typography, List, ListItem, Alert, CircularProgress } from '@mui/material';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -70,6 +59,8 @@ const RemoteMatch = () => {
       if (!response.success) {
         console.error('set IR mode failed:', response.message);
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/remote-match/index.setMode',
+          logReason: 'pages.ir.remote.setIRModeFail',
           open: true,
           msg: t('pages.ir.remote.setIRModeFail'),
           severity: 'error',
@@ -279,11 +270,7 @@ const RemoteMatch = () => {
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && (
-              <IconButton onClick={() => navigate(-1)}>
-                <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-              </IconButton>
-            )}
+            {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
             <Typography
               variant="h6"
               sx={{

@@ -31,8 +31,10 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
 
   // 获取设备信息
   useEffect(() => {
-    const status = gManageDevice.deviceStatus;
-    const foundDevice = listDevice || (status?.deviceUUID === deviceUUID ? status : null);
+    const sameDevice = (item) => item?.deviceUUID?.toUpperCase() === deviceUUID?.toUpperCase();
+    const detail = sameDevice(gManageDevice.deviceStatus) ? gManageDevice.deviceStatus : null;
+    const currentListDevice = listDevice || gManageDevice.companyDevices.find(sameDevice);
+    const foundDevice = editable ? detail || currentListDevice : currentListDevice || detail;
     if (foundDevice) {
       const deviceWithSafeRemoteList = {
         ...foundDevice,
@@ -42,8 +44,8 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
         },
       };
       setDevice(deviceWithSafeRemoteList);
-    }
-  }, [deviceUUID, listDevice, gManageDevice.deviceStatus]);
+    } else setDevice({ deviceUUID, stateInfo: { remoteList: [] } });
+  }, [deviceUUID, editable, listDevice, gManageDevice.deviceStatus, gManageDevice.companyDevices]);
 
   // 添加遥控器的处理函数
   const handleAddRemote = () => {
@@ -75,6 +77,8 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
       } else {
         console.error('delete failed:', response.message);
         setSnackbarValue({
+          logScope: 'components/MobileHub3RemoteList.deleteRemote',
+          logReason: 'pages.ir.remoteList.deleteFailed',
           open: true,
           msg: t('pages.ir.remoteList.deleteFailed'),
           severity: 'error',
@@ -85,7 +89,6 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
   };
 
   const gotoRemoteControl = (remote = selectedRemote) => {
-    console.log('gotoRemoteControl:', remote);
     let remotePath = '';
     let irTypeNum = parseInt(remote.type);
     if (remote.code === 0) {

@@ -175,6 +175,7 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
           height: '100%',
           overflowY: 'auto',
           overflowX: 'hidden',
+          overscrollBehaviorY: 'contain',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': {
             display: 'none',

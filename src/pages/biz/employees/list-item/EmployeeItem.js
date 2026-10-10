@@ -1,7 +1,7 @@
+import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardHeader, CardContent, IconButton, Box } from '@mui/material';
+import { Card, CardHeader, CardContent, Box } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { gUtils } from '@/utils/gUtils';
 import EditableText from '@/components/EditableText';
@@ -168,9 +168,7 @@ const EmployeeItem = () => {
             title={
               gStripe.isFromApp ? null : (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}>
-                    <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-                  </IconButton>
+                  <BackButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}></BackButton>
                   <EditableText
                     style={{
                       fontSize: '1.2em',

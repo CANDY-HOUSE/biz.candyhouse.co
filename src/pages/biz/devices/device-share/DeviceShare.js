@@ -1,3 +1,4 @@
+import BackButton from '@/components/BackButton';
 import {
   Card,
   CardHeader,
@@ -5,7 +6,6 @@ import {
   Typography,
   Button,
   CardContent,
-  IconButton,
   FormControl,
   RadioGroup,
   FormControlLabel,
@@ -19,7 +19,6 @@ import { CmDataPicker } from '@/components/biz/device/CmDataPicker';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LoadingButton } from '@mui/lab';
 import DataTable from '@/components/biz/device/DataTable';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { registerLocale } from 'react-datepicker';
 import { ja } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -86,12 +85,11 @@ const DeviceShare = () => {
             p: '10px 5px',
           }}
         >
-          <IconButton size="small" onClick={() => window.history.back()}>
-            <KeyboardArrowLeftIcon />
+          <BackButton size="small" onClick={() => window.history.back()}>
             <Typography variant="h2" sx={{ ml: '5px', color: 'black' }}>
               選択済デバイス
             </Typography>
-          </IconButton>
+          </BackButton>
         </Box>
         <DataTable
           isMobile={gMediaType.isMobile}

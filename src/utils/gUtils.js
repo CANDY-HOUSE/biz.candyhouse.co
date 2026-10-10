@@ -290,6 +290,7 @@ const isSesameAccessControlDevice = (model) => {
 };
 
 const lockModelDevices = [
+  gConfig.sesameDeviceModel.sesame_miwa,
   gConfig.sesameDeviceModel.sesame_2,
   gConfig.sesameDeviceModel.sesame_4,
   gConfig.sesameDeviceModel.sesame_5,

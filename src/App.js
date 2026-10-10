@@ -4,24 +4,38 @@ import BizHomePage from '@biz/home';
 import Settings from '@biz/settings';
 import Layout from '@components/biz/layout';
 import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
-import { ThemeProvider } from '@mui/material';
+import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import NotFoundPage from '@pages/404';
 import HomePage from '@pages/index';
 import LoginIndex from '@pages/login';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import awsconfig from './aws-exports';
 import GlobalContextProvider, { GlobalStateContext } from './context/GlobalContextProvider';
 import './i18n';
 import { routerComponentMap } from './router_config';
 import './styles/global.css';
-import theme from './theme/theme';
+import NativePageTheme from './theme/NativePageTheme';
+import AppPullRefresh from './components/AppPullRefresh';
+import AppGuestGate from './components/AppGuestGate';
+import AppRegistration from './components/AppRegistration';
+import AppBootstrap from './components/AppBootstrap';
+import AppNavigation from './components/AppNavigation';
+import { appTabPaths } from './services/appNavigation';
+import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
+import { currentAppToken } from './services/appSession';
+import AppHomeRuntime from './components/AppHomeRuntime';
+import { isAppHome } from './services/deviceService';
 
 Amplify.configure(awsconfig);
 
 const AppContent = () => {
-  const { gStripe } = useContext(GlobalStateContext);
+  const { gStripe, gManageDevice, gAuth } = useContext(GlobalStateContext);
+  const { setDevices: clearStartupDevices } = useContext(AppOfflineStateContext);
+  useEffect(() => {
+    if (gManageDevice.devicesLoaded) clearStartupDevices(null);
+  }, [gManageDevice.devicesLoaded, clearStartupDevices]);
   const [allowedRoutes, setAllowedRoutes] = useState([]);
   const location = useLocation();
 
@@ -38,8 +52,9 @@ const AppContent = () => {
         }
         return null;
       });
+      if (isAppHome) allowed.push('/contacts', '/me');
       allowed.push(...routerComponentMap.filter((it) => !!it.load));
-      setAllowedRoutes(allowed.filter(Boolean));
+      setAllowedRoutes([...new Set(allowed.filter(Boolean))]);
     }
   }, [gStripe.customerInfo]);
 
@@ -57,7 +72,21 @@ const AppContent = () => {
           </Route>
         );
       }
-      return <Route key={route.router} path={route.router} element={<route.component />}></Route>;
+      return (
+        <Route
+          key={route.router}
+          path={route.router}
+          element={
+            isAppHome && ['/contacts', '/contact-add'].includes(route.router) ? (
+              <AppGuestGate>
+                <route.component />
+              </AppGuestGate>
+            ) : (
+              <route.component />
+            )
+          }
+        ></Route>
+      );
     }
   };
 
@@ -70,33 +99,107 @@ const AppContent = () => {
     });
   };
 
-  if (gStripe.isPending) {
+  if (isAppHome && !gManageDevice.devicesLoaded && location.pathname === '/') {
+    return (
+      <AppOfflineDevices
+        retry={async () => {
+          try {
+            const token = await currentAppToken();
+            gAuth.autoLogin(token);
+            gStripe.getCustomerInfo('ch_CandyhouseMobile');
+            if (gStripe.customerInfo.companyID) gManageDevice.getCompanyDevices(true);
+          } catch (_) {
+            /* Local BLE remains available when authentication cannot refresh. */
+          }
+        }}
+      />
+    );
+  }
+
+  if (isAppHome && !allowedRoutes.length && location.pathname !== '/login') return null;
+
+  if (!isAppHome && gStripe.isPending) {
     return <LoadingPage />;
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginIndex />} />
-      <Route element={<Layout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/biz" element={<BizHomePage />} />
-        {generateRoutes(allowedRoutes)}
-        <Route path="/biz/settings" element={<Settings />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <>
+      {isAppHome && <AppPullRefresh />}
+      <Routes>
+        <Route path="/login" element={<LoginIndex />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          {isAppHome && <Route path="/app/register" element={<AppRegistration />} />}
+          <Route path="/biz" element={<BizHomePage />} />
+          {generateRoutes(allowedRoutes)}
+          <Route path="/biz/settings" element={<Settings />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </>
+  );
+};
+
+// Keep the tab bar mounted while session and device data initialize.
+const AppFrame = ({ children }) => {
+  const location = useLocation();
+  const contentRef = useRef(null);
+  const homeScrollTop = useRef(0);
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = location.pathname === '/' ? homeScrollTop.current : 0;
+    }
+  }, [location.pathname]);
+  const appTab = isAppHome && appTabPaths.includes(location.pathname);
+  if (!isAppHome) return children;
+  return (
+    <Box
+      sx={
+        appTab
+          ? { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+          : undefined
+      }
+    >
+      <Box
+        ref={contentRef}
+        onScroll={(event) => {
+          if (location.pathname === '/') homeScrollTop.current = event.currentTarget.scrollTop;
+        }}
+        sx={
+          appTab
+            ? {
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                position: 'relative',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                overscrollBehaviorX: 'none',
+              }
+            : undefined
+        }
+      >
+        {children}
+      </Box>
+      {isAppHome && <AppNavigation />}
+    </Box>
   );
 };
 
 const App = () => {
   return (
     <Router>
-      <GlobalContextProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <AppContent />
-        </ThemeProvider>
-      </GlobalContextProvider>
+      <NativePageTheme>
+        <CssBaseline />
+        <AppFrame>
+          <AppBootstrap>
+            <GlobalContextProvider>
+              <AppHomeRuntime />
+              <AppContent />
+            </GlobalContextProvider>
+          </AppBootstrap>
+        </AppFrame>
+      </NativePageTheme>
     </Router>
   );
 };

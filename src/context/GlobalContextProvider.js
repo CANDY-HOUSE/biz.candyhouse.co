@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { createSnackbarNotifier } from '@/services/operationFailure';
+import React, { useMemo, useState } from 'react';
 
 import GSnackbar from '@/components/SnackBar';
 import CustomModal from '@/components/biz/CustomModal';
@@ -20,7 +21,8 @@ import WebSocketManager from '../websocket/WebSocketManager.ts';
 export const GlobalStateContext = React.createContext({});
 const GlobalContextProvider = ({ children, location }) => {
   const gMediaType = useMediaType();
-  const [gSnackbarValue, setSnackbarValue] = useState({ open: false, msg: '' });
+  const [gSnackbarValue, showSnackbar] = useState({ open: false, msg: '' });
+  const setSnackbarValue = useMemo(() => createSnackbarNotifier(showSnackbar), []);
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [customModalKeep, setCustomModalKeep] = useState(false);
   const [modalContent, setModalContent] = useState(null);

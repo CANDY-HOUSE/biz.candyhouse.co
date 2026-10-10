@@ -99,7 +99,12 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
                 msg: 'ユーザー数の上限に達しました。プランのアップグレードが必要です。',
               });
             } else {
-              setSnackbarValue({ open: true, msg: message.message });
+              setSnackbarValue({
+                logScope: 'api/useManageEmployee.handleEmployee',
+                severity: 'error',
+                open: true,
+                msg: message.message,
+              });
             }
             return;
           }
@@ -110,7 +115,12 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
           break;
         case 'delete':
           if (!message.success) {
-            setSnackbarValue({ open: true, msg: message.message });
+            setSnackbarValue({
+              logScope: 'api/useManageEmployee.handleEmployee',
+              severity: 'error',
+              open: true,
+              msg: message.message,
+            });
             return;
           }
           getEmployees();
@@ -127,7 +137,12 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
       if (message.action !== ACTION_TYPES.BIZ3_MANAGE_ROLE) return;
       invokeCallbacks(message);
       if (!message.success) {
-        setSnackbarValue({ open: true, msg: message.message });
+        setSnackbarValue({
+          logScope: 'api/useManageEmployee.handleRoleResponse',
+          severity: 'error',
+          open: true,
+          msg: message.message,
+        });
         return;
       }
       switch (message.op) {

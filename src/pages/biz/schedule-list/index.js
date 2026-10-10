@@ -97,7 +97,7 @@ const ScheduleList = () => {
 
                 <Tooltip title="Cancel Schedule">
                   {item.isCancelling ? (
-                    <CircularProgress size={18} color="inherit" aria-label="Loading" />
+                    <CircularProgress size={18} aria-label="Loading" />
                   ) : (
                     <ClearIcon sx={{ cursor: 'pointer' }} onClick={() => handleCancelSchedule(item.scheduleId)} />
                   )}

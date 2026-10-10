@@ -1,3 +1,5 @@
+import BackButton from '@/components/BackButton';
+import PageHeader from '@/components/PageHeader';
 import React, { useContext, useEffect, useMemo } from 'react';
 import { Box, Grid2, IconButton, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -6,7 +8,6 @@ import DeviceUserList from '@/components/DeviceUserList';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import MobileBatteryChart from '@/components/MobileBatteryChart';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import DeviceSetting from '@/components/DeviceSetting';
 import { MoreHoriz } from '@mui/icons-material';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
@@ -29,34 +30,45 @@ const DeviceItem = () => {
   }, [gManageDevice.companyDevices, did]);
 
   return (
-    <Box sx={{ bgcolor: '#FBFBFB', overscrollBehavior: 'none' }}>
-      <Box
-        sx={{
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        overscrollBehavior: 'none',
+        ...(gMediaType.isMobile && {
+          height: 'var(--page-viewport-height, 100dvh)',
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }),
+      }}
+    >
+      <PageHeader
+        sx={{
+          position: gMediaType.isMobile ? 'sticky' : 'static',
+          zIndex: gMediaType.isMobile ? 1100 : 'auto',
+          top: 'var(--page-header-offset, 0px)',
           justifyContent: 'space-between',
           px: gMediaType.isMobile ? 0 : 4,
-          pt: 2,
         }}
       >
-        <IconButton onClick={() => navigate(-1)} disableRipple>
-          <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
+        <BackButton onClick={() => navigate(-1)} disableRipple>
           <Typography variant="h3" sx={{ color: 'black' }}>
             {deviceName}
           </Typography>
-        </IconButton>
+        </BackButton>
         {gMediaType.isMobile ? (
           <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
             <MoreHoriz sx={{ color: 'black' }} />
           </IconButton>
         ) : null}
-      </Box>
+      </PageHeader>
       <Grid2
         container
         spacing={2}
         sx={{
-          py: 2,
+          py: gMediaType.isMobile ? 0 : 2,
           px: gMediaType.isMobile ? 0 : 4,
+          ...(gMediaType.isMobile && { flex: 1, minHeight: 0, overflow: 'hidden' }),
           '& > *': {
             '& > .MuiBox-root': {
               backgroundColor: 'white',
@@ -72,8 +84,8 @@ const DeviceItem = () => {
         }}
       >
         {gMediaType.isMobile ? (
-          <Grid2 size={12}>
-            <DeviceHistory />
+          <Grid2 size={12} sx={{ height: '100%', minHeight: 0 }}>
+            <DeviceHistory fullHeight={false} />
           </Grid2>
         ) : (
           <>

@@ -1,3 +1,4 @@
+import BackButton from '@/components/BackButton';
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   Card,
@@ -19,12 +20,7 @@ import {
   MenuItem,
   Popover,
 } from '@mui/material';
-import {
-  KeyboardArrowLeft as KeyboardArrowLeftIcon,
-  Delete as DeleteIcon,
-  SignalWifiConnectedNoInternet4Rounded,
-  MoreHoriz,
-} from '@mui/icons-material';
+import { Delete as DeleteIcon, SignalWifiConnectedNoInternet4Rounded, MoreHoriz } from '@mui/icons-material';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import EditIcon from '@mui/icons-material/Edit';
@@ -105,6 +101,7 @@ const RemoteLearn = () => {
     if (!hub3DeviceIdParam) {
       console.error('hub3DeviceId 参数缺失');
       setSnackbarValue({
+        logScope: 'pages/personal/devices/wifi-module/ir/learn/index.RemoteLearn',
         open: true,
         msg: 'hub3DeviceId 参数缺失',
         severity: 'error',
@@ -124,6 +121,8 @@ const RemoteLearn = () => {
       } catch (error) {
         console.error('get remote error!', error);
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.RemoteLearn',
+          logReason: 'pages.ir.remote.invalidRemoteParam',
           open: true,
           msg: t('pages.ir.remote.invalidRemoteParam'),
           severity: 'error',
@@ -157,6 +156,8 @@ const RemoteLearn = () => {
         if (!response.success) {
           console.error('set IR mode error:', response.message);
           setSnackbarValue({
+            logScope: 'pages/personal/devices/wifi-module/ir/learn/index.setMode',
+            logReason: 'pages.ir.remote.setIRModeFail',
             open: true,
             msg: t('pages.ir.remote.setIRModeFail'),
             severity: 'error',
@@ -235,6 +236,8 @@ const RemoteLearn = () => {
           } else {
             console.error('add IR code failed:', addResponse.message);
             setSnackbarValue({
+              logScope: 'pages/personal/devices/wifi-module/ir/learn/index.subscribeIRDataChanges',
+              logReason: 'pages.ir.remote.addIRCodeFail',
               open: true,
               msg: t('pages.ir.remote.addIRCodeFail'),
               severity: 'error',
@@ -278,6 +281,7 @@ const RemoteLearn = () => {
       } else {
         console.error('save remote to server failed:', response.message);
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.saveRemoteToServer',
           open: true,
           msg: t(response.message || 'pages.ir.remote.addIRRemoteFail'),
           severity: 'error',
@@ -326,6 +330,8 @@ const RemoteLearn = () => {
           });
         } else {
           setSnackbarValue({
+            logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleEmitIRCode',
+            logReason: 'pages.ir.remote.sendFail',
             open: true,
             msg: t('pages.ir.remote.sendFail'),
             severity: 'error',
@@ -388,6 +394,8 @@ const RemoteLearn = () => {
         );
       } else {
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleSaveIRCodeName',
+          logReason: 'pages.ir.remote.updateIRCodeFail',
           open: true,
           msg: t('pages.ir.remote.updateIRCodeFail'),
           severity: 'error',
@@ -406,6 +414,8 @@ const RemoteLearn = () => {
         setIrCodes((prev) => prev.filter((code) => code.keyUUID !== irCode.keyUUID));
       } else {
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleDeleteIRCode',
+          logReason: 'pages.ir.remote.deleteIRCodeFail',
           open: true,
           msg: t('pages.ir.remote.deleteIRCodeFail'),
           severity: 'error',
@@ -490,6 +500,8 @@ const RemoteLearn = () => {
           onComplete(false);
           console.error('remote modification failed:', response.message);
           setSnackbarValue({
+            logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleModify',
+            logReason: 'pages.ir.remote.updateIRRemoteFail',
             open: true,
             msg: t('pages.ir.remote.updateIRRemoteFail'),
             severity: 'error',
@@ -499,6 +511,8 @@ const RemoteLearn = () => {
     } catch (error) {
       console.error('handleModify error:', error);
       setSnackbarValue({
+        logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleModify',
+        logReason: 'pages.ir.remote.updateIRRemoteFail',
         open: true,
         msg: t('pages.ir.remote.updateIRRemoteFail'),
         severity: 'error',
@@ -638,11 +652,7 @@ const RemoteLearn = () => {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && (
-                <IconButton onClick={() => navigate(-1)}>
-                  <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-                </IconButton>
-              )}
+              {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
 
               <Typography
                 variant="h6"
@@ -681,11 +691,7 @@ const RemoteLearn = () => {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && (
-                <IconButton onClick={() => navigate(-1)}>
-                  <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-                </IconButton>
-              )}
+              {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
 
               <Typography
                 variant="h6"
@@ -751,11 +757,7 @@ const RemoteLearn = () => {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                {!isMobile && (
-                  <IconButton onClick={() => navigate(-1)}>
-                    <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-                  </IconButton>
-                )}
+                {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
                 <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <EditableText
                     style={{

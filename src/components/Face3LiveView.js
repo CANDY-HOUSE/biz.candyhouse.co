@@ -307,7 +307,7 @@ export default function Face3LiveView({ device, onClose }) {
             </>
           ) : (
             <>
-              <CircularProgress size={28} sx={{ color: 'rgba(255,255,255,0.7)' }} />
+              <CircularProgress size={28} />
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                 {t('face3.liveConnecting')}
               </Typography>
@@ -325,7 +325,7 @@ export default function Face3LiveView({ device, onClose }) {
           right: 8,
           bgcolor: 'rgba(0,0,0,0.5)',
           color: 'white',
-          '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+          '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' },
         }}
       >
         <CloseIcon fontSize="small" />

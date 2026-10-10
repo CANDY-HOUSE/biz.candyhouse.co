@@ -47,13 +47,18 @@ const MobileDeviceSetting = () => {
 
   useEffect(() => {
     if (!deviceUUID) return;
-    const device = gManageDevice.deviceStatus;
+    const device =
+      gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === deviceUUID.toUpperCase()) ||
+      (gManageDevice.deviceStatus?.deviceUUID?.toUpperCase() === deviceUUID.toUpperCase()
+        ? gManageDevice.deviceStatus
+        : null);
     if (device?.deviceName) {
       setDeviceName(device.deviceName);
     } else {
+      setDeviceName(searchParams.get('deviceName') || '');
       gManageDevice.getDeviceStatus(deviceUUID);
     }
-  }, [deviceUUID, gManageDevice.deviceStatus]);
+  }, [deviceUUID, gManageDevice.deviceStatus, gManageDevice.companyDevices]);
 
   useLayoutEffect(() => {
     if (!containerRef.current) {

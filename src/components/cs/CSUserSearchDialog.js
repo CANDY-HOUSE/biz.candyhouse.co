@@ -126,7 +126,12 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
     gManageEmployee.queryByCS(keywordStr, (res) => {
       if (res?.success === false) {
         setSearchState((prevState) => ({ ...prevState, searching: false }));
-        setSnackbarValue({ open: true, msg: res.message });
+        setSnackbarValue({
+          logScope: 'components/cs/CSUserSearchDialog.handleSearch',
+          severity: 'error',
+          open: true,
+          msg: res.message,
+        });
         return;
       }
       setSearchState({
@@ -150,7 +155,12 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
     const loginWindow = window.open('', '_blank');
     gManageEmployee.confirmQueryByCS(selectedEmail, async (res) => {
       setConfirming(false);
-      setSnackbarValue({ open: true, msg: res.message });
+      setSnackbarValue({
+        open: true,
+        msg: res.message,
+        severity: res?.success === false ? 'error' : 'success',
+        logScope: 'CSUserSearchDialog.confirmQueryByCS',
+      });
       let { loginUrl = null } = res?.success === false ? {} : res.data || {};
       if (loginUrl && loginWindow) {
         loginWindow.location.href = loginUrl;

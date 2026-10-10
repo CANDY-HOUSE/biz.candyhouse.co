@@ -1,3 +1,4 @@
+import { isAppHome } from '@/services/deviceService';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
@@ -115,6 +116,7 @@ const MobileMeIndex = () => {
   };
 
   useEffect(() => {
+    if (isAppHome) return;
     requestActivePromotion()
       .then((promotion) => {
         if (promotion?.success) {
@@ -132,6 +134,7 @@ const MobileMeIndex = () => {
     }
     fetchCurrentUserInfo();
 
+    if (isAppHome) return;
     requestNotificationStatus()
       .then((response) => {
         setNotificationEnabled(Boolean(response?.enabled));
@@ -208,27 +211,29 @@ const MobileMeIndex = () => {
             </>
           )}
         </ListItem>
-        <ListItem onClick={handlePushPage}>
-          <ListItemText
-            primary={t('setting.enableNotification')}
-            secondary={
-              notificationEnabled == null
-                ? null
-                : notificationEnabled
-                  ? t('setting.notificationEnabled')
-                  : t('setting.notificationDisabled')
-            }
-            secondaryTypographyProps={{
-              sx: {
-                color: 'text.other',
-                fontSize: '0.875rem',
-              },
-            }}
-          />
-          <ListItemIcon sx={{ minWidth: 'auto' }}>
-            <SvgIcon component={SvgArrow} />
-          </ListItemIcon>
-        </ListItem>
+        {!isAppHome && (
+          <ListItem onClick={handlePushPage}>
+            <ListItemText
+              primary={t('setting.enableNotification')}
+              secondary={
+                notificationEnabled == null
+                  ? null
+                  : notificationEnabled
+                    ? t('setting.notificationEnabled')
+                    : t('setting.notificationDisabled')
+              }
+              secondaryTypographyProps={{
+                sx: {
+                  color: 'text.other',
+                  fontSize: '0.875rem',
+                },
+              }}
+            />
+            <ListItemIcon sx={{ minWidth: 'auto' }}>
+              <SvgIcon component={SvgArrow} />
+            </ListItemIcon>
+          </ListItem>
+        )}
         <ListItem onClick={handleShopClick}>
           <ListItemText
             primary={

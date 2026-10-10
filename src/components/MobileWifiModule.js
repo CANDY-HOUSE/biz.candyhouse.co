@@ -1,3 +1,11 @@
+import PageHeader from '@/components/PageHeader';
+import BackButton from '@/components/BackButton';
+import WifiNetworkStatus from './WifiNetworkStatus';
+import PeripheralDeviceSetting from './PeripheralDeviceSetting';
+import AppHubWifi from './AppHubWifi';
+import { deviceDetailFor } from '@/services/deviceDetail';
+import { deviceService, isAppHome } from '@/services/deviceService';
+import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from '@/components/MobileDeviceSetting';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import {
@@ -12,19 +20,18 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  CheckCircleOutline,
-  Error,
-  Language,
-  QrCode,
-  Remove,
-  Wifi,
-  SignalCellularAlt,
-  LanOutlined,
-} from '@mui/icons-material';
+import { Error, QrCode } from '@mui/icons-material';
 import ClearOutlinedIcon from '@mui/icons-material/ClearOutlined';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
@@ -39,10 +46,63 @@ import BatteryPercent from '@/components/biz/device/BatteryPercent';
 import SliderItem from '@/components/SliderItem';
 
 const MobileWifiModule = () => {
+  const { gManageDevice } = useContext(GlobalStateContext);
+  const [params] = useSearchParams();
+  const id = params.get('deviceUUID');
+  const model =
+    gManageDevice.companyDevices.find((d) => d.deviceUUID?.toUpperCase() === id?.toUpperCase())?.deviceModel ||
+    params.get('deviceModel');
+  return model === 'wm_2' ? <PeripheralDeviceSetting /> : <ExistingWifiModule />;
+};
+
+const ExistingWifiModule = () => {
   const { gManageDevice, setSnackbarValue, gIot, gMediaType, gStripe } = useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
   const did = searchParams.get('deviceUUID') || '';
   const isFromApp = searchParams.get('fromType') === 'app';
+  const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
+  const nativeDevice = nativeDevices[did.toUpperCase()];
+  const hubReady = !!nativeDevice;
+  const [wifiOpen, setWifiOpen] = useState(false);
+  const [watchedHub, setWatchedHub] = useState('');
+  useEffect(() => {
+    // Registration can navigate here before the refreshed device list reaches the native controller.
+    if (!isAppHome || !did || !hubReady) return;
+    const session = crypto.randomUUID();
+    let watching = false;
+    // StrictMode setup/cleanup must not connect, disconnect, then reconnect the Hub.
+    const start = setTimeout(() => {
+      watching = true;
+      deviceService
+        .request('hubSettings', { deviceUUID: did, operation: 'watch', session })
+        .then(() => {
+          if (watching) setWatchedHub(did);
+        })
+        .catch(() => {
+          if (watching)
+            setSnackbarValue({
+              logScope: 'components/MobileWifiModule.start',
+              logReason: 'lockSettings.failed',
+              open: true,
+              msg: t('lockSettings.failed'),
+              severity: 'error',
+            });
+        });
+    }, 0);
+    return () => {
+      clearTimeout(start);
+      if (watching) deviceService.notify('hubSettings', { deviceUUID: did, operation: 'unwatch', session });
+      watching = false;
+    };
+  }, [did, hubReady]);
+  useEffect(() => {
+    if (!isAppHome || watchedHub !== did || !nativeDevice?.bleConnected) return;
+    // One scan per connection; the drawer reuses these results, including an in-flight scan.
+    const start = setTimeout(() => {
+      deviceService.request('hubSettings', { deviceUUID: did, operation: 'scan' }).catch(() => {});
+    }, 0);
+    return () => clearTimeout(start);
+  }, [did, watchedHub, nativeDevice?.bleConnected]);
   const [matterInfo, setMatterInfo] = useState({ manualCode: '', qrCode: '' });
   const [bleStatus, setBleStatus] = useState(null);
   const [internetStatus, setInternetStatus] = useState({
@@ -73,8 +133,12 @@ const MobileWifiModule = () => {
   };
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.deviceStatus || {};
-  }, [gManageDevice.deviceStatus]);
+    return deviceDetailFor(did, gManageDevice.deviceStatus, gManageDevice.companyDevices);
+  }, [did, gManageDevice.deviceStatus, gManageDevice.companyDevices]);
+
+  useEffect(() => {
+    gManageDevice.getDeviceStatus(did);
+  }, [did, gManageDevice.getDeviceStatus]);
 
   // 来自 App 时 URL 没有 deviceModel，需要等后台返回 device 后才能确定设备类型，
   // 在确定之前不要渲染网络图标，避免先显示单 WiFi 再跳到 LAN/LTE/WiFi 的闪动。
@@ -98,9 +162,23 @@ const MobileWifiModule = () => {
       enable1: relayInfo.enable1 === undefined ? true : Number(relayInfo.enable1) === 1,
       enable2: relayInfo.enable2 === undefined ? true : Number(relayInfo.enable2) === 1,
     });
-    console.log('Current device info updated:', currentDevice);
     setIsHub3Pro(currentDevice.deviceModel === gConfig.sesameDeviceModel.hub3_pro);
   }, [currentDevice]);
+
+  useEffect(() => {
+    if (!isAppHome || !nativeDevice?.bleConnected || !nativeDevice.hub) return;
+    const hub = nativeDevice.hub;
+    if (hub.network) setInternetStatus(hub.network);
+    if (
+      hub.wifiSsid !== undefined &&
+      (hub.wifiSsid !== currentDevice.stateInfo?.wifiSsid ||
+        (hub.wifiPwd || '') !== (currentDevice.stateInfo?.wifiPwd || ''))
+    )
+      gManageDevice.updateDeviceState({
+        deviceUUID: currentDevice.deviceUUID || did,
+        stateInfo: { wifiSsid: hub.wifiSsid, wifiPwd: hub.wifiPwd || '' },
+      });
+  }, [nativeDevice]);
 
   // 切换某一路继电器使能，乐观更新本地并写入后台 relay_info
   const handleToggleRelayEnable = useCallback(
@@ -115,6 +193,7 @@ const MobileWifiModule = () => {
   );
 
   useEffect(() => {
+    if (isAppHome && nativeDevice?.bleConnected && nativeDevice.hub?.network) return;
     let isIoTWork = currentDevice.stateInfo?.wm2State === true;
     setInternetStatus((prev) => ({
       ...prev,
@@ -122,7 +201,7 @@ const MobileWifiModule = () => {
       isNetwork: isIoTWork,
       isIoTWork: isIoTWork,
     }));
-  }, [currentDevice.stateInfo?.wm2State]);
+  }, [currentDevice.stateInfo?.wm2State, nativeDevice?.bleConnected]);
 
   // 通知Hub3打开配网窗口，成功显示 Matter 码， 失败显示失败信息
   const handleOpenMatter = useCallback(() => {
@@ -165,6 +244,8 @@ const MobileWifiModule = () => {
         } else {
           setSnackbarValue({
             open: true,
+            severity: 'error',
+            logScope: 'MobileWifiModule.matterPairingWindow',
             msg: 'Hub3がすでに多数のMatterネットワークに接続されている可能性があります。Hub3をリセットしてから再試行してください。',
           });
         }
@@ -289,73 +370,31 @@ const MobileWifiModule = () => {
     if (!bleStatus) {
       return false;
     }
-    return bleStatus['bleStatus'] !== 'logined' && isFromApp;
+    return !isAppHome && !!bleStatus['bleStatus'] && bleStatus['bleStatus'] !== 'logined' && isFromApp;
   }, [bleStatus, isFromApp]);
 
   useLayoutEffect(() => {
+    if (isAppHome) return;
     isFromApp && did && requestEnablePullRefresh();
     // 尝试连接 BLE
     isFromApp && did && requestBLEConnectFromApp({ deviceUUID: did });
   }, []);
 
   const bleAvailable = useMemo(() => {
-    return bleStatus && bleStatus['bleStatus'] === 'logined';
-  }, [bleStatus]);
+    return isAppHome ? !!nativeDevice?.bleConnected : bleStatus && bleStatus['bleStatus'] === 'logined';
+  }, [bleStatus, nativeDevice?.bleConnected]);
 
   useEffect(() => {
-    if (!bleAvailable) return;
+    if (isAppHome || !bleAvailable) return;
     // 监听配网变化
     requestMonitorInternetFromApp();
   }, [bleAvailable]);
 
-  const internetStatusIndicator = useMemo(() => {
-    const { isAPWork, isNetwork, isIoTWork, isBindingAPWork, isConnectingNetwork, isConnectingIoT } = internetStatus;
-    const renderIcon = (IconComponent, isLoading, isActive, step1, customSx = {}) => (
-      <Box key={IconComponent.name} sx={{ display: 'flex', alignItems: 'center', ...customSx }}>
-        <Box sx={{ width: 25, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {isLoading ? (
-            <CircularProgress size={14} sx={{ color: 'primary.main' }} />
-          ) : !!step1 ? (
-            <></>
-          ) : (
-            <Remove sx={{ color: isActive ? 'primary.main' : 'title.other' }} />
-          )}
-        </Box>
-        <IconComponent
-          sx={{
-            color: isActive ? 'primary.main' : 'title.other',
-          }}
-        />
-      </Box>
-    );
-
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        {!isDeviceInfoResolved ? (
-          <Box sx={{ width: 25, height: 24 }} />
-        ) : (
-          <>
-            {isHub3Pro ? (
-              <>
-                {renderIcon(LanOutlined, false, networkConnectivity.ethernet, true, { marginRight: -2.5 })}
-                {renderIcon(SignalCellularAlt, false, networkConnectivity.lte, true, { marginRight: -2.5 })}
-                {renderIcon(Wifi, false, networkConnectivity.wifi, true)}
-              </>
-            ) : (
-              <>{renderIcon(Wifi, isAPWork ? false : isBindingAPWork, isAPWork, true)}</>
-            )}
-            {renderIcon(Language, isNetwork ? false : isConnectingNetwork, isNetwork)}
-            {renderIcon(CheckCircleOutline, isIoTWork ? false : isConnectingIoT, isIoTWork)}
-          </>
-        )}
-      </Box>
-    );
-  }, [internetStatus, networkConnectivity, isHub3Pro, isDeviceInfoResolved]);
-
   return (
     <Box
+      data-refresh-disabled={nativeDevice?.hub?.otaProgress >= 0 && nativeDevice?.hub?.otaProgress < 100}
       sx={{
-        height: '100vh',
+        height: '100dvh',
         overflow: 'auto',
         '&::-webkit-scrollbar': {
           display: 'none',
@@ -364,6 +403,12 @@ const MobileWifiModule = () => {
         scrollbarWidth: 'none',
       }}
     >
+      {isAppHome && (
+        <PageHeader>
+          <BackButton onClick={() => navigate(-1)} disableRipple aria-label={t('lockSettings.back')}></BackButton>
+        </PageHeader>
+      )}
+      {isAppHome && <BleStatusBar deviceUUID={did} />}
       {showBleStatus && (
         <Box
           sx={{
@@ -389,7 +434,33 @@ const MobileWifiModule = () => {
           <Typography sx={{ color: 'title.other' }}>{currentDevice.deviceModel}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem onClick={() => requestConfigureInternetFromApp(did)}>
+        <ListItem
+          onClick={() => {
+            if (isAppHome) {
+              if (!bleAvailable) {
+                setSnackbarValue({
+                  logScope: 'components/MobileWifiModule.ExistingWifiModule',
+                  logReason: 'lockSettings.failed',
+                  open: true,
+                  msg: t('lockSettings.failed'),
+                  severity: 'error',
+                });
+                return;
+              }
+              setWifiOpen(true);
+              // The native scan gate reuses an active scan or results less than 30 seconds old.
+              deviceService.request('hubSettings', { deviceUUID: did, operation: 'scan' }).catch(() =>
+                setSnackbarValue({
+                  logScope: 'components/MobileWifiModule.ExistingWifiModule',
+                  logReason: 'lockSettings.failed',
+                  open: true,
+                  msg: t('lockSettings.failed'),
+                  severity: 'error',
+                })
+              );
+            } else requestConfigureInternetFromApp({ deviceUUID: did });
+          }}
+        >
           <ListItemText
             primary={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -427,7 +498,12 @@ const MobileWifiModule = () => {
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.InternetStatus')} />
-          {internetStatusIndicator}
+          <WifiNetworkStatus
+            status={internetStatus}
+            resolved={isDeviceInfoResolved}
+            hub3Pro={isHub3Pro}
+            connectivity={networkConnectivity}
+          />
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <UpgradeFirmware device={currentDevice} bleAvailable={bleAvailable} />
@@ -470,7 +546,7 @@ const MobileWifiModule = () => {
           <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
             <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
             <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
-              {isRequestMatter ? <CircularProgress size={16} sx={{ color: 'title.other' }} /> : <QrCode />}
+              {isRequestMatter ? <CircularProgress size={16} /> : <QrCode />}
               <SvgIcon component={SvgArrow} />
             </ListItemIcon>
           </ListItem>
@@ -521,6 +597,7 @@ const MobileWifiModule = () => {
         subUUID={gStripe.customerInfo.subUUID}
         deviceName={currentDevice?.deviceName}
       />
+      {wifiOpen && <AppHubWifi deviceUUID={did} onClose={() => setWifiOpen(false)} />}
       <MobileQRCodeDialog
         onClose={() => {
           setMatterInfo({ qrCode: '', manualCode: '' });

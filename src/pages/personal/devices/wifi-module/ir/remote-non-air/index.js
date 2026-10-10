@@ -1,6 +1,6 @@
+import BackButton from '@/components/BackButton';
 import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardContent, Box, Typography, IconButton, Grid, Paper } from '@mui/material';
-import { KeyboardArrowLeft as KeyboardArrowLeftIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -154,6 +154,8 @@ const RemoteNonAir = () => {
       if (!cmd) {
         console.error('handleItemClick buildCommand is empty!');
         setSnackbarValue({
+          logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleItemClick',
+          logReason: 'pages.ir.remote.operationFailed',
           open: true,
           msg: t('pages.ir.remote.operationFailed'),
           severity: 'error',
@@ -193,6 +195,8 @@ const RemoteNonAir = () => {
     } catch (error) {
       console.error('handleItemClick error:', error);
       setSnackbarValue({
+        logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleItemClick',
+        logReason: 'pages.ir.remote.operationFailed',
         open: true,
         msg: t('pages.ir.remote.operationFailed'),
         severity: 'error',
@@ -238,6 +242,8 @@ const RemoteNonAir = () => {
           onComplete(false);
           console.error('remote modification failed:', response.message);
           setSnackbarValue({
+            logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleModify',
+            logReason: 'pages.ir.remote.updateIRRemoteFail',
             open: true,
             msg: t('pages.ir.remote.updateIRRemoteFail'),
             severity: 'error',
@@ -247,6 +253,8 @@ const RemoteNonAir = () => {
     } catch (error) {
       console.error('handleModify error:', error);
       setSnackbarValue({
+        logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleModify',
+        logReason: 'pages.ir.remote.handleFailed',
         open: true,
         msg: t('pages.ir.remote.handleFailed'),
         severity: 'error',
@@ -303,6 +311,7 @@ const RemoteNonAir = () => {
           console.error('remote save failed:', response.message);
           setIsSaving(false);
           setSnackbarValue({
+            logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleSave',
             open: true,
             msg: t(response.message || 'pages.ir.remote.addIRRemoteFail'),
             severity: 'error',
@@ -313,6 +322,8 @@ const RemoteNonAir = () => {
       setIsSaving(false);
       console.error('handleSave error:', error);
       setSnackbarValue({
+        logScope: 'pages/personal/devices/wifi-module/ir/remote-non-air/index.handleSave',
+        logReason: 'pages.ir.remote.handleFailed',
         open: true,
         msg: t('pages.ir.remote.handleFailed'),
         severity: 'error',
@@ -339,11 +350,7 @@ const RemoteNonAir = () => {
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-            {!isMobile && (
-              <IconButton onClick={() => navigate(-1)} sx={{ flexShrink: 0, mr: 1 }}>
-                <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-              </IconButton>
-            )}
+            {!isMobile && <BackButton onClick={() => navigate(-1)} sx={{ flexShrink: 0, mr: 1 }}></BackButton>}
             <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden', mr: 1 }}>
               <EditableText
                 style={{

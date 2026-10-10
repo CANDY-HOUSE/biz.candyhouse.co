@@ -1,3 +1,4 @@
+import { logOperationFailure } from '@/services/operationFailure';
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import {
   Box,
@@ -212,14 +213,14 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, waking, isViewing }) 
             height: 44,
             bgcolor: 'rgba(0,0,0,0.55)',
             color: 'white',
-            '&:hover': { bgcolor: 'rgba(0,0,0,0.72)' },
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.55)' },
             '&.Mui-disabled': {
               bgcolor: 'rgba(0,0,0,0.35)',
               color: 'rgba(255,255,255,0.4)',
             },
           }}
         >
-          {waking ? <CircularProgress size={20} sx={{ color: 'inherit' }} /> : <PlayArrowIcon />}
+          {waking ? <CircularProgress size={20} /> : <PlayArrowIcon />}
         </IconButton>
       </Box>
 
@@ -342,7 +343,8 @@ export default function Face3DeviceList({ onOpen }) {
         next.delete(device.deviceUUID);
         return next;
       });
-      setToast({ severity, text });
+      if (severity === 'error') logOperationFailure('Face3DeviceList.wake');
+      else setToast({ severity, text });
     };
 
     /* 断网时 sendMessage 静默丢弃，不会有回包 —— 转圈必须由这里收尾 */
@@ -387,7 +389,13 @@ export default function Face3DeviceList({ onOpen }) {
                 gManageGroup.redeemQRToken(qrUrl, (response) => {
                   floatingAddRef.current?.handleClose();
                   if (!response?.success) {
-                    setSnackbarValue({ open: true, msg: response?.message || t('face3.errUnknown') });
+                    setSnackbarValue({
+                      logScope: 'components/Face3DeviceList.addDeviceMenu',
+                      logReason: 'face3.errUnknown',
+                      severity: 'error',
+                      open: true,
+                      msg: response?.message || t('face3.errUnknown'),
+                    });
                     fileInput.value = '';
                     return;
                   }

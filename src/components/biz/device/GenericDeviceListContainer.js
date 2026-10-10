@@ -32,7 +32,7 @@ const GenericDeviceListContainer = forwardRef(
     ref
   ) => {
     const floatingAddRef = useRef(null);
-    const [displayData, setDisplayData] = useState([]);
+    const [displayData, setDisplayData] = useState(dataSource);
 
     // 暴露 floatingAddRef 给父组件
     useImperativeHandle(ref, () => floatingAddRef.current);

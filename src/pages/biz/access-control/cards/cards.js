@@ -339,7 +339,7 @@ export default function VCards() {
         }}
         open={isExporting}
       >
-        <CircularProgress color="inherit" />
+        <CircularProgress />
         <div>カードデータをダウンロード中...</div>
       </Backdrop>
     </>

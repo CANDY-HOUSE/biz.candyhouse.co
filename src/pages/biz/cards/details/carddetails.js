@@ -1,13 +1,13 @@
+import BackButton from '@/components/BackButton';
 import { useState, useContext, useEffect, useMemo, useRef } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { Box, Card, CardHeader, IconButton, Typography } from '@mui/material';
+import { Box, Card, CardHeader, Typography } from '@mui/material';
 import { CfpDgBindMember } from '@/components/biz/device/CfpDialogBindMember';
 import CheckTable from '@/components/biz/CheckTable';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gConfig } from '@constants/gConfig';
 import { wordConfig } from '@constants/wordConfig';
 import { useTranslation } from 'react-i18next';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { biz3utils } from '@/utils/biz3utils';
 import useOperateIoT from '@hooks/useOperateIoT';
 import { Buffer } from 'buffer';
@@ -155,9 +155,7 @@ export default function CardDetails() {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate(-1)}>
-                <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
-              </IconButton>
+              <BackButton onClick={() => navigate(-1)}></BackButton>
               <Typography variant="h3">{biz3utils.formatCardID(cards[0]?.cardID)}</Typography>
             </Box>
           }
@@ -185,6 +183,8 @@ export default function CardDetails() {
               gManageAuthData.updateCardName(param, (resp) => {
                 if (resp.errMsg) {
                   setSnackbarValue({
+                    logScope: 'pages/biz/cards/details/carddetails',
+                    severity: 'error',
                     open: true,
                     msg: resp.errMsg,
                   });

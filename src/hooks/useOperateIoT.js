@@ -1,5 +1,6 @@
+import WebSocketManager from '@/websocket/WebSocketManager.ts';
 import { useCallback } from 'react';
-import { useWebSocket, sendMessage } from './useWebSocket.ts';
+import { useWebSocket } from './useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { getIotCallbacks } from './useIotCallbackRegistry.js';
 const useOperateIoT = () => {
@@ -42,22 +43,19 @@ const useOperateIoT = () => {
     }
   };
 
-  const handleSendMessage = (message) => {
-    sendMessage(message);
-  };
   const handleBiz3OperateIoTResponse = useCallback((message) => {
     if (message.action === ACTION_TYPES.BIZ3_OPERATE_IOT) {
       iotReceive(message);
     }
   });
   useWebSocket(ACTION_TYPES.BIZ3_OPERATE_IOT, handleBiz3OperateIoTResponse);
-  const sendCmd = async (cmd) => {
+  const sendCmd = async (cmd, allowQueue = true) => {
     console.log('sendCmd', cmd);
     let message = {
       action: ACTION_TYPES.BIZ3_OPERATE_IOT,
       ...cmd,
     };
-    handleSendMessage(message);
+    await WebSocketManager.sendMessage(message, allowQueue);
   };
 
   return {

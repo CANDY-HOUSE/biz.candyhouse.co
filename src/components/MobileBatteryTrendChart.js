@@ -174,7 +174,6 @@ const MobileBatteryTrendChart = ({
               height: 32,
               color: 'error.main',
               pointerEvents: 'auto',
-              '&:active': { opacity: 0.6 },
             }}
             onClick={(e) => {
               e.preventDefault();

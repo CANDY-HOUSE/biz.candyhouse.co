@@ -1,10 +1,12 @@
+import { createDevicePageCollector } from '@/services/devicePages';
+import { isAppHome } from '@/services/deviceService';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
-import WebSocketManager from '@/websocket/WebSocketManager.ts';
+import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
 
 const PubedCompanyDevice = 'PubedCompanyDevice';
 const PubedUserDevice = 'PubedUserDevice';
@@ -14,11 +16,12 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   const [canChoosedAccessControlDevices, setCanChoosedAccessControlDevices] = useState([]); //用户可选择的认证机器
   const [canChoosedSsmDevices, setCanChoosedSsmDevices] = useState([]); //用户可选择的ssm设备
   const [userDevices, setUserDevices] = useState([]); //个人用户所有设备
+  const [devicesLoaded, setDevicesLoaded] = useState(false);
   const [companyDevices, setCompanyDevices] = useState([]); //公司用户所有设备
   const [deviceStatus, setDeviceStatus] = useState(null); //单个设备详情
   const { registerCallback, invokeCallbacks } = useCallbacks();
-  const tempCompanyDevicesRef = useRef([]); //临时存储公司设备数据
-  const tempUserDevicesRef = useRef([]); //临时个人设备数据
+  const companyPages = useRef(createDevicePageCollector());
+  const userPages = useRef(createDevicePageCollector());
 
   const handleManageDeviceResponse = useCallback(
     (message) => {
@@ -28,7 +31,12 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
         if (message.message === 'Limit Exceeded') {
           setSnackbarValue({ open: true, msg: 'デバイス数の上限に達しました。プランのアップグレードが必要です。' });
         } else {
-          setSnackbarValue({ open: true, msg: message.message });
+          setSnackbarValue({
+            logScope: 'api/useManageDevice.handleManageDeviceResponse',
+            severity: 'error',
+            open: true,
+            msg: message.message,
+          });
         }
         return;
       }
@@ -39,18 +47,15 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
             totalPage,
             data: { list, page },
           } = message.data;
-          const tmpRef = message.op === PubedCompanyDevice ? tempCompanyDevicesRef : tempUserDevicesRef;
-          if (page === 1) {
-            tmpRef.current = [...list];
-          } else {
-            tmpRef.current = [...tmpRef.current, ...list];
-          }
-          if (totalPage === page) {
+          const collector = message.op === PubedCompanyDevice ? companyPages : userPages;
+          const complete = collector.current({ list, page, totalPage });
+          if (complete !== null) {
             if (message.op === PubedCompanyDevice) {
-              setCompanyDevices(tmpRef.current);
-              subscribeDevices(tmpRef.current);
+              setCompanyDevices(complete);
+              setDevicesLoaded(true);
+              subscribeDevices(complete);
             } else {
-              setUserDevices(tmpRef.current);
+              setUserDevices(complete);
             }
           }
           break;
@@ -86,9 +91,20 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
 
   useWebSocket(ACTION_TYPES.BIZ3_MANAGE_DEVICE, handleManageDeviceResponse);
 
+  useEffect(() => {
+    if (!isAppHome) return;
+    return WebSocketManager.onStatusChange((status) => {
+      if (status === WS_STATUS.DISCONNECTED) {
+        setCompanyDevices((devices) =>
+          devices.map((device) => ({ ...device, stateInfo: { ...device.stateInfo, wm2State: false } }))
+        );
+      }
+    });
+  }, []);
+
   // 发送消息给 Hub3WebSocket
   const handleSendMessage = (message) => {
-    if (gStripe.isFromApp) {
+    if (gStripe.isFromApp && !isAppHome) {
       return;
     }
     sendMessage(message);
@@ -101,6 +117,8 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       setCanChoosedAccessControlDevices([]);
       setCanChoosedSsmDevices([]);
       setUserDevices([]);
+      setCompanyDevices([]);
+      setDevicesLoaded(false);
       setDeviceStatus(null);
     }
   }, [gAuth.loginState]);
@@ -154,11 +172,16 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     if (!gStripe.customerInfo.companyID) {
       return;
     }
+    if (isAppHome) {
+      setDevicesLoaded(false);
+      setCompanyDevices([]);
+      companyPages.current = createDevicePageCollector();
+    }
     getCompanyDevices();
     if (!gStripe.customerInfo.isSesameApp) {
       getUserDevices();
     }
-  }, [gStripe.customerInfo.companyID]);
+  }, [gStripe.customerInfo.companyID, gStripe.customerInfo.subUUID]);
 
   const getWifiState = useCallback(
     (touchId) => {
@@ -404,6 +427,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
 
   return {
     companyDevices,
+    devicesLoaded,
     getCompanyDevices,
     filteredAccessControlDevices,
     setFilteredAccessControlDevices,

@@ -146,7 +146,7 @@ const MobileUserDevices = ({ deviceKeys, onAddButtonClickHandler, onDelete, onRe
                 }}
               >
                 <Typography color="error.main">{'削除'}</Typography>
-                {removeLoading && <CircularProgress size={16} color="info" sx={{ ml: 1 }} />}
+                {removeLoading && <CircularProgress size={16} sx={{ ml: 1 }} />}
               </ListItem>
               <ListItem onClick={() => setDrawerOpen(false)}>
                 <Typography>{t('deviceMember.opt.cancel')}</Typography>

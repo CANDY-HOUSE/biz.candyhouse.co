@@ -1,3 +1,4 @@
+import { isAppHome } from '@/services/deviceService';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
@@ -14,6 +15,7 @@ function PrivateRoute({ children }) {
 
   useEffect(() => {
     try {
+      if (isAppHome) return;
       let loginStripe = localStorage.getItem('curLogin');
       let shouldFetchUserInfo = false;
       if (gAuth.loginState === gConfig.loginState.loginOut && loginStripe) {
@@ -49,7 +51,7 @@ function PrivateRoute({ children }) {
     gStripe.getCustomerInfo(spaceID);
   }, [searchParams, gAuth.loginState, gStripe.isFromApp]);
 
-  if (loading) {
+  if (loading && !isAppHome) {
     return <LoadingPage />;
   }
 

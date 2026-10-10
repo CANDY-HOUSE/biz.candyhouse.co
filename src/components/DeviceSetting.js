@@ -1,6 +1,17 @@
-import React, { useContext, useMemo, useState } from 'react';
+import PageHeader from '@/components/PageHeader';
+import BackButton from '@/components/BackButton';
+import PeripheralDeviceSetting from './PeripheralDeviceSetting';
+import { isPeripheralModel } from '@/services/peripheralSettings';
+import { isBotModel, isScriptBotModel } from '@/services/botScripts';
+import AppBotSettings from './AppBotSettings';
+import { isAppLockModel } from '@/services/appLockSettings';
+import { isAppHome } from '@/services/deviceService';
+import LockSettingsExtras from './LockSettingsExtras';
+import AppLockSettings from './AppLockSettings';
+import React, { useContext, useMemo } from 'react';
+import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from './MobileDeviceSetting';
-import { Box, Divider, List, ListItem, ListItemText, Typography, Switch, SvgIcon, IconButton } from '@mui/material';
+import { Box, Divider, List, ListItem, ListItemText, Typography, SvgIcon, Switch } from '@mui/material';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import MobileRemoveDevice from './MobileRemoveDevice';
@@ -8,28 +19,35 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import BatteryPercent from './biz/device/BatteryPercent';
 import UpgradeFirmware from './biz/device/UpgradeFirmware';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { gConfig } from '@/constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
-import MobileBindDevice from './MobileBindDevice';
 import SliderItem from './SliderItem';
 
-export default function DeviceSetting({ showBack = true }) {
+export default function DeviceSetting(props) {
+  const { gManageDevice } = useContext(GlobalStateContext);
+  const [params] = useSearchParams();
+  const id = params.get('deviceUUID');
+  const model =
+    gManageDevice.companyDevices.find((d) => d.deviceUUID?.toUpperCase() === id?.toUpperCase())?.deviceModel ||
+    params.get('deviceModel');
+  return isPeripheralModel(model) ? <PeripheralDeviceSetting {...props} /> : <ExistingDeviceSetting {...props} />;
+}
+
+function ExistingDeviceSetting({ showBack = true }) {
   const { gStripe, gManageDevice, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
   const { t } = useTranslation();
-  /* 这个开关的 onChange 走 onClickSetAngle(导航到设置页)，从不改自身状态，
-     所以只读 autoLockEnabled、不需要 setter。留着未用的 setter 会被
-     CRA 生产构建(CI=true 视警告为错误)判成 no-unused-vars 而编译失败。 */
-  const [autoLockEnabled] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const did = searchParams.get('deviceUUID') || '';
-  const deviceModel = searchParams.get('deviceModel') || '';
+  const deviceModel =
+    gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase())?.deviceModel ||
+    searchParams.get('deviceModel') ||
+    '';
   const deviceName = searchParams.get('deviceName') || '';
 
   const currentDevice = useMemo(() => {
-    return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
-  }, [gManageDevice.filteredSsmDevices, did]);
+    return gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase()) || {};
+  }, [gManageDevice.companyDevices, did]);
 
   const onClickSetAngle = () => {
     setSnackbarValue({
@@ -65,39 +83,33 @@ export default function DeviceSetting({ showBack = true }) {
   };
 
   const subFunctionsComp = useMemo(() => {
-    return gUtils.isLockModel(deviceModel) ? (
-      <>
-        <ListItem onClick={onClickSetAngle}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.SetAngle')} />
-          <SvgIcon component={SvgArrow} />
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem onClick={onClickSetAngle}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.LockWithOpenSensor')} />
-          <Typography sx={{ color: 'text.secondary', mr: 1 }}>{''}</Typography>
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem onClick={onClickSetAngle}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.AutoLockCountdown')} />
-          <Switch
-            checked={autoLockEnabled}
-            onChange={onClickSetAngle}
-            sx={{
-              '& .MuiSwitch-switchBase.Mui-checked': {
-                color: 'primary.main',
-              },
-              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                backgroundColor: 'primary.main',
-              },
-            }}
-          />
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem onClick={onClickSetAngle}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.SiriCustomPhrase')} />
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-      </>
+    return gUtils.isLockModel(deviceModel) || isAppLockModel(deviceModel) ? (
+      isAppHome && isAppLockModel(deviceModel) ? (
+        <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} />
+      ) : !gStripe.isFromApp && isAppLockModel(deviceModel) ? (
+        <>
+          {['SetAngle', 'LockWithOpenSensor', 'AutoLockCountdown'].map((feature) => (
+            <React.Fragment key={feature}>
+              <ListItem onClick={onClickSetAngle} sx={{ cursor: 'pointer' }}>
+                <ListItemText primary={t(`pages.sesameAccessControlDevice.index.${feature}`)} />
+                {feature === 'SetAngle' && <SvgIcon component={SvgArrow} />}
+                {feature === 'LockWithOpenSensor' && (
+                  <Typography sx={{ color: '#999' }}>{t('lockSettings.immediate')}</Typography>
+                )}
+                {feature === 'AutoLockCountdown' && (
+                  <Switch
+                    checked={false}
+                    inputProps={{ 'aria-label': t('pages.sesameAccessControlDevice.index.AutoLockCountdown') }}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={onClickSetAngle}
+                  />
+                )}
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </React.Fragment>
+          ))}
+        </>
+      ) : null
     ) : (
       <>
         {gUtils.isShowType(deviceModel, gConfig.sesameTouchProAuthType.card) && (
@@ -163,23 +175,15 @@ export default function DeviceSetting({ showBack = true }) {
       }}
     >
       {showBack && (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: gMediaType.isMobile ? 0 : 4,
-            pt: 2,
-          }}
-        >
-          <IconButton onClick={() => navigate(-1)} disableRipple>
-            <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
+        <PageHeader sx={{ justifyContent: 'space-between', px: gMediaType.isMobile ? 0 : 4 }}>
+          <BackButton onClick={() => navigate(-1)} disableRipple>
             <Typography variant="h3" sx={{ color: 'black' }}>
-              {deviceName}
+              {currentDevice.deviceName || deviceName}
             </Typography>
-          </IconButton>
-        </Box>
+          </BackButton>
+        </PageHeader>
       )}
+      {isAppHome && <BleStatusBar deviceUUID={did} />}
       <List>
         <ListItem disablePadding>
           <MobileDeviceSetting />
@@ -187,11 +191,38 @@ export default function DeviceSetting({ showBack = true }) {
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
-          <Typography sx={{ color: 'title.other' }}>{currentDevice.deviceModel}</Typography>
+          <Typography sx={{ color: 'title.other' }}>{deviceModel}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        {subFunctionsComp}
-        <UpgradeFirmware device={currentDevice} Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID} />
+        {isScriptBotModel(deviceModel) ? (
+          isAppHome ? (
+            <AppBotSettings deviceUUID={did} />
+          ) : (
+            <>
+              <ListItem onClick={onClickSetAngle}>
+                <ListItemText primary={t('botSettings.script')} />
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </>
+          )
+        ) : (
+          subFunctionsComp
+        )}
+        {(!gStripe.isFromApp || /iPhone|iPad|iPod/.test(navigator.userAgent)) &&
+          !isAppHome &&
+          isAppLockModel(deviceModel) && (
+            <>
+              <ListItem onClick={onClickSetAngle}>
+                <ListItemText primary={t('pages.sesameAccessControlDevice.index.SiriCustomPhrase')} />
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </>
+          )}
+        <UpgradeFirmware
+          key={`firmware:${did}`}
+          device={currentDevice}
+          Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID}
+        />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <BatteryPercent device={currentDevice} />
 
@@ -224,20 +255,16 @@ export default function DeviceSetting({ showBack = true }) {
         {gUtils.isShowType(deviceModel, gConfig.sesameTouchProAuthType.face) && (
           <SliderItem text={t('accessCtl.auth.radarDetectionDistance')} value={0} onChangeCommitted={onClickSetAngle} />
         )}
-        <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-          <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-            {t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: currentDevice.deviceName })}
-          </Typography>
-        </Box>
-        <ListItem>
-          <MobileBindDevice device={currentDevice} editable={false} />
-        </ListItem>
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <MobileRemoveDevice
           deviceUUID={did}
           subUUID={gStripe.customerInfo.subUUID}
-          deviceName={currentDevice.deviceName}
+          deviceName={currentDevice.deviceName || deviceName}
+          named={isAppLockModel(deviceModel) || isBotModel(deviceModel)}
         />
+        {(isAppLockModel(deviceModel) || isBotModel(deviceModel)) && (
+          <LockSettingsExtras key={`extras:${did}`} deviceUUID={did} autoUnlock={!isBotModel(deviceModel)} />
+        )}
       </List>
     </Box>
   );

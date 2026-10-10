@@ -1,7 +1,7 @@
+import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
-import { Box, FormControl, Select, MenuItem, IconButton, Typography } from '@mui/material';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import { Box, FormControl, Select, MenuItem, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MobileQRCodeDialog from './MobileQRCodeDialog';
 import { biz3utils } from '@/utils/biz3utils';
@@ -131,12 +131,11 @@ const MobileDeviceShareQRCode = () => {
     >
       {!gStripe.isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <IconButton onClick={() => navigate(-1)} disableRipple>
-            <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
+          <BackButton onClick={() => navigate(-1)} disableRipple>
             <Typography variant="h3" sx={{ color: 'title.main' }}>
               {t('pages.login.ReturnToMailInput')}
             </Typography>
-          </IconButton>
+          </BackButton>
         </Box>
       )}
       <MobileQRCodeDialog

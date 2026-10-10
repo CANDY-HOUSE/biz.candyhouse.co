@@ -1,4 +1,5 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { isAppHome } from '@/services/deviceService';
+import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, Typography, Button } from '@mui/material';
@@ -24,24 +25,12 @@ const Devices = () => {
     useContext(GlobalStateContext);
   const floatingAddRef = useRef(null);
   const { navigateToDeviceDetail, navigateToDeviceShare } = useNavigateUtils();
-  const [ssmDevices, setSsmDevices] = useState([]);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (isBizDevicesRoute) {
-      setSsmDevices(gManageDevice.filteredSsmDevices);
-    } else if (isBizAccessControlRoute) {
-      setSsmDevices(gManageDevice.filteredAccessControlDevices);
-    } else {
-      setSsmDevices(gManageDevice.companyDevices);
-    }
-  }, [
-    isBizDevicesRoute,
-    isBizAccessControlRoute,
-    gManageDevice.filteredSsmDevices,
-    gManageDevice.filteredAccessControlDevices,
-    gManageDevice.companyDevices,
-  ]);
+  const ssmDevices = isBizDevicesRoute
+    ? gManageDevice.filteredSsmDevices
+    : isBizAccessControlRoute
+      ? gManageDevice.filteredAccessControlDevices
+      : gManageDevice.companyDevices;
 
   // Biz 路由下的个人设备导入功能
   const handleOpenModal = useCallback(() => {
@@ -136,6 +125,8 @@ const Devices = () => {
                       floatingAddRef.current.handleClose();
                       if (!res.success) {
                         setSnackbarValue({
+                          logScope: 'pages/personal/devices/index.addDeviceComp',
+                          severity: 'error',
                           open: true,
                           msg: res.message,
                         });
@@ -276,16 +267,41 @@ const Devices = () => {
   const dragEndHandler = canDrag ? handleDragEnd : undefined;
 
   return (
-    <GenericDeviceListContainer
-      ref={floatingAddRef}
-      dataSource={ssmDevices}
-      onDragEnd={dragEndHandler}
-      onItemClick={handleItemClick}
-      onSearch={handleSearch}
-      popupComponent={addDeviceComp}
-      gIot={gIot}
-      isMobile={!gStripe.isFromApp}
-    />
+    <>
+      <GenericDeviceListContainer
+        ref={floatingAddRef}
+        dataSource={ssmDevices}
+        onDragEnd={dragEndHandler}
+        onItemClick={handleItemClick}
+        onSearch={handleSearch}
+        popupComponent={addDeviceComp}
+        gIot={gIot}
+        enableFloatingAdd={!isAppHome}
+        isMobile={!gStripe.isFromApp}
+      />
+      {isAppHome && !isBizRoute && gManageDevice.devicesLoaded && !gManageDevice.companyDevices.length && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: '20px',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography
+            sx={{ color: 'text.secondary', textAlign: 'center', fontSize: 17, fontWeight: 600, maxWidth: '32rem' }}
+          >
+            {t('appHome.noDevices')}
+          </Typography>
+        </Box>
+      )}
+    </>
   );
 };
 

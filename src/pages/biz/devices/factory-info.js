@@ -1,6 +1,6 @@
+import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useState } from 'react';
-import { Box, Divider, IconButton, List, ListItem, Typography } from '@mui/material';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import { Box, Divider, List, ListItem, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
@@ -51,12 +51,11 @@ const FactoryInfoDetail = () => {
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper' }}>
       {!isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <IconButton onClick={() => navigate(-1)} disableRipple>
-            <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
+          <BackButton onClick={() => navigate(-1)} disableRipple>
             <Typography variant="h3" sx={{ color: 'title.main' }}>
               {searchParams.get('deviceName')}
             </Typography>
-          </IconButton>
+          </BackButton>
         </Box>
       )}
 

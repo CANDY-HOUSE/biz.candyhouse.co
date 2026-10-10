@@ -22,7 +22,7 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BlurOverlay from './BlurOverlay';
 import { useTranslation } from 'react-i18next';
 
-export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false }) {
+export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false, fullHeight = true }) {
   const { gManageGroup, gStripe } = useContext(GlobalStateContext);
   const navigate = useNavigate();
   const [deviceHistory, setDeviceHistory] = useState([]);
@@ -128,6 +128,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
 
   const content = noToolBar ? (
     <MobileDeviceHistory
+      fullHeight={fullHeight}
       histories={deviceHistory}
       onLoadMore={(cb) => {
         loadHistory(timestamp, (lastKey) => {
@@ -182,7 +183,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
         }}
         open={isDownloading}
       >
-        <CircularProgress color="inherit" />
+        <CircularProgress />
         <div>履歴データをダウンロード中...</div>
       </Backdrop>
     </>
@@ -190,7 +191,9 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
 
   return (
     <>
-      <BlurOverlay enabled={disableInteraction}>{content}</BlurOverlay>
+      <BlurOverlay enabled={disableInteraction} style={fullHeight ? undefined : { height: '100%' }}>
+        {content}
+      </BlurOverlay>
       <Drawer anchor="bottom" open={menuState.open} onClose={handleCloseMenu}>
         <List sx={{ pb: 1, justifyContent: 'center' }} disablePadding>
           <ListItem disablePadding>

@@ -1,9 +1,9 @@
+import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useState } from 'react';
-import { Card, Box, IconButton } from '@mui/material';
+import { Card, Box } from '@mui/material';
 import DataTable from '@/components/biz/device/DataTable';
 import CheckTable from '@/components/biz/CheckTable';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import { useSearchParams } from 'react-router-dom';
 import { gUtils } from '@/utils/gUtils';
@@ -88,9 +88,7 @@ const DeviceGroupItem = () => {
     <>
       <Card sx={{ padding: '10px', pb: '0' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton size="small" onClick={() => window.history.back()}>
-            <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-          </IconButton>
+          <BackButton size="small" onClick={() => window.history.back()}></BackButton>
           <EditableText
             style={{
               fontSize: '1.2em',

@@ -53,6 +53,7 @@ export const NavigatorItem = ({ to, name, icon, location, external = false, onCl
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           {Icon && (
             <Icon
+              {...(['contacts', 'me'].includes(icon) ? { selected: isActive } : {})}
               size={20}
               sx={{
                 fontSize: 20,
@@ -137,6 +138,7 @@ export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           {Icon && (
             <Icon
+              {...(['contacts', 'me'].includes(icon) ? { selected: isActive } : {})}
               size={20}
               sx={{
                 fontSize: 20,

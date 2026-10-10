@@ -1,3 +1,4 @@
+import theme from '@/theme/theme';
 import React, { useMemo, useState } from 'react';
 import MUIDataTable from 'mui-datatables';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -58,6 +59,7 @@ const CheckTable = ({
         },
       },
       components: {
+        MuiCircularProgress: theme.components.MuiCircularProgress,
         MuiTypography: {
           styleOverrides: {
             root: {

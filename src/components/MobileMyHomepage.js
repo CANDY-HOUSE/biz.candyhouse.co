@@ -1,4 +1,7 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { appPromotion } from '@/services/appPromotion';
+import { isAndroidShell } from '@/services/appBridge';
+import { isAppHome } from '@/services/deviceService';
+import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +16,9 @@ const MobileMyHomepage = () => {
   const { gStripe, gManageEmployee } = useContext(GlobalStateContext);
   const [currentUserInfo, setCurrentUserInfo] = useState({});
   const [notificationEnabled, setNotificationEnabled] = useState(null);
-  const [activePromotion, setActivePromotion] = useState(null);
+  const [legacyPromotion, setActivePromotion] = useState(null);
+  const webPromotion = useSyncExternalStore(appPromotion.subscribe, appPromotion.getSnapshot);
+  const activePromotion = isAppHome ? webPromotion : legacyPromotion;
   const [authState, setAuthState] = useState(null); // { signedIn, state }
   const [appVersion, setAppVersion] = useState(null); // { display, downloadURL, ... }
   const [actionSheet, setActionSheet] = useState(null); // { title, onConfirm }
@@ -177,6 +182,7 @@ const MobileMyHomepage = () => {
   };
 
   useEffect(() => {
+    if (isAppHome) return;
     requestActivePromotion()
       .then((promotion) => {
         if (promotion?.success) {
@@ -195,10 +201,7 @@ const MobileMyHomepage = () => {
   }, [requestAuthState, requestAppVersion]);
 
   useEffect(() => {
-    if (gStripe.customerInfo.isAnonymous) {
-      return;
-    }
-    fetchCurrentUserInfo();
+    if (!gStripe.customerInfo.isAnonymous) fetchCurrentUserInfo();
 
     requestNotificationStatus()
       .then((response) => {
@@ -230,8 +233,11 @@ const MobileMyHomepage = () => {
   };
 
   const handlePushPage = async () => {
-    const pushInfo = await requestPushTokenFromApp();
-    handleOpenPage({ targetPath: 'device-notify', param: pushInfo });
+    if (isAppHome) handleOpenPage({ targetPath: 'device-notify' });
+    else {
+      const pushInfo = await requestPushTokenFromApp();
+      handleOpenPage({ targetPath: 'device-notify', param: pushInfo });
+    }
   };
 
   const handleHeaderClick = () => {
@@ -259,21 +265,30 @@ const MobileMyHomepage = () => {
   const handleLogout = () => setActionSheet({ title: t('setting.logout'), onConfirm: doSignOut });
   const handleDeleteAccount = () => setActionSheet({ title: t('setting.deleteAccount'), onConfirm: doSignOut });
 
-  const handleShopClick = () => {
+  const handleShopClick = async () => {
     const targetUrl = activePromotion?.targetUrl || URLs.shop;
     if (activePromotion?.promotionId && activePromotion.visible) {
       setActivePromotion({
         ...activePromotion,
         visible: false,
       });
-      requestMarkPromotionRead(activePromotion.promotionId, targetUrl);
+      if (isAppHome) {
+        // Finish the request before an external page replaces this WebView document.
+        await appPromotion.markRead(activePromotion.promotionId, targetUrl).catch(() => {});
+      } else requestMarkPromotionRead(activePromotion.promotionId, targetUrl);
     }
     handleOpenPage({ link: targetUrl });
   };
 
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          minHeight: isAppHome ? 'calc(100dvh - 64px - env(safe-area-inset-bottom))' : '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <List disablePadding>
           <ListItem onClick={handleHeaderClick} sx={{ height: '80px' }}>
             {gStripe.customerInfo.isAnonymous ? (
@@ -301,27 +316,29 @@ const MobileMyHomepage = () => {
               </>
             )}
           </ListItem>
-          <ListItem onClick={handlePushPage}>
-            <ListItemText
-              primary={t('setting.enableNotification')}
-              secondary={
-                notificationEnabled == null
-                  ? null
-                  : notificationEnabled
-                    ? t('setting.notificationEnabled')
-                    : t('setting.notificationDisabled')
-              }
-              secondaryTypographyProps={{
-                sx: {
-                  color: 'text.other',
-                  fontSize: '0.875rem',
-                },
-              }}
-            />
-            <ListItemIcon sx={{ minWidth: 'auto' }}>
-              <SvgIcon component={SvgArrow} />
-            </ListItemIcon>
-          </ListItem>
+          {
+            <ListItem onClick={handlePushPage}>
+              <ListItemText
+                primary={t('setting.enableNotification')}
+                secondary={
+                  notificationEnabled == null
+                    ? null
+                    : notificationEnabled
+                      ? t('setting.notificationEnabled')
+                      : t('setting.notificationDisabled')
+                }
+                secondaryTypographyProps={{
+                  sx: {
+                    color: 'text.other',
+                    fontSize: '0.875rem',
+                  },
+                }}
+              />
+              <ListItemIcon sx={{ minWidth: 'auto' }}>
+                <SvgIcon component={SvgArrow} />
+              </ListItemIcon>
+            </ListItem>
+          }
           <ListItem onClick={handleShopClick}>
             <ListItemText
               primary={
@@ -334,8 +351,8 @@ const MobileMyHomepage = () => {
                         position: 'absolute',
                         top: '-4px',
                         right: '2px',
-                        width: '20px',
-                        height: '20px',
+                        width: '16px',
+                        height: '16px',
                         borderRadius: '50%',
                         bgcolor: '#f44336',
                       }}
@@ -354,7 +371,7 @@ const MobileMyHomepage = () => {
         <Typography
           onClick={() => {
             let url = 'https://testflight.apple.com/join/Rok4GOFD';
-            if (window.AndroidHandler) {
+            if (isAndroidShell || window.AndroidHandler) {
               url =
                 'https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp/releases/latest/download/Sesame_android_release.apk';
             }

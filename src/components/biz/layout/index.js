@@ -1,3 +1,5 @@
+import { appTabPaths } from '@/services/appNavigation';
+import { isAppHome } from '@/services/deviceService';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { GlobalStateContext } from '@context/GlobalContextProvider.js';
@@ -69,6 +71,7 @@ const Layout = () => {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
   const location = useLocation();
+  const appTab = isAppHome && appTabPaths.includes(location.pathname);
 
   const toggleDrawer = (open) => (event) => {
     if (event && event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -106,8 +109,12 @@ const Layout = () => {
 
   return (
     <PrivateRoute>
-      <>
-        <Grid2 container style={{ minHeight: '100%' }}>
+      <Box sx={appTab ? { height: '100%' } : undefined}>
+        <Grid2
+          key={appTab ? location.pathname : undefined}
+          container
+          sx={appTab ? { minHeight: '100%', height: '100%' } : { minHeight: '100%' }}
+        >
           <AppBar
             position="fixed"
             elevation={0}
@@ -383,16 +390,21 @@ const Layout = () => {
           <Grid2
             className="child"
             sx={{
+              '--page-viewport-height': isFromApp ? '100dvh' : `calc(100dvh - ${headerHeight})`,
+              '--page-header-offset': isFromApp ? '0px' : headerHeight,
               marginTop: isFromApp ? 0 : headerHeight,
               marginLeft: isMobile || isFromApp ? '0' : menuWidth,
               width: isMobile || isFromApp ? '100%' : `calc(100% - ${menuWidth})`,
-              height: isFromApp ? '100vh' : `calc(100vh - ${headerHeight})`,
+              height: isAppHome ? 'auto' : isFromApp ? '100vh' : `calc(100vh - ${headerHeight})`,
+              minHeight: appTab ? '100%' : isAppHome ? '100dvh' : undefined,
+              minWidth: 0,
+              position: appTab ? 'relative' : undefined,
             }}
           >
             <Outlet />
           </Grid2>
         </Grid2>
-        {gStripe.isPending && (
+        {!isAppHome && gStripe.isPending && (
           <Grid2
             sx={{
               position: 'fixed',
@@ -441,7 +453,7 @@ const Layout = () => {
             {csTool === 'yamatoShipping' && <YamatoShippingCsv />}
           </DialogContent>
         </Dialog>
-      </>
+      </Box>
     </PrivateRoute>
   );
 };

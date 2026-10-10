@@ -1,3 +1,6 @@
+import { claimGuestDevices, preserveGuestDevices } from '@/services/guestDevices';
+import { currentAppToken, retireLegacySession, initialAppToken } from '@/services/appSession';
+import { isAppHome } from '@/services/deviceService';
 import { useEffect, useState } from 'react';
 import { gConfig } from '@constants/gConfig.js';
 import WebSocketManager from '../websocket/WebSocketManager.ts';
@@ -42,7 +45,9 @@ const AUTH_EVENTS = {
 };
 
 export const useAuthState = () => {
-  const [loginState, setLoginState] = useState(gConfig.loginState.loginOut);
+  const [loginState, setLoginState] = useState(
+    isAppHome && initialAppToken() ? gConfig.loginState.login : gConfig.loginState.loginOut
+  );
   const [isClearData, setIsClearData] = useState(false);
   const [user, setUser] = useState({});
 
@@ -60,15 +65,15 @@ export const useAuthState = () => {
     };
     const checkAuthStatus = async () => {
       try {
-        const {
-          idToken: { jwtToken },
-        } = await Auth.currentSession();
+        const jwtToken = isAppHome ? await currentAppToken() : (await Auth.currentSession()).getIdToken().getJwtToken();
+        if (isAppHome) setLoginState(gConfig.loginState.login);
         console.log('会话有效');
         WebSocketManager.connect(jwtToken);
       } catch (error) {
         console.log('会话无效', error);
         // 退出登录
-        handleSignout();
+        if (!isAppHome) handleSignout();
+        // A failed refresh is not a sign-out: retain the native offline device scope.
       }
     };
     const handleConnectionFailure = async (currentToken) => {
@@ -140,7 +145,7 @@ export const useAuthState = () => {
         console.log(err);
       });
     // App 内：交给 native 走 SDK 发送验证码（复用 App 的 Cognito 会话）
-    const appRes = await callAppBridge('requestSignIn', { email: loginMail });
+    const appRes = isAppHome ? false : await callAppBridge('requestSignIn', { email: loginMail });
     if (appRes !== false) {
       if (appRes && appRes.success) {
         cb && cb({ appLogin: true });
@@ -167,7 +172,8 @@ export const useAuthState = () => {
 
   const handleSignout = async (cb) => {
     try {
-      await Auth.forgetDevice();
+      if (isAppHome) await retireLegacySession();
+      await Auth.forgetDevice().catch(() => {});
       await Auth.signOut();
     } catch (error) {
       // console.error('Error during sign out:', error);
@@ -175,12 +181,15 @@ export const useAuthState = () => {
       clearCache();
       setIsClearData(true);
       cb && cb({ success: true });
+      if (isAppHome) window.location.replace('/me/homepage?appHome=1&fromType=app');
     }
   };
 
   const clearCache = () => {
     setLoginState(gConfig.loginState.loginOut);
-    localStorage.clear();
+    WebSocketManager.closeConnection();
+    if (isAppHome) preserveGuestDevices(() => localStorage.clear());
+    else localStorage.clear();
   };
 
   const autoLogin = (jwtToken) => {
@@ -190,7 +199,7 @@ export const useAuthState = () => {
 
   const handleChallenge = async ({ pagePwd, cb }) => {
     // App 内：交给 native 走 SDK 提交验证码完成登录，登录成功后由 native 关闭 webview
-    const appRes = await callAppBridge('requestConfirmSignIn', { code: pagePwd });
+    const appRes = isAppHome ? false : await callAppBridge('requestConfirmSignIn', { code: pagePwd });
     if (appRes !== false) {
       if (appRes && appRes.success && appRes.signedIn) {
         setIsClearData(false);
@@ -206,6 +215,10 @@ export const useAuthState = () => {
       const {
         idToken: { jwtToken },
       } = challengeAnswerResponse.signInUserSession;
+      if (isAppHome) {
+        claimGuestDevices(JSON.parse(atob(jwtToken.split('.')[1])).sub);
+        await retireLegacySession();
+      }
       autoLogin(jwtToken);
       setIsClearData(false);
       setTimeout(() => {

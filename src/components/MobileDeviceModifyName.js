@@ -1,8 +1,9 @@
+import BackButton from '@/components/BackButton';
+import { isAppHome } from '@/services/deviceService';
 import React, { useContext } from 'react';
 import EditableText from './EditableText';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
-import { Box, IconButton, List, ListItem, ListItemText, Typography } from '@mui/material';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
+import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
@@ -32,14 +33,13 @@ const MobileDeviceModifyName = () => {
 
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-      {!gStripe.isFromApp && (
-        <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <IconButton onClick={() => navigate(-1)} disableRipple>
-            <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
+      {(!gStripe.isFromApp || isAppHome) && (
+        <Box sx={{ display: 'flex', alignItems: 'center', pt: isAppHome ? 0 : 1, pl: 2 }}>
+          <BackButton onClick={() => navigate(-1)} disableRipple>
             <Typography variant="h3" sx={{ color: 'title.main' }}>
               {t('pages.login.ReturnToMailInput')}
             </Typography>
-          </IconButton>
+          </BackButton>
         </Box>
       )}
       <Box sx={{ bgcolor: 'secondary.light', p: 2 }}>
@@ -51,6 +51,7 @@ const MobileDeviceModifyName = () => {
         <ListItem>
           <ListItemText primary={t('deviceMember.editName')} />
           <EditableText
+            key={deviceUUID}
             initialValue={deviceName}
             onSave={async (newValue, callback) => {
               if (!newValue || !callback) {

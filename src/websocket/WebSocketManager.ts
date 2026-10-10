@@ -14,7 +14,7 @@ export enum WS_STATUS {
 class WebSocketManager {
   private static instance: WebSocketManager;
   private ws: WebSocket | null = null;
-  private subscribers = new Map<string, Function>();
+  private subscribers = new Map<string, Set<Function>>();
 
   // 重连与退避控制
   private reconnectTimer: any = null;
@@ -117,7 +117,8 @@ class WebSocketManager {
     return this.currentStatus;
   }
 
-  private wakeUpConnection() {
+  public wakeUpConnection() {
+    if (this.ws?.readyState === WebSocket.CONNECTING) return;
     this.updateStatus(WS_STATUS.CONNECTING);
     const idleTime = Date.now() - this.lastActiveTime;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || idleTime > this.maxIdleTimeInterval) {
@@ -145,6 +146,11 @@ class WebSocketManager {
   public connect(token: string) {
     if (!token) {
       console.error('【WS】无效的 token');
+      return;
+    }
+    if (this.authenticatedToken === token && this.ws?.readyState === WebSocket.CONNECTING) return;
+    if (this.authenticatedToken === token && this.ws?.readyState === WebSocket.OPEN) {
+      this.wakeUpConnection();
       return;
     }
     if (this.ws) {
@@ -281,7 +287,8 @@ class WebSocketManager {
     this.ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        console.log(`【WS 收到消息⬇${new Date().toLocaleString()}】`, message.action, message);
+        if (message.action !== 'biz3AppOperations')
+          console.log(`【WS 收到消息⬇${new Date().toLocaleString()}】`, message.action, message);
         this.lastActiveTime = Date.now();
         this.notifySubscribers(message);
       } catch (e) {
@@ -348,24 +355,33 @@ class WebSocketManager {
 
   // ---- 消息分发与队列系统 ----
   subscribe(key: string, callback: Function) {
-    this.subscribers.set(key, callback);
+    const callbacks = this.subscribers.get(key) ?? new Set<Function>();
+    callbacks.add(callback);
+    this.subscribers.set(key, callbacks);
   }
 
-  unsubscribe(key: string) {
-    this.subscribers.delete(key);
+  unsubscribe(key: string, callback: Function) {
+    const callbacks = this.subscribers.get(key);
+    callbacks?.delete(callback);
+    if (callbacks?.size === 0) this.subscribers.delete(key);
   }
 
   private notifySubscribers(message: any) {
     const action = message.action;
     if (this.subscribers.has(action)) {
-      this.subscribers.get(action)!(message);
+      this.subscribers.get(action)!.forEach((callback) => callback(message));
     } else {
       console.log(`【WS】 No subscriber for action: ${action}`);
     }
   }
 
-  async sendMessage(message: any) {
-    console.log(`【WS 发送消息⬆${new Date().toLocaleString()}】`, message.action, message);
+  async sendMessage(message: any, allowQueue = true) {
+    if (!allowQueue && (!navigator.onLine || this.ws?.readyState !== WebSocket.OPEN)) {
+      throw new Error('Connection unavailable. Please try again after reconnecting.');
+    }
+
+    if (message.action !== 'biz3AppOperations')
+      console.log(`【WS 发送消息⬆${new Date().toLocaleString()}】`, message.action, message);
     if (!this.checkNetworkStatus()) {
       console.error('【WS】当前无网络连接，消息发送失败');
       return;

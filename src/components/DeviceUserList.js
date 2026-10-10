@@ -13,6 +13,13 @@ import MobileQRCodeDialog from './MobileQRCodeDialog';
 import { biz3utils } from '@/utils/biz3utils';
 import BlurOverlay from './BlurOverlay';
 
+// Modal content lives in global state; read employees here so async results remain reactive.
+function DeviceUserSelection({ users, ...props }) {
+  const { gManageEmployee } = useContext(GlobalStateContext);
+  const data = gManageEmployee.employees.Items.filter((item) => !users.some((user) => user.subUUID === item.subUUID));
+  return <CheckTable {...props} data={data} />;
+}
+
 export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultManageMode = false }) {
   const { gManageGroup, gStripe, gMediaType, setCustomModalOpen, setModalContent, gManageEmployee, gManageDevice } =
     useContext(GlobalStateContext);
@@ -66,13 +73,6 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
     getDeviceUser(deviceUUID, isManageMode ? 0 : 5);
   };
 
-  const canSelectedUser = useMemo(() => {
-    if (users.length < 1) {
-      return gManageEmployee.employees.Items;
-    }
-    return gManageEmployee.employees.Items.filter((it) => !users.some((exit) => exit.subUUID === it.subUUID));
-  }, [gManageEmployee.employees.Items, users]);
-
   const chooseKeyLevel = (items) => {
     setModalContent(
       <KeyLevelSelector
@@ -106,10 +106,10 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   const onAddButtonClickHandler = () => {
     setCustomModalOpen(true);
     setModalContent(
-      <CheckTable
+      <DeviceUserSelection
+        users={users}
         title={'ユーザーを選択'}
         customColumns={DataTableColumns.groupMember}
-        data={canSelectedUser}
         selectableRows={'multiple'}
         enableFilter={!gStripe.isFromApp}
         useCustomSelection={true}

@@ -1,8 +1,8 @@
+import BackButton from '@/components/BackButton';
 // /biz/ir/ir-type-list/index.js
 import React, { useContext } from 'react';
 import { Box, Card, CardContent, CardHeader, IconButton, List, ListItem, Typography } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
 import { SvgAir, SvgFan, SvgLearn, SvgLight, SvgTV } from '@assets/svg/ir/svgIR';
@@ -157,11 +157,7 @@ export default function IrTypeList() {
       <CardHeader
         title={
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && (
-              <IconButton onClick={() => navigate(-1)}>
-                <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-              </IconButton>
-            )}
+            {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
             <Typography
               variant="h6"
               sx={{

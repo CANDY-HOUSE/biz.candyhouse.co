@@ -1,10 +1,10 @@
-import { Box, IconButton, Typography } from '@mui/material';
+import BackButton from '@/components/BackButton';
+import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import UpgradeFirmware from './UpgradeFirmware';
 import { useContext, useMemo } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 
 const UpgradeSSMFirmware = () => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
@@ -25,9 +25,7 @@ const UpgradeSSMFirmware = () => {
     <>
       {!gStripe.isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <IconButton onClick={() => navigate(-1)}>
-            <KeyboardArrowLeftIcon sx={{ ml: -2 }} />
-          </IconButton>
+          <BackButton onClick={() => navigate(-1)}></BackButton>
           <Typography variant="h3">{t('pages.login.ReturnToMailInput')}</Typography>
         </Box>
       )}

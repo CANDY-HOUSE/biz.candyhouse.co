@@ -1,9 +1,9 @@
+import BackButton from '@/components/BackButton';
 import React, { useState, useContext, useEffect } from 'react';
-import { Box, Card, IconButton } from '@mui/material';
+import { Box, Card } from '@mui/material';
 import DataTable from '@/components/biz/device/DataTable';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
-import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import { useSearchParams } from 'react-router-dom';
 import { gUtils } from '@/utils/gUtils';
 import CheckTable from '@/components/biz/CheckTable';
@@ -62,9 +62,7 @@ const EmployeeGroupItem = () => {
     <>
       <Card sx={{ padding: '10px', pb: '0' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton size="small" onClick={() => window.history.back()}>
-            <KeyboardArrowLeftIcon sx={{ ml: -1 }} />
-          </IconButton>
+          <BackButton size="small" onClick={() => window.history.back()}></BackButton>
           <EditableText
             style={{
               fontSize: '1.2em',

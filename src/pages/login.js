@@ -1,3 +1,4 @@
+import { isAppHome } from '@/services/deviceService';
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '../context/GlobalContextProvider';
@@ -34,6 +35,8 @@ const LoginIndex = () => {
       cb: (resp) => {
         if (resp instanceof Error) {
           setSnackbarValue({
+            logScope: 'pages/login.handleAutoLogin',
+            severity: 'error',
             open: true,
             msg: resp.message,
           });
@@ -54,8 +57,8 @@ const LoginIndex = () => {
       return;
     }
     let loginStripe = localStorage.getItem('curLogin');
-    if (loginStripe) {
-      navigate('/'); // 如果已经登录，直接跳转到首页
+    if (loginStripe && !isAppHome) {
+      navigate(isAppHome ? '/?appHome=1&fromType=app' : '/'); // 如果已经登录，直接跳转到首页
     }
   }, []);
 
@@ -71,17 +74,14 @@ const LoginIndex = () => {
         cb: (resp) => {
           setVerifying(false);
           if (resp instanceof Error) {
-            setSnackbarValue({
-              open: true,
-              msg: resp.message,
-            });
+            setSnackbarValue({ logScope: 'pages/login.LoginIndex', severity: 'error', open: true, msg: resp.message });
             return;
           }
           // App 内登录成功由 native 接管（关闭 webview + 刷新），无需 Web 侧跳转
           if (resp && resp.appLogin) {
             return;
           }
-          gStripe.getCustomerInfo(loginMail);
+          gStripe.getCustomerInfo(isAppHome ? 'ch_CandyhouseMobile' : loginMail);
           navigate(redirectPath);
         },
       });
@@ -103,6 +103,8 @@ const LoginIndex = () => {
         setPagePwd('');
         if (resp instanceof Error) {
           setSnackbarValue({
+            logScope: 'pages/login.handleLoginBtnClick',
+            severity: 'error',
             open: true,
             msg: resp.message,
           });

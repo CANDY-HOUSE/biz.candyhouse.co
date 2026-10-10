@@ -470,6 +470,11 @@ const ssmDevices = ({ datas, gIot }) => [
               deviceUUID={c.deviceUUID}
               gIot={gIot}
               defaultState={state}
+              position={
+                c.stateInfo?.wm2State === true && Number.isFinite(c.stateInfo?.position)
+                  ? Math.trunc((c.stateInfo.position * 360) / 1024)
+                  : undefined
+              }
               shareKey={c.secretKey}
             />
           );
