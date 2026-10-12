@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 
 export const CfpMsg = ({ msg, onClick }) => {
+  const { t } = useTranslation();
   return (
     <Box
       sx={{
@@ -26,7 +28,7 @@ export const CfpMsg = ({ msg, onClick }) => {
           color: '#28aeb1',
         }}
       >
-        確定
+        {t('deviceMember.opt.ok')}
       </Button>
     </Box>
   );

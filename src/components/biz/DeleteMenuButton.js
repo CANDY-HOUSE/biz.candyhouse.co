@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Menu, MenuItem, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const DeleteMenuButton = ({ onDelete }) => {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
   const handleMenuOpen = (event) => {
     event.stopPropagation();
@@ -45,7 +47,7 @@ const DeleteMenuButton = ({ onDelete }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleDeleteClick}>削除</MenuItem>
+        <MenuItem onClick={handleDeleteClick}>{t('pages.ir.remote.delete')}</MenuItem>
       </Menu>
     </>
   );

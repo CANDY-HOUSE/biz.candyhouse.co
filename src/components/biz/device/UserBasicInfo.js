@@ -83,7 +83,7 @@ const UserBasicInfo = ({ data, employeeEmail, isSesameApp, onSave }) => {
       <Divider sx={{ opacity: 0.4 }} />
       <ListItem sx={{ ...infoItem }}>
         <Typography variant="h4" sx={{ color: 'title.main' }}>
-          ロール
+          {t('contacts.role')}
         </Typography>
         <Typography variant="h4" sx={{ color: 'info.light' }}>
           {data.tag &&
@@ -95,7 +95,7 @@ const UserBasicInfo = ({ data, employeeEmail, isSesameApp, onSave }) => {
       <Divider sx={{ opacity: 0.4 }} />
       <ListItem sx={{ ...infoItem }}>
         <Typography variant="h4" sx={{ color: 'title.main' }}>
-          所属
+          {t('contacts.department')}
         </Typography>
         <EditableText
           initialValue={data.department}
@@ -110,7 +110,7 @@ const UserBasicInfo = ({ data, employeeEmail, isSesameApp, onSave }) => {
       <Divider sx={{ opacity: 0.4 }} />
       <ListItem sx={{ ...infoItem }}>
         <Typography variant="h4" sx={{ color: 'title.main' }}>
-          電話番号
+          {t('contacts.phone')}
         </Typography>
         <EditableText
           initialValue={data.phone}

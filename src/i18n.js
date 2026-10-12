@@ -26,6 +26,14 @@ const switchLanguage = (language) => {
 
 */
 
+const followsSystemLanguage = isAppHome || new URLSearchParams(window.location.search).get('fromType') === 'app';
+
+const normalizeDetectedLanguage = (language) => {
+  const locale = language.replace(/_/g, '-');
+  if (!/^zh(?:-|$)/i.test(locale)) return locale;
+  return /-(?:Hant|TW|HK|MO)(?:-|$)/i.test(locale) ? 'zh-TW' : 'zh-CN';
+};
+
 i18n
   .use(LanguageDetector) // 使用语言检测
   .use(initReactI18next) // 绑定 react-i18next 到 i18next
@@ -42,9 +50,16 @@ i18n
       escapeValue: false, // React 已经自动防止了 XSS
     },
     detection: {
-      order: isAppHome ? ['navigator'] : ['cookie', 'navigator', 'querystring', 'localStorage'],
-      caches: isAppHome ? [] : ['localStorage', 'cookie'],
+      convertDetectedLanguage: normalizeDetectedLanguage,
+      order: followsSystemLanguage ? ['navigator'] : ['cookie', 'navigator', 'querystring', 'localStorage'],
+      caches: followsSystemLanguage ? [] : ['localStorage', 'cookie'],
     },
   });
+
+if (followsSystemLanguage) {
+  window.addEventListener('languagechange', () => {
+    i18n.changeLanguage(normalizeDetectedLanguage(navigator.languages?.[0] || navigator.language));
+  });
+}
 
 export default i18n;

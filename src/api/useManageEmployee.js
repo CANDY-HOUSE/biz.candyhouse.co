@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useState } from 'react';
 import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
@@ -7,6 +8,7 @@ import { setEnvId } from '@/utils/envIdentity.js';
 
 const PubedEmployees = 'pubEmployees';
 export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
+  const { t } = useTranslation();
   const init = { count: 0, Items: [] };
   const [employees, setEmployees] = useState(init);
   const [employeeGroups, setEmployeeGroups] = useState(null);
@@ -62,6 +64,15 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     [getEmployeeGroups]
   );
 
+  const employeeError = useCallback(
+    (message, fallback) => {
+      if (message === 'ユーザーは存在しません') return t('contacts.userNotFound');
+      if (message === '必ず【メールアドレス】と【ユーザー名】を含めてください。') return t('contacts.invalidProfile');
+      return gStripe.customerInfo.isSesameApp ? t(fallback) : message;
+    },
+    [gStripe.customerInfo.isSesameApp, t]
+  );
+
   const handleEmployee = useCallback(
     (message) => {
       switch (message.op) {
@@ -96,14 +107,14 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
             if (message.message === 'Limit Exceeded') {
               setSnackbarValue({
                 open: true,
-                msg: 'ユーザー数の上限に達しました。プランのアップグレードが必要です。',
+                msg: t('contacts.limitExceeded'),
               });
             } else {
               setSnackbarValue({
                 logScope: 'api/useManageEmployee.handleEmployee',
                 severity: 'error',
                 open: true,
-                msg: message.message,
+                msg: employeeError(message.message, 'contacts.addFailed'),
               });
             }
             return;
@@ -119,7 +130,7 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
               logScope: 'api/useManageEmployee.handleEmployee',
               severity: 'error',
               open: true,
-              msg: message.message,
+              msg: employeeError(message.message, 'contacts.deleteFailed'),
             });
             return;
           }
@@ -129,7 +140,7 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
           break;
       }
     },
-    [setSnackbarValue, getEmployees]
+    [setSnackbarValue, getEmployees, employeeError, t]
   );
 
   const handleRoleResponse = useCallback(

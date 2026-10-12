@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   Card,
@@ -16,12 +17,13 @@ import { LoadingButton } from '@mui/lab';
 import { Grid } from '@mui/material';
 
 const KeyLevelSelector = ({ onConfirm, onCancel, showOwnerOption = true, showButton = false }) => {
+  const { t } = useTranslation();
   const [level, setLevel] = useState('1'); // 默认选择管理员鍵
   const [loading, setLoading] = useState(false);
   return (
     <Box>
       <Card sx={{ mb: '10px' }}>
-        <CardHeader title={<Typography variant="h2">合鍵の権限を選択</Typography>} sx={{ pb: '5px' }} />
+        <CardHeader title={<Typography variant="h2">{t('contacts.keyPermission')}</Typography>} sx={{ pb: '5px' }} />
         <CardContent>
           <FormControl sx={{ display: 'flex', alignItems: 'flex-start' }}>
             <RadioGroup
@@ -33,10 +35,10 @@ const KeyLevelSelector = ({ onConfirm, onCancel, showOwnerOption = true, showBut
               }}
             >
               <Hider show={showOwnerOption}>
-                <FormControlLabel value="0" control={<Radio />} label="オーナー鍵" />
+                <FormControlLabel value="0" control={<Radio />} label={t('contacts.ownerKey')} />
               </Hider>
-              <FormControlLabel value="1" control={<Radio />} label="マネージャー鍵" />
-              <FormControlLabel value="2" control={<Radio />} label="ゲスト鍵" />
+              <FormControlLabel value="1" control={<Radio />} label={t('contacts.managerKey')} />
+              <FormControlLabel value="2" control={<Radio />} label={t('contacts.guestKey')} />
             </RadioGroup>
           </FormControl>
         </CardContent>
@@ -45,7 +47,7 @@ const KeyLevelSelector = ({ onConfirm, onCancel, showOwnerOption = true, showBut
       {showButton && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
           <Button variant="text" onClick={onCancel}>
-            キャンセル
+            {t('deviceMember.opt.cancel')}
           </Button>
           <Grid item xs={12}>
             <LoadingButton
@@ -60,7 +62,7 @@ const KeyLevelSelector = ({ onConfirm, onCancel, showOwnerOption = true, showBut
                 });
               }}
             >
-              確認
+              {t('deviceMember.opt.ok')}
             </LoadingButton>
           </Grid>
         </Box>

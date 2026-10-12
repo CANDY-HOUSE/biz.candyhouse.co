@@ -95,7 +95,7 @@ const MobileUserDevices = ({ deviceKeys, onAddButtonClickHandler, onDelete, onRe
                         {roleAndTime(device)}
                       </Typography>
                       <Typography component="span" sx={{ color: 'info.light', ml: 1, fontSize: '0.8rem' }}>
-                        {device.msgData}
+                        {device.msgData || t('contacts.alwaysAvailable')}
                       </Typography>
                     </>
                   }
@@ -145,7 +145,7 @@ const MobileUserDevices = ({ deviceKeys, onAddButtonClickHandler, onDelete, onRe
                     });
                 }}
               >
-                <Typography color="error.main">{'削除'}</Typography>
+                <Typography color="error.main">{t('pages.ir.remote.delete')}</Typography>
                 {removeLoading && <CircularProgress size={16} sx={{ ml: 1 }} />}
               </ListItem>
               <ListItem onClick={() => setDrawerOpen(false)}>

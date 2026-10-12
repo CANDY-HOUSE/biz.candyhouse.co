@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import theme from '@/theme/theme';
 import React, { useMemo, useState } from 'react';
 import MUIDataTable from 'mui-datatables';
@@ -8,6 +9,7 @@ import { LoadingButton } from '@mui/lab';
 
 const CheckTable = ({
   title,
+  titleKey,
   data,
   loadingAble,
   setOpenModal,
@@ -20,6 +22,7 @@ const CheckTable = ({
   customColumns = [],
   isMobile = false,
 }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -151,7 +154,7 @@ const CheckTable = ({
   const deviceColumns = [
     {
       name: 'deviceName',
-      label: 'デバイス名',
+      label: t('contacts.deviceName'),
       options: {
         customBodyRenderLite: (dataIndex) => {
           const rowData = ndata[dataIndex];
@@ -178,7 +181,7 @@ const CheckTable = ({
     <Box>
       <ThemeProvider theme={getMuiTheme()}>
         <MUIDataTable
-          title={<Typography variant="h2">{title}</Typography>}
+          title={<Typography variant="h2">{titleKey ? t(titleKey) : title}</Typography>}
           columns={customColumns.length > 0 ? customColumns : deviceColumns}
           data={ndata}
           options={{
@@ -230,10 +233,13 @@ const CheckTable = ({
             },
             tableBodyHeight: '50vh',
             textLabels: {
+              body: { noMatch: t('contacts.noResults'), toolTip: t('contacts.sort') },
+              toolbar: { filterTable: t('contacts.filter') },
+              filter: { all: t('contacts.all'), title: t('contacts.filter'), reset: t('contacts.reset') },
               pagination: {
-                next: 'Next Page',
-                previous: 'Previous Page',
-                rowsPerPage: '表示数',
+                next: t('contacts.nextPage'),
+                previous: t('contacts.previousPage'),
+                rowsPerPage: t('contacts.rowsPerPage'),
                 displayRows: '/',
               },
             },
@@ -253,7 +259,7 @@ const CheckTable = ({
               setOpenModal(false);
             }}
           >
-            キャンセル
+            {t('deviceMember.opt.cancel')}
           </Button>
           {loadingAble ? (
             <LoadingButton
@@ -269,7 +275,7 @@ const CheckTable = ({
                 });
               }}
             >
-              確認
+              {t('deviceMember.opt.ok')}
             </LoadingButton>
           ) : (
             <Button
@@ -281,7 +287,7 @@ const CheckTable = ({
                 handleCheck(selected);
               }}
             >
-              確認
+              {t('deviceMember.opt.ok')}
             </Button>
           )}
         </Box>

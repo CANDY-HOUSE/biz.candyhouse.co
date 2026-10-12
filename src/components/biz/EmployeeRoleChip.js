@@ -1,7 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Chip, Menu, MenuItem, ListItemText } from '@mui/material';
 
 const EmployeeRoleChip = ({ handleCheck, label, rowChipLength }) => {
+  const { t } = useTranslation();
+  const roleKeys = { オーナー: 'owner', マネージャー: 'manager', ゲスト: 'guest' };
+  const displayLabel = roleKeys[label] ? t(`deviceMember.role.${roleKeys[label]}`) : label;
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClick = (event) => {
@@ -13,7 +17,7 @@ const EmployeeRoleChip = ({ handleCheck, label, rowChipLength }) => {
 
   return (
     <>
-      <Chip style={{ margin: 1 }} label={label} onDelete={rowChipLength === 1 ? null : handleClick} />
+      <Chip style={{ margin: 1 }} label={displayLabel} onDelete={rowChipLength === 1 ? null : handleClick} />
       <Menu
         elevation={1}
         getcontentanchorel={null}
@@ -39,7 +43,7 @@ const EmployeeRoleChip = ({ handleCheck, label, rowChipLength }) => {
             setAnchorEl(null);
           }}
         >
-          <ListItemText primary="削除" />
+          <ListItemText primary={t('pages.ir.remote.delete')} />
         </MenuItem>
       </Menu>
     </>

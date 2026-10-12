@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Menu, MenuItem, IconButton, ListItemText } from '@mui/material';
 import Hider from '@/components/biz/Hider';
 
 export default function DeleteItem({ handleCheck, employeeRole }) {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -46,7 +48,7 @@ export default function DeleteItem({ handleCheck, employeeRole }) {
             setAnchorEl(null);
           }}
         >
-          <ListItemText primary="削除" />
+          <ListItemText primary={t('pages.ir.remote.delete')} />
         </MenuItem>
       </Menu>
     </>

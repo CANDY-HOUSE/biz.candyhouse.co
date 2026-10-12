@@ -78,7 +78,7 @@ export default function AddEmployee({ tags, completionCallback }) {
       //判斷 要新增的社員email 跟 ownerEmail是不是一樣
       if (body.employeeEmail && ownerEmail && body.employeeEmail.toLowerCase() === ownerEmail.toLowerCase()) {
         setIsPending(false);
-        showError('オーナーのメールアドレスと同じメールアドレスは追加できません。');
+        showError(t('contacts.ownerEmailError'));
         return;
       }
       submit([body]);
@@ -86,14 +86,14 @@ export default function AddEmployee({ tags, completionCallback }) {
       setIsPending(false);
       setSnackbarValue({
         open: true,
-        msg: '有効なユーザー名およびメールアドレスを入力してください。いずれも空欄では登録できません。',
+        msg: t('contacts.invalidProfile'),
       });
     }
   };
 
   const handleOpenModal = async (csvData) => {
     setCustomModalOpen(false);
-    setModalTitle('ロールを選択');
+    setModalTitle(t('contacts.selectRole'));
     setModalContent(
       <CheckMember
         btnClose={setCustomModalOpen}
@@ -130,7 +130,7 @@ export default function AddEmployee({ tags, completionCallback }) {
     if (!isValidProfile(items)) {
       setSnackbarValue({
         open: true,
-        msg: '有効なユーザー名およびメールアドレスを入力してください。いずれも空欄では登録できません。',
+        msg: t('contacts.invalidProfile'),
       });
       callback && callback();
       setCustomModalOpen(false);
@@ -147,8 +147,7 @@ export default function AddEmployee({ tags, completionCallback }) {
     if (duplicateEmails.length > 0) {
       setSnackbarValue({
         open: true,
-        msg: `重複したメールアドレスが存在します。修正したデータで再度アップロードしてください。
-        ${duplicateEmails.join('\n')}`,
+        msg: `${t('contacts.duplicateEmails')}\n${duplicateEmails.join('\n')}`,
       });
       callback && callback();
       setCustomModalOpen(false);
@@ -251,7 +250,7 @@ export default function AddEmployee({ tags, completionCallback }) {
             <Grid item xs={isMobile ? 12 : 2}>
               <TextField
                 size="small"
-                label="ユーザー名"
+                label={t('contacts.userName')}
                 variant="filled"
                 fullWidth
                 required
@@ -266,10 +265,10 @@ export default function AddEmployee({ tags, completionCallback }) {
           <Grid item xs={isMobile || !tags ? 12 : 2}>
             <TextField
               size="small"
-              label="メールアドレス"
+              label={t('contacts.email')}
               variant="filled"
               error={!mailChk}
-              helperText={mailChk ? '' : 'メールアドレスの形式が正しくありません'}
+              helperText={mailChk ? '' : t('pages.login.EmailAddressFormatIsIncorrect')}
               fullWidth
               required
               value={member.employeeEmail}
@@ -285,7 +284,7 @@ export default function AddEmployee({ tags, completionCallback }) {
               <Grid item xs={isMobile ? 12 : 2}>
                 <TextField
                   size="small"
-                  label="所属（任意）"
+                  label={t('contacts.optionalDepartment')}
                   variant="filled"
                   fullWidth
                   value={member.department}
@@ -298,7 +297,7 @@ export default function AddEmployee({ tags, completionCallback }) {
               <Grid item xs={isMobile ? 12 : 2}>
                 <TextField
                   size="small"
-                  label="電話番号（任意）"
+                  label={t('contacts.optionalPhone')}
                   variant="filled"
                   fullWidth
                   value={member.phone}
@@ -321,7 +320,7 @@ export default function AddEmployee({ tags, completionCallback }) {
                 }}
               >
                 <FormLabel sx={{ mr: '15px', width: '70px' }} required>
-                  ロール
+                  {t('contacts.role')}
                 </FormLabel>
                 <FormGroup sx={{ width: '100%', display: 'flex', flexDirection: 'row' }}>
                   {tags
@@ -361,7 +360,13 @@ export default function AddEmployee({ tags, completionCallback }) {
                               checked={tagItems.includes(i.tag)}
                             />
                           }
-                          label={i.tag}
+                          label={
+                            {
+                              オーナー: t('deviceMember.role.owner'),
+                              マネージャー: t('deviceMember.role.manager'),
+                              ゲスト: t('deviceMember.role.guest'),
+                            }[i.tag] || i.tag
+                          }
                           value={i.tag}
                           key={i.tag}
                         />
@@ -385,7 +390,7 @@ export default function AddEmployee({ tags, completionCallback }) {
           )}
           {gStripe.customerInfo.isSesameApp && (
             <Button varient="text" component="label" startIcon={<QrCodeIcon />} sx={{ ml: 1 }}>
-              QRコードで追加
+              {t('contacts.addByQr')}
               <input
                 type="file"
                 hidden
@@ -395,7 +400,7 @@ export default function AddEmployee({ tags, completionCallback }) {
                     if (!userInfo) {
                       setSnackbarValue({
                         open: true,
-                        msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
+                        msg: t('contacts.qrReadFailed'),
                       });
                       return;
                     }
@@ -424,7 +429,7 @@ export default function AddEmployee({ tags, completionCallback }) {
               sx={{ height: '40px' }}
               fullWidth
             >
-              登録
+              {t('contacts.register')}
             </LoadingButton>
           </Grid>
         </Grid>

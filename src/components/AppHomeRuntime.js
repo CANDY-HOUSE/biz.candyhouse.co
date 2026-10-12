@@ -133,11 +133,10 @@ export default function AppHomeRuntime() {
           ctx.gManageEmployee.addEmployee(
             [{ friendID: friend.toLowerCase(), companyID: ctx.gStripe.customerInfo.companyID }],
             (response) => {
-              if (!response.success) showError(response.message || 'Unable to add contact');
-              else {
-                ctx.gManageEmployee.getEmployees();
-                go('/contacts');
-              }
+              // useManageEmployee displays the localized contact error.
+              if (!response.success) return;
+              ctx.gManageEmployee.getEmployees();
+              go('/contacts');
             }
           );
           return;

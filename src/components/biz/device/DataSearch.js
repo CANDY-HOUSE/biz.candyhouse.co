@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, IconButton, TextField } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
@@ -5,6 +6,7 @@ import React, { useRef, useEffect } from 'react';
 import { debounce } from 'lodash';
 
 export const DataSearch = ({ callSearch, initialValue = '' }) => {
+  const { t } = useTranslation();
   const [search, setSearch] = React.useState(initialValue);
 
   const callSearchRef = useRef(callSearch);
@@ -45,7 +47,7 @@ export const DataSearch = ({ callSearch, initialValue = '' }) => {
       <SearchIcon sx={{ color: 'action.active', ml: 2, mr: 1, mt: 0.5 }} />
       <TextField
         variant="standard"
-        placeholder="検索"
+        placeholder={t('contacts.search')}
         value={search}
         sx={{
           width: '100%',
@@ -65,7 +67,7 @@ export const DataSearch = ({ callSearch, initialValue = '' }) => {
 
       {search && (
         <IconButton
-          aria-label="clear search"
+          aria-label={t('contacts.clearSearch')}
           onClick={() => {
             setSearch('');
             debouncedSearchRef.current.cancel(); // 取消待处理的防抖调用

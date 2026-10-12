@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardHeader, CardContent, Box } from '@mui/material';
@@ -15,6 +16,7 @@ import { biz3utils } from '@utils/biz3utils';
 import UserBasicInfo from '@/components/biz/device/UserBasicInfo';
 
 const EmployeeItem = () => {
+  const { t } = useTranslation();
   const {
     gManageEmployee,
     gStripe,
@@ -72,7 +74,7 @@ const EmployeeItem = () => {
     gManageGroup.getEmployeeDeviceKeys(uid, (res) => {
       if (res.success) {
         let nresult = res.data.map((item) => {
-          let data = '常時利用';
+          let data = '';
           if (item.endAt && item.startAt) {
             item.startTime = item.startAt;
             item.endTime = item.endAt;
@@ -148,7 +150,7 @@ const EmployeeItem = () => {
     setCustomModalOpen(true);
     setModalContent(
       <CheckTable
-        title={'デバイスを選択'}
+        titleKey="contacts.selectDevices"
         data={canSelectedDevices}
         selectableRows={'single'}
         enableFilter={!gStripe.isFromApp}
@@ -261,7 +263,7 @@ const EmployeeItem = () => {
           isCsv={false}
           isBind={false}
           isDel={false}
-          text={`カード一覽`}
+          text={t('contacts.cardList')}
           columns={DataTableColumns.deviceItemCards({ gManageDevice, ref })}
         />
       )}
