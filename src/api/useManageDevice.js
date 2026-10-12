@@ -1,3 +1,4 @@
+import { appSessionRevision } from '@/services/appSession';
 import { createDevicePageCollector } from '@/services/devicePages';
 import { isAppHome } from '@/services/deviceService';
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -20,6 +21,25 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   const [companyDevices, setCompanyDevices] = useState([]); //公司用户所有设备
   const [deviceStatus, setDeviceStatus] = useState(null); //单个设备详情
   const { registerCallback, invokeCallbacks } = useCallbacks();
+  // A completed save may arrive after sign-out, an account switch, or unmount.
+  const orderScope = useRef({ key: null, revision: 0 });
+  const orderScopeKey = JSON.stringify([
+    gAuth.loginState,
+    gStripe.customerInfo.subUUID,
+    gStripe.customerInfo.companyID,
+    gStripe.customerInfo.isAnonymous,
+  ]);
+  if (orderScope.current.key !== orderScopeKey) {
+    orderScope.current.key = orderScopeKey;
+    orderScope.current.revision++;
+  }
+  useEffect(
+    () => () => {
+      orderScope.current.revision++;
+    },
+    []
+  );
+
   const companyPages = useRef(createDevicePageCollector());
   const userPages = useRef(createDevicePageCollector());
 
@@ -300,6 +320,8 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
 
   const updateDeviceOrderKey = useCallback(
     (obj, cb, orderedIds) => {
+      const revision = orderScope.current.revision;
+      const sessionRevision = appSessionRevision();
       const message = {
         action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
         obj,
@@ -307,12 +329,15 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       };
       handleSendMessage(message);
       registerCallback(message.action, message.op, (response) => {
+        if (revision !== orderScope.current.revision || sessionRevision !== appSessionRevision()) return;
         if (response.success && orderedIds) {
           const positions = new Map(orderedIds.map((id, index) => [id, index]));
           setCompanyDevices((devices) =>
-            [...devices].sort(
-              (a, b) => (positions.get(a.deviceUUID) ?? Infinity) - (positions.get(b.deviceUUID) ?? Infinity)
-            )
+            revision !== orderScope.current.revision || sessionRevision !== appSessionRevision()
+              ? devices
+              : [...devices].sort(
+                  (a, b) => (positions.get(a.deviceUUID) ?? Infinity) - (positions.get(b.deviceUUID) ?? Infinity)
+                )
           );
           // Fetch the server-generated order keys for the next move. The ordered
           // shared list also flows through the existing native persistence path.

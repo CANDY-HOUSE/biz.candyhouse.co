@@ -1,5 +1,6 @@
+import { appSessionRevision } from '@/services/appSession';
 import { useTranslation } from 'react-i18next';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
@@ -16,6 +17,24 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
   const [employeeGroups, setEmployeeGroups] = useState(null);
   const [tags, setTags] = useState([]);
   const { registerCallback, invokeCallbacks } = useCallbacks();
+  // A completed save may arrive after sign-out, an account switch, or unmount.
+  const orderScope = useRef({ key: null, revision: 0 });
+  const orderScopeKey = JSON.stringify([
+    gAuth.loginState,
+    gStripe.customerInfo.subUUID,
+    gStripe.customerInfo.companyID,
+    gStripe.customerInfo.isAnonymous,
+  ]);
+  if (orderScope.current.key !== orderScopeKey) {
+    orderScope.current.key = orderScopeKey;
+    orderScope.current.revision++;
+  }
+  useEffect(
+    () => () => {
+      orderScope.current.revision++;
+    },
+    []
+  );
 
   const getEmployees = useCallback(() => {
     let companyID = gStripe.customerInfo.companyID;
@@ -313,6 +332,8 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
 
   const reorderEmployees = useCallback(
     (items, cb) => {
+      const revision = orderScope.current.revision;
+      const sessionRevision = appSessionRevision();
       const messageData = {
         action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
         items,
@@ -320,14 +341,19 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
       };
       sendMessage(messageData);
       registerCallback(messageData.action, messageData.op, (response) => {
+        if (revision !== orderScope.current.revision || sessionRevision !== appSessionRevision()) return;
         if (response.success) {
           const positions = new Map(items.map((item, index) => [item.friendUUID, index]));
-          setEmployees((previous) => ({
-            ...previous,
-            Items: [...previous.Items].sort(
-              (a, b) => (positions.get(a.subUUID) ?? Infinity) - (positions.get(b.subUUID) ?? Infinity)
-            ),
-          }));
+          setEmployees((previous) =>
+            revision !== orderScope.current.revision || sessionRevision !== appSessionRevision()
+              ? previous
+              : {
+                  ...previous,
+                  Items: [...previous.Items].sort(
+                    (a, b) => (positions.get(a.subUUID) ?? Infinity) - (positions.get(b.subUUID) ?? Infinity)
+                  ),
+                }
+          );
         }
         cb?.(response);
       });

@@ -12,6 +12,7 @@ let guestRefreshing;
 let initialToken;
 let anonymous = false;
 let sessionGeneration = 0;
+export const appSessionRevision = () => sessionGeneration;
 export const initialAppToken = () => initialToken;
 export const isGuestAppSession = () => anonymous;
 
