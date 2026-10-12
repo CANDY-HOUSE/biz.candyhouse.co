@@ -95,7 +95,10 @@ const MobileContacts = () => {
                   friendUUID: item.subUUID,
                   rank: -index,
                 }));
-                gManageEmployee.reorderEmployees(reorderedData);
+                settbData(newData);
+                gManageEmployee.reorderEmployees(reorderedData, (response) => {
+                  if (!response.success) gManageEmployee.getEmployees();
+                });
               }
         }
       />

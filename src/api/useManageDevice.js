@@ -299,16 +299,29 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
   );
 
   const updateDeviceOrderKey = useCallback(
-    (obj, cb) => {
+    (obj, cb, orderedIds) => {
       const message = {
         action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
         obj,
         op: 'updateDeviceOrderKey',
       };
       handleSendMessage(message);
-      registerCallback(message.action, message.op, cb);
+      registerCallback(message.action, message.op, (response) => {
+        if (response.success && orderedIds) {
+          const positions = new Map(orderedIds.map((id, index) => [id, index]));
+          setCompanyDevices((devices) =>
+            [...devices].sort(
+              (a, b) => (positions.get(a.deviceUUID) ?? Infinity) - (positions.get(b.deviceUUID) ?? Infinity)
+            )
+          );
+          // Fetch the server-generated order keys for the next move. The ordered
+          // shared list also flows through the existing native persistence path.
+          getCompanyDevices();
+        }
+        cb?.(response);
+      });
     },
-    [gStripe.customerInfo.companyID, handleSendMessage, registerCallback]
+    [gStripe.customerInfo.companyID, handleSendMessage, registerCallback, getCompanyDevices]
   );
 
   const getDevicesNotifyStatus = useCallback(

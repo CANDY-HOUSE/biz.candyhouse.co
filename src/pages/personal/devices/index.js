@@ -242,12 +242,11 @@ const Devices = () => {
       if (!moved) return;
       const prevKey = newData[newIndex - 1]?.orderKey;
       const nextKey = newData[newIndex + 1]?.orderKey;
-      gManageDevice.updateDeviceOrderKey({
-        subUUID: moved.subUUID,
-        deviceUUID: moved.deviceUUID,
-        prevKey,
-        nextKey,
-      });
+      gManageDevice.updateDeviceOrderKey(
+        { subUUID: moved.subUUID, deviceUUID: moved.deviceUUID, prevKey, nextKey },
+        undefined,
+        newData.map((device) => device.deviceUUID)
+      );
     },
     [gManageDevice, ssmDevices]
   );

@@ -1,7 +1,5 @@
 import { appPromotion } from '@/services/appPromotion';
-import { appPageRefreshEvent, requestAppRefreshData } from '@/services/appTabRefresh';
-import { ACTION_TYPES } from '@/constants/messageConstants';
-import { isAndroidShell } from '@/services/appBridge';
+import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
 import { isAppHome } from '@/services/deviceService';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
@@ -189,34 +187,39 @@ const MobileMyHomepage = () => {
     }, true);
   };
 
+  const { getCurrentUserInfo } = gManageEmployee;
   useEffect(() => {
     if (!isAppHome) return;
-    const refresh = ({ detail: { tasks, signal } }) => {
-      const apply = (setter) => (value) => {
-        if (!value || value.success === false) throw new Error('Page refresh failed');
-        if (!signal.aborted) setter(value);
-      };
-      tasks.push(
-        requestAuthState().then(apply(setAuthState)),
-        requestAppVersion().then(apply(setAppVersion)),
-        requestNotificationStatus().then(apply((response) => setNotificationEnabled(Boolean(response.enabled)))),
-        appPromotion.refresh(gStripe.customerInfo.subUUID)
-      );
-      if (!gStripe.customerInfo.isAnonymous) {
-        tasks.push(
-          requestAppRefreshData(
-            { action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE, op: 'currentInfo', excludeLogins: true },
-            (message) => (message.op === 'currentInfo' ? true : null),
-            signal
-          ).then(apply(setCurrentUserInfo))
-        );
-      }
+    let active = true;
+    const apply = (setter) => (value) => {
+      if (active && value && value.success !== false) setter(value);
     };
-    window.addEventListener(appPageRefreshEvent, refresh);
-    return () => window.removeEventListener(appPageRefreshEvent, refresh);
+    const unsubscribe = onNativeEvent(({ type }) => {
+      if (type !== 'resume') return;
+      // Preserve the last known state if a background refresh fails.
+      requestAuthState()
+        .then(apply(setAuthState))
+        .catch(() => {});
+      requestAppVersion()
+        .then(apply(setAppVersion))
+        .catch(() => {});
+      requestNotificationStatus()
+        .then(apply((response) => setNotificationEnabled(Boolean(response.enabled))))
+        .catch(() => {});
+      if (!gStripe.customerInfo.isAnonymous) {
+        getCurrentUserInfo((response) => {
+          if (active && response.success && response.data) setCurrentUserInfo(response.data);
+        }, true);
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [
     gStripe.customerInfo.subUUID,
     gStripe.customerInfo.isAnonymous,
+    getCurrentUserInfo,
     requestAuthState,
     requestAppVersion,
     requestNotificationStatus,

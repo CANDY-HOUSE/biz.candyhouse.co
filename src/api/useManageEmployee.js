@@ -4,6 +4,8 @@ import { gConfig } from '@constants/gConfig';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
+import WebSocketManager from '@/websocket/WebSocketManager.ts';
+import { isAppHome } from '@/services/deviceService';
 import { setEnvId } from '@/utils/envIdentity.js';
 
 const PubedEmployees = 'pubEmployees';
@@ -317,7 +319,18 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
         op: 'order',
       };
       sendMessage(messageData);
-      registerCallback(messageData.action, messageData.op, cb);
+      registerCallback(messageData.action, messageData.op, (response) => {
+        if (response.success) {
+          const positions = new Map(items.map((item, index) => [item.friendUUID, index]));
+          setEmployees((previous) => ({
+            ...previous,
+            Items: [...previous.Items].sort(
+              (a, b) => (positions.get(a.subUUID) ?? Infinity) - (positions.get(b.subUUID) ?? Infinity)
+            ),
+          }));
+        }
+        cb?.(response);
+      });
     },
     [registerCallback]
   );
@@ -492,6 +505,11 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     }
     getEmployees();
   }, [gStripe.isFromApp, gStripe.customerInfo.companyID, getEmployees]);
+
+  useEffect(() => {
+    if (!isAppHome || gStripe.customerInfo.isAnonymous !== false) return;
+    return WebSocketManager.onConnectionIdChange(() => getEmployees());
+  }, [gStripe.customerInfo.isAnonymous, getEmployees]);
 
   useWebSocket(ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE, handleEmployeesResponse);
   useWebSocket(ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE_GROUP, handleEmployeesResponse);
