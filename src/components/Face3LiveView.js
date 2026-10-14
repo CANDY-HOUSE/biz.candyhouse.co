@@ -53,13 +53,20 @@ export default function Face3LiveView({ device, onClose }) {
   const { gFace3 } = useContext(GlobalStateContext);
   const { viewFace3Device, face3StreamStates } = gFace3;
 
+  const containerRef = useRef(null);
   const videoRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const pipDragRef = useRef(null);
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
      state 的闭包会拿到旧值。 */
   const viewerRef = useRef(null);
   const [phase, setPhase] = useState('connecting'); // connecting | playing | error
   const [errorKey, setErrorKey] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [hasLocalVideo, setHasLocalVideo] = useState(false);
+  const [localIsMain, setLocalIsMain] = useState(false);
+  const [pipCorner, setPipCorner] = useState('bottom-right');
+  const [pipPosition, setPipPosition] = useState(null);
   /* 自动起播被拦时置上，用来提示用户点一下。WebView 里
      mediaPlaybackRequiresUserGesture 默认拦截连静音媒体也不放过。 */
   const [needsTap, setNeedsTap] = useState(false);
@@ -73,6 +80,10 @@ export default function Face3LiveView({ device, onClose }) {
 
     let cancelled = false;
     setPhase('connecting');
+    setHasLocalVideo(false);
+    setLocalIsMain(false);
+    setPipCorner('bottom-right');
+    setPipPosition(null);
     setNeedsTap(false);
     setErrorKey('');
 
@@ -92,6 +103,20 @@ export default function Face3LiveView({ device, onClose }) {
         return;
       }
       viewerRef.current = startFace3Viewer(message.data, {
+        onLocalStream: (stream) => {
+          if (cancelled) return;
+          const el = localVideoRef.current;
+          if (!el) return;
+          el.srcObject = stream;
+          /* 本地预览必须静音，否则麦克风会再次收到扬声器声音形成回声。
+             镜像只作用于本地画面，发送给 Face3 的视频保持原始方向。 */
+          el.muted = true;
+          el.play().catch((err) => {
+            // eslint-disable-next-line no-console
+            console.warn('[face3Viewer] local preview play failed:', err?.name || err);
+          });
+          setHasLocalVideo(true);
+        },
         onStream: (stream) => {
           if (cancelled) return;
           const el = videoRef.current;
@@ -151,6 +176,7 @@ export default function Face3LiveView({ device, onClose }) {
       viewerRef.current?.close();
       viewerRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
+      if (localVideoRef.current) localVideoRef.current.srcObject = null;
     };
   }, [deviceUUID, streamReady, viewFace3Device, attempt]);
 
@@ -227,14 +253,126 @@ export default function Face3LiveView({ device, onClose }) {
 
   const retry = () => setAttempt((n) => n + 1);
 
+  const PIP_MARGIN = 12;
+  const pipCornerStyle = {
+    'top-left': { top: PIP_MARGIN, left: PIP_MARGIN },
+    'top-right': { top: PIP_MARGIN, right: PIP_MARGIN },
+    'bottom-left': { bottom: PIP_MARGIN, left: PIP_MARGIN },
+    'bottom-right': { bottom: PIP_MARGIN, right: PIP_MARGIN },
+  }[pipCorner];
+
+  const beginPipDrag = (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    const container = containerRef.current;
+    if (!container) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const containerRect = container.getBoundingClientRect();
+    const pipRect = event.currentTarget.getBoundingClientRect();
+    const left = pipRect.left - containerRect.left;
+    const top = pipRect.top - containerRect.top;
+    pipDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left,
+      top,
+      currentLeft: left,
+      currentTop: top,
+      width: pipRect.width,
+      height: pipRect.height,
+      moved: false,
+    };
+    setPipPosition({ left, top });
+  };
+
+  const movePip = (event) => {
+    const drag = pipDragRef.current;
+    const container = containerRef.current;
+    if (!drag || !container || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (Math.hypot(dx, dy) > 6) drag.moved = true;
+    const rect = container.getBoundingClientRect();
+    const maxLeft = Math.max(PIP_MARGIN, rect.width - drag.width - PIP_MARGIN);
+    const maxTop = Math.max(PIP_MARGIN, rect.height - drag.height - PIP_MARGIN);
+    const left = Math.min(Math.max(PIP_MARGIN, drag.left + dx), maxLeft);
+    const top = Math.min(Math.max(PIP_MARGIN, drag.top + dy), maxTop);
+    drag.currentLeft = left;
+    drag.currentTop = top;
+    setPipPosition({ left, top });
+  };
+
+  const finishPipDrag = (event, cancelled = false) => {
+    const drag = pipDragRef.current;
+    const container = containerRef.current;
+    if (!drag || !container || drag.pointerId !== event.pointerId) return;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    const rect = container.getBoundingClientRect();
+    const maxLeft = Math.max(PIP_MARGIN, rect.width - drag.width - PIP_MARGIN);
+    const maxTop = Math.max(PIP_MARGIN, rect.height - drag.height - PIP_MARGIN);
+    const corners = [
+      ['top-left', PIP_MARGIN, PIP_MARGIN],
+      ['top-right', maxLeft, PIP_MARGIN],
+      ['bottom-left', PIP_MARGIN, maxTop],
+      ['bottom-right', maxLeft, maxTop],
+    ];
+    const nearest = corners.reduce(
+      (best, item) => {
+        const distance = (drag.currentLeft - item[1]) ** 2 + (drag.currentTop - item[2]) ** 2;
+        return distance < best.distance ? { name: item[0], distance } : best;
+      },
+      { name: pipCorner, distance: Number.POSITIVE_INFINITY }
+    );
+    setPipCorner(nearest.name);
+    setPipPosition(null);
+    pipDragRef.current = null;
+    if (!cancelled && !drag.moved) setLocalIsMain((value) => !value);
+  };
+
+  const videoStyle = (isLocal) => {
+    const isPip = isLocal ? !localIsMain : localIsMain;
+    if (!isPip) {
+      return {
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        background: '#000',
+        transform: isLocal ? 'scaleX(-1)' : 'none',
+      };
+    }
+    return {
+      position: 'absolute',
+      ...(pipPosition ? { left: pipPosition.left, top: pipPosition.top } : pipCornerStyle),
+      width: 'clamp(84px, 25%, 132px)',
+      aspectRatio: '4 / 3',
+      objectFit: 'cover',
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.7)',
+      boxShadow: '0 3px 12px rgba(0,0,0,0.45)',
+      background: '#111',
+      transform: isLocal ? 'scaleX(-1)' : 'none',
+      touchAction: 'none',
+      cursor: pipPosition ? 'grabbing' : 'grab',
+      zIndex: 2,
+    };
+  };
+
   /* 铺满父容器（卡片的 16:9 预览框）。父级已是 position:relative + overflow:hidden，
      所以这里 inset:0 就正好落在占位框的位置和尺寸上。 */
   return (
-    <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#000' }}>
+    <Box ref={containerRef} sx={{ position: 'absolute', inset: 0, bgcolor: '#000', overflow: 'hidden' }}>
       <video
         ref={videoRef}
         autoPlay
         playsInline
+        onPointerDown={(event) => localIsMain && beginPipDrag(event)}
+        onPointerMove={(event) => localIsMain && movePip(event)}
+        onPointerUp={(event) => localIsMain && finishPipDrag(event)}
+        onPointerCancel={(event) => localIsMain && finishPipDrag(event, true)}
         onClick={() => {
           /* 点击是真手势：解除静音并起播，让用户听到声音。muted 不写成 JSX
              属性(React 老 bug 不生效)，这里命令式设。失败必须记下来——之前
@@ -250,12 +388,23 @@ export default function Face3LiveView({ device, onClose }) {
             });
         }}
         style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
+          ...videoStyle(false),
           display: phase === 'playing' ? 'block' : 'none',
+        }}
+      />
+
+      <video
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        onPointerDown={(event) => !localIsMain && beginPipDrag(event)}
+        onPointerMove={(event) => !localIsMain && movePip(event)}
+        onPointerUp={(event) => !localIsMain && finishPipDrag(event)}
+        onPointerCancel={(event) => !localIsMain && finishPipDrag(event, true)}
+        style={{
+          ...videoStyle(true),
+          display: phase === 'playing' && hasLocalVideo ? 'block' : 'none',
         }}
       />
 
@@ -325,6 +474,7 @@ export default function Face3LiveView({ device, onClose }) {
           right: 8,
           bgcolor: 'rgba(0,0,0,0.5)',
           color: 'white',
+          zIndex: 3,
           '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' },
         }}
       >

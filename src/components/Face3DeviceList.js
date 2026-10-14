@@ -20,6 +20,7 @@ import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import Face3LiveView from '@/components/Face3LiveView';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
+import { useNavigateUtils } from '@/hooks/useNavigateUtils';
 
 /** 在线状态的刷新间隔。
  *
@@ -241,8 +242,9 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, waking, isViewing }) 
  * 数据来自 WS 路由 biz3Face3Qr 的 op:"list" —— 云端从连接记录取 subUUID，
  * 只会返回当前登录用户名下的设备（见 doc/face3-identity-model.md 第 5.7 节）。
  */
-export default function Face3DeviceList({ onOpen }) {
+export default function Face3DeviceList() {
   const { t } = useTranslation();
+  const { navigateToDeviceDetail } = useNavigateUtils();
   const { gFace3, gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const [attempt, setAttempt] = useState(0);
   const floatingAddRef = useRef(null);
@@ -444,7 +446,7 @@ export default function Face3DeviceList({ onOpen }) {
             <DeviceCard
               key={d.deviceUUID}
               device={d}
-              onOpen={onOpen}
+              onOpen={navigateToDeviceDetail}
               onWake={handleWake}
               onCloseView={() =>
                 setViewingIds((ids) => {

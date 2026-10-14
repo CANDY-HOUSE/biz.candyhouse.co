@@ -6,7 +6,7 @@ import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
  * 设备是 MASTER（推流），H5 是 VIEWER（收流）。流程：
  *
  *   1. 连信令通道（WSS，用云端签发的受限临时凭证签名）
- *   2. 建 RTCPeerConnection，接收设备音视频并把 Viewer 麦克风发给 Master
+ *   2. 建 RTCPeerConnection，接收设备音视频并把 Viewer 摄像头、麦克风发给 Master
  *   3. 发 SDP offer → 设备回 answer
  *   4. 双向交换 ICE candidate
  *   5. ontrack 拿到远端流，挂到 <video>
@@ -88,16 +88,24 @@ const brief = (v) => {
  * @param {object} cfg  op:"viewer" 返回的 data
  * @param {object} handlers
  * @param {(stream: MediaStream) => void} handlers.onStream  拿到远端流
+ * @param {(stream: MediaStream) => void} [handlers.onLocalStream] 拿到本地摄像头流，用于画中画预览
  * @param {(reasonKey: string) => void} handlers.onError     出错，参数是 i18n key 后缀
  * @param {(state: string) => void} [handlers.onState]       连接状态变化，用于 UI 提示
  * @returns {{ close: () => void }} 调用方必须在卸载时 close()
  */
-export function startFace3Viewer(cfg, { onStream, onError, onState }) {
+export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onState }) {
   const { channelArn, region, clientId, credentials, iceServers } = cfg || {};
 
   let signalingClient = null;
   let peer = null;
+  let videoTr = null;
+  let audioTr = null;
+  let cameraStream = null;
+  let rotatedCameraStream = null;
+  let cameraSource = null;
+  let cameraDrawTimer = null;
   let microphoneStream = null;
+  let localMediaStarted = false;
   let closed = false;
   let timer = null;
   let offerTimer = null;
@@ -148,6 +156,14 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     clearTimeout(timer);
     clearInterval(offerTimer);
     clearInterval(statsTimer);
+    clearInterval(cameraDrawTimer);
+    rotatedCameraStream?.getTracks().forEach((track) => track.stop());
+    rotatedCameraStream = null;
+    if (cameraSource) {
+      cameraSource.pause();
+      cameraSource.srcObject = null;
+      cameraSource = null;
+    }
     /* 顺序要紧：先摘监听再关，否则关闭动作本身会触发 onError 回调，
        把一次正常的主动关闭报成失败 */
     try {
@@ -159,6 +175,8 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     } catch {
       /* 已关就算了 */
     }
+    cameraStream?.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
     microphoneStream?.getTracks().forEach((track) => track.stop());
     microphoneStream = null;
     try {
@@ -257,7 +275,102 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     iceTransportPolicy: 'all',
   });
 
-  /* ontrack **每条轨道各触发一次**：这里声明了 video + audio 两个 recvonly
+  /* 先用空的 sendrecv transceiver 完成协商。只有 MASTER 回了 SDP answer，才说明
+     Face3 已经上线；这时再开启手机摄像头和麦克风，并通过 replaceTrack 接入
+     已协商好的 sender，不需要重新发 offer。 */
+  const startLocalMedia = async () => {
+    if (closed || localMediaStarted) return;
+    localMediaStarted = true;
+
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: 'user',
+          width: { ideal: 600, max: 600 },
+          height: { ideal: 450, max: 450 },
+          aspectRatio: { ideal: 4 / 3 },
+          frameRate: { ideal: 15, max: 15 },
+        },
+      });
+      if (closed) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+        return;
+      }
+      const cameraTrack = cameraStream.getVideoTracks()[0];
+      if (cameraTrack) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 450;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        if (!ctx || !canvas.captureStream) throw new Error('Canvas video capture unavailable');
+        const source = document.createElement('video');
+        cameraSource = source;
+        source.muted = true;
+        source.playsInline = true;
+        source.srcObject = cameraStream;
+        await source.play();
+        if (closed) return;
+
+        const draw = () => {
+          if (closed || !source.videoWidth || !source.videoHeight) return;
+          // 完整等比缩放，并按固件写屏方向将 600×450 旋转为 450×600。
+          const scale = Math.min(600 / source.videoWidth, 450 / source.videoHeight);
+          const width = source.videoWidth * scale;
+          const height = source.videoHeight * scale;
+          ctx.setTransform(0, 1, -1, 0, 450, 0);
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, 600, 450);
+          ctx.drawImage(source, (600 - width) / 2, (450 - height) / 2, width, height);
+        };
+        draw();
+        rotatedCameraStream = canvas.captureStream(15);
+        cameraDrawTimer = setInterval(draw, 1000 / 15);
+        await videoTr.sender.replaceTrack(rotatedCameraStream.getVideoTracks()[0]);
+        if (closed) return;
+        onLocalStream?.(cameraStream);
+      }
+      logi('camera ' + (cameraTrack ? 'enabled' : 'track unavailable'), cameraTrack?.getSettings?.());
+    } catch (err) {
+      clearInterval(cameraDrawTimer);
+      rotatedCameraStream?.getTracks().forEach((track) => track.stop());
+      rotatedCameraStream = null;
+      if (cameraSource) {
+        cameraSource.pause();
+        cameraSource.srcObject = null;
+        cameraSource = null;
+      }
+      cameraStream?.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+      logi('camera unavailable, receive-only video', err);
+    }
+    if (closed) return;
+    try {
+      microphoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: false,
+      });
+      if (closed) {
+        microphoneStream.getTracks().forEach((track) => track.stop());
+        microphoneStream = null;
+        return;
+      }
+      const microphoneTrack = microphoneStream.getAudioTracks()[0];
+      if (microphoneTrack) await audioTr.sender.replaceTrack(microphoneTrack);
+      logi('microphone ' + (microphoneTrack ? 'enabled' : 'track unavailable'));
+    } catch (err) {
+      microphoneStream?.getTracks().forEach((track) => track.stop());
+      microphoneStream = null;
+      logi('microphone unavailable, receive-only audio', err);
+    }
+  };
+
+  /* ontrack **每条轨道各触发一次**：这里声明了 video + audio 两个 sendrecv
      transceiver，所以会来两次，而且 e.streams[0] 是同一个 MediaStream。
      照单上抛的话调用方会二次赋 srcObject，那等于发起一次新的 load，把上一次
      还没完成的 play() 打断——实测报 AbortError，画面停在一个播放按钮上。
@@ -358,6 +471,15 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
         if (r.type === 'outbound-rtp' && kind === 'audio') {
           out.microphone = { bytes: r.bytesSent, packets: r.packetsSent };
         }
+        if (r.type === 'outbound-rtp' && kind === 'video') {
+          out.camera = {
+            bytes: r.bytesSent,
+            packets: r.packetsSent,
+            framesEncoded: r.framesEncoded,
+            fps: r.framesPerSecond,
+            size: `${r.frameWidth || 0}x${r.frameHeight || 0}`,
+          };
+        }
         if (r.type === 'candidate-pair' && r.state === 'succeeded' && r.nominated) {
           const lc = byId.get(r.localCandidateId);
           const rc = byId.get(r.remoteCandidateId);
@@ -430,32 +552,9 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     logi('signaling open');
     say('signaling');
     try {
-      /* 不发视频；音频优先用 sendrecv，把 Viewer 麦克风送给设备，同时继续接收
-         设备声音。用户拒绝权限或运行环境没有麦克风时，降级为只收音频，不影响观看。 */
-      const videoTr = peer.addTransceiver('video', { direction: 'recvonly' });
-      let audioTr;
-      try {
-        microphoneStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-          video: false,
-        });
-        if (closed) {
-          microphoneStream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        const microphoneTrack = microphoneStream.getAudioTracks()[0];
-        audioTr = microphoneTrack
-          ? peer.addTransceiver(microphoneTrack, { direction: 'sendrecv', streams: [microphoneStream] })
-          : peer.addTransceiver('audio', { direction: 'recvonly' });
-        logi('microphone ' + (microphoneTrack ? 'enabled' : 'track unavailable'));
-      } catch (err) {
-        logi('microphone unavailable, receive-only audio', err);
-        audioTr = peer.addTransceiver('audio', { direction: 'recvonly' });
-      }
+      /* 先声明双向媒体能力，但此时不访问本地摄像头和麦克风。 */
+      videoTr = peer.addTransceiver('video', { direction: 'sendrecv' });
+      audioTr = peer.addTransceiver('audio', { direction: 'sendrecv' });
       /* rtx 要留着：H264 的丢包重传靠它，去掉会明显掉画质 */
       preferCodecs(videoTr, 'video', ['video/h264', 'video/rtx']);
       preferCodecs(audioTr, 'audio', ['audio/pcma', 'audio/pcmu']);
@@ -523,6 +622,7 @@ export function startFace3Viewer(cfg, { onStream, onError, onState }) {
     try {
       await peer.setRemoteDescription(answer);
       say('answered');
+      startLocalMedia();
     } catch (e) {
       fail('errPeerFailed', e);
     }

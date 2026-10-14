@@ -56,16 +56,16 @@ flowchart LR
 
 ## 代码入口
 
-| Path | Responsibility |
-| --- | --- |
-| src/components/AppBootstrap.js | Session startup + offline fallback |
-| src/components/AppHomeRuntime.js | Cloud/BLE events, key handoff, navigation |
-| src/components/AppOfflineDevices.js | Local data + shared device list + BLE |
-| src/services/appBridge.js | Trusted native MessagePort requests |
-| src/services/appSession.js | Web/legacy/guest session selection |
-| src/services/appOperations.js | Existing socket app-operation adapter |
+| Path                                                            | Responsibility                                                    |
+| --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| src/components/AppBootstrap.js                                  | Session startup + offline fallback                                |
+| src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                         |
+| src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                             |
+| src/services/appBridge.js                                       | Trusted native MessagePort requests                               |
+| src/services/appSession.js                                      | Web/legacy/guest session selection                                |
+| src/services/appOperations.js                                   | Existing socket app-operation adapter                             |
 | src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation |
-| src/services/appPageCache.js + public/app-worker.js | Automatic public page cache |
-| src/components/BackButton.js | Shared PC and Web App back button |
-| src/api + src/websocket | Existing business requests and socket lifecycle |
-| src/i18n | ja / en / zh-CN / zh-TW UI strings |
+| src/services/appPageCache.js + public/app-worker.js             | Automatic public page cache                                       |
+| src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
+| src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
+| src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
