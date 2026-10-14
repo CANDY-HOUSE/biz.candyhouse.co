@@ -18,6 +18,11 @@ import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
 /** 从发起到出画的整体超时。超过就当失败，让用户重试而不是无限转圈。 */
 const CONNECT_TIMEOUT_MS = 30000;
 
+// Keep the Viewer camera at 15 fps; Face3 pauses its local preview work during a call.
+const CAMERA_STREAM_FPS = 15;
+// WebRTC maxBitrate uses bits per second (256 kbps).
+const CAMERA_MAX_BITRATE_BPS = 256000;
+
 /**
  * 重发 offer 的间隔。
  *
@@ -325,8 +330,18 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
           ctx.drawImage(source, (600 - width) / 2, (450 - height) / 2, width, height);
         };
         draw();
-        rotatedCameraStream = canvas.captureStream(15);
-        cameraDrawTimer = setInterval(draw, 1000 / 15);
+        rotatedCameraStream = canvas.captureStream(CAMERA_STREAM_FPS);
+        cameraDrawTimer = setInterval(draw, 1000 / CAMERA_STREAM_FPS);
+        // Apply the cap before attaching the track so startup cannot send uncapped video.
+        const parameters = videoTr.sender.getParameters();
+        if (!parameters.encodings?.length) throw new Error('Video sender has no negotiated encoding');
+        parameters.encodings.forEach((encoding) => {
+          encoding.maxBitrate = CAMERA_MAX_BITRATE_BPS;
+          encoding.maxFramerate = CAMERA_STREAM_FPS;
+        });
+        parameters.degradationPreference = 'maintain-framerate';
+        await videoTr.sender.setParameters(parameters);
+        if (closed) return;
         await videoTr.sender.replaceTrack(rotatedCameraStream.getVideoTracks()[0]);
         if (closed) return;
         onLocalStream?.(cameraStream);
@@ -553,7 +568,10 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
     say('signaling');
     try {
       /* 先声明双向媒体能力，但此时不访问本地摄像头和麦克风。 */
-      videoTr = peer.addTransceiver('video', { direction: 'sendrecv' });
+      videoTr = peer.addTransceiver('video', {
+        direction: 'sendrecv',
+        sendEncodings: [{ maxBitrate: CAMERA_MAX_BITRATE_BPS, maxFramerate: CAMERA_STREAM_FPS }],
+      });
       audioTr = peer.addTransceiver('audio', { direction: 'sendrecv' });
       /* rtx 要留着：H264 的丢包重传靠它，去掉会明显掉画质 */
       preferCodecs(videoTr, 'video', ['video/h264', 'video/rtx']);
