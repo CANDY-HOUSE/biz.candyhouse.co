@@ -1,6 +1,6 @@
 import lock from './lock.png';
 import unlock from './unlock.png';
-import disablelock from './disablelock.png';
+import disablelock from './disablelock.svg';
 import botLock from './swtich_locked.png';
 import botUnLock from './swtich_unlocked.png';
 import botNoSign from './swtich_no_ble.png';
