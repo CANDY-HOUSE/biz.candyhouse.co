@@ -488,6 +488,7 @@
     "errInsecureContext": "当前页面不是 HTTPS，浏览器禁用了加密接口，无法播放。请用 https 或 localhost 打开"
   },
   "appHome": {
+    "registrationNetworkRequired": "请连接网络后再注册",
     "noDevices": "从⊕开始注册新设备，或扫描二维码获取已注册设备的使用权限",
     "sesame": "芝麻",
     "vision": "视觉",

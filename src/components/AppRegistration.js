@@ -9,15 +9,16 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { cloudCallback } from '@/services/cloudCallback';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, CircularProgress, List, ListItemButton, Divider, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress, List, ListItemButton, Divider, Stack, Typography } from '@mui/material';
 import { Bluetooth, BluetoothConnected, BluetoothDisabled } from '@mui/icons-material';
 import { deviceService } from '@/services/deviceService';
-import BleStatusBar from './BleStatusBar';
+import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
 import AppRefreshIndicator from './AppRefreshIndicator';
+import BleStatusBar from './BleStatusBar';
 
 export default function AppRegistration() {
   const { t } = useTranslation();
-  const { gManageDevice, gStripe } = useContext(GlobalStateContext);
+  const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const navigate = useNavigate();
   const active = useRef(false);
   const container = useRef(null);
@@ -25,21 +26,24 @@ export default function AppRegistration() {
   const [refreshing, setRefreshing] = useState(false);
   const [discovery, setDiscovery] = useState({ devices: [] });
   const [busy, setBusy] = useState('');
-  const [error, setError] = useState('');
+  const registering = useRef(false);
+  const showNotice = (message) => setSnackbarValue({ open: true, severity: 'info', msg: message });
   const start = async () => {
-    setError('');
     setRefreshing(true);
     try {
       await deviceService.request('scanStart');
     } catch (e) {
-      if (active.current) setError(e.message);
+      if (active.current) showNotice(e.message);
     } finally {
       if (active.current) setRefreshing(false);
     }
   };
   useEffect(() => {
     active.current = true;
-    const unsubscribe = deviceService.onDiscovery(setDiscovery);
+    const unsubscribe = deviceService.onDiscovery((data) => {
+      setDiscovery(data);
+      if (data.error) showNotice(data.error);
+    });
     start();
     return () => {
       active.current = false;
@@ -96,8 +100,17 @@ export default function AppRegistration() {
     };
   }, [busy, refreshing]);
   const register = async (device) => {
+    if (registering.current) return;
+    if (navigator.onLine === false || WebSocketManager.getStatus() !== WS_STATUS.CONNECTED) {
+      showNotice(t('appHome.registrationNetworkRequired'));
+      return;
+    }
+    if (discovery.bluetoothOff) {
+      showNotice(t('lockSettings.connectBluetooth'));
+      return;
+    }
+    registering.current = true;
     setBusy(device.deviceUUID);
-    setError('');
     try {
       const result = await deviceService.request('register', { deviceUUID: device.deviceUUID });
       await cloudCallback((cb) => gManageDevice.addSesameDevicesToBiz3([result.data], cb));
@@ -105,7 +118,6 @@ export default function AppRegistration() {
         rememberGuestDevice(gStripe.customerInfo.subUUID, result.data);
       await deviceService.request('keysUploaded', { deviceUUID: device.deviceUUID });
       if (isScriptBotModel(result.data.deviceModel)) {
-        await deviceService.request('scripts', { deviceUUID: device.deviceUUID });
         await initializeBotScripts(device.deviceUUID, [], 0, true);
       }
       gManageDevice.getCompanyDevices(true);
@@ -132,15 +144,23 @@ export default function AppRegistration() {
         }
       }
     } catch (e) {
-      if (active.current) setError(e.message);
+      if (active.current) {
+        const message =
+          e.message === 'Registration requires network'
+            ? t('appHome.registrationNetworkRequired')
+            : e.message === 'Bluetooth disconnected'
+              ? t('lockSettings.connectBluetooth')
+              : e.message;
+        showNotice(message);
+      }
     } finally {
+      registering.current = false;
       if (active.current) setBusy('');
     }
   };
   return (
     <Box ref={container} sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}>
       <AppRefreshIndicator distance={pullDistance} refreshing={refreshing} />
-      {(error || discovery.error) && <Alert severity="error">{error || discovery.error}</Alert>}
       <BleStatusBar bluetoothOff={discovery.bluetoothOff} />
       <List sx={{ px: 2, display: discovery.devices.length ? 'block' : 'none' }}>
         {discovery.devices.map((device) => {

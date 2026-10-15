@@ -1,4 +1,5 @@
 import { isAppLockModel } from '@/services/appLockSettings';
+import { deviceService, isAppHome } from '@/services/deviceService';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { Box, IconButton } from '@mui/material';
 import React, { useState, useEffect, useMemo, useContext, useRef } from 'react';
@@ -24,11 +25,16 @@ const VIotSwitch = ({
 }) => {
   const { setSnackbarValue } = useContext(GlobalStateContext);
   const inFlight = useRef(false);
+  const lastCommandAt = useRef(-Infinity);
   const execute = async (command) => {
-    if (disabled || inFlight.current) return;
+    const lock = gUtils.isLockModel(model);
+    const now = performance.now();
+    if (disabled || inFlight.current || (lock && now - lastCommandAt.current < 1000)) return;
+    lastCommandAt.current = now;
     inFlight.current = true;
-    onCommandStart?.();
     try {
+      if (lock && isAppHome) deviceService.notify('haptic', { duration: 100 });
+      onCommandStart?.();
       await command();
     } catch (error) {
       setSnackbarValue?.({

@@ -158,12 +158,13 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
             color: 'text.secondary',
             textAlign: 'right',
             ...(label === 'UUID'
-              ? { ml: 'auto', whiteSpace: 'nowrap', fontSize: 'clamp(10px, 3.3vw, 14px)', letterSpacing: 0 }
+              ? { ml: 'auto', whiteSpace: 'nowrap', fontSize: 'clamp(10px, 2.9vw, 12px)', letterSpacing: 0 }
               : { overflowWrap: 'anywhere', maxWidth: '65%' }),
           }}
         >
           {value}
         </Typography>
+        {label === 'UUID' && click && <SvgIcon component={SvgArrow} />}
       </ListItem>
       <Divider variant="middle" sx={{ opacity: 0.4 }} />
     </React.Fragment>

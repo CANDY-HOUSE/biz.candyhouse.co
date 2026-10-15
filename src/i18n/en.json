@@ -488,6 +488,7 @@
     "errInsecureContext": "This page is not served over HTTPS, so the browser disables the crypto API needed for playback. Open it over https or localhost."
   },
   "appHome": {
+    "registrationNetworkRequired": "Connect to the internet to register",
     "noDevices": "Press ⊕ to register a new device, or scan the QR code to obtain access to an already registered device",
     "sesame": "Sesame",
     "vision": "Vision",

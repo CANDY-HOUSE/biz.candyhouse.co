@@ -488,6 +488,7 @@
     "errInsecureContext": "目前頁面不是 HTTPS，瀏覽器停用了加密介面，無法播放。請用 https 或 localhost 開啟"
   },
   "appHome": {
+    "registrationNetworkRequired": "請連接網路後再註冊",
     "noDevices": "從⊕開始註冊新設備，或掃描QR碼獲取已註冊設備的使用權限",
     "sesame": "芝麻",
     "vision": "視覺",

@@ -488,6 +488,7 @@
     "errInsecureContext": "このページは HTTPS ではないため、再生に必要な暗号 API が使えません。https または localhost で開いてください。"
   },
   "appHome": {
+    "registrationNetworkRequired": "登録するにはインターネットに接続してください",
     "noDevices": "⊕から新規デバイスを登録するか、QRコードをスキャンして登録済みデバイスのアクセス権を取得",
     "sesame": "セサミ",
     "vision": "ビジョン",

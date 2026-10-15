@@ -238,13 +238,13 @@ function ExistingDeviceSetting({ showBack = true }) {
           </>
         )}
         <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
-          <ListItemText primary="UUID" />
+          <ListItemText primary="UUID" sx={{ flexShrink: 0, mr: 1 }} />
           <Typography
             sx={{
               color: 'text.secondary',
-              fontSize: '0.75rem',
-              maxWidth: 250,
-              wordBreak: 'break-all',
+              fontSize: 'clamp(10px, 2.9vw, 12px)',
+              whiteSpace: 'nowrap',
+              ml: 'auto',
             }}
           >
             {did}

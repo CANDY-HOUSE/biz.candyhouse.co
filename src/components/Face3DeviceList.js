@@ -1,16 +1,6 @@
 import { logOperationFailure } from '@/services/operationFailure';
 import React, { useContext, useEffect, useState, useRef } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  CardActionArea,
-  IconButton,
-  Button,
-  CircularProgress,
-  Snackbar,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Card, CardActionArea, IconButton, Button, CircularProgress } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -307,7 +297,6 @@ export default function Face3DeviceList() {
 
   const [wakingIds, setWakingIds] = useState(() => new Set());
   const [viewingIds, setViewingIds] = useState(() => new Set());
-  const [toast, setToast] = useState(null); // { severity, text }
 
   /* 唤醒失败的原因要说清楚，否则用户只知道"没反应"。
      云端的 message 见 Face3_qr.mjs 的 wakeDevice。 */
@@ -346,7 +335,7 @@ export default function Face3DeviceList() {
         return next;
       });
       if (severity === 'error') logOperationFailure('Face3DeviceList.wake');
-      else setToast({ severity, text });
+      else setSnackbarValue({ open: true, severity, msg: text });
     };
 
     /* 断网时 sendMessage 静默丢弃，不会有回包 —— 转圈必须由这里收尾 */
@@ -460,22 +449,6 @@ export default function Face3DeviceList() {
             />
           ))}
         </Box>
-        <Snackbar
-          open={Boolean(toast)}
-          autoHideDuration={4000}
-          onClose={() => setToast(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          {/* Snackbar 要求 children 恒定存在，toast 为空时给个空壳撑着 */}
-          <Alert
-            severity={toast?.severity || 'info'}
-            variant="filled"
-            onClose={() => setToast(null)}
-            sx={{ width: '100%' }}
-          >
-            {toast?.text || ''}
-          </Alert>
-        </Snackbar>
       </Box>
     </SesameFloatingAdd>
   );
