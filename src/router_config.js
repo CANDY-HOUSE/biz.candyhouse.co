@@ -1,3 +1,4 @@
+import deferredComponent from './components/deferredComponent';
 import AppCredentials from './components/AppCredentials';
 import AppBotScript from '@/components/AppBotScript';
 import DeviceHistory from '@/components/DeviceHistory';
@@ -10,28 +11,7 @@ import RemoteAir from '@/pages/personal/devices/wifi-module/ir/remote-air';
 import RemoteList from '@/pages/personal/devices/wifi-module/ir/remote-list';
 import RemoteMatch from '@/pages/personal/devices/wifi-module/ir/remote-match';
 import RemoteNonAir from '@/pages/personal/devices/wifi-module/ir/remote-non-air';
-import VCards from '@biz/access-control/cards/cards';
-import PasswordDetails from '@biz/access-control/password/passworddetails';
-import Passwords from '@biz/access-control/password/passwords';
-import SesameAccessControlDeviceRegion from '@biz/access-control/region/region';
-import Cards from '@biz/cards';
-import CardDetails from '@biz/cards/details/carddetails';
-import Developer from '@biz/developer';
-import EnvSnapshotDetail from '@biz/history/env-snapshot';
-import DeviceShare from '@biz/devices/device-share/DeviceShare';
-import DeviceGroupItem from '@biz/devices/group-item/DeviceGroupItem';
-import GroupShare from '@biz/devices/group-share/GroupShare';
-import DeviceGroup from '@biz/devices/group/DeviceGroup';
-import DeviceItem from '@biz/devices/list-item/DeviceItem';
 import FactoryInfoDetail from '@biz/devices/factory-info';
-import EmployeeGroupItem from '@biz/employees/group-item/EmployeeGroupItem';
-import EmployeeGroups from '@biz/employees/group/EmployeeGroups';
-import EmployeeItem from '@biz/employees/list-item/EmployeeItem';
-import EmployeeList from '@biz/employees/list/EmployeeList';
-import EmployeeRoles from '@biz/employees/role/EmployeeRoles';
-import HistoryList from '@biz/history';
-import BizHomePage from '@biz/home';
-import ScheduleList from '@biz/schedule-list';
 import Vision from '@biz/vision';
 import UpgradeSSMFirmware from '@components/biz/device/UpgradeSSMFirmware';
 import Contacts from '@personal/contacts';
@@ -50,6 +30,28 @@ import {
   SesameMobileNotifyCenter,
   SesameMobileMyHomepage,
 } from './components/index';
+
+const VCards = deferredComponent(() => import('@biz/access-control/cards/cards'));
+const PasswordDetails = deferredComponent(() => import('@biz/access-control/password/passworddetails'));
+const Passwords = deferredComponent(() => import('@biz/access-control/password/passwords'));
+const SesameAccessControlDeviceRegion = deferredComponent(() => import('@biz/access-control/region/region'));
+const Cards = deferredComponent(() => import('@biz/cards'));
+const CardDetails = deferredComponent(() => import('@biz/cards/details/carddetails'));
+const Developer = deferredComponent(() => import('@biz/developer'));
+const EnvSnapshotDetail = deferredComponent(() => import('@biz/history/env-snapshot'));
+const DeviceShare = deferredComponent(() => import('@biz/devices/device-share/DeviceShare'));
+const DeviceGroupItem = deferredComponent(() => import('@biz/devices/group-item/DeviceGroupItem'));
+const GroupShare = deferredComponent(() => import('@biz/devices/group-share/GroupShare'));
+const DeviceGroup = deferredComponent(() => import('@biz/devices/group/DeviceGroup'));
+const DeviceItem = deferredComponent(() => import('@biz/devices/list-item/DeviceItem'));
+const EmployeeGroupItem = deferredComponent(() => import('@biz/employees/group-item/EmployeeGroupItem'));
+const EmployeeGroups = deferredComponent(() => import('@biz/employees/group/EmployeeGroups'));
+const EmployeeItem = deferredComponent(() => import('@biz/employees/list-item/EmployeeItem'));
+const EmployeeList = deferredComponent(() => import('@biz/employees/list/EmployeeList'));
+const EmployeeRoles = deferredComponent(() => import('@biz/employees/role/EmployeeRoles'));
+const HistoryList = deferredComponent(() => import('@biz/history'));
+const BizHomePage = deferredComponent(() => import('@biz/home'));
+const ScheduleList = deferredComponent(() => import('@biz/schedule-list'));
 
 // 与 gUtils.categoriesConf 对应
 const routerComponentMap = [

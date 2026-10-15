@@ -83,7 +83,7 @@ const Me = () => {
             <EditableText
               initialValue={currentUserInfo.name || currentUserInfo.email}
               onSave={(newValue, callback) => {
-                gManageEmployee.postEmployeeInfo({ Name: 'name', Value: newValue }, (res) => {
+                gManageEmployee.updateCurrentUserName(newValue, (res) => {
                   callback(res.success);
                   res.success &&
                     biz3utils.triggerScheme(

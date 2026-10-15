@@ -1,3 +1,4 @@
+import deferredComponent from '@/components/deferredComponent';
 import { appTabPaths } from '@/services/appNavigation';
 import { isAppHome } from '@/services/deviceService';
 import siteIcon from '@assets/site-icon.png';
@@ -37,9 +38,9 @@ import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
 import SideBarMenu from './SideBarMenu.js';
 import WsStatusIndicator from '@/components/WsStatusIndicator.js';
-import CSUserSearchDialog from '@/components/cs/CSUserSearchDialog.js';
-import RepairCsv from '@/components/cs/RepairCsv.js';
-import YamatoShippingCsv from '@/components/cs/YamatoShippingCsv.js';
+const CSUserSearchDialog = deferredComponent(() => import('@/components/cs/CSUserSearchDialog.js'));
+const RepairCsv = deferredComponent(() => import('@/components/cs/RepairCsv.js'));
+const YamatoShippingCsv = deferredComponent(() => import('@/components/cs/YamatoShippingCsv.js'));
 
 const Layout = () => {
   const navigate = useNavigate();

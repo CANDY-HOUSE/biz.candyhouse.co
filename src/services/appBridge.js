@@ -8,7 +8,7 @@ let connected;
 const connection = new Promise((resolve) => {
   connected = resolve;
 });
-window.addEventListener('message', (event) => {
+function receivePort(event) {
   if (
     !isAndroidShell ||
     event.data !== window.__sesamePortNonce ||
@@ -17,6 +17,7 @@ window.addEventListener('message', (event) => {
   )
     return;
   delete window.__sesamePortNonce;
+  delete window.__sesamePendingBridgeEvent;
   port?.close();
   port = event.ports[0];
   port.onmessage = ({ data }) => {
@@ -37,7 +38,10 @@ window.addEventListener('message', (event) => {
   };
   port.start();
   connected();
-});
+}
+window.addEventListener('message', receivePort);
+// Android can deliver the port before the main bundle finishes loading.
+if (window.__sesamePendingBridgeEvent) receivePort(window.__sesamePendingBridgeEvent);
 export function onNativeEvent(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);

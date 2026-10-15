@@ -240,17 +240,56 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, registerCallback]
   );
 
+  // Keep only the current session's display profile across route unmounts.
+  const profileScope = `${orderScope.current.revision}:${appSessionRevision()}`;
+  const [profile, setProfile] = useState({ scope: profileScope, data: {} });
+  const profileVersion = useRef(0);
+  if (profile.scope !== profileScope) {
+    setProfile({ scope: profileScope, data: {} });
+  }
+  const currentUserProfile = profile.scope === profileScope ? profile.data : {};
+
   const getCurrentUserInfo = useCallback(
     (cb, excludeLogins = false) => {
+      const revision = orderScope.current.revision;
+      const session = appSessionRevision();
+      const version = profileVersion.current;
       const msgData = {
         action: ACTION_TYPES.BIZ3_MANAGE_EMPLOYEE,
         op: 'currentInfo',
         ...(excludeLogins ? { excludeLogins: true } : {}),
       };
+      registerCallback(msgData.action, msgData.op, (response) => {
+        if (revision !== orderScope.current.revision || session !== appSessionRevision()) return;
+        if (response.success && response.data && version === profileVersion.current) {
+          const { name, email } = response.data;
+          setProfile({ scope: `${revision}:${session}`, data: { name, email } });
+        }
+        cb?.(response);
+      });
       sendMessage(msgData);
-      registerCallback(msgData.action, msgData.op, cb);
     },
     [registerCallback]
+  );
+
+  const updateCurrentUserName = useCallback(
+    (name, cb) => {
+      const revision = orderScope.current.revision;
+      const session = appSessionRevision();
+      postEmployeeInfo({ Name: 'name', Value: name }, (response) => {
+        if (revision !== orderScope.current.revision || session !== appSessionRevision()) return;
+        if (response.success) {
+          // An earlier profile read must not overwrite the newly saved name.
+          profileVersion.current++;
+          setProfile((previous) => ({
+            scope: `${revision}:${session}`,
+            data: { ...(previous.scope === `${revision}:${session}` ? previous.data : {}), name },
+          }));
+        }
+        cb?.(response);
+      });
+    },
+    [postEmployeeInfo]
   );
 
   const removeEmployees = useCallback(
@@ -560,6 +599,8 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
     removeDeviceGroup,
     postEmployeeInfo,
     getCurrentUserInfo,
+    currentUserProfile,
+    updateCurrentUserName,
     postEmployeeGroupInfo,
     findEmployeeById,
     reorderEmployees,

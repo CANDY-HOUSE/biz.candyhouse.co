@@ -14,7 +14,7 @@ import ActionSheet from './ActionSheet';
 const MobileMyHomepage = () => {
   const { t } = useTranslation();
   const { gStripe, gManageEmployee } = useContext(GlobalStateContext);
-  const [currentUserInfo, setCurrentUserInfo] = useState({});
+  const currentUserInfo = gManageEmployee.currentUserProfile;
   const [notificationEnabled, setNotificationEnabled] = useState(null);
   const [legacyPromotion, setActivePromotion] = useState(null);
   const webPromotion = useSyncExternalStore(appPromotion.subscribe, appPromotion.getSnapshot);
@@ -182,9 +182,7 @@ const MobileMyHomepage = () => {
   }, []);
 
   const fetchCurrentUserInfo = async () => {
-    gManageEmployee.getCurrentUserInfo((res) => {
-      setCurrentUserInfo(res.data);
-    }, true);
+    gManageEmployee.getCurrentUserInfo(undefined, true);
   };
 
   const { getCurrentUserInfo } = gManageEmployee;
@@ -207,9 +205,7 @@ const MobileMyHomepage = () => {
         .then(apply((response) => setNotificationEnabled(Boolean(response.enabled))))
         .catch(() => {});
       if (!gStripe.customerInfo.isAnonymous) {
-        getCurrentUserInfo((response) => {
-          if (active && response.success && response.data) setCurrentUserInfo(response.data);
-        }, true);
+        getCurrentUserInfo(undefined, true);
       }
     });
     return () => {

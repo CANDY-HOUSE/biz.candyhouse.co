@@ -1,5 +1,6 @@
 const { override, addBabelPlugin, addWebpackAlias } = require('customize-cra');
 const path = require('path');
+const { DefinePlugin } = require('webpack');
 
 const plugins = [
   addWebpackAlias({
@@ -33,6 +34,19 @@ const ignoreKvsSourceMapWarnings = (config) => {
   return config;
 };
 plugins.push(ignoreKvsSourceMapWarnings);
+
+// Amplify runs generate-version.js before webpack. Embed that same commit in the
+// running bundle; fetching version.json only tells us what is deployed now.
+plugins.push((config) => {
+  config.plugins.push(
+    new DefinePlugin({
+      'process.env.REACT_APP_GIT_HASH': JSON.stringify(
+        process.env.NODE_ENV === 'production' ? require('./public/version.json').gitHash : ''
+      ),
+    })
+  );
+  return config;
+});
 
 if (process.env.REMOVE_CONSOLE === 'true') {
   plugins.push(addBabelPlugin(['babel-plugin-transform-remove-console', { exclude: ['error', 'warn'] }]));

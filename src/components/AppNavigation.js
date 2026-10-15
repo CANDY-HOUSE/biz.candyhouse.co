@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { appPromotion } from '@/services/appPromotion';
+import { appUpdate } from '@/services/appUpdate';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Badge, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +16,7 @@ const tabs = [
 ];
 export default function AppNavigation() {
   const promotion = useSyncExternalStore(appPromotion.subscribe, appPromotion.getSnapshot);
+  const updateVersion = useSyncExternalStore(appUpdate.subscribe, appUpdate.getSnapshot);
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -28,21 +31,25 @@ export default function AppNavigation() {
       >
         {tabs.map(([path, icon, label]) => {
           const Icon = navIconMap[icon];
+          const hasUpdate = icon === 'me' && Boolean(updateVersion);
           return (
             <BottomNavigationAction
               key={path}
               value={path}
               label={t(label)}
+              aria-label={t(label)}
               icon={
                 <Badge
                   color="error"
-                  variant="dot"
-                  invisible={icon !== 'me' || !promotion?.visible}
+                  variant={hasUpdate ? 'standard' : 'dot'}
+                  badgeContent={hasUpdate ? <ArrowUpwardIcon sx={{ fontSize: 14 }} /> : null}
+                  invisible={icon !== 'me' || (!hasUpdate && !promotion?.visible)}
                   sx={{
-                    '& .MuiBadge-dot': {
-                      width: 16,
-                      height: 16,
-                      minWidth: 16,
+                    '& .MuiBadge-badge': {
+                      width: hasUpdate ? 18 : 16,
+                      height: hasUpdate ? 18 : 16,
+                      minWidth: hasUpdate ? 18 : 16,
+                      padding: 0,
                       borderRadius: '50%',
                       bgcolor: '#f44336',
                       top: -4,

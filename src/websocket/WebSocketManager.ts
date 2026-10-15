@@ -2,6 +2,7 @@
 import { WS_HEARTBEAT_INTERVAL_MS, ACTION_TYPES } from '@constants/messageConstants';
 import { envConfig } from '../env_config';
 import i18n from '@/i18n';
+import { appUpdateEnabled } from '@/services/appBuildVersion';
 
 /* eslint-disable no-unused-vars */
 export enum WS_STATUS {
@@ -248,7 +249,10 @@ class WebSocketManager {
   private initWebSocket(token: string) {
     try {
       this.updateStatus(WS_STATUS.CONNECTING);
-      const wsUrl = `${envConfig.getConfigAwsUrl()}?token=${encodeURIComponent(token)}&lang=${i18n.language}`;
+      const releaseSubscription = appUpdateEnabled
+        ? `&appReleaseOrigin=${encodeURIComponent(window.location.origin)}`
+        : '';
+      const wsUrl = `${envConfig.getConfigAwsUrl()}?token=${encodeURIComponent(token)}&lang=${i18n.language}${releaseSubscription}`;
       if (!wsUrl) throw new Error('WebSocket URL未配置');
       if (this.ws) {
         this.ws.onclose = null;

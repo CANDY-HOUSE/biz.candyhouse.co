@@ -1,7 +1,6 @@
 import { gUtils } from '@/utils/gUtils';
 import { Amplify } from '@aws-amplify/core';
-import BizHomePage from '@biz/home';
-import Settings from '@biz/settings';
+import deferredComponent from './components/deferredComponent';
 import Layout from '@components/biz/layout';
 import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
 import { Box } from '@mui/material';
@@ -22,12 +21,17 @@ import AppPullRefresh from './components/AppPullRefresh';
 import AppGuestGate from './components/AppGuestGate';
 import AppRegistration from './components/AppRegistration';
 import AppBootstrap from './components/AppBootstrap';
+import AppUpdateRuntime from './components/AppUpdateRuntime';
+import AppStartupReady from './components/AppStartupReady';
 import AppNavigation from './components/AppNavigation';
 import { appTabPaths } from './services/appNavigation';
 import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
 import { currentAppToken } from './services/appSession';
 import AppHomeRuntime from './components/AppHomeRuntime';
 import { isAppHome } from './services/deviceService';
+
+const BizHomePage = deferredComponent(() => import('@biz/home'));
+const Settings = deferredComponent(() => import('@biz/settings'));
 
 Amplify.configure(awsconfig);
 
@@ -205,6 +209,8 @@ const App = () => {
           />
         )}
         <AppFrame>
+          <AppStartupReady />
+          <AppUpdateRuntime />
           <AppBootstrap>
             <GlobalContextProvider>
               <AppHomeRuntime />
