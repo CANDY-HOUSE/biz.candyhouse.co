@@ -18,7 +18,7 @@ import { currentAppToken, isGuestAppSession } from '@/services/appSession';
 import { modelNameByProductType } from '@/constants/sesameDeviceModel';
 import { qrMode } from '@/constants/qrType';
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
-import { appTabPaths, currentAppTab, rememberAppTab } from '@/services/appNavigation';
+import { appRouteInfo, appTabPaths, currentAppTab, rememberAppTab } from '@/services/appNavigation';
 
 export default function AppHomeRuntime() {
   const navigate = useNavigate();
@@ -472,7 +472,7 @@ export default function AppHomeRuntime() {
       rememberAppTab(location.pathname);
       tabIndex.current = window.history.state?.idx ?? 0;
     }
-    deviceService.notify('route', { path: location.pathname });
+    deviceService.notify('route', appRouteInfo(location.pathname));
   }, [location.pathname]);
   useEffect(() => {
     if (!isAppHome || !context.gManageDevice.devicesLoaded) return;
