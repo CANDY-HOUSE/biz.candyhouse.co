@@ -10,4 +10,4 @@ export const useWebSocket = (key: string, handler: Function) => {
 };
 
 // 单独导出 sendMessage 方法
-export const sendMessage = (message: any) => WebSocketManager.sendMessage(message);
+export const sendMessage = (message: any, allowQueue = true) => WebSocketManager.sendMessage(message, allowQueue);

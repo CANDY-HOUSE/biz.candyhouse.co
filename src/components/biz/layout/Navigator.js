@@ -13,11 +13,17 @@ export default function Navigator({ location, onClick }) {
   const { isSesameApp } = customerInfo;
 
   const renderCategories = useMemo(() => {
-    const { access } = customerInfo;
+    const access = Array.isArray(customerInfo.access) ? customerInfo.access : [];
     const { categoriesConf, pageNames } = gUtils;
-    const processedAccess = access.flatMap((item) =>
-      item === pageNames.devices ? [pageNames.ssmDevices, pageNames.touchDevices] : item
-    );
+    // Face3 is authorized by user/device bindings and does not require a Biz company.
+    const processedAccess = [
+      ...new Set([
+        ...access.flatMap((item) =>
+          item === pageNames.devices ? [pageNames.ssmDevices, pageNames.touchDevices] : item
+        ),
+        pageNames.vision,
+      ]),
+    ];
     const routerParams = processedAccess
       .map((id) => categoriesConf.find((cat) => cat.id === id))
       .filter(Boolean)

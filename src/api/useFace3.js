@@ -1,6 +1,7 @@
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { sendMessage, useWebSocket } from '@hooks/useWebSocket.ts';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createEventRecordingRequests } from '../utils/eventRecordingRequests';
 import { useCallbacks } from '../hooks/useCallbacks.js';
 
 /**
@@ -25,6 +26,33 @@ const useFace3 = () => {
   const [face3Devices, setFace3Devices] = useState([]);
   const [face3StreamStates, setFace3StreamStates] = useState({});
   const { registerCallback, invokeCallbacks } = useCallbacks();
+
+  const recordingRequests = useRef(null);
+  if (!recordingRequests.current) {
+    recordingRequests.current = createEventRecordingRequests(
+      (message) => sendMessage(message, false),
+      ACTION_TYPES.BIZ3_FACE3_QR
+    );
+  }
+  useEffect(() => () => recordingRequests.current.dispose(), []);
+  const listFace3Recordings = useCallback(
+    (deviceUUID, { before, limit = 30, signal } = {}) =>
+      recordingRequests.current.request(
+        'eventRecList',
+        {
+          deviceId: deviceUUID.toUpperCase(),
+          ...(before ? { before } : {}),
+          limit,
+        },
+        signal
+      ),
+    []
+  );
+  const playFace3Recording = useCallback(
+    (deviceUUID, recId, signal) =>
+      recordingRequests.current.request('eventRecPlay', { deviceId: deviceUUID.toUpperCase(), recId }, signal),
+    []
+  );
 
   /**
    * 给一台设备下发一条命令（通用入口）。
@@ -119,6 +147,7 @@ const useFace3 = () => {
 
   const handleFace3Response = useCallback(
     (message) => {
+      recordingRequests.current.handle(message);
       const callbackDeviceId = message.data?.deviceId;
       invokeCallbacks(
         callbackDeviceId && (message.op === 'command' || message.op === 'viewer')
@@ -159,6 +188,8 @@ const useFace3 = () => {
   return {
     face3Devices,
     face3StreamStates,
+    listFace3Recordings,
+    playFace3Recording,
     listFace3Devices,
     sendFace3Command,
     wakeFace3Device,

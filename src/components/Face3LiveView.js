@@ -1,13 +1,28 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Box, IconButton, Typography, CircularProgress, Button } from '@mui/material';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Box, IconButton, Typography, CircularProgress, Button, Alert, Slider } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { startFace3Viewer } from '@utils/face3Viewer';
+import { startFace3Viewer, getFace3ViewerEnvironmentError } from '@utils/face3Viewer';
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
 const CRED_TIMEOUT_MS = 15000;
+const CRED_RETRY_MS = 2000;
+const CALL_TIMEOUT_MS = 45000;
+
+const WAKE_ERROR_TEXT = {
+  device_offline: 'face3.wakeOffline',
+  not_bound: 'face3.wakeNotBound',
+  device_identity_rejected: 'face3.wakeIdentityRejected',
+  device_not_signable: 'face3.wakeNeedsUpdate',
+};
 
 /** 云端拒绝的原因 → 文案。都是要用户知道下一步做什么的情况。
  *
@@ -37,6 +52,26 @@ const VIEWER_ERROR_TEXT = {
   errBadConfig: 'face3.errBadConfig',
 };
 
+// 本地发送失败独立提示，不阻断Face3接收画面，也不终止仍可用的音视频。
+const LOCAL_MEDIA_ERROR_TEXT = {
+  camera: {
+    permission_denied: 'face3.cameraPermissionDenied',
+    not_found: 'face3.cameraNotFound',
+    unsupported: 'face3.cameraUnsupported',
+    unavailable: 'face3.cameraUnavailable',
+    timeout: 'face3.cameraTimeout',
+    busy: 'face3.intercomBusy',
+  },
+  microphone: {
+    permission_denied: 'face3.microphonePermissionDenied',
+    not_found: 'face3.microphoneNotFound',
+    unsupported: 'face3.microphoneUnsupported',
+    unavailable: 'face3.microphoneUnavailable',
+    timeout: 'face3.microphoneTimeout',
+    busy: 'face3.intercomBusy',
+  },
+};
+
 /**
  * Face3 实时画面（就地播放）。
  *
@@ -51,19 +86,29 @@ const VIEWER_ERROR_TEXT = {
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
-  const { viewFace3Device, face3StreamStates } = gFace3;
+  const { wakeFace3Device, viewFace3Device, face3StreamStates } = gFace3;
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
+  const frameProbeRef = useRef(null);
   const localVideoRef = useRef(null);
   const pipDragRef = useRef(null);
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
      state 的闭包会拿到旧值。 */
   const viewerRef = useRef(null);
-  const [phase, setPhase] = useState('connecting'); // connecting | playing | error
+  const cancelAttemptRef = useRef(null);
+  const [phase, setPhase] = useState('connecting'); // connecting | playing | error | ended
   const [errorKey, setErrorKey] = useState('');
+  const [localMediaIssues, setLocalMediaIssues] = useState({});
   const [attempt, setAttempt] = useState(0);
   const [hasLocalVideo, setHasLocalVideo] = useState(false);
+  const [mediaStates, setMediaStates] = useState({ camera: 'disabled', microphone: 'disabled' });
+  const [mediaControlsReady, setMediaControlsReady] = useState(false);
+  const [observationUnsupported, setObservationUnsupported] = useState(false);
+  const [speakerEnabled, setSpeakerEnabled] = useState(false);
+  const [volume, setVolume] = useState(70);
+  const speakerEnabledRef = useRef(false);
+  const volumeRef = useRef(70);
   const [localIsMain, setLocalIsMain] = useState(false);
   const [pipCorner, setPipCorner] = useState('bottom-right');
   const [pipPosition, setPipPosition] = useState(null);
@@ -73,112 +118,218 @@ export default function Face3LiveView({ device, onClose }) {
 
   const deviceUUID = device?.deviceUUID;
   const streamState = face3StreamStates?.[deviceUUID];
-  const streamReady = streamState === 'master_ready' || streamState === 'already_streaming';
+  const previousStreamStateRef = useRef(streamState);
+
+  const clearPlayback = useCallback(() => {
+    viewerRef.current?.close();
+    viewerRef.current = null;
+    const video = videoRef.current;
+    if (frameProbeRef.current !== null) video?.cancelVideoFrameCallback?.(frameProbeRef.current);
+    frameProbeRef.current = null;
+    for (const element of [video, localVideoRef.current]) {
+      if (element) {
+        element.onloadedmetadata = null;
+        element.onloadeddata = null;
+        element.pause();
+        element.srcObject = null;
+      }
+    }
+  }, []);
+
+  const endPlayback = useCallback(
+    (key) => {
+      cancelAttemptRef.current?.();
+      clearPlayback();
+      setHasLocalVideo(false);
+      setNeedsTap(false);
+      setLocalMediaIssues({});
+      setErrorKey(key);
+      setPhase('ended');
+    },
+    [clearPlayback]
+  );
 
   useEffect(() => {
-    if (!deviceUUID || !streamReady) return undefined;
+    if (!deviceUUID) return undefined;
 
     let cancelled = false;
+    let wakeSettled = false;
+    let pictureReady = false;
+    let wakeTimer;
+    let credentialTimer;
+    let retryTimer;
+    let deadlineTimer;
+    const cancel = () => {
+      cancelled = true;
+      [wakeTimer, credentialTimer, retryTimer, deadlineTimer].forEach(clearTimeout);
+      clearPlayback();
+    };
+    cancelAttemptRef.current = cancel;
     setPhase('connecting');
+    setMediaStates({ camera: 'disabled', microphone: 'disabled' });
+    setMediaControlsReady(false);
+    setObservationUnsupported(false);
+    setSpeakerEnabled(false);
+    speakerEnabledRef.current = false;
     setHasLocalVideo(false);
     setLocalIsMain(false);
     setPipCorner('bottom-right');
     setPipPosition(null);
     setNeedsTap(false);
     setErrorKey('');
+    setLocalMediaIssues({});
 
     const fail = (key) => {
       if (cancelled) return;
+      cancel();
+      setHasLocalVideo(false);
+      setNeedsTap(false);
       setErrorKey(key);
       setPhase('error');
     };
-
-    const timer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
-
-    viewFace3Device(deviceUUID, (message) => {
-      clearTimeout(timer);
-      if (cancelled) return;
-      if (!message?.success) {
-        fail(CRED_ERROR_TEXT[message?.message] || 'face3.errLiveUnknown');
-        return;
-      }
-      viewerRef.current = startFace3Viewer(message.data, {
-        onLocalStream: (stream) => {
-          if (cancelled) return;
-          const el = localVideoRef.current;
-          if (!el) return;
-          el.srcObject = stream;
-          /* 本地预览必须静音，否则麦克风会再次收到扬声器声音形成回声。
-             镜像只作用于本地画面，发送给 Face3 的视频保持原始方向。 */
-          el.muted = true;
-          el.play().catch((err) => {
-            // eslint-disable-next-line no-console
-            console.warn('[face3Viewer] local preview play failed:', err?.name || err);
-          });
-          setHasLocalVideo(true);
-        },
-        onStream: (stream) => {
-          if (cancelled) return;
-          const el = videoRef.current;
-          if (!el) return;
-          /* 直接赋 srcObject，不要用 URL.createObjectURL —— 后者已废弃，
-             且在部分 WebView 上拿不到画面。 */
-          /* 出画与否的判据：videoWidth/Height 非 0 才说明真的解出了帧。
-             之前只看到"一个大播放按钮"时无从判断是没起播还是没解码。
-             监听器必须**先挂再赋流**，否则 loadedmetadata 可能已经过去了。 */
-          el.onloadedmetadata = () => {
-            // eslint-disable-next-line no-console
-            console.info(
-              `[face3Viewer] video ${el.videoWidth}x${el.videoHeight}, tracks=` +
-                stream
-                  .getTracks()
-                  .map((tk) => tk.kind)
-                  .join('+')
-            );
-          };
-          /* 同一个流不要重复赋值：重复赋值等于发起新的 load，会把还没完成的
-             play() 打断(AbortError)。 */
-          if (el.srcObject !== stream) el.srcObject = stream;
-          setPhase('playing');
-          startFrameProbe(el);
-
-          /* 先尝试带声音自动播放。WebView 已关 mediaPlaybackRequiresUserGesture，
-             多数情况能直接出声。被拦住(NotAllowedError)就退回静音自动播放——静音
-             播放浏览器一律放行——并提示点击解除静音，点击是真手势可开声音。
-             muted 用 el.muted 命令式设置，不用 JSX 的 muted 属性：React 对 video
-             的 muted 属性有已知不生效的老 bug。 */
-          el.muted = false;
-          const p = el.play();
-          if (p?.catch) {
-            p.catch((err) => {
-              if (cancelled) return;
-              // eslint-disable-next-line no-console
-              console.warn('[face3Viewer] unmuted autoplay blocked:', err?.name || err);
-              el.muted = true;
-              el.play().catch((e) => {
-                if (cancelled) return;
-                // eslint-disable-next-line no-console
-                console.warn('[face3Viewer] muted autoplay also blocked:', e?.name || e);
+    const markPictureReady = () => {
+      if (cancelled || pictureReady || !videoRef.current?.videoWidth) return;
+      pictureReady = true;
+      clearTimeout(deadlineTimer);
+      setPhase('playing');
+    };
+    const startViewer = (data) => {
+      try {
+        const viewer = startFace3Viewer(data, {
+          onState: (state) => {
+            if (cancelled) return;
+            if (state === 'answered') setMediaControlsReady(true);
+            if (state === 'observation_supported') setObservationUnsupported(false);
+            if (state === 'observation_unsupported') setObservationUnsupported(true);
+          },
+          onLocalMediaState: ({ kind, state }) => {
+            if (cancelled) return;
+            setMediaStates((states) => ({ ...states, [kind]: state }));
+            if (state === 'starting' || state === 'enabled') {
+              setLocalMediaIssues((issues) => {
+                const next = { ...issues };
+                delete next[kind];
+                return next;
               });
-              setNeedsTap(true); /* 视频已静音在播，提示点一下开声音 */
+            }
+          },
+          onLocalMediaError: ({ kind, reason }) => {
+            if (cancelled || !LOCAL_MEDIA_ERROR_TEXT[kind]) return;
+            if (kind === 'camera') setLocalIsMain(false);
+            setLocalMediaIssues((issues) => ({
+              ...issues,
+              [kind]: LOCAL_MEDIA_ERROR_TEXT[kind][reason] || LOCAL_MEDIA_ERROR_TEXT[kind].unavailable,
+            }));
+          },
+          onLocalStream: (stream) => {
+            if (cancelled) return;
+            const el = localVideoRef.current;
+            if (!el) return;
+            el.srcObject = stream;
+            setHasLocalVideo(Boolean(stream));
+            if (!stream) {
+              setLocalIsMain(false);
+              return;
+            }
+            // 本机预览保持静音；发送方向由Viewer转换，不受本机镜像影响。
+            el.muted = true;
+            el.play().catch(() => {
+              if (cancelled || el.srcObject !== stream) return;
+              setLocalMediaIssues((issues) => ({ ...issues, camera: 'face3.cameraPreviewUnavailable' }));
             });
+          },
+          onStream: (stream) => {
+            if (cancelled) return;
+            const el = videoRef.current;
+            if (!el) return;
+            // ontrack可能早于实际媒体到达，只在收到画面后结束总超时。
+            el.onloadeddata = markPictureReady;
+            if (el.srcObject !== stream) el.srcObject = stream;
+            startFrameProbe(el);
+            el.muted = !speakerEnabledRef.current;
+            el.volume = volumeRef.current / 100;
+            el.play()
+              .then(markPictureReady)
+              .catch(() => {
+                if (cancelled) return;
+                el.muted = true;
+                el.play()
+                  .then(markPictureReady)
+                  .catch(() => {});
+                setNeedsTap(true);
+              });
+          },
+          onError: (key) => fail(VIEWER_ERROR_TEXT[key] || 'face3.errLiveUnknown'),
+          onEnded: () => {
+            if (!cancelled) endPlayback('face3.liveInterrupted');
+          },
+        });
+        // 防御同步失败回调，不能把已取消的Viewer留在ref里。
+        if (cancelled) viewer?.close();
+        else viewerRef.current = viewer;
+      } catch {
+        fail('face3.errLiveUnknown');
+      }
+    };
+    const requestCredentials = () => {
+      if (cancelled) return;
+      let settled = false;
+      credentialTimer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
+      try {
+        viewFace3Device(deviceUUID, (message) => {
+          if (cancelled || settled) return;
+          settled = true;
+          clearTimeout(credentialTimer);
+          if (!message?.success) {
+            if (message?.message === 'channel_not_ready') {
+              retryTimer = setTimeout(requestCredentials, CRED_RETRY_MS);
+            } else {
+              fail(CRED_ERROR_TEXT[message?.message] || 'face3.errLiveUnknown');
+            }
+            return;
           }
-        },
-        onError: (key) => fail(VIEWER_ERROR_TEXT[key] || 'face3.errLiveUnknown'),
-      });
-    });
+          startViewer(message.data);
+        });
+      } catch {
+        fail('face3.errLiveUnknown');
+      }
+    };
+
+    const environmentError = getFace3ViewerEnvironmentError();
+    if (environmentError) {
+      fail(VIEWER_ERROR_TEXT[environmentError] || 'face3.errLiveUnknown');
+    } else {
+      // 状态推送可能被另一个浏览器接收，不能作为握手的必需条件。
+      deadlineTimer = setTimeout(() => fail('face3.errLiveTimeout'), CALL_TIMEOUT_MS);
+      wakeTimer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
+      try {
+        wakeFace3Device(deviceUUID, (message) => {
+          if (cancelled || wakeSettled) return;
+          wakeSettled = true;
+          clearTimeout(wakeTimer);
+          if (!message?.success) {
+            fail(WAKE_ERROR_TEXT[message?.message] || 'face3.wakeFailed');
+            return;
+          }
+          requestCredentials();
+        });
+      } catch {
+        fail('face3.wakeFailed');
+      }
+    }
 
     return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      /* 必须显式关：不关的话 RTCPeerConnection 和信令 WebSocket 会一直活着，
-         反复开关就会攒下一堆连接，设备侧也会被多个 viewer 占住。 */
-      viewerRef.current?.close();
-      viewerRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-      if (localVideoRef.current) localVideoRef.current.srcObject = null;
+      cancel();
+      if (cancelAttemptRef.current === cancel) cancelAttemptRef.current = null;
     };
-  }, [deviceUUID, streamReady, viewFace3Device, attempt]);
+  }, [deviceUUID, wakeFace3Device, viewFace3Device, attempt, clearPlayback, endPlayback]);
+
+  useEffect(() => {
+    // 忽略挂载时上一次通话残留的stopped，只响应本次看到的状态变化。
+    const previous = previousStreamStateRef.current;
+    previousStreamStateRef.current = streamState;
+    if (streamState === 'stopped' && previous !== 'stopped') endPlayback('face3.liveEndedByDevice');
+  }, [streamState, endPlayback]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;
@@ -211,6 +362,7 @@ export default function Face3LiveView({ device, onClose }) {
       console.warn('[face3Lat] requestVideoFrameCallback 不可用，退回只看 getStats');
       return;
     }
+    if (frameProbeRef.current !== null) el.cancelVideoFrameCallback?.(frameProbeRef.current);
     let n = 0;
     let lastPresent = 0;
     let gapCount = 0;
@@ -246,9 +398,32 @@ export default function Face3LiveView({ device, onClose }) {
             })
         );
       }
-      el.requestVideoFrameCallback(onFrame);
+      frameProbeRef.current = el.requestVideoFrameCallback(onFrame);
     };
-    el.requestVideoFrameCallback(onFrame);
+    frameProbeRef.current = el.requestVideoFrameCallback(onFrame);
+  };
+
+  const updateSpeaker = (enabled, nextVolume = volumeRef.current) => {
+    setSpeakerEnabled(enabled);
+    speakerEnabledRef.current = enabled;
+    setVolume(nextVolume);
+    volumeRef.current = nextVolume;
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !enabled;
+    video.volume = nextVolume / 100;
+    if (enabled)
+      video
+        .play()
+        .then(() => setNeedsTap(false))
+        .catch(() => setNeedsTap(true));
+    else setNeedsTap(false);
+  };
+
+  const toggleLocalMedia = (kind) => {
+    const enabled = mediaStates[kind] === 'disabled';
+    if (kind === 'camera') viewerRef.current?.setCameraEnabled?.(enabled);
+    else viewerRef.current?.setMicrophoneEnabled?.(enabled);
   };
 
   const retry = () => setAttempt((n) => n + 1);
@@ -257,8 +432,8 @@ export default function Face3LiveView({ device, onClose }) {
   const pipCornerStyle = {
     'top-left': { top: PIP_MARGIN, left: PIP_MARGIN },
     'top-right': { top: PIP_MARGIN, right: PIP_MARGIN },
-    'bottom-left': { bottom: PIP_MARGIN, left: PIP_MARGIN },
-    'bottom-right': { bottom: PIP_MARGIN, right: PIP_MARGIN },
+    'bottom-left': { bottom: PIP_MARGIN + 52, left: PIP_MARGIN },
+    'bottom-right': { bottom: PIP_MARGIN + 52, right: PIP_MARGIN },
   }[pipCorner];
 
   const beginPipDrag = (event) => {
@@ -361,6 +536,13 @@ export default function Face3LiveView({ device, onClose }) {
     };
   };
 
+  // 默认关闭不占小窗；申请中或取不到画面时保留转圈提示和具体错误。
+  const cameraLoading =
+    phase === 'playing' &&
+    (mediaStates.camera === 'starting' ||
+      Boolean(localMediaIssues.camera) ||
+      (mediaStates.camera === 'enabled' && !hasLocalVideo));
+
   /* 铺满父容器（卡片的 16:9 预览框）。父级已是 position:relative + overflow:hidden，
      所以这里 inset:0 就正好落在占位框的位置和尺寸上。 */
   return (
@@ -373,20 +555,6 @@ export default function Face3LiveView({ device, onClose }) {
         onPointerMove={(event) => localIsMain && movePip(event)}
         onPointerUp={(event) => localIsMain && finishPipDrag(event)}
         onPointerCancel={(event) => localIsMain && finishPipDrag(event, true)}
-        onClick={() => {
-          /* 点击是真手势：解除静音并起播，让用户听到声音。muted 不写成 JSX
-             属性(React 老 bug 不生效)，这里命令式设。失败必须记下来——之前
-             吞掉异常，用户点了没反应而控制台一片空白，线索也一起丢了。 */
-          const el = videoRef.current;
-          if (!el) return;
-          el.muted = false;
-          el.play()
-            .then(() => setNeedsTap(false))
-            .catch((err) => {
-              // eslint-disable-next-line no-console
-              console.warn('[face3Viewer] tap play failed:', err?.name || err);
-            });
-        }}
         style={{
           ...videoStyle(false),
           display: phase === 'playing' ? 'block' : 'none',
@@ -404,9 +572,46 @@ export default function Face3LiveView({ device, onClose }) {
         onPointerCancel={(event) => !localIsMain && finishPipDrag(event, true)}
         style={{
           ...videoStyle(true),
-          display: phase === 'playing' && hasLocalVideo ? 'block' : 'none',
+          display: phase === 'playing' && hasLocalVideo && !cameraLoading ? 'block' : 'none',
         }}
       />
+
+      {cameraLoading && (
+        <Box
+          role="status"
+          aria-label={t('face3.camera')}
+          aria-busy="true"
+          sx={{
+            ...videoStyle(true),
+            transform: 'none',
+            borderRadius: '10px',
+            cursor: 'default',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CircularProgress size={28} disableShrink aria-hidden="true" />
+        </Box>
+      )}
+
+      {(phase === 'connecting' || phase === 'playing') &&
+        (observationUnsupported || Object.keys(localMediaIssues).length > 0) && (
+          <Box
+            sx={{ position: 'absolute', top: 8, left: 8, right: 48, zIndex: 3, maxHeight: '55%', overflowY: 'auto' }}
+          >
+            {observationUnsupported && (
+              <Alert severity="warning" sx={{ mb: 0.5, py: 0, fontSize: '0.75rem' }}>
+                {t('face3.observationUnsupported')}
+              </Alert>
+            )}
+            {Object.entries(localMediaIssues).map(([kind, key]) => (
+              <Alert key={kind} severity="warning" sx={{ mb: 0.5, py: 0, fontSize: '0.75rem' }}>
+                {t(key)}
+              </Alert>
+            ))}
+          </Box>
+        )}
 
       {phase === 'playing' && needsTap && (
         <Box
@@ -439,7 +644,16 @@ export default function Face3LiveView({ device, onClose }) {
             textAlign: 'center',
           }}
         >
-          {phase === 'error' ? (
+          {phase === 'ended' ? (
+            <>
+              <Typography role="status" variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+                {t(errorKey)}
+              </Typography>
+              <Button variant="outlined" size="small" onClick={onClose} sx={{ color: 'white' }}>
+                {t('face3.liveClose')}
+              </Button>
+            </>
+          ) : phase === 'error' ? (
             <>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)' }}>
                 {t(errorKey)}
@@ -462,6 +676,82 @@ export default function Face3LiveView({ device, onClose }) {
               </Typography>
             </>
           )}
+        </Box>
+      )}
+
+      {phase === 'playing' && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 8,
+            left: 8,
+            right: 8,
+            zIndex: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            p: 0.5,
+            borderRadius: 1,
+            bgcolor: 'rgba(20,20,20,0.85)',
+            color: 'white',
+          }}
+        >
+          <Button
+            size="small"
+            aria-label={t('face3.microphone')}
+            aria-pressed={mediaStates.microphone !== 'disabled'}
+            disabled={!mediaControlsReady}
+            onClick={() => toggleLocalMedia('microphone')}
+            startIcon={
+              mediaStates.microphone === 'starting' ? (
+                <CircularProgress size={16} />
+              ) : mediaStates.microphone === 'enabled' ? (
+                <MicIcon />
+              ) : (
+                <MicOffIcon />
+              )
+            }
+            sx={{ color: 'white', minWidth: 0, fontSize: '0.75rem' }}
+          >
+            {t('face3.microphone')}
+          </Button>
+          <Button
+            size="small"
+            aria-label={t('face3.camera')}
+            aria-pressed={mediaStates.camera !== 'disabled'}
+            disabled={!mediaControlsReady}
+            onClick={() => toggleLocalMedia('camera')}
+            startIcon={
+              mediaStates.camera === 'starting' ? (
+                <CircularProgress size={16} />
+              ) : mediaStates.camera === 'enabled' ? (
+                <VideocamIcon />
+              ) : (
+                <VideocamOffIcon />
+              )
+            }
+            sx={{ color: 'white', minWidth: 0, fontSize: '0.75rem' }}
+          >
+            {t('face3.camera')}
+          </Button>
+          <IconButton
+            size="small"
+            aria-label={t('face3.speaker')}
+            aria-pressed={speakerEnabled}
+            onClick={() => updateSpeaker(!speakerEnabled, volume || 70)}
+            sx={{ color: 'white' }}
+          >
+            {speakerEnabled ? <VolumeUpIcon fontSize="small" /> : <VolumeOffIcon fontSize="small" />}
+          </IconButton>
+          <Slider
+            size="small"
+            aria-label={t('face3.volume')}
+            value={speakerEnabled ? volume : 0}
+            onChange={(event, value) => updateSpeaker(value > 0, value)}
+            min={0}
+            max={100}
+            sx={{ minWidth: 40, maxWidth: 120, mx: 0.5 }}
+          />
         </Box>
       )}
 

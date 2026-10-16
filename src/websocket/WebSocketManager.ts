@@ -291,7 +291,7 @@ class WebSocketManager {
     this.ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.action !== 'biz3AppOperations')
+        if (message.action !== 'biz3AppOperations' && message.op !== 'eventRecPlay')
           console.log(`【WS 收到消息⬇${new Date().toLocaleString()}】`, message.action, message);
         this.lastActiveTime = Date.now();
         this.notifySubscribers(message);
@@ -384,7 +384,7 @@ class WebSocketManager {
       throw new Error('Connection unavailable. Please try again after reconnecting.');
     }
 
-    if (message.action !== 'biz3AppOperations')
+    if (message.action !== 'biz3AppOperations' && message.op !== 'eventRecPlay')
       console.log(`【WS 发送消息⬆${new Date().toLocaleString()}】`, message.action, message);
     if (!this.checkNetworkStatus()) {
       console.error('【WS】当前无网络连接，消息发送失败');

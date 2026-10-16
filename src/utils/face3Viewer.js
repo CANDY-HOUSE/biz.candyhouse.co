@@ -17,6 +17,8 @@ import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
 
 /** 从发起到出画的整体超时。超过就当失败，让用户重试而不是无限转圈。 */
 const CONNECT_TIMEOUT_MS = 30000;
+// 给ICE短暂恢复的机会，超出宽限才提示通话中断。
+const DISCONNECT_GRACE_MS = 3000;
 
 // Keep the Viewer camera at 15 fps; Face3 pauses its local preview work during a call.
 const CAMERA_STREAM_FPS = 15;
@@ -89,16 +91,29 @@ const brief = (v) => {
   }
 };
 
+// 在发出唤醒前和真正创建Viewer时共用检查，局域网HTTP不能使用加密/媒体接口。
+export function getFace3ViewerEnvironmentError() {
+  return typeof window !== 'undefined' && (!window.isSecureContext || !window.crypto?.subtle)
+    ? 'errInsecureContext'
+    : null;
+}
+
 /**
  * @param {object} cfg  op:"viewer" 返回的 data
  * @param {object} handlers
  * @param {(stream: MediaStream) => void} handlers.onStream  拿到远端流
- * @param {(stream: MediaStream) => void} [handlers.onLocalStream] 拿到本地摄像头流，用于画中画预览
+ * @param {(stream: MediaStream|null) => void} [handlers.onLocalStream] 拿到本地摄像头流，用于画中画预览
  * @param {(reasonKey: string) => void} handlers.onError     出错，参数是 i18n key 后缀
  * @param {(state: string) => void} [handlers.onState]       连接状态变化，用于 UI 提示
- * @returns {{ close: () => void }} 调用方必须在卸载时 close()
+ * @param {({kind: string, reason: string}) => void} [handlers.onLocalMediaError] 本地媒体不可用，不中断仍可用的通话
+ * @param {() => void} [handlers.onEnded] 已建立的通话中断，关闭本地媒体后通知UI
+ * @param {({kind: string, state: string}) => void} [handlers.onLocalMediaState] 本地媒体开关状态
+ * @returns {{ close: () => void, setCameraEnabled?: (enabled: boolean) => void, setMicrophoneEnabled?: (enabled: boolean) => void }} 调用方必须在卸载时 close()
  */
-export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onState }) {
+export function startFace3Viewer(
+  cfg,
+  { onStream, onLocalStream, onError, onState, onEnded, onLocalMediaError, onLocalMediaState }
+) {
   const { channelArn, region, clientId, credentials, iceServers } = cfg || {};
 
   let signalingClient = null;
@@ -107,13 +122,30 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
   let audioTr = null;
   let cameraStream = null;
   let rotatedCameraStream = null;
-  let cameraSource = null;
-  let cameraDrawTimer = null;
   let microphoneStream = null;
-  let localMediaStarted = false;
+  let answerApplied = false;
+  let controlChannel = null;
+  let controlReady = false;
+  let controlSequence = 0;
+  let controlTimer;
+  const mediaSetupTimers = new Set();
+  const mediaControllers = Object.fromEntries(
+    ['camera', 'microphone'].map((kind) => [
+      kind,
+      {
+        generation: 0,
+        enabled: false,
+        state: 'disabled',
+        queue: Promise.resolve(),
+      },
+    ])
+  );
   let closed = false;
   let timer = null;
   let offerTimer = null;
+  let disconnectTimer = null;
+  let connectedOnce = false;
+  let statsTimer = null;
 
   /* 纯排查用。超时只报一句 errTimeout 等于什么都没说：卡在信令、设备没回
      answer、answer 回了但 ICE 打不通 —— 三种情况的排查方向完全不同。
@@ -159,15 +191,21 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
     if (closed) return;
     closed = true;
     clearTimeout(timer);
+    clearTimeout(disconnectTimer);
     clearInterval(offerTimer);
     clearInterval(statsTimer);
-    clearInterval(cameraDrawTimer);
-    rotatedCameraStream?.getTracks().forEach((track) => track.stop());
-    rotatedCameraStream = null;
-    if (cameraSource) {
-      cameraSource.pause();
-      cameraSource.srcObject = null;
-      cameraSource = null;
+    clearTimeout(controlTimer);
+    mediaSetupTimers.forEach(clearTimeout);
+    Object.values(mediaControllers).forEach((controller) => {
+      controller.generation += 1;
+      controller.cancel?.();
+      controller.cleanup?.();
+    });
+    if (controlChannel) {
+      controlChannel.onopen = null;
+      controlChannel.onmessage = null;
+      controlChannel.onclose = null;
+      controlChannel.close();
     }
     /* 顺序要紧：先摘监听再关，否则关闭动作本身会触发 onError 回调，
        把一次正常的主动关闭报成失败 */
@@ -175,6 +213,8 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
       if (peer) {
         peer.ontrack = null;
         peer.onicecandidate = null;
+        peer.onconnectionstatechange = null;
+        peer.oniceconnectionstatechange = null;
         peer.close();
       }
     } catch {
@@ -206,6 +246,37 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
     cb?.(key);
   };
 
+  const ended = () => {
+    if (closed) return;
+    close();
+    onEnded?.();
+  };
+
+  const checkPeerState = () => {
+    if (closed || !peer) return;
+    if (peer.connectionState === 'connected') {
+      connectedOnce = true;
+      if (!controlReady && !controlTimer) controlTimer = setTimeout(() => say('observation_unsupported'), 8000);
+    }
+    const states = [peer.connectionState, peer.iceConnectionState];
+    if (states.includes('failed') || states.includes('closed')) {
+      if (connectedOnce) ended();
+      else fail('errPeerFailed');
+      return;
+    }
+    if (connectedOnce && states.includes('disconnected')) {
+      if (!disconnectTimer) {
+        disconnectTimer = setTimeout(() => {
+          disconnectTimer = null;
+          if (!closed && peer && [peer.connectionState, peer.iceConnectionState].includes('disconnected')) ended();
+        }, DISCONNECT_GRACE_MS);
+      }
+    } else {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = null;
+    }
+  };
+
   /* 先查安全上下文。
    *
    * KVS SDK 要对 WSS 做 SigV4 签名，而它用的 isomorphic-webcrypto 在浏览器下
@@ -215,7 +286,7 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
    *
    * 注意 isSecureContext 和 crypto.subtle 两个都要看：有的环境前者为 true 但
    * 后者被策略禁掉，反过来也有(某些 WebView)。 */
-  if (typeof window !== 'undefined' && (!window.isSecureContext || !window.crypto?.subtle)) {
+  if (getFace3ViewerEnvironmentError()) {
     // eslint-disable-next-line no-console
     console.error(
       '[face3Viewer] insecure context: crypto.subtle unavailable, ' +
@@ -280,109 +351,196 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
     iceTransportPolicy: 'all',
   });
 
-  /* 先用空的 sendrecv transceiver 完成协商。只有 MASTER 回了 SDP answer，才说明
-     Face3 已经上线；这时再开启手机摄像头和麦克风，并通过 replaceTrack 接入
-     已协商好的 sender，不需要重新发 offer。 */
-  const startLocalMedia = async () => {
-    if (closed || localMediaStarted) return;
-    localMediaStarted = true;
-
+  const reportLocalMediaError = (kind, error) => {
+    if (closed) return;
+    const name = error?.name;
+    let reason = 'unavailable';
+    if (['NotAllowedError', 'PermissionDeniedError', 'SecurityError'].includes(name)) reason = 'permission_denied';
+    else if (['NotFoundError', 'DevicesNotFoundError'].includes(name)) reason = 'not_found';
+    else if (name === 'TimeoutError') reason = 'timeout';
+    else if (!navigator.mediaDevices?.getUserMedia || name === 'NotSupportedError') reason = 'unsupported';
+    onLocalMediaError?.({ kind, reason });
+  };
+  const observationUnsupported = () => {
+    if (!closed && !controlReady) say('observation_unsupported');
+  };
+  const sendMediaState = () => {
+    if (closed || controlChannel?.readyState !== 'open') return;
+    controlSequence = (controlSequence % 1000000000) + 1;
     try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: 'user',
-          width: { ideal: 600, max: 600 },
-          height: { ideal: 450, max: 450 },
-          aspectRatio: { ideal: 4 / 3 },
-          frameRate: { ideal: 15, max: 15 },
-        },
-      });
-      if (closed) {
-        cameraStream.getTracks().forEach((track) => track.stop());
-        cameraStream = null;
+      const camera = Number(mediaControllers.camera.enabled);
+      const microphone = Number(mediaControllers.microphone.enabled);
+      controlChannel.send(`F3M1:${controlSequence}:${camera}:${microphone}`);
+      if (!controlReady && !controlTimer) controlTimer = setTimeout(observationUnsupported, 8000);
+    } catch {
+      observationUnsupported();
+    }
+  };
+  const setLocalMediaEnabled = (kind, enabled) => {
+    if (closed) return;
+    const controller = mediaControllers[kind];
+    if (!enabled) {
+      controller.generation += 1;
+      controller.cancel?.();
+      controller.cleanup?.();
+      controller.enabled = false;
+      controller.state = 'disabled';
+      onLocalMediaState?.({ kind, state: 'disabled' });
+      const sender = kind === 'camera' ? videoTr?.sender : audioTr?.sender;
+      if (sender) controller.queue = controller.queue.catch(() => {}).then(() => sender.replaceTrack(null));
+      controller.queue.catch(() => {});
+      sendMediaState();
+      return;
+    }
+    if (controller.state !== 'disabled') return;
+    if (!answerApplied) {
+      reportLocalMediaError(kind, new Error('Media negotiation is not ready'));
+      return;
+    }
+    const generation = ++controller.generation;
+    const active = () => !closed && controller.generation === generation;
+    let rawStream = null;
+    let outputStream = null;
+    let source = null;
+    let drawTimer;
+    let endedTrack = null;
+    let endedHandler = null;
+    let published = false;
+    let setupTimer;
+    const cleanup = () => {
+      clearInterval(drawTimer);
+      if (endedTrack && endedHandler) endedTrack.removeEventListener?.('ended', endedHandler);
+      if (source) {
+        source.pause();
+        source.srcObject = null;
+      }
+      outputStream?.getTracks().forEach((track) => track.stop());
+      rawStream?.getTracks().forEach((track) => track.stop());
+      if (kind === 'camera') {
+        if (cameraStream === rawStream) cameraStream = null;
+        if (rotatedCameraStream === outputStream) rotatedCameraStream = null;
+        if (published && !closed) onLocalStream?.(null);
+      } else if (microphoneStream === rawStream) microphoneStream = null;
+    };
+    const cancelSetup = () => {
+      clearTimeout(setupTimer);
+      mediaSetupTimers.delete(setupTimer);
+    };
+    const mediaFailed = (error) => {
+      if (!active()) return;
+      controller.generation += 1;
+      cancelSetup();
+      cleanup();
+      controller.enabled = false;
+      controller.state = 'disabled';
+      onLocalMediaState?.({ kind, state: 'disabled' });
+      sendMediaState();
+      logi(kind + ' unavailable', error?.name);
+      reportLocalMediaError(kind, error);
+    };
+    controller.cleanup = cleanup;
+    controller.cancel = cancelSetup;
+    controller.state = 'starting';
+    onLocalMediaState?.({ kind, state: 'starting' });
+    setupTimer = setTimeout(
+      () => mediaFailed(new DOMException('Local media startup timed out', 'TimeoutError')),
+      15000
+    );
+    mediaSetupTimers.add(setupTimer);
+    // 每种媒体独立启动；摄像头被占用或等待授权不会阻塞麦克风。
+    const open = async () => {
+      const acquired = await navigator.mediaDevices.getUserMedia(
+        kind === 'camera'
+          ? {
+              audio: false,
+              video: {
+                facingMode: 'user',
+                width: { ideal: 600, max: 600 },
+                height: { ideal: 450, max: 450 },
+                aspectRatio: { ideal: 4 / 3 },
+                frameRate: { ideal: 15, max: 15 },
+              },
+            }
+          : { video: false, audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }
+      );
+      if (!active()) {
+        acquired.getTracks().forEach((track) => track.stop());
         return;
       }
-      const cameraTrack = cameraStream.getVideoTracks()[0];
-      if (cameraTrack) {
+      rawStream = acquired;
+      const track = kind === 'camera' ? acquired.getVideoTracks()[0] : acquired.getAudioTracks()[0];
+      if (!track) throw new DOMException('Media track unavailable', 'NotFoundError');
+      if (track.readyState === 'ended') throw new DOMException('Media source ended', 'NotReadableError');
+      endedTrack = track;
+      endedHandler = () => mediaFailed(new DOMException('Media source ended', 'NotReadableError'));
+      track.addEventListener?.('ended', endedHandler);
+      let outgoingTrack = track;
+      let sender;
+      if (kind === 'camera') {
+        cameraStream = acquired;
         const canvas = document.createElement('canvas');
         canvas.width = 450;
         canvas.height = 600;
         const ctx = canvas.getContext('2d');
-        if (!ctx || !canvas.captureStream) throw new Error('Canvas video capture unavailable');
-        const source = document.createElement('video');
-        cameraSource = source;
+        if (!ctx || !canvas.captureStream)
+          throw new DOMException('Canvas video capture unavailable', 'NotSupportedError');
+        source = document.createElement('video');
         source.muted = true;
         source.playsInline = true;
-        source.srcObject = cameraStream;
+        source.srcObject = acquired;
         await source.play();
-        if (closed) return;
-
+        if (!active()) return;
         const draw = () => {
-          if (closed || !source.videoWidth || !source.videoHeight) return;
-          // 完整等比缩放，并按固件写屏方向将 600×450 旋转为 450×600。
+          if (!active() || !source.videoWidth || !source.videoHeight) return;
           const scale = Math.min(600 / source.videoWidth, 450 / source.videoHeight);
-          const width = source.videoWidth * scale;
-          const height = source.videoHeight * scale;
+          const width = source.videoWidth * scale,
+            height = source.videoHeight * scale;
           ctx.setTransform(0, 1, -1, 0, 450, 0);
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, 600, 450);
           ctx.drawImage(source, (600 - width) / 2, (450 - height) / 2, width, height);
         };
         draw();
-        rotatedCameraStream = canvas.captureStream(CAMERA_STREAM_FPS);
-        cameraDrawTimer = setInterval(draw, 1000 / CAMERA_STREAM_FPS);
-        // Apply the cap before attaching the track so startup cannot send uncapped video.
-        const parameters = videoTr.sender.getParameters();
+        outputStream = canvas.captureStream(CAMERA_STREAM_FPS);
+        rotatedCameraStream = outputStream;
+        drawTimer = setInterval(draw, 1000 / CAMERA_STREAM_FPS);
+        sender = videoTr.sender;
+        const parameters = sender.getParameters();
         if (!parameters.encodings?.length) throw new Error('Video sender has no negotiated encoding');
         parameters.encodings.forEach((encoding) => {
           encoding.maxBitrate = CAMERA_MAX_BITRATE_BPS;
           encoding.maxFramerate = CAMERA_STREAM_FPS;
         });
         parameters.degradationPreference = 'maintain-framerate';
-        await videoTr.sender.setParameters(parameters);
-        if (closed) return;
-        await videoTr.sender.replaceTrack(rotatedCameraStream.getVideoTracks()[0]);
-        if (closed) return;
-        onLocalStream?.(cameraStream);
+        await sender.setParameters(parameters);
+        if (!active()) return;
+        outgoingTrack = outputStream.getVideoTracks()[0];
+        if (!outgoingTrack) throw new DOMException('Canvas video track unavailable', 'NotSupportedError');
+      } else {
+        microphoneStream = acquired;
+        sender = audioTr.sender;
       }
-      logi('camera ' + (cameraTrack ? 'enabled' : 'track unavailable'), cameraTrack?.getSettings?.());
-    } catch (err) {
-      clearInterval(cameraDrawTimer);
-      rotatedCameraStream?.getTracks().forEach((track) => track.stop());
-      rotatedCameraStream = null;
-      if (cameraSource) {
-        cameraSource.pause();
-        cameraSource.srcObject = null;
-        cameraSource = null;
+      // 同一路sender的附轨与摘轨顺序执行，取消后的旧任务不能重新上行。
+      controller.queue = controller.queue
+        .catch(() => {})
+        .then(() => {
+          if (active()) return sender.replaceTrack(outgoingTrack);
+          return undefined;
+        });
+      await controller.queue;
+      if (!active()) return;
+      cancelSetup();
+      controller.enabled = true;
+      controller.state = 'enabled';
+      onLocalMediaState?.({ kind, state: 'enabled' });
+      if (kind === 'camera') {
+        published = true;
+        onLocalStream?.(acquired);
       }
-      cameraStream?.getTracks().forEach((track) => track.stop());
-      cameraStream = null;
-      logi('camera unavailable, receive-only video', err);
-    }
-    if (closed) return;
-    try {
-      microphoneStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: false,
-      });
-      if (closed) {
-        microphoneStream.getTracks().forEach((track) => track.stop());
-        microphoneStream = null;
-        return;
-      }
-      const microphoneTrack = microphoneStream.getAudioTracks()[0];
-      if (microphoneTrack) await audioTr.sender.replaceTrack(microphoneTrack);
-      logi('microphone ' + (microphoneTrack ? 'enabled' : 'track unavailable'));
-    } catch (err) {
-      microphoneStream?.getTracks().forEach((track) => track.stop());
-      microphoneStream = null;
-      logi('microphone unavailable, receive-only audio', err);
-    }
+      sendMediaState();
+      logi(kind + ' enabled');
+    };
+    open().catch(mediaFailed);
   };
 
   /* ontrack **每条轨道各触发一次**：这里声明了 video + audio 两个 sendrecv
@@ -430,7 +588,6 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
   const STATS_PROBE_AT_MS = [3000, 8000, 15000];
   const STATS_PERIOD_MS = 5000;
   let statsProbeStarted = false;
-  let statsTimer = null;
 
   const dumpStats = async (label) => {
     if (closed || !peer) return;
@@ -547,15 +704,14 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
        媒体这时才可能流动。只在 failed 时才打日志的话，"卡在 connecting"
        这种最常见的形态反而看不见——而它和"连上了但没帧"处置完全不同。 */
     logi('connectionState=' + peer.connectionState);
-    if (peer.connectionState === 'failed') {
-      fail('errPeerFailed');
-    }
+    checkPeerState();
   };
 
   /* ICE 中间状态在 logcat 里很关键：进到 checking 说明候选对已经在试，
      一直停在 new 说明压根没配上对。 */
   peer.oniceconnectionstatechange = () => {
     if (!closed && peer) logi('iceConnectionState=' + peer.iceConnectionState);
+    checkPeerState();
   };
   peer.onicegatheringstatechange = () => {
     if (!closed && peer) logi('iceGatheringState=' + peer.iceGatheringState);
@@ -576,6 +732,37 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
       /* rtx 要留着：H264 的丢包重传靠它，去掉会明显掉画质 */
       preferCodecs(videoTr, 'video', ['video/h264', 'video/rtx']);
       preferCodecs(audioTr, 'audio', ['audio/pcma', 'audio/pcmu']);
+
+      // 新固件确认黑屏观察能力；旧固件无确认时只提示，不中断原有观看与手动对讲。
+      try {
+        controlChannel = peer.createDataChannel('face3-viewer-control');
+        controlChannel.onopen = sendMediaState;
+        controlChannel.onmessage = ({ data }) => {
+          if (closed || typeof data !== 'string') return;
+          const match = /^F3A1:([1-9][0-9]{0,9}):([01])$/.exec(data);
+          if (!match || Number(match[1]) !== controlSequence) return;
+          clearTimeout(controlTimer);
+          controlTimer = null;
+          if (!controlReady) {
+            controlReady = true;
+            say('observation_supported');
+          }
+          if (match[2] === '0') {
+            const enabledKinds = Object.keys(mediaControllers).filter((kind) => mediaControllers[kind].enabled);
+            enabledKinds.forEach((kind) => {
+              setLocalMediaEnabled(kind, false);
+              onLocalMediaError?.({ kind, reason: 'busy' });
+            });
+          }
+        };
+        controlChannel.onclose = () => {
+          if (closed) return;
+          if (controlReady) fail('errSignalingClosed');
+          else observationUnsupported();
+        };
+      } catch {
+        observationUnsupported();
+      }
 
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
@@ -639,8 +826,8 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
     }
     try {
       await peer.setRemoteDescription(answer);
+      answerApplied = true;
       say('answered');
-      startLocalMedia();
     } catch (e) {
       fail('errPeerFailed', e);
     }
@@ -670,5 +857,9 @@ export function startFace3Viewer(cfg, { onStream, onLocalStream, onError, onStat
   say('connecting');
   signalingClient.open();
 
-  return { close };
+  return {
+    close,
+    setCameraEnabled: (enabled) => setLocalMediaEnabled('camera', enabled),
+    setMicrophoneEnabled: (enabled) => setLocalMediaEnabled('microphone', enabled),
+  };
 }

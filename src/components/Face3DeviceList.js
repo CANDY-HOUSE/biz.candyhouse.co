@@ -1,4 +1,3 @@
-import { logOperationFailure } from '@/services/operationFailure';
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { Box, Typography, Card, CardActionArea, IconButton, Button, CircularProgress } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -8,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import Face3LiveView from '@/components/Face3LiveView';
+import Face3EventRecordings from '@/components/Face3EventRecordings';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
@@ -18,9 +19,6 @@ import { useNavigateUtils } from '@/hooks/useNavigateUtils';
  * （十分钟量级）才会触发 $disconnect，所以刷得再快也快不过那个粒度。
  * 30 秒是个折中：用户手动下拉之外还能自己变，又不会把 WS 刷满。 */
 const REFRESH_INTERVAL_MS = 30000;
-
-/** 唤醒命令的等待上限。和 list 同理：sendMessage 断网是静默丢弃的。 */
-const WAKE_TIMEOUT_MS = 15000;
 
 /** 预览区占位图标的边长。唤醒按钮压在它正下方居中，改这里按钮会跟着走。 */
 const PREVIEW_ICON_SIZE = 56;
@@ -46,7 +44,7 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onCloseView, waking, isViewing }) => {
+const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, waking, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
@@ -215,6 +213,10 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, waking, isViewing }) 
         </IconButton>
       </Box>
 
+      <Button startIcon={<VideoLibraryIcon />} onClick={() => onRecordings(device)} sx={{ m: 1 }}>
+        {t('face3.recordings.title')}
+      </Button>
+
       {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/设置按钮。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
       {isViewing && (
@@ -248,7 +250,7 @@ export default function Face3DeviceList() {
    *
    * 项目里既有页面（schedule-list）也是这个写法：effect 里直接调，
    * 依赖放具体的值而不是 hook 对象。 */
-  const { listFace3Devices, wakeFace3Device } = gFace3;
+  const { listFace3Devices } = gFace3;
   /* 第二道防线：两次请求至少隔 1 秒。
    *
    * 注意不能用"在途标志"来挡 —— React 在依赖变化时会先跑 cleanup 再跑新的
@@ -295,65 +297,13 @@ export default function Face3DeviceList() {
 
   const face3Devices = gFace3.face3Devices || [];
 
-  const [wakingIds, setWakingIds] = useState(() => new Set());
   const [viewingIds, setViewingIds] = useState(() => new Set());
-
-  /* 唤醒失败的原因要说清楚，否则用户只知道"没反应"。
-     云端的 message 见 Face3_qr.mjs 的 wakeDevice。 */
-  const wakeErrorText = (message) => {
-    switch (message) {
-      case 'device_offline':
-        return t('face3.wakeOffline');
-      case 'not_bound':
-        return t('face3.wakeNotBound');
-      case 'device_identity_rejected':
-        /* 设备身份公钥与云端钉住的对不上。可能是换了主板，也可能是固件派生出的
-           密钥变了 —— 两种都要人去查，不是用户能自助解决的。 */
-        return t('face3.wakeIdentityRejected');
-      case 'device_not_signable':
-        /* 云端签不出这条命令：设备固件太老（没上报会话 nonce），
-           或者它的身份公钥没通过核验。都得线下处理，别让用户干等。 */
-        return t('face3.wakeNeedsUpdate');
-      default:
-        return t('face3.wakeFailed');
-    }
-  };
+  const [recordingDevice, setRecordingDevice] = useState(null);
 
   const handleWake = (device) => {
-    if (!device?.deviceUUID || wakingIds.has(device.deviceUUID)) return;
-    setWakingIds((ids) => new Set(ids).add(device.deviceUUID));
-    /* 立即挂载播放 UI 监听 streamState；它只在固件就绪后发送 viewer。 */
+    if (!device?.deviceUUID) return;
+    // 通话组件统一负责环境预检、唤醒和连接，关闭即取消本轮异步工作。
     setViewingIds((ids) => new Set(ids).add(device.deviceUUID));
-
-    let settled = false;
-    const finish = (severity, text) => {
-      if (settled) return;
-      settled = true;
-      setWakingIds((ids) => {
-        const next = new Set(ids);
-        next.delete(device.deviceUUID);
-        return next;
-      });
-      if (severity === 'error') logOperationFailure('Face3DeviceList.wake');
-      else setSnackbarValue({ open: true, severity, msg: text });
-    };
-
-    /* 断网时 sendMessage 静默丢弃，不会有回包 —— 转圈必须由这里收尾 */
-    const timer = setTimeout(() => finish('error', t('face3.errTimeout')), WAKE_TIMEOUT_MS);
-
-    wakeFace3Device(device.deviceUUID, (message) => {
-      clearTimeout(timer);
-      if (message?.success) {
-        finish('success', t('face3.wakeSent'));
-      } else {
-        setViewingIds((ids) => {
-          const next = new Set(ids);
-          next.delete(device.deviceUUID);
-          return next;
-        });
-        finish('error', wakeErrorText(message?.message));
-      }
-    });
   };
 
   const addDeviceMenu = (
@@ -437,6 +387,10 @@ export default function Face3DeviceList() {
               device={d}
               onOpen={navigateToDeviceDetail}
               onWake={handleWake}
+              onRecordings={(device) => {
+                setViewingIds(new Set());
+                setRecordingDevice(device);
+              }}
               onCloseView={() =>
                 setViewingIds((ids) => {
                   const next = new Set(ids);
@@ -444,11 +398,18 @@ export default function Face3DeviceList() {
                   return next;
                 })
               }
-              waking={wakingIds.has(d.deviceUUID)}
+              waking={viewingIds.has(d.deviceUUID)}
               isViewing={viewingIds.has(d.deviceUUID)}
             />
           ))}
         </Box>
+        {recordingDevice && (
+          <Face3EventRecordings
+            key={recordingDevice.deviceUUID}
+            device={recordingDevice}
+            onClose={() => setRecordingDevice(null)}
+          />
+        )}
       </Box>
     </SesameFloatingAdd>
   );
