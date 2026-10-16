@@ -73,7 +73,6 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
             if (message.op === PubedCompanyDevice) {
               setCompanyDevices(complete);
               setDevicesLoaded(true);
-              subscribeDevices(complete);
             } else {
               setUserDevices(complete);
             }
@@ -92,15 +91,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
           }
           break;
         case 'getDeviceStatus':
-          const device = message.data?.length > 0 ? message.data[0] : null;
-          setDeviceStatus(device);
-          if (gUtils.isWifiModel(device?.deviceModel)) {
-            const subDeviceInfos = [{ deviceUUID: device.deviceUUID, deviceModel: device.deviceModel }];
-            (device.stateInfo?.sesameDevices ?? []).forEach((sub) => {
-              subDeviceInfos.push({ deviceUUID: sub.deviceUUID, deviceModel: sub.deviceModel });
-            });
-            subscribeDevices(subDeviceInfos);
-          }
+          setDeviceStatus(message.data?.length > 0 ? message.data[0] : null);
           break;
         default:
           break;
@@ -384,36 +375,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
     [gStripe.customerInfo.companyID, registerCallback]
   );
 
-  const subscribeDevicesUpdate = useCallback(
-    (deviceInfos) => {
-      const companyID = gStripe.customerInfo.companyID;
-      const message = {
-        action: ACTION_TYPES.BIZ3_MANAGE_DEVICE,
-        op: 'subscribeDevicesUpdate',
-        items: deviceInfos,
-        companyID: companyID,
-      };
-      sendMessage(message);
-    },
-    [sendMessage, gStripe.customerInfo.companyID]
-  );
-
-  const subscribeDevices = useCallback(
-    (devices) => {
-      if (!devices || devices.length === 0) {
-        return;
-      }
-      const deviceInfos = devices.map((device) => ({
-        deviceUUID: device.deviceUUID,
-        deviceModel: device.deviceModel,
-      }));
-      if (deviceInfos.length > 0) {
-        subscribeDevicesUpdate(deviceInfos);
-      }
-    },
-    [subscribeDevicesUpdate]
-  );
-
+  // 设备状态订阅由服务端在 getCompanyDevice / getDeviceStatus 时自动完成；重连后重新拉取即重新订阅
   useEffect(() => {
     const unsubscribe = WebSocketManager.onConnectionIdChange((newConnectionId) => {
       console.log('【Device】检测到 WebSocket connectionId 变化:', newConnectionId);
