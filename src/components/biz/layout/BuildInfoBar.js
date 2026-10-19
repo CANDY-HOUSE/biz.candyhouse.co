@@ -7,27 +7,50 @@ const BuildInfoBar = () => {
   const [info, setInfo] = useState(versionInfo || { buildTime: '--', gitHash: '--' });
 
   useEffect(() => {
-    let cancelled = false;
-    if (versionInfo) {
+    const live = process.env.NODE_ENV === 'development';
+    if (versionInfo && !live) {
       setInfo(versionInfo);
       return;
     }
 
-    fetch('/version.json', { cache: 'no-store' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
+    let cancelled = false;
+    let pending = false;
+    const controller = new AbortController();
+    const refresh = async () => {
+      if (cancelled || pending || (live && document.hidden)) return;
+      pending = true;
+      try {
+        const res = await fetch('/version.json', { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
         if (cancelled || !data) return;
         const buildInfo = {
           buildTime: data.buildTime || '--',
           gitHash: data.gitHash || '--',
         };
-        setInfo(buildInfo);
         versionInfo = buildInfo;
-      })
-      .catch(() => {});
-
+        setInfo((previous) =>
+          previous.buildTime === buildInfo.buildTime && previous.gitHash === buildInfo.gitHash ? previous : buildInfo
+        );
+      } catch {
+        // 暂时断网或卸载取消请求时保留上次标识，开发模式下一轮会重试。
+      } finally {
+        pending = false;
+      }
+    };
+    refresh();
+    let timer;
+    if (live) {
+      timer = setInterval(refresh, 2000);
+      window.addEventListener('focus', refresh);
+      document.addEventListener('visibilitychange', refresh);
+    }
     return () => {
       cancelled = true;
+      controller.abort();
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
     };
   }, []);
 

@@ -55,6 +55,20 @@ const useFace3 = () => {
   );
 
   /**
+   * 唤醒、取观看凭证这类请求只在连接可用时发送，不进断线队列：
+   * 页面关掉后才重连补发，会把设备白白唤醒一次。断线时立即回调 ws_disconnected。
+   */
+  const sendWithoutQueue = useCallback(
+    (messageData, callbackKey, cb) => {
+      sendMessage(messageData, false).then(
+        () => registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, callbackKey, cb),
+        () => cb?.({ success: false, message: 'ws_disconnected' })
+      );
+    },
+    [registerCallback]
+  );
+
+  /**
    * 给一台设备下发一条命令（通用入口）。
    *
    * 今后所有发给 face3 设备的命令都走这里，由 H5 通过 cmd 决定是哪个 action，
@@ -74,10 +88,9 @@ const useFace3 = () => {
         deviceId: deviceUUID,
         cmd,
       };
-      sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
+      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
     },
-    [registerCallback]
+    [sendWithoutQueue]
   );
 
   /**
@@ -139,10 +152,9 @@ const useFace3 = () => {
         op: 'viewer',
         deviceId: deviceUUID,
       };
-      sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, `${messageData.op}:${deviceUUID}`, cb);
+      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
     },
-    [registerCallback]
+    [sendWithoutQueue]
   );
 
   const handleFace3Response = useCallback(

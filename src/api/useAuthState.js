@@ -97,7 +97,7 @@ export const useAuthState = () => {
 
         case AUTH_EVENTS.SIGN_OUT:
           console.log('用户已登出');
-          WebSocketManager.closeConnection();
+          WebSocketManager.closeConnection(true);
           break;
 
         case AUTH_EVENTS.TOKEN_REFRESH:
@@ -187,7 +187,7 @@ export const useAuthState = () => {
 
   const clearCache = () => {
     setLoginState(gConfig.loginState.loginOut);
-    WebSocketManager.closeConnection();
+    WebSocketManager.closeConnection(true);
     if (isAppHome) preserveGuestDevices(() => localStorage.clear());
     else localStorage.clear();
   };

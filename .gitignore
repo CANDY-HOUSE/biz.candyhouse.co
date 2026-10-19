@@ -41,3 +41,5 @@ pids
 # OS specific
 .DS_Store
 .Rhistory
+# 构建/开发时由 generate-version.js 生成
+/public/version.json

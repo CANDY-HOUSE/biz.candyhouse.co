@@ -53,3 +53,15 @@ if (process.env.REMOVE_CONSOLE === 'true') {
 }
 
 module.exports = override(...plugins);
+
+// 在静态文件前提供开发版本接口，覆盖提交、切分支和rebase后的HEAD变化。
+module.exports.devServer = (createConfig) => (proxy, allowedHost) => {
+  const config = createConfig(proxy, allowedHost);
+  const setup = config.setupMiddlewares;
+  const versionMiddleware = require('./dev-version-middleware')(__dirname);
+  config.setupMiddlewares = (middlewares, server) => [
+    { name: 'biz3-live-version', path: '/version.json', middleware: versionMiddleware },
+    ...(setup ? setup(middlewares, server) : middlewares),
+  ];
+  return config;
+};

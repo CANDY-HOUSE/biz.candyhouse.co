@@ -22,6 +22,7 @@ const WAKE_ERROR_TEXT = {
   not_bound: 'face3.wakeNotBound',
   device_identity_rejected: 'face3.wakeIdentityRejected',
   device_not_signable: 'face3.wakeNeedsUpdate',
+  ws_disconnected: 'face3.errTimeout',
 };
 
 /** 云端拒绝的原因 → 文案。都是要用户知道下一步做什么的情况。
@@ -36,6 +37,7 @@ const CRED_ERROR_TEXT = {
   device_offline: 'face3.wakeOffline',
   device_identity_rejected: 'face3.wakeIdentityRejected',
   device_not_signable: 'face3.wakeNeedsUpdate',
+  ws_disconnected: 'face3.errTimeout',
 };
 
 /** face3Viewer 的错误 key → 文案。

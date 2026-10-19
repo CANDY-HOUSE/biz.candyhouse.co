@@ -34,7 +34,12 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
     if (typeof sesameDevices[0] === 'object') {
       return sesameDevices;
     }
-    return gManageDevice.companyDevices.filter((it) => sesameDevices.includes(it.deviceUUID));
+    return sesameDevices.map(
+      (deviceUUID) =>
+        gManageDevice.companyDevices.find((it) => it.deviceUUID?.toUpperCase() === deviceUUID?.toUpperCase()) || {
+          deviceUUID,
+        }
+    );
   }, [currentDevice, gManageDevice.companyDevices]);
 
   const canAddSesameDevice = useMemo(() => {
@@ -45,7 +50,7 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
       if (devices.length < 1) {
         return true;
       }
-      return !devices.some((d) => d.deviceUUID === it.deviceUUID);
+      return !devices.some((d) => d.deviceUUID?.toUpperCase() === it.deviceUUID?.toUpperCase());
     });
   }, [devices, sourceDevices]);
 
@@ -141,7 +146,7 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
             >
               <ListItemText
                 sx={{ minWidth: 0 }}
-                primary={<Typography sx={singleLineTextSx}>{device.deviceName}</Typography>}
+                primary={<Typography sx={singleLineTextSx}>{device.deviceName || device.deviceUUID}</Typography>}
               />
               {editable && (
                 <ListItemIcon
@@ -191,7 +196,7 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
           <List>
             <ListItem>
               <Typography sx={{ color: 'rgb(204, 204, 204)', ...singleLineTextSx }}>
-                {selectedDevice?.deviceName}
+                {selectedDevice?.deviceName || selectedDevice?.deviceUUID}
               </Typography>
             </ListItem>
             <ListItem onClick={() => handleOSUpdateClick(selectedDevice)}>

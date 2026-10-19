@@ -35,7 +35,8 @@ class WebSocketManager {
   private sleepDetectorTimer: any = null;
   private readonly SLEEP_CHECK_INTERVAL = 2000;
   private readonly SLEEP_THRESHOLD = 5000;
-  private messageQueue: any[] = [];
+  // 断线期间的待发消息。owner 记排队时的账号，换账号后不能替新账号补发。
+  private messageQueue: { key: string; owner: string; message: any }[] = [];
   private authenticatedToken: string = '';
   private connectionId: string = '';
   private connectionFailureCallback: ((_token: string) => Promise<boolean>) | null = null;
@@ -162,7 +163,9 @@ class WebSocketManager {
     this.initWebSocket(token);
   }
 
-  public closeConnection() {
+  /** @param discardQueue 登出时传 true，丢弃断线期间排队未发的消息 */
+  public closeConnection(discardQueue = false) {
+    if (discardQueue) this.messageQueue = [];
     this.clearAllTimers();
     if (this.ws) {
       this.ws.onclose = null;
@@ -391,11 +394,14 @@ class WebSocketManager {
       return;
     }
     if (this.ws?.readyState !== WebSocket.OPEN) {
-      const existingIndex = this.messageQueue.findIndex((msg) => msg.action === message.action);
+      // 同一操作、同一目标只留最新一条；不同 op 或不同设备的消息互不覆盖。
+      const key = WebSocketManager.queueKey(message);
+      const entry = { key, owner: WebSocketManager.tokenSubject(this.authenticatedToken), message };
+      const existingIndex = this.messageQueue.findIndex((item) => item.key === key);
       if (existingIndex !== -1) {
-        this.messageQueue[existingIndex] = message;
+        this.messageQueue[existingIndex] = entry;
       } else {
-        this.messageQueue.push(message);
+        this.messageQueue.push(entry);
       }
       console.log('【WS】WebSocket未连接，消息已加入队列');
       return;
@@ -403,16 +409,35 @@ class WebSocketManager {
     this.ws.send(JSON.stringify(message));
   }
 
+  private static queueKey(message: any) {
+    const target = message.deviceUUID ?? message.deviceId ?? message.device_id ?? message.uuid ?? message.topic ?? '';
+    return `${message.action}|${message.op ?? ''}|${String(target).toUpperCase()}`;
+  }
+
+  /** 取 JWT 的 sub 作为账号标识；解析不了返回空串（视为未知账号）。 */
+  private static tokenSubject(token: string) {
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return String(JSON.parse(atob(payload)).sub ?? '');
+    } catch {
+      return '';
+    }
+  }
+
   private async processMessageQueue() {
     if (this.messageQueue.length > 0) {
-      console.log({ '【WS】检查队列消息': JSON.stringify(this.messageQueue) });
+      console.log({ '【WS】检查队列消息': JSON.stringify(this.messageQueue.map((item) => item.message)) });
     }
-    if (this.ws?.readyState !== WebSocket.OPEN) return;
-    while (this.messageQueue.length > 0) {
-      const msg = this.messageQueue[0];
+    const owner = WebSocketManager.tokenSubject(this.authenticatedToken);
+    while (this.messageQueue.length > 0 && this.ws?.readyState === WebSocket.OPEN) {
+      const { owner: queuedOwner, message } = this.messageQueue.shift()!;
+      // 登录前排队的（owner 为空）照常发；其他账号排队的直接丢弃。
+      if (queuedOwner && queuedOwner !== owner) {
+        console.log('【WS】丢弃其他账号排队的消息', message.action, message.op);
+        continue;
+      }
       try {
-        await this.sendMessage(msg);
-        this.messageQueue.shift();
+        await this.sendMessage(message);
       } catch (error) {
         console.error(`【WS】队列消息发送失败:`, error);
         break;
