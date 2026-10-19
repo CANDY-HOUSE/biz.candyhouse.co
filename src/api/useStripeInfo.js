@@ -129,8 +129,12 @@ export const useStripeInfo = (gAuth) => {
         switch (message.op) {
           case 'getDevApiInfo':
             if (!message.success) return;
-            const { apiKeyValue, apiKeyId, usedCount } = message.data;
-            setApiKey({ apiKeyValue, apiKeyId, usedCount });
+            const { apiKeyValue, apiKeyId, usedCount, webhook } = message.data;
+            setApiKey({ apiKeyValue, apiKeyId, usedCount, webhook: webhook || null });
+            break;
+          case 'updateWebhook':
+            if (!message.success) return;
+            setApiKey((prev) => ({ ...prev, webhook: message.data?.webhook || null }));
             break;
           case 'getClientSecret':
             break;
@@ -314,6 +318,23 @@ export const useStripeInfo = (gAuth) => {
     [priorityCompanyId, customerInfo.employeeEmail]
   );
 
+  // 编辑 webhook URL（仅オーナー），url 为空即删除配置
+  const updateWebhook = useCallback(
+    (url, cb) => {
+      const customerId = priorityCompanyId;
+      if (!customerId) return;
+      const msgData = {
+        action: ACTION_TYPES.BIZ3_MANAGE_PAYMENT,
+        customerId,
+        url,
+        op: 'updateWebhook',
+      };
+      sendMessage(msgData);
+      registerCallback(msgData.action, msgData.op, cb);
+    },
+    [priorityCompanyId, registerCallback]
+  );
+
   const updateCompanyName = useCallback(
     (name, cb) => {
       const companyID = priorityCompanyId;
@@ -397,6 +418,7 @@ export const useStripeInfo = (gAuth) => {
     updateLevel,
     getLevelConfig,
     getDevApiInfo,
+    updateWebhook,
     apiKey,
 
     isOwner,

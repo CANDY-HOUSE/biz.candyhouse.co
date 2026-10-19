@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 import CheckTable from '@/components/biz/CheckTable';
 import DataTable from '@/components/biz/device/DataTable';
 import { gConfig } from '@constants/gConfig';
+import WebhookCard from './WebhookCard';
 
 export default function Developer() {
   const { t } = useTranslation(); // i18n
@@ -311,6 +312,7 @@ export default function Developer() {
                 </CardContent>
               </Card>
             </Box>
+            {gStripe.isOwner && <WebhookCard />}
             <Card>
               <CardHeader title={<Typography variant="h3">デモ</Typography>} />
               <CardContent>
