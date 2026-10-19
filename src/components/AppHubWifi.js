@@ -152,7 +152,8 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
             autoFocus
             fullWidth
             margin="dense"
-            type="password"
+            type="text"
+            inputProps={{ autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false }}
             value={password}
             disabled={busy}
             label={t('pages.sesameAccessControlDevice.index.WiFiPWD')}
