@@ -32,7 +32,6 @@ import { isAppHome } from './services/deviceService';
 
 const BizHomePage = deferredComponent(() => import('@biz/home'));
 const Settings = deferredComponent(() => import('@biz/settings'));
-const Vision = deferredComponent(() => import('@biz/vision'));
 
 Amplify.configure(awsconfig);
 
@@ -137,9 +136,7 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           {isAppHome && <Route path="/app/register" element={<AppRegistration />} />}
           <Route path="/biz" element={<BizHomePage />} />
-          {/* Face3 uses user/device bindings, including accounts without a Biz company. */}
-          <Route path="/vision" element={<Vision />} />
-          {generateRoutes(allowedRoutes.filter((route) => route !== '/vision'))}
+          {generateRoutes(allowedRoutes)}
           <Route path="/biz/settings" element={<Settings />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
