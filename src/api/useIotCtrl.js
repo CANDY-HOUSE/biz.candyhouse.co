@@ -58,7 +58,9 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
     const sesameIdArray = biz3utils.hexStringToUint8Array(cleanSesameId);
 
     const sesameSecretKey = iotPayload.ssmSecKa;
-    const secretKeyArray = biz3utils.hexStringToUint8Array(sesameSecretKey);
+    // 固件按固定结构校验长度（nickName 为空时至少 92 字节），删除时只比对 UUID；
+    // 只有 Hub3 上报 UUID、本地没有该设备钥匙时补 16 字节 0 占位，否则命令会被固件静默丢弃
+    const secretKeyArray = sesameSecretKey ? biz3utils.hexStringToUint8Array(sesameSecretKey) : new Uint8Array(16);
 
     const nickName = iotPayload.nickName || '';
     const nickNameArray = biz3utils.stringToUint8Array(nickName);

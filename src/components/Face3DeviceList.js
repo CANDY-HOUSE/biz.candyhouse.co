@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Typography, Card, CardActionArea, IconButton, Button, CircularProgress } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -305,6 +306,28 @@ export default function Face3DeviceList() {
     // 通话组件统一负责环境预检、唤醒和连接，关闭即取消本轮异步工作。
     setViewingIds((ids) => new Set(ids).add(device.deviceUUID));
   };
+
+  /* 门铃推送点进来：/vision?deviceUUID=<id>&live=1 直接打开这台的实时画面。
+     等列表里有这台再开（App 冷启动时列表要先拉回来）；开过就把参数去掉，
+     免得刷新或返回时再开一次。列表里没有这台（已解绑/无权限）就静默忽略。 */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const liveUUID = searchParams.get('live') === '1' ? (searchParams.get('deviceUUID') || '').toUpperCase() : '';
+  useEffect(() => {
+    if (!liveUUID) return;
+    const device = face3Devices.find((d) => (d.deviceUUID || '').toUpperCase() === liveUUID);
+    if (!device) return;
+    handleWake(device);
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params);
+        next.delete('deviceUUID');
+        next.delete('live');
+        return next;
+      },
+      { replace: true }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveUUID, face3Devices]);
 
   const addDeviceMenu = (
     <Box>
