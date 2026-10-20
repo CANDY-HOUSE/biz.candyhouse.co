@@ -24,6 +24,9 @@ import AppBootstrap from './components/AppBootstrap';
 import AppUpdateRuntime from './components/AppUpdateRuntime';
 import AppStartupReady from './components/AppStartupReady';
 import AppNavigation from './components/AppNavigation';
+import AppTopBar from './components/AppTopBar';
+import AppQrScanner from './components/AppQrScanner';
+import AppInternalTest from './components/AppInternalTest';
 import { appTabPaths } from './services/appNavigation';
 import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
 import { currentAppToken } from './services/appSession';
@@ -165,6 +168,7 @@ const AppFrame = ({ children }) => {
           : undefined
       }
     >
+      <AppTopBar />
       <Box
         ref={contentRef}
         onScroll={(event) => {
@@ -215,6 +219,8 @@ const App = () => {
             <GlobalContextProvider>
               <AppHomeRuntime />
               <AppContent />
+              {isAppHome && <AppQrScanner />}
+              {isAppHome && <AppInternalTest />}
             </GlobalContextProvider>
           </AppBootstrap>
         </AppFrame>

@@ -14,6 +14,13 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
   const { t } = useTranslation();
   const init = { count: 0, Items: [] };
   const [employees, setEmployees] = useState(init);
+  // Contacts deleted moments ago; a refresh may be empty (no page pushed) or read before the delete settles.
+  const recentlyDeleted = useRef(new Map());
+  const withoutDeleted = (list) => {
+    const now = Date.now();
+    recentlyDeleted.current.forEach((until, id) => until < now && recentlyDeleted.current.delete(id));
+    return list.filter((item) => !recentlyDeleted.current.has(item.subUUID));
+  };
   const [employeeGroups, setEmployeeGroups] = useState(null);
   const [tags, setTags] = useState([]);
   const { registerCallback, invokeCallbacks } = useCallbacks();
@@ -110,15 +117,17 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
             data: { list, page },
           } = message.data;
           setEmployees((prevState) => {
+            const fresh = withoutDeleted(list);
+            const count = totalCount - (list.length - fresh.length);
             if (page === 1) {
               return {
-                count: totalCount,
-                Items: [...list],
+                count,
+                Items: [...fresh],
               };
             } else {
               return {
                 count: prevState.count,
-                Items: [...prevState.Items, ...list],
+                Items: [...prevState.Items, ...fresh],
               };
             }
           });
@@ -300,7 +309,22 @@ export const useManageEmployee = (gAuth, gStripe, setSnackbarValue) => {
         op: 'delete',
       };
       sendMessage(msgData);
-      registerCallback(msgData.action, msgData.op, cb);
+      registerCallback(msgData.action, msgData.op, (res) => {
+        if (res?.success) {
+          const ids = new Set(items.map((item) => item.subUUID).filter(Boolean));
+          const until = Date.now() + 10000;
+          ids.forEach((id) => recentlyDeleted.current.set(id, until));
+          setEmployees((prev) => {
+            const Items = (prev?.Items || []).filter((item) => !ids.has(item.subUUID));
+            return {
+              ...prev,
+              count: Math.max(0, (prev?.count ?? Items.length) - ((prev?.Items?.length || 0) - Items.length)),
+              Items,
+            };
+          });
+        }
+        cb && cb(res);
+      });
     },
     [registerCallback]
   );

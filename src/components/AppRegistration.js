@@ -2,8 +2,10 @@ import { bleStateLabel } from '@/services/blePresentation';
 import { isPeripheralModel } from '@/services/peripheralSettings';
 import { initializeBotScripts, isScriptBotModel } from '@/services/botScripts';
 import { rememberGuestDevice } from '@/services/guestDevices';
+import { forgetRemovedDevice, removedDevices } from '@/services/removedDevices';
 import { isAppLockModel } from '@/services/appLockSettings';
 import { isGuestAppSession } from '@/services/appSession';
+import { appTopBarHeight } from '@/services/appNavigation';
 import { useTranslation } from 'react-i18next';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -31,7 +33,8 @@ export default function AppRegistration() {
   const start = async () => {
     setRefreshing(true);
     try {
-      await deviceService.request('scanStart');
+      const owned = new Set(gManageDevice.companyDevices.map((item) => item.deviceUUID?.toUpperCase()));
+      await deviceService.request('scanStart', { removedDevices: removedDevices().filter((id) => !owned.has(id)) });
     } catch (e) {
       if (active.current) showNotice(e.message);
     } finally {
@@ -113,6 +116,7 @@ export default function AppRegistration() {
     setBusy(device.deviceUUID);
     try {
       const result = await deviceService.request('register', { deviceUUID: device.deviceUUID });
+      forgetRemovedDevice(device.deviceUUID);
       await cloudCallback((cb) => gManageDevice.addSesameDevicesToBiz3([result.data], cb));
       if (isGuestAppSession() && gStripe.customerInfo.isAnonymous)
         rememberGuestDevice(gStripe.customerInfo.subUUID, result.data);
@@ -158,12 +162,25 @@ export default function AppRegistration() {
       if (active.current) setBusy('');
     }
   };
+  // Removed but not yet reset devices go after every registrable one
+  const devices = [
+    ...discovery.devices.filter((device) => !device.registered),
+    ...discovery.devices.filter((device) => device.registered),
+  ];
   return (
-    <Box ref={container} sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}>
+    <Box
+      ref={container}
+      sx={{
+        minHeight: `calc(100dvh - ${appTopBarHeight}px)`,
+        display: 'flex',
+        flexDirection: 'column',
+        touchAction: 'pan-y',
+      }}
+    >
       <AppRefreshIndicator distance={pullDistance} refreshing={refreshing} />
       <BleStatusBar bluetoothOff={discovery.bluetoothOff} />
       <List sx={{ px: 2, display: discovery.devices.length ? 'block' : 'none' }}>
-        {discovery.devices.map((device) => {
+        {devices.map((device) => {
           const connected = ['readyToRegister', 'bleConnecting', 'waitingGatt', 'bleLogining', 'registering'].includes(
             device.bleState
           );
@@ -172,7 +189,7 @@ export default function AppRegistration() {
           return (
             <Box key={device.deviceUUID}>
               <ListItemButton
-                disabled={Boolean(busy)}
+                disabled={Boolean(busy) || device.registered}
                 onClick={() => register(device)}
                 sx={{ py: 3, px: 0, display: 'block' }}
               >
@@ -191,7 +208,7 @@ export default function AppRegistration() {
                 >
                   <Typography sx={{ fontSize: 10, overflowWrap: 'anywhere' }}>{device.deviceUUID}</Typography>
                   <Typography sx={{ fontSize: 10, whiteSpace: 'nowrap' }}>
-                    {bleStateLabel(device.bleState, t)}
+                    {device.registered ? t('appHome.resetToRegister') : bleStateLabel(device.bleState)}
                   </Typography>
                 </Stack>
                 {busy === device.deviceUUID && <CircularProgress size={24} />}

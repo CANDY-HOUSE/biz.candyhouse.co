@@ -33,7 +33,19 @@
     "openSensorName": "开关传感器",
     "distance": "距离",
     "radarDescription": "・这是雷达唤醒系统的侦测距离。\n・每日人流量超过10次, 则设置短距以省电！(甚至是最短0cm)\n・每日人流量10次以下, 则设置最长距离以获得最爽体验。\n・即使为最短距离，按下「开锁按钮/侧面按钮」将立即启动人脸或掌静脉识别，兼顾极度省电与最爽体验。\n・请勿混用不同品牌、新旧不同或型号不同的电池。\n・建议不要只装2节，装满所有电池。电池越多，负载越分散，电压越稳定，电池寿命越长。",
-    "delayValue": "{{value}} 秒 后"
+    "delayValue": "{{value}} 秒 后",
+    "manualName": "名称",
+    "manualNameHint": "请输入名称",
+    "manualPassword": "密码",
+    "manualPasswordHint": "请输入密码（仅数字）",
+    "manualPasswordRequired": "请输入密码",
+    "batchAdd": "批量添加",
+    "manualCancel": "取消",
+    "manualConfirm": "确认",
+    "manualCardId": "卡ID",
+    "manualCardIdHint": "请输入卡ID（0-9,A-F,a-f）",
+    "manualCardIdRequired": "请输入卡ID",
+    "importOverLimit": "超出容量：导入 {{incoming}} 条，超过上限 {{limit}} 条"
   },
   "pages": {
     "login": {
@@ -536,7 +548,9 @@
     "volume": "音量"
   },
   "appHome": {
+    "unloginHistoryTag": "未登入用户",
     "registrationNetworkRequired": "请连接网络后再注册",
+    "resetToRegister": "请重置设备后再注册",
     "noDevices": "从⊕开始注册新设备，或扫描二维码获取已注册设备的使用权限",
     "sesame": "芝麻",
     "vision": "视觉",
@@ -548,7 +562,13 @@
     "noBleDevicesDescription": "1. 您的手机蓝牙开启了吗？\n2. 重启手机有时可解决问题。\n3. 附近有未注册设备吗？\n4. 用针戳复位键直到LED灯熄灭以重置设备",
     "loginRequired": "请登录",
     "unsupportedQr": "不支持此二维码",
-    "refreshing": "刷新中"
+    "refreshing": "刷新中",
+    "addNewDevice": "添加新设备",
+    "scanQrCode": "扫描二维码",
+    "addContacts": "添加联系人",
+    "gallery": "图库",
+    "close": "关闭",
+    "qrNotFound": "图片中未发现二维码"
   },
   "lockSettings": {
     "immediate": "马上",
@@ -572,8 +592,7 @@
     "back": "返回"
   },
   "bleStatus": {
-    "off": "手机蓝牙未开启",
-    "noSignal": "找不到蓝牙信号, 请靠近"
+    "off": "手机蓝牙未开启"
   },
   "lockExtras": {
     "notificationGranted": "已获得 安卓的 通知权限",
@@ -605,6 +624,8 @@
     "refresh": "↓您可以下拉刷新",
     "password": "请输入 WiFi 密码",
     "close": "关闭",
+    "connected": "WiFi模块已连接到网络",
+    "connectFailed": "很抱歉🙏\n请确认您的WiFi密码，或把WiFi模块设置于尽量接近WiFi路由器的地方\n\n然后多试几次，通常能成功连上线🙏",
     "status": {
       "ReceivedAdV": "收到蓝牙信号了",
       "BleConnecting": "蓝牙连接中",

@@ -33,7 +33,19 @@
     "openSensorName": "オープンセンサー",
     "distance": "距離",
     "radarDescription": "・レーダーがシステムを睡眠状態から起こす距離です。\n・人通りが一日10回を超える場合、節電のため、レーダーの探知距離を短めに設定して下さい(場合によって0cmの最短に)！\n・人通りが一日10回以下の場合、最長距離に設定すると非常に快適にご利用頂けます。\n・最短距離に設定しても、施錠状態で「解錠ボタン/側面ボタン」を押すと、顔認証や手のひら静脈認証が即座に開始されるため、ある程度、極度な省電力と極上のユーザー体験の両立を実現できます。\n・異なるメーカー・新旧・型番の電池を混用しない。\n・電池は2本ではなく、全て入れる事をお勧めします。多いほど負荷分散、電圧安定、電池寿命も長持ち。",
-    "delayValue": "{{value}} 秒 後"
+    "delayValue": "{{value}} 秒 後",
+    "manualName": "名前",
+    "manualNameHint": "名前を入力してください",
+    "manualPassword": "パスワード",
+    "manualPasswordHint": "パスワードを入力してください（数字のみ）",
+    "manualPasswordRequired": "パスワードを入力してください",
+    "batchAdd": "一括追加",
+    "manualCancel": "キャンセル",
+    "manualConfirm": "確認",
+    "manualCardId": "カードID",
+    "manualCardIdHint": "カードIDを入力してください（0-9,A-F,a-f）",
+    "manualCardIdRequired": "カードIDを入力してください",
+    "importOverLimit": "容量を超えています：{{incoming}} 件が上限 {{limit}} 件を超えます"
   },
   "pages": {
     "login": {
@@ -536,7 +548,9 @@
     "volume": "音量"
   },
   "appHome": {
+    "unloginHistoryTag": "未登録利用者",
     "registrationNetworkRequired": "登録するにはインターネットに接続してください",
+    "resetToRegister": "リセットしてから登録してください",
     "noDevices": "⊕から新規デバイスを登録するか、QRコードをスキャンして登録済みデバイスのアクセス権を取得",
     "sesame": "セサミ",
     "vision": "ビジョン",
@@ -548,7 +562,13 @@
     "noBleDevicesDescription": "1. スマートフォンのBluetoothがオンになっていますか？\n2. スマートフォンの再起動で解決できる場合がございます。\n3. 未登録のデバイスが近くにありますか？\n4. 登録済のデバイスをリセットするには、細い棒でリセットボタンをLED点灯が消えるまで長押ししてください。",
     "loginRequired": "ログインしてください",
     "unsupportedQr": "対応していないQRコードです",
-    "refreshing": "更新中"
+    "refreshing": "更新中",
+    "addNewDevice": "新しいデバイスを追加",
+    "scanQrCode": "QRコードのスキャン",
+    "addContacts": "連絡先の追加",
+    "gallery": "写真ライブラリ",
+    "close": "閉じる",
+    "qrNotFound": "画像にQRコードが見つかりません"
   },
   "lockSettings": {
     "immediate": "すぐに",
@@ -572,8 +592,7 @@
     "back": "戻る"
   },
   "bleStatus": {
-    "off": "Bluetoothがオフ",
-    "noSignal": "Bluetooth信号見つからず、近づいてください"
+    "off": "Bluetoothがオフ"
   },
   "lockExtras": {
     "notificationGranted": "Androidの通知権限を取得済み",
@@ -605,6 +624,8 @@
     "refresh": "↓引っ張って更新できます",
     "password": "WiFi環境のパスワードをご入力ください",
     "close": "閉じる",
+    "connected": "WiFiモジュールがネットに接続できました",
+    "connectFailed": "すみません🙏\nWiFiパスワードを再度確かめるか、WiFiルーターとの距離を近づけて、再度設定をお試し頂けますでしょうか？\n\n一度失敗した場合でも、通常数回お試し頂くと、接続に成功することがほとんどです。🙏",
     "status": {
       "ReceivedAdV": "Received Ble",
       "BleConnecting": "Ble Connecting",

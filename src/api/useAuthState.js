@@ -1,4 +1,5 @@
 import { claimGuestDevices, preserveGuestDevices } from '@/services/guestDevices';
+import { preserveRemovedDevices } from '@/services/removedDevices';
 import { currentAppToken, retireLegacySession, initialAppToken } from '@/services/appSession';
 import { isAppHome } from '@/services/deviceService';
 import { useEffect, useState } from 'react';
@@ -188,7 +189,7 @@ export const useAuthState = () => {
   const clearCache = () => {
     setLoginState(gConfig.loginState.loginOut);
     WebSocketManager.closeConnection(true);
-    if (isAppHome) preserveGuestDevices(() => localStorage.clear());
+    if (isAppHome) preserveRemovedDevices(() => preserveGuestDevices(() => localStorage.clear()));
     else localStorage.clear();
   };
 

@@ -16,16 +16,17 @@ const stateLabels = new Map(
     moved: 'Moved',
     waitApConnect: 'waitApConnect',
     dfumode: 'dfumode',
+    // Product keeps the raw state name instead of a sentence.
+    noBleSignal: 'NoBleSignal',
   })
 );
 
-export function bleStateLabel(state, t) {
-  if (state === 'noBleSignal') return t('bleStatus.noSignal');
+export function bleStateLabel(state) {
   return stateLabels.get(state) || '';
 }
 
 export function bleStatusText(device, bluetoothOff, t) {
   if (bluetoothOff) return t('bleStatus.off');
   if (!device || device.bleConnected) return '';
-  return bleStateLabel(device.bleState, t);
+  return bleStateLabel(device.bleState);
 }

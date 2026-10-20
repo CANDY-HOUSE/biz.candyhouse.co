@@ -13,6 +13,7 @@ import CheckTable from '@/components/biz/CheckTable';
 import KeyLevelSelector from '@/components/biz/KeyLevelSelector';
 import MobileUserDevices from '@/components/MobileUserDevices';
 import { biz3utils } from '@utils/biz3utils';
+import { isAppHome } from '@/services/deviceService';
 import UserBasicInfo from '@/components/biz/device/UserBasicInfo';
 
 const EmployeeItem = () => {
@@ -232,6 +233,8 @@ const EmployeeItem = () => {
                           notifyName: FriendChangedName,
                         })}`;
                         biz3utils.triggerScheme(scheme);
+                        // The former host closed this page on the notify; the web app leaves it itself.
+                        if (isAppHome) window.dispatchEvent(new CustomEvent('app-back'));
                       } else {
                         // 不在 App 端内退回上一页
                         navigate(-1);

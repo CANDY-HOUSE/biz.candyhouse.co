@@ -26,7 +26,7 @@ const DeviceItem = () => {
   }, []);
 
   const device = useMemo(() => {
-    return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
+    return gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase()) || {};
   }, [gManageDevice.companyDevices, did]);
 
   return (
@@ -53,7 +53,8 @@ const DeviceItem = () => {
       >
         <BackButton onClick={() => navigate(-1)} disableRipple>
           <Typography variant="h3" sx={{ color: 'black' }}>
-            {deviceName}
+            {/* The list carries renames made in device settings; the query keeps the name from entry. */}
+            {device.deviceName || deviceName}
           </Typography>
         </BackButton>
         {gMediaType.isMobile ? (

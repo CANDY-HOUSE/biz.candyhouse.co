@@ -33,7 +33,19 @@
     "openSensorName": "Open Sensor",
     "distance": "Distance",
     "radarDescription": "・This is the Radar wake-up detection range.\n・Over 10 visits/day: shorten range(even to 0cm) to save power !\n・10 or fewer visits/day: extend to max range for the best experience.\n・Even at minimum range, pressing the Unlock Button/Side Button triggers face or palm-vein recognition, balancing power saving with a supreme user experience.\n・Do not mix batteries of different brands, ages, or model types. \n・Use all the batteries, not just 2. More batteries, better load sharing, more voltage stability, longer battery life.",
-    "delayValue": "{{value}} second later"
+    "delayValue": "{{value}} second later",
+    "manualName": "Name",
+    "manualNameHint": "Please enter name",
+    "manualPassword": "Password",
+    "manualPasswordHint": "Please enter password (numbers only)",
+    "manualPasswordRequired": "Please enter password",
+    "batchAdd": "Batch Add",
+    "manualCancel": "Cancel",
+    "manualConfirm": "Confirm",
+    "manualCardId": "Card ID",
+    "manualCardIdHint": "Please enter Card ID (0-9, A-F, a-f)",
+    "manualCardIdRequired": "Please enter Card ID",
+    "importOverLimit": "Over capacity: {{incoming}} entries exceed the limit of {{limit}}"
   },
   "pages": {
     "login": {
@@ -536,7 +548,9 @@
     "volume": "Volume"
   },
   "appHome": {
+    "unloginHistoryTag": "Unlogin user",
     "registrationNetworkRequired": "Connect to the internet to register",
+    "resetToRegister": "Reset the device before registering",
     "noDevices": "Press ⊕ to register a new device, or scan the QR code to obtain access to an already registered device",
     "sesame": "Sesame",
     "vision": "Vision",
@@ -548,7 +562,13 @@
     "noBleDevicesDescription": "1. Is phone Bluetooth on？\n2. Restarting phone may resolve the problem.\n3. Is the unregistered device nearby？\n4. To reset the registered device, please press the reset button with a pin until the LED light turns off.",
     "loginRequired": "Please log in",
     "unsupportedQr": "Unsupported QR code",
-    "refreshing": "Refreshing"
+    "refreshing": "Refreshing",
+    "addNewDevice": "Add Device",
+    "scanQrCode": "Scan QR Code",
+    "addContacts": "Add Contacts",
+    "gallery": "Photo library",
+    "close": "Close",
+    "qrNotFound": "No QR code found in this image"
   },
   "lockSettings": {
     "immediate": "Immediately",
@@ -572,8 +592,7 @@
     "back": "Back"
   },
   "bleStatus": {
-    "off": "Bluetooth is off",
-    "noSignal": "Bluetooth signal not found, please get closer"
+    "off": "Bluetooth is off"
   },
   "lockExtras": {
     "notificationGranted": "Android notification permissions granted",
@@ -605,6 +624,8 @@
     "refresh": "↓You can pull to refresh",
     "password": "Please enter the WiFi password",
     "close": "Close",
+    "connected": "WiFi Module is connected to network successfully",
+    "connectFailed": "SORRY🙏\nPlease double check your WiFi password, or put WiFi Module as close to the WiFi router as possible.\n\nThen normally retry for a few times it will get connected successfully.🙏",
     "status": {
       "ReceivedAdV": "Received Ble",
       "BleConnecting": "Ble Connecting",

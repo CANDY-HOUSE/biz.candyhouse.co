@@ -14,11 +14,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { onNativeEvent, requestNative, notifyNative, takeEarlyNavigate } from '@/services/appBridge';
+import { appQrScanner } from '@/services/appQrScanner';
 import { currentAppToken, isGuestAppSession } from '@/services/appSession';
 import { modelNameByProductType } from '@/constants/sesameDeviceModel';
 import { qrMode } from '@/constants/qrType';
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
-import { appRouteInfo, appTabPaths, currentAppTab, rememberAppTab } from '@/services/appNavigation';
+import {
+  appRouteInfo,
+  appTabPaths,
+  closeTopAppLayer,
+  currentAppTab,
+  onAppLayersChange,
+  rememberAppTab,
+} from '@/services/appNavigation';
 
 export default function AppHomeRuntime() {
   const navigate = useNavigate();
@@ -91,6 +99,7 @@ export default function AppHomeRuntime() {
       navigate({ pathname: url.pathname, search: url.search }, { replace });
     };
     const back = () => {
+      if (closeTopAppLayer()) return;
       const path = current.current.location.pathname;
       const index = window.history.state?.idx ?? 0;
       if (path === '/app/register' || path === '/login') go(currentAppTab(), true);
@@ -120,6 +129,25 @@ export default function AppHomeRuntime() {
       }
     };
     let scanCallback;
+    // Biz-drawn scanner; app pages may pass a window callback name, otherwise the result is a contact/key QR.
+    const startScan = (callbackName) => {
+      scanCallback = callbackName;
+      // Like the native scanner: a second request while open only replaces the callback.
+      if (appQrScanner.getSnapshot()) return;
+      appQrScanner
+        .open()
+        .then((value) => {
+          const callback = window[scanCallback];
+          scanCallback = null;
+          if (value === null) return;
+          if (typeof callback === 'function') callback(value);
+          else scan(value);
+        })
+        .catch((error) => {
+          scanCallback = null;
+          showError(error);
+        });
+    };
     const scan = (value) => {
       const ctx = current.current.context;
       try {
@@ -210,17 +238,14 @@ export default function AppHomeRuntime() {
           .catch(() => notifyNative('cloudResponse', { requestId: data.requestId, success: false }));
       } else if (type === 'snapshot') deviceService.receiveSnapshot(data);
       else if (type === 'discovery') deviceService.receiveDiscovery(data);
+      // Pushes carrying a route (e.g. a Face3 doorbell opening /vision) navigate inside the page.
       else if (type === 'navigate') go(data);
       else if (type === 'back') back();
       else if (type === 'resume' || type === 'push') refresh();
-      else if (type === 'qrCancelled') scanCallback = null;
-      else if (type === 'qr') {
-        const callback = window[scanCallback];
-        scanCallback = null;
-        if (typeof callback === 'function') callback(data);
-        else scan(data);
-      } else if (type === 'error') showError(data);
+      else if (type === 'error') showError(data);
     });
+    const navigateTo = ({ detail }) => go(detail);
+    const scanQr = () => startScan();
     const scheme = ({ detail }) => {
       try {
         const uri = new URL(detail);
@@ -234,8 +259,7 @@ export default function AppHomeRuntime() {
       const callback = (response) => window[message.callbackName]?.(response);
       switch (message.action) {
         case 'requestScanQRCode':
-          scanCallback = message.callbackName;
-          requestNative('scanQr').catch(showError);
+          startScan(message.callbackName);
           break;
         case 'requestLogin':
           go('/login');
@@ -294,6 +318,9 @@ export default function AppHomeRuntime() {
     };
     window.addEventListener('app-scheme', scheme);
     window.addEventListener('app-command', command);
+    window.addEventListener('app-navigate', navigateTo);
+    window.addEventListener('app-back', back);
+    window.addEventListener('app-scan-qr', scanQr);
     deviceService.notify('ready');
     // A navigate that arrived before this subscription (cold start from a push) would be lost.
     const early = takeEarlyNavigate();
@@ -302,6 +329,9 @@ export default function AppHomeRuntime() {
       unsubscribe();
       window.removeEventListener('app-scheme', scheme);
       window.removeEventListener('app-command', command);
+      window.removeEventListener('app-navigate', navigateTo);
+      window.removeEventListener('app-back', back);
+      window.removeEventListener('app-scan-qr', scanQr);
     };
   }, [navigate, t]);
   useEffect(() => {
@@ -475,8 +505,24 @@ export default function AppHomeRuntime() {
       rememberAppTab(location.pathname);
       tabIndex.current = window.history.state?.idx ?? 0;
     }
-    deviceService.notify('route', appRouteInfo(location.pathname));
+    const report = () => deviceService.notify('route', appRouteInfo(location.pathname));
+    report();
+    // System back closes an open menu, scanner or sheet first; the host learns that from the route.
+    return onAppLayersChange(report);
   }, [location.pathname]);
+  const signedIn = context.gStripe.customerInfo.isAnonymous === false && !isGuestAppSession();
+  const profile = context.gManageEmployee.currentUserProfile;
+  const profileLoaded = !!(profile?.name || profile?.email);
+  useEffect(() => {
+    // OS2 BLE history tags carry the account name, so load the profile once for signed-in users.
+    if (isAppHome && signedIn && !profileLoaded) context.gManageEmployee.getCurrentUserInfo(undefined, true);
+  }, [signedIn, profileLoaded, context.gStripe.customerInfo.subUUID]);
+  // Same as the native app: account name, otherwise the "unlogin user" tag; omitted until a signed-in profile loads.
+  const historyName = signedIn
+    ? profileLoaded
+      ? profile.name || t('appHome.unloginHistoryTag')
+      : undefined
+    : t('appHome.unloginHistoryTag');
   useEffect(() => {
     if (!isAppHome || !context.gManageDevice.devicesLoaded) return;
     let active = true;
@@ -485,6 +531,7 @@ export default function AppHomeRuntime() {
       .request('devices', {
         devices: context.gManageDevice.companyDevices,
         historyTag: context.gStripe.customerInfo.envId,
+        historyName,
       })
       .then(() => {
         if (active && current.current.context.gStripe.customerInfo.subUUID === account)
@@ -512,6 +559,7 @@ export default function AppHomeRuntime() {
     context.gManageDevice.devicesLoaded,
     context.gStripe.customerInfo.envId,
     context.gStripe.customerInfo.subUUID,
+    historyName,
   ]);
   return null;
 }

@@ -1,6 +1,7 @@
 import { appPromotion } from '@/services/appPromotion';
 import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
 import { isAppHome } from '@/services/deviceService';
+import { appTopBarHeight } from '@/services/appNavigation';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
@@ -324,7 +325,8 @@ const MobileMyHomepage = () => {
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
       <Box
         sx={{
-          minHeight: isAppHome ? 'calc(100dvh - 64px - env(safe-area-inset-bottom))' : '100vh',
+          // The app header row sits inside the viewport, above the tab content.
+          minHeight: isAppHome ? `calc(100dvh - 64px - ${appTopBarHeight}px - env(safe-area-inset-bottom))` : '100vh',
           display: 'flex',
           flexDirection: 'column',
         }}

@@ -5,11 +5,15 @@ import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { biz3utils } from '@/utils/biz3utils.js';
 import WebSocketManager from '../websocket/WebSocketManager.ts';
 import { isAppHome } from '@/services/deviceService';
+import { isAndroidShell } from '@/services/appBridge';
 import { Buffer } from 'buffer';
 import { gConfig } from '@constants/gConfig.js';
 import useOperateIoT from '@/hooks/useOperateIoT';
 import { getEnvId } from '@/utils/envIdentity.js';
 
+// APP 内 IoT 开关锁的历史标签类型（APP 用户 WIFI 类型，历史记录显示 wifi icon），按 APP 平台取值；PC 不设，沿用 BIZ 类型
+const APP_IOT_HISTORY_PREFIX = isAndroidShell ? '0010' : undefined;
+const UNLOGIN_HISTORY_UUID = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
 const PubedDeviceStateChange = 'pubDeviceStateChange';
 const PubedUserDeviceChange = 'pubUserDeviceChange';
 
@@ -38,8 +42,9 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
   const sendCommandToWM2 = useCallback(
     async ({ device_id, cmd = 88, sescretKey }) => {
       const sign = await Cmac.cmacTime(sescretKey);
-      const uuid = getEnvId() || gStripe.customerInfo.subUUID;
-      const history = biz3utils.uuidBuffer(uuid);
+      // 未取得 envId/subUUID（访客）时按协议使用全 ff，云端显示为未登入用户
+      const uuid = getEnvId() || gStripe.customerInfo.subUUID || UNLOGIN_HISTORY_UUID;
+      const history = biz3utils.uuidBuffer(uuid, APP_IOT_HISTORY_PREFIX);
       const msgData = {
         action: ACTION_TYPES.BIZ3_TRIGGER_LOCKER,
         cmd,

@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { bleStateLabel } from '@/services/blePresentation';
 import { logOperationFailure } from '@/services/operationFailure';
 import { reportDeviceLocation } from '@/services/deviceLocation';
@@ -90,7 +89,6 @@ const SortableItemComponent = ({
     disabled: !enableDrag,
   });
 
-  const { t } = useTranslation();
   const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const native = isAppHome ? nativeDevices[device.deviceUUID.toUpperCase()] : null;
   const { setSnackbarValue, gStripe } = useContext(GlobalStateContext);
@@ -211,7 +209,7 @@ const SortableItemComponent = ({
           </Stack>
           {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
             <Typography variant="caption" color="text.disabled">
-              {bleStateLabel(native.bleState, t)}
+              {bleStateLabel(native.bleState)}
             </Typography>
           )}
         </Box>

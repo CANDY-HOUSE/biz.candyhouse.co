@@ -146,7 +146,6 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   useEffect(() => {
     if (!wifi || !ready || !native?.bleConnected) return;
     deviceService.request('hubSettings', { deviceUUID: id, operation: 'scan' }).catch(fail);
-    if (params.get('setup') === '1') setWifiOpen(true);
   }, [wifi, ready, native?.bleConnected, id]);
   const row = (label, value, click) => (
     <React.Fragment key={label}>

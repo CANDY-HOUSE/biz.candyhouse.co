@@ -2,6 +2,7 @@ import { isScriptBotModel, saveBotScript } from '@/services/botScripts';
 import { cloudCallback } from '@/services/cloudCallback';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { guestDevices, forgetGuestDevice } from '@/services/guestDevices';
+import { rememberRemovedDevice } from '@/services/removedDevices';
 import { Box, Drawer, ListItem, List, Typography, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useContext, useState } from 'react';
@@ -82,6 +83,8 @@ const MobileRemoveDevice = ({ deviceUUID, subUUID, deviceName, showHint = true, 
                         if (!res.success) return;
                         if (isAppHome) {
                           await deviceService.request('dropDevice', { deviceUUID });
+                          // Removing does not reset the device; let the registration page show it greyed out
+                          if (target?.keyLevel === 0) rememberRemovedDevice(deviceUUID);
                           deviceService
                             .request('pushInfo')
                             .then(({ data }) =>

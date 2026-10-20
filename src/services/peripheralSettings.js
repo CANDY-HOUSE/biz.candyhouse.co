@@ -118,3 +118,40 @@ export function credentialDisplayId(kind, id) {
   if (kind === 'passcode') return [...id].filter((_, index) => index % 2 === 1).join('');
   return String(parseInt(id.slice(0, 2), 16) + (kind === 'fingerprint' ? 1 : 0)).padStart(3, '0');
 }
+
+// Manual NFC card / passcode entry and JSON import, encoded as the device protocol expects.
+const toHex = (bytes) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+const passcodeBytes = (digits) =>
+  Array.from(digits, (char) => {
+    if (!/^\d$/.test(char)) throw new Error(`Invalid password digit: ${char}`);
+    return Number(char);
+  });
+const cardBytes = (id) => {
+  if (!/^(?:[0-9a-f]{2})+$/i.test(id)) throw new Error(`Invalid card ID: ${id}`);
+  return id.match(/../g).map((pair) => parseInt(pair, 16));
+};
+export const manualCredentialKinds = ['card', 'passcode'];
+// Card IDs and passcodes occupy 16 bytes on the device: 32 hex digits or 16 passcode digits.
+export const manualCredentialMaxLength = { card: 32, passcode: 16 };
+export function credentialValueHex(kind, value) {
+  return toHex(kind === 'card' ? cardBytes(value) : passcodeBytes(value));
+}
+/** `{"nfc_cards": [{name, id}]}` or `{"passcodes": [{account, password}]}`; names keep their first 20 bytes. */
+export function credentialImport(kind, text) {
+  const json = JSON.parse(text);
+  const rows = kind === 'card' ? json.nfc_cards : json.passcodes;
+  if (!Array.isArray(rows)) throw new Error(`No value for ${kind === 'card' ? 'nfc_cards' : 'passcodes'}`);
+  const bytes = [];
+  rows.forEach((row) => {
+    const name = kind === 'card' ? row?.name : row?.account;
+    const value = kind === 'card' ? row?.id : row?.password;
+    if (typeof name !== 'string' || typeof value !== 'string') throw new Error('Invalid entry');
+    const valueBytes = kind === 'card' ? cardBytes(value) : passcodeBytes(value);
+    const nameBytes = new TextEncoder().encode(name).slice(0, 20);
+    bytes.push(valueBytes.length, ...valueBytes, nameBytes.length, ...nameBytes);
+  });
+  if (!bytes.length) throw new Error('Empty list');
+  // The device protocol carries the total size in a signed 16-bit field.
+  if (bytes.length > 32767) throw new Error('Too many entries');
+  return { data: toHex(bytes), count: rows.length };
+}

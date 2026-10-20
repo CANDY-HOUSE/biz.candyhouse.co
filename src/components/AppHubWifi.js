@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useContext, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Alert,
   Box,
@@ -19,11 +19,15 @@ import {
 import { Close, Wifi, Wifi1Bar, Wifi2Bar } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { deviceService } from '@/services/deviceService';
+import { bleStateLabel } from '@/services/blePresentation';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import AppRefreshIndicator from './AppRefreshIndicator';
+import { GlobalStateContext } from '@/context/GlobalContextProvider';
+import { logOperationFailure } from '@/services/operationFailure';
 
 export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword = false }) {
   const { t } = useTranslation();
+  const { setSnackbarValue } = useContext(GlobalStateContext);
   const devices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const device = devices[deviceUUID.toUpperCase()];
   const networks = [...(device?.hub?.wifiScan || [])].sort((a, b) => b.rssi - a.rssi);
@@ -66,7 +70,7 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
         </IconButton>
       </Box>
       {(failed || device?.hub?.wifiScanFailed) && <Alert severity="error">{t('lockSettings.failed')}</Alert>}
-      {!device?.bleConnected && <Alert severity="info">{t('bleStatus.noSignal')}</Alert>}
+      {!device?.bleConnected && <Alert severity="info">{bleStateLabel('noBleSignal')}</Alert>}
       <AppRefreshIndicator distance={pullDistance} refreshing={scanning} />
       <Box
         sx={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}
@@ -172,7 +176,20 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
               setFailed(false);
               try {
                 await request('password', { password });
-                if (connectAfterPassword) await request('connectWifi');
+                // WM2 replies only after trying the AP; like the original app, close now and report later.
+                if (connectAfterPassword)
+                  request('connectWifi')
+                    .then(() => setSnackbarValue({ open: true, msg: t('hubWifi.connected'), severity: 'success' }))
+                    .catch(() => {
+                      logOperationFailure('components/AppHubWifi.connectWifi', 'hubWifi.connectFailed');
+                      // Error snackbars are log-only; this retry advice replaces the original app's alert.
+                      setSnackbarValue({
+                        open: true,
+                        msg: t('hubWifi.connectFailed'),
+                        severity: 'warning',
+                        duration: 6000,
+                      });
+                    });
                 onClose();
               } catch (_) {
                 setFailed(true);

@@ -41,7 +41,7 @@ const GSnackbar = ({ value }) => {
         }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         open={data.open}
-        autoHideDuration={1500}
+        autoHideDuration={data.duration || 1500}
         onClose={closeSnackbar}
         message={data.msg || '未知信息'}
         onClick={() => closeSnackbar()}

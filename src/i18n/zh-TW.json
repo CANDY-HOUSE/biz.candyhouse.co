@@ -33,7 +33,19 @@
     "openSensorName": "開關傳感器",
     "distance": "距離",
     "radarDescription": "・這是雷達喚醒系統的偵測距離。\n・每日人流量超過10次, 則設置短距以省電！(甚至是最短0cm)\n・每日人流量10次以下, 則設置最長距離以獲得最爽體驗。\n・即使為最短距離，按下「開鎖按鈕/側面按鈕」將立即啓動人臉或掌靜脈識別，兼顧極度省電與最爽體驗。\n・請勿混用不同品牌、新舊不同或型號不同的電池。\n・建議不要只裝2顆，裝滿所有電池。電池越多，負載越分散，電壓越穩定，電池壽命越長。",
-    "delayValue": "{{value}} 秒 後"
+    "delayValue": "{{value}} 秒 後",
+    "manualName": "名稱",
+    "manualNameHint": "請輸入名稱",
+    "manualPassword": "密碼",
+    "manualPasswordHint": "請輸入密碼（僅數字）",
+    "manualPasswordRequired": "請輸入密碼",
+    "batchAdd": "批量添加",
+    "manualCancel": "取消",
+    "manualConfirm": "確認",
+    "manualCardId": "卡ID",
+    "manualCardIdHint": "請輸入卡ID（0-9,A-F,a-f）",
+    "manualCardIdRequired": "請輸入卡ID",
+    "importOverLimit": "超出容量：匯入 {{incoming}} 筆，超過上限 {{limit}} 筆"
   },
   "pages": {
     "login": {
@@ -536,7 +548,9 @@
     "volume": "音量"
   },
   "appHome": {
+    "unloginHistoryTag": "未登入用戶",
     "registrationNetworkRequired": "請連接網路後再註冊",
+    "resetToRegister": "請重置設備後再註冊",
     "noDevices": "從⊕開始註冊新設備，或掃描QR碼獲取已註冊設備的使用權限",
     "sesame": "芝麻",
     "vision": "視覺",
@@ -548,7 +562,13 @@
     "noBleDevicesDescription": "1. 您已經允許了手機的藍牙和位置權限嗎？\n2. 重啟手機有時可解決問題。\n3. 附近是否有未註冊的設備？ \n4. 若要重置已註冊的設備，請用針戳長按重置按鈕直到LED燈熄滅。",
     "loginRequired": "請登入",
     "unsupportedQr": "不支援此 QR 碼",
-    "refreshing": "重新整理中"
+    "refreshing": "重新整理中",
+    "addNewDevice": "新增裝置",
+    "scanQrCode": "掃描QR code",
+    "addContacts": "添加聯絡人",
+    "gallery": "圖庫",
+    "close": "關閉",
+    "qrNotFound": "圖片中未發現 QR 碼"
   },
   "lockSettings": {
     "immediate": "馬上",
@@ -572,8 +592,7 @@
     "back": "返回"
   },
   "bleStatus": {
-    "off": "手機藍芽未開啟",
-    "noSignal": "找不到藍牙訊號, 請靠近"
+    "off": "手機藍芽未開啟"
   },
   "lockExtras": {
     "notificationGranted": "已獲得 安卓的 通知權限",
@@ -605,6 +624,8 @@
     "refresh": "↓您可以下拉刷新",
     "password": "請輸入 WiFi 密碼",
     "close": "關閉",
+    "connected": "WiFi模組已連接到網路",
+    "connectFailed": "很抱歉🙏\n請確認您的WiFi密碼，或把WiFi模組設置於盡量接近WiFi路由器的地方\n\n然後多試幾次，通常能成功連上線🙏",
     "status": {
       "ReceivedAdV": "收到藍芽訊號了",
       "BleConnecting": "藍芽連接中",
