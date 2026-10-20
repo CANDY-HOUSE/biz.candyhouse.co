@@ -85,6 +85,30 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * T32 冷启动加上 KVS 信令握手要好几秒，所以拿不到画面时优先提示"设备正在启动"
  * 而不是直接报错。
  */
+/* 扬声器开关与音量按设备记住，下次打开（包括门铃推送点进来自动打开）沿用。
+   localStorage 在无痕/禁用存储时会抛，读不到就用默认（关、70）。 */
+const DEFAULT_SPEAKER = { enabled: false, volume: 70 };
+const speakerPrefKey = (deviceUUID) => `face3.speaker.${String(deviceUUID || '').toUpperCase()}`;
+const loadSpeakerPref = (deviceUUID) => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(speakerPrefKey(deviceUUID)) || 'null');
+    const volume = Number(saved?.volume);
+    return {
+      enabled: saved?.enabled === true,
+      volume: Number.isFinite(volume) && volume >= 0 && volume <= 100 ? volume : DEFAULT_SPEAKER.volume,
+    };
+  } catch (_) {
+    return DEFAULT_SPEAKER;
+  }
+};
+const saveSpeakerPref = (deviceUUID, enabled, volume) => {
+  try {
+    localStorage.setItem(speakerPrefKey(deviceUUID), JSON.stringify({ enabled, volume }));
+  } catch (_) {
+    /* 存不下就只影响下次的默认值 */
+  }
+};
+
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
@@ -107,10 +131,11 @@ export default function Face3LiveView({ device, onClose }) {
   const [mediaStates, setMediaStates] = useState({ camera: 'disabled', microphone: 'disabled' });
   const [mediaControlsReady, setMediaControlsReady] = useState(false);
   const [observationUnsupported, setObservationUnsupported] = useState(false);
-  const [speakerEnabled, setSpeakerEnabled] = useState(false);
-  const [volume, setVolume] = useState(70);
-  const speakerEnabledRef = useRef(false);
-  const volumeRef = useRef(70);
+  const [initialSpeaker] = useState(() => loadSpeakerPref(device?.deviceUUID));
+  const [speakerEnabled, setSpeakerEnabled] = useState(initialSpeaker.enabled);
+  const [volume, setVolume] = useState(initialSpeaker.volume);
+  const speakerEnabledRef = useRef(initialSpeaker.enabled);
+  const volumeRef = useRef(initialSpeaker.volume);
   const [localIsMain, setLocalIsMain] = useState(false);
   const [pipCorner, setPipCorner] = useState('bottom-right');
   const [pipPosition, setPipPosition] = useState(null);
@@ -410,6 +435,7 @@ export default function Face3LiveView({ device, onClose }) {
     speakerEnabledRef.current = enabled;
     setVolume(nextVolume);
     volumeRef.current = nextVolume;
+    saveSpeakerPref(deviceUUID, enabled, nextVolume);
     const video = videoRef.current;
     if (!video) return;
     video.muted = !enabled;
@@ -420,6 +446,21 @@ export default function Face3LiveView({ device, onClose }) {
         .then(() => setNeedsTap(false))
         .catch(() => setNeedsTap(true));
     else setNeedsTap(false);
+  };
+
+  /* 带声起播被 WebView 拦下时(onStream 里退回静音并置 needsTap)，用户在画面上随便点一下
+     就按记住的设置恢复，不翻转扬声器开关。点的是按钮/滑块则交给它们自己处理 ——
+     否则这里先恢复出声，扬声器按钮的 onClick 紧接着又把它关掉。 */
+  const resumeOnTap = (event) => {
+    if (!needsTap || event.target.closest?.('button, .MuiSlider-root')) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !speakerEnabledRef.current;
+    video.volume = volumeRef.current / 100;
+    video
+      .play()
+      .then(() => setNeedsTap(false))
+      .catch(() => {});
   };
 
   const toggleLocalMedia = (kind) => {
@@ -548,7 +589,11 @@ export default function Face3LiveView({ device, onClose }) {
   /* 铺满父容器（卡片的 16:9 预览框）。父级已是 position:relative + overflow:hidden，
      所以这里 inset:0 就正好落在占位框的位置和尺寸上。 */
   return (
-    <Box ref={containerRef} sx={{ position: 'absolute', inset: 0, bgcolor: '#000', overflow: 'hidden' }}>
+    <Box
+      ref={containerRef}
+      onPointerDownCapture={resumeOnTap}
+      sx={{ position: 'absolute', inset: 0, bgcolor: '#000', overflow: 'hidden' }}
+    >
       <video
         ref={videoRef}
         autoPlay

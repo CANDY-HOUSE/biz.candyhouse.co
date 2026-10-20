@@ -13,7 +13,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
-import { onNativeEvent, requestNative, notifyNative } from '@/services/appBridge';
+import { onNativeEvent, requestNative, notifyNative, takeEarlyNavigate } from '@/services/appBridge';
 import { currentAppToken, isGuestAppSession } from '@/services/appSession';
 import { modelNameByProductType } from '@/constants/sesameDeviceModel';
 import { qrMode } from '@/constants/qrType';
@@ -295,6 +295,9 @@ export default function AppHomeRuntime() {
     window.addEventListener('app-scheme', scheme);
     window.addEventListener('app-command', command);
     deviceService.notify('ready');
+    // A navigate that arrived before this subscription (cold start from a push) would be lost.
+    const early = takeEarlyNavigate();
+    if (early) go(early);
     return () => {
       unsubscribe();
       window.removeEventListener('app-scheme', scheme);

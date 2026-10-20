@@ -4,6 +4,17 @@ let port;
 let sequence = 0;
 const pending = new Map();
 const listeners = new Set();
+// Native may post 'navigate' (e.g. a tapped push opening /vision?deviceUUID=..) right after the
+// port connects on cold start, before AppHomeRuntime has subscribed; listeners would drop it.
+// Keep the latest one until the runtime takes it once, then stop holding.
+let earlyNavigate = null;
+let navigateReady = false;
+export function takeEarlyNavigate() {
+  navigateReady = true;
+  const target = earlyNavigate;
+  earlyNavigate = null;
+  return target;
+}
 let connected;
 const connection = new Promise((resolve) => {
   connected = resolve;
@@ -34,7 +45,10 @@ function receivePort(event) {
       clearTimeout(request.timer);
       pending.delete(result.requestId);
       result.success ? request.resolve(result) : request.reject(new Error(result.error || 'Native operation failed'));
-    } else listeners.forEach((listener) => listener(message));
+    } else {
+      if (message.type === 'navigate' && !navigateReady) earlyNavigate = message.data;
+      listeners.forEach((listener) => listener(message));
+    }
   };
   port.start();
   connected();
