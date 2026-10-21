@@ -1,4 +1,4 @@
-import { isAppHome } from '@/services/deviceService';
+import { isAppHome, deviceService } from '@/services/deviceService';
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '../context/GlobalContextProvider';
@@ -117,6 +117,14 @@ const LoginIndex = () => {
   };
 
   const handleOpenExternalUrl = useCallback((event, url) => {
+    // Stay in the app: open in the app's web page view, like push links and the shop.
+    if (isAppHome) {
+      event.preventDefault();
+      deviceService
+        .request('openWebPage', { url })
+        .catch(() => biz3utils.triggerBridge({ action: 'requestOpenExternalURL', url }));
+      return;
+    }
     const openedByApp = biz3utils.triggerBridge({
       action: 'requestOpenExternalURL',
       url,

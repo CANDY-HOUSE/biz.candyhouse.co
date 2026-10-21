@@ -3,6 +3,7 @@ import { Alert, Box, Button, ButtonBase, IconButton, Typography } from '@mui/mat
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
+import { deviceService, isAppHome } from '@/services/deviceService';
 import { useAppLockSettings } from '@/hooks/useAppLockSettings';
 import LockSettingWheel from './LockSettingWheel';
 import LockCalibrationGraphic from './LockCalibrationGraphic';
@@ -129,7 +130,10 @@ function LockAngle({ deviceUUID }) {
           <LockCalibrationGraphic
             settings={settings}
             disabled={disabled}
-            onClick={() => command('toggle')}
+            onClick={() => {
+              if (isAppHome) deviceService.notify('haptic', { duration: 100 });
+              command('toggle');
+            }}
             label={t('pages.sesameAccessControlDevice.index.SetAngle')}
           />
         </Box>

@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
+import { DeferredLoading } from './deferredComponent';
 
 const MobileDeviceNotifyCenter = () => {
   const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
@@ -16,20 +17,27 @@ const MobileDeviceNotifyCenter = () => {
     if (isAppHome)
       requestNative('pushInfo')
         .then(({ data }) => setPushToken(data.pushToken))
-        .catch((error) =>
+        .catch((error) => {
+          setLoading(false);
           setSnackbarValue({
             logScope: 'components/MobileDeviceNotifyCenter.MobileDeviceNotifyCenter',
             severity: 'error',
             open: true,
             msg: error.message,
-          })
-        );
+          });
+        });
   }, []);
   const [devices, setDevices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!pushToken) return;
+    if (!pushToken) {
+      if (!isAppHome) setLoading(false);
+      return;
+    }
+    setLoading(true);
     gManageDevice.getDevicesNotifyStatus({ pushToken }, (res) => {
+      setLoading(false);
       if (!res.success) {
         setSnackbarValue({
           logScope: 'components/MobileDeviceNotifyCenter.MobileDeviceNotifyCenter',
@@ -72,6 +80,7 @@ const MobileDeviceNotifyCenter = () => {
 
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      {loading && <DeferredLoading />}
       <List disablePadding>
         {devices.length > 0 && (
           <Box sx={{ bgcolor: 'secondary.light', p: 2 }}>
