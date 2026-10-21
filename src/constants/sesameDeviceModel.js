@@ -77,3 +77,46 @@ export const modelNameByProductType = {
   36: sesameDeviceModel.hub3_pro,
   37: sesameDeviceModel.sesame_face_3,
 };
+
+// 设备型号对应的显示名称（与设备端 deviceModelName 保持一致），仅用于页面展示
+const displayNameByModel = {
+  [sesameDeviceModel.sesame_2]: 'Sesame 3',
+  [sesameDeviceModel.wm_2]: 'WiFi Module 2',
+  [sesameDeviceModel.ssmbot_1]: 'Sesame Bot 1',
+  [sesameDeviceModel.bike_1]: 'Sesame Bike 1',
+  [sesameDeviceModel.sesame_4]: 'Sesame 4',
+  [sesameDeviceModel.sesame_5]: 'Sesame 5',
+  [sesameDeviceModel.ssm_bike2]: 'Sesame Bike 2',
+  [sesameDeviceModel.sesame_5_pro]: 'Sesame 5 Pro',
+  [sesameDeviceModel.ssm_opensensor_1]: 'Open Sensor 1',
+  [sesameDeviceModel.ssm_touch_pro]: 'Sesame Touch 1 Pro',
+  [sesameDeviceModel.ssm_touch]: 'Sesame Touch 1',
+  [sesameDeviceModel.ble_connector]: 'BLE Connector 1',
+  [sesameDeviceModel.hub_3]: 'Hub 3',
+  [sesameDeviceModel.remote]: 'Remote',
+  [sesameDeviceModel.remote_nano]: 'Remote Nano',
+  [sesameDeviceModel.sesame_5_us]: 'Sesame 5 US',
+  [sesameDeviceModel.bot_2]: 'Sesame Bot 2',
+  [sesameDeviceModel.sesame_face_pro]: 'Sesame Face 1 Pro',
+  [sesameDeviceModel.sesame_face]: 'Sesame Face 1',
+  [sesameDeviceModel.sesame_6]: 'Sesame 6',
+  [sesameDeviceModel.sesame_6_pro]: 'Sesame 6 Pro',
+  [sesameDeviceModel.sesame_face_pro_ai]: 'Sesame Face 1 Pro AI',
+  [sesameDeviceModel.sesame_face_ai]: 'Sesame Face 1 AI',
+  [sesameDeviceModel.ssm_opensensor_2]: 'Open Sensor 2',
+  [sesameDeviceModel.ssm_touch_2]: 'Sesame Touch 2',
+  [sesameDeviceModel.ssm_touch_2_pro]: 'Sesame Touch 2 Pro',
+  [sesameDeviceModel.sesame_face_2]: 'Sesame Face 2',
+  [sesameDeviceModel.sesame_face_2_pro]: 'Sesame Face 2 Pro',
+  [sesameDeviceModel.sesame_miwa]: 'Sesame miwa',
+  [sesameDeviceModel.sesame_face_2_ai]: 'Sesame Face 2 AI',
+  [sesameDeviceModel.sesame_face_2_pro_ai]: 'Sesame Face 2 Pro AI',
+  [sesameDeviceModel.sesame_6_pro_slidingdoor]: 'Sesame 6 Pro SlidingDoor',
+  [sesameDeviceModel.ssm_bike3]: 'Sesame Bike 3',
+  [sesameDeviceModel.bot_3]: 'Sesame Bot 3',
+  [sesameDeviceModel.hub3_pro]: 'Hub 3 Pro',
+  [sesameDeviceModel.sesame_face_3]: 'Sesame Face 3',
+};
+
+// 未收录的型号回退显示原始 deviceModel
+export const deviceModelDisplayName = (model) => displayNameByModel[model] || model;

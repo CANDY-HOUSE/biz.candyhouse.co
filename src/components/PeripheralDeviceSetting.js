@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { deviceDetailFor } from '@/services/deviceDetail';
+import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
 import {
   isBike,
   isSleepy,
@@ -235,7 +236,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
             <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
           </>
         )}
-        {row(t('pages.sesameAccessControlDevice.index.DeviceModel'), model)}
+        {row(t('pages.sesameAccessControlDevice.index.DeviceModel'), deviceModelDisplayName(model))}
         {model === 'remote_nano' && !sleeping && (
           <>
             {row(

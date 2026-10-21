@@ -21,6 +21,7 @@ import BatteryPercent from './biz/device/BatteryPercent';
 import UpgradeFirmware from './biz/device/UpgradeFirmware';
 import { gConfig } from '@/constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
+import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
 import SliderItem from './SliderItem';
 
 export default function DeviceSetting(props) {
@@ -191,7 +192,7 @@ function ExistingDeviceSetting({ showBack = true }) {
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
-          <Typography sx={{ color: 'title.other' }}>{deviceModel}</Typography>
+          <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(deviceModel)}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {isScriptBotModel(deviceModel) ? (

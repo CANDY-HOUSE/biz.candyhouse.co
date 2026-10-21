@@ -39,6 +39,7 @@ import MobileBindDevice from '@/components/MobileBindDevice';
 import { gConfig } from '@/constants/gConfig';
 import { registerIotCallback } from '@/hooks/useIotCallbackRegistry';
 import { biz3utils } from '@/utils/biz3utils';
+import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
 import MobileQRCodeDialog from '@/components/MobileQRCodeDialog';
 import UpgradeFirmware from '@/components/biz/device/UpgradeFirmware';
 import MobileRemoveDevice from '@/components/MobileRemoveDevice';
@@ -431,7 +432,7 @@ const ExistingWifiModule = () => {
         <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <ListItem>
           <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
-          <Typography sx={{ color: 'title.other' }}>{currentDevice.deviceModel}</Typography>
+          <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(currentDevice.deviceModel)}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <ListItem
