@@ -7,6 +7,14 @@ import Hider from '@/components/biz/Hider';
 import { PngBotIcon, SvgLock, SvgLockDisable, SvgOPS, SvgUnLock } from '@/assets/svg/svgLock';
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@/constants/gConfig';
+import { keyframes } from '@mui/system';
+
+// Bike / Bot 执行指令后按钮左右抖动（3% 宽度，60ms 往返），持续 1.5 秒
+const shake = keyframes`from { transform: translateX(-3%); } to { transform: translateX(3%); }`;
+const isShakeModel = (model) =>
+  gUtils.isBotModel(model) ||
+  model === gConfig.sesameDeviceModel.ssm_bike2 ||
+  model === gConfig.sesameDeviceModel.ssm_bike3;
 
 const VIotSwitch = ({
   gIot,
@@ -26,17 +34,30 @@ const VIotSwitch = ({
   const { setSnackbarValue } = useContext(GlobalStateContext);
   const inFlight = useRef(false);
   const lastCommandAt = useRef(-Infinity);
+  const [shaking, setShaking] = useState(false);
+  const shakeTimer = useRef();
+  const stopShake = () => {
+    clearTimeout(shakeTimer.current);
+    setShaking(false);
+  };
+  useEffect(() => () => clearTimeout(shakeTimer.current), []);
   const execute = async (command) => {
     const lock = gUtils.isLockModel(model);
     const now = performance.now();
     if (disabled || inFlight.current || (lock && now - lastCommandAt.current < 1000)) return;
     lastCommandAt.current = now;
     inFlight.current = true;
+    if (isShakeModel(model)) {
+      clearTimeout(shakeTimer.current);
+      setShaking(true);
+      shakeTimer.current = setTimeout(stopShake, 1500);
+    }
     try {
       if (lock && isAppHome) deviceService.notify('haptic', { duration: 100 });
       onCommandStart?.();
       await command();
     } catch (error) {
+      stopShake();
       setSnackbarValue?.({
         logScope: 'components/biz/device/VIotSwitch.execute',
         severity: 'error',
@@ -136,6 +157,7 @@ const VIotSwitch = ({
           sx={{
             position: 'relative',
             display: 'inline-flex',
+            ...(shaking ? { animation: `${shake} 60ms linear infinite alternate` } : {}),
             ...(large ? { '& img': { width: '88px !important', height: '88px !important' } } : {}),
           }}
         >
