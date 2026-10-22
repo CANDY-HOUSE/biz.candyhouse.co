@@ -132,7 +132,6 @@ export default function AppBotScript() {
   const disabled = busy || !bot.connected || !script || !!pendingCloud;
   return (
     <Box sx={lockSettingsInteraction}>
-      <BleStatusBar deviceUUID={deviceUUID} />
       <PageHeader sx={{ pl: 0, pr: 2 }}>
         <BackButton disableRipple onClick={() => navigate(-1)}></BackButton>
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
@@ -154,6 +153,7 @@ export default function AppBotScript() {
           <AddCircleOutline />
         </IconButton>
       </PageHeader>
+      <BleStatusBar deviceUUID={deviceUUID} />
       <Typography sx={{ bgcolor: 'secondary.main', p: 2, color: 'text.secondary', whiteSpace: 'pre-line' }}>
         {t('botSettings.hint', {
           deviceName: bot.deviceName || params.get('deviceName') || 'Sesame Bot',

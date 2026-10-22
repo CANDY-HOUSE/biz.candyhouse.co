@@ -20,7 +20,7 @@ export default function AppLockAngle() {
 function LockAngle({ deviceUUID }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { gManageDevice } = useContext(GlobalStateContext);
+  const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const { settings, connected, busy, error, command } = useAppLockSettings(deviceUUID);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
   const [pendingModel, setPendingModel] = useState(null);
@@ -39,6 +39,8 @@ function LockAngle({ deviceUUID }) {
   const frequency = (ms) =>
     ms === 0 ? t('lockSettings.stopped') : t('lockSettings.hertz', { count: Math.round(1000 / ms) });
   const disabled = !connected || busy || syncing;
+  // All entries stay visible; firmware without the capability answers with Coming soon.
+  const coming = () => setSnackbarValue({ open: true, msg: 'Coming soon', severity: 'info' });
   const syncModel = async (model) => {
     setSyncing(true);
     try {
@@ -67,10 +69,10 @@ function LockAngle({ deviceUUID }) {
       await syncModel(data.deviceModel);
     }
   };
-  const calibration = (operation, text, src) => (
+  const calibration = (operation, text, src, supported = true) => (
     <ButtonBase
       disabled={disabled}
-      onClick={() => command(operation)}
+      onClick={() => (supported ? command(operation) : coming())}
       sx={{
         width: '100%',
         minHeight: 60,
@@ -155,7 +157,7 @@ function LockAngle({ deviceUUID }) {
         </Typography>
         {calibration('lockPosition', t('lockSettings.setLocked'), locked)}
         {calibration('unlockPosition', t('lockSettings.setUnlocked'), unlocked)}
-        {settings.switchPoint !== undefined && calibration('switchPoint', t('lockSettings.switchPoint'))}
+        {calibration('switchPoint', t('lockSettings.switchPoint'), null, settings.switchPoint !== undefined)}
         {(error || syncFailed) && (
           <Alert severity="error">
             {t('lockSettings.failed')}
@@ -167,65 +169,63 @@ function LockAngle({ deviceUUID }) {
           </Alert>
         )}
         <Box sx={{ height: 400 }} />
-        {settings.sensorInterval !== undefined && (
-          <>
-            <ButtonBase
+        <ButtonBase
+          disabled={disabled}
+          onClick={() => (settings.sensorInterval !== undefined ? setFrequencyOpen(!frequencyOpen) : coming())}
+          sx={{ width: '100%', minHeight: 53, px: 2, justifyContent: 'space-between', bgcolor: '#fff', gap: 2 }}
+        >
+          <Typography>{t('lockSettings.frequency')}</Typography>
+          <Typography sx={{ color: '#999' }}>
+            {settings.sensorInterval !== undefined && frequency(settings.sensorInterval)}
+          </Typography>
+        </ButtonBase>
+        {frequencyOpen && (
+          <Box ref={wheel}>
+            <LockSettingWheel
+              title={t('lockSettings.frequency')}
+              values={intervals}
+              value={intervals.reduce((a, b) =>
+                Math.abs(b - settings.sensorInterval) < Math.abs(a - settings.sensorInterval) ? b : a
+              )}
+              label={frequency}
               disabled={disabled}
-              onClick={() => setFrequencyOpen(!frequencyOpen)}
-              sx={{ width: '100%', minHeight: 53, px: 2, justifyContent: 'space-between', bgcolor: '#fff', gap: 2 }}
-            >
-              <Typography>{t('lockSettings.frequency')}</Typography>
-              <Typography sx={{ color: '#999' }}>{frequency(settings.sensorInterval)}</Typography>
-            </ButtonBase>
-            {frequencyOpen && (
-              <Box ref={wheel}>
-                <LockSettingWheel
-                  title={t('lockSettings.frequency')}
-                  values={intervals}
-                  value={intervals.reduce((a, b) =>
-                    Math.abs(b - settings.sensorInterval) < Math.abs(a - settings.sensorInterval) ? b : a
-                  )}
-                  label={frequency}
-                  disabled={disabled}
-                  onChange={async (value) => {
-                    if (await command('sensorInterval', value)) setFrequencyOpen(false);
-                  }}
-                />
-              </Box>
-            )}
-          </>
+              onChange={async (value) => {
+                if (await command('sensorInterval', value)) setFrequencyOpen(false);
+              }}
+            />
+          </Box>
         )}
-        {settings.magnet && (
-          <ButtonBase
-            disabled={disabled}
-            onPointerDown={() => {
-              longPressed.current = false;
-              hold.current = setTimeout(() => {
-                longPressed.current = true;
-                changeMode();
-              }, 700);
-            }}
-            onPointerUp={() => clearTimeout(hold.current)}
-            onPointerCancel={() => clearTimeout(hold.current)}
-            onPointerLeave={() => clearTimeout(hold.current)}
-            onContextMenu={(e) => e.preventDefault()}
-            onClick={() => {
-              if (!longPressed.current) command('magnet');
-            }}
-            sx={{
-              width: '100%',
-              minHeight: 53,
-              bgcolor: '#fff',
-              mt: '1px',
-              fontSize: 17,
-              fontWeight: 'bold',
-              color: '#f44336',
-              userSelect: 'none',
-            }}
-          >
-            {t('lockSettings.magnet')}
-          </ButtonBase>
-        )}
+        <ButtonBase
+          disabled={disabled}
+          onPointerDown={() => {
+            longPressed.current = false;
+            if (!settings.magnet) return;
+            hold.current = setTimeout(() => {
+              longPressed.current = true;
+              changeMode();
+            }, 700);
+          }}
+          onPointerUp={() => clearTimeout(hold.current)}
+          onPointerCancel={() => clearTimeout(hold.current)}
+          onPointerLeave={() => clearTimeout(hold.current)}
+          onContextMenu={(e) => e.preventDefault()}
+          onClick={() => {
+            if (!settings.magnet) coming();
+            else if (!longPressed.current) command('magnet');
+          }}
+          sx={{
+            width: '100%',
+            minHeight: 53,
+            bgcolor: '#fff',
+            mt: '1px',
+            fontSize: 17,
+            fontWeight: 'bold',
+            color: '#f44336',
+            userSelect: 'none',
+          }}
+        >
+          {t('lockSettings.magnet')}
+        </ButtonBase>
       </Box>
     </Box>
   );

@@ -592,7 +592,8 @@
     "back": "戻る"
   },
   "bleStatus": {
-    "off": "Bluetoothがオフ"
+    "off": "Bluetoothがオフ",
+    "noSignal": "Bluetooth信号見つからず、近づいてください"
   },
   "lockExtras": {
     "notificationGranted": "Androidの通知権限を取得済み",

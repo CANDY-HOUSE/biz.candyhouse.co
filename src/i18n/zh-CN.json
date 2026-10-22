@@ -592,7 +592,8 @@
     "back": "返回"
   },
   "bleStatus": {
-    "off": "手机蓝牙未开启"
+    "off": "手机蓝牙未开启",
+    "noSignal": "找不到蓝牙信号, 请靠近"
   },
   "lockExtras": {
     "notificationGranted": "已获得 安卓的 通知权限",

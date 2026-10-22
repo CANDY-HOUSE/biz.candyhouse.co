@@ -592,7 +592,8 @@
     "back": "Back"
   },
   "bleStatus": {
-    "off": "Bluetooth is off"
+    "off": "Bluetooth is off",
+    "noSignal": "Bluetooth signal not found, please get closer"
   },
   "lockExtras": {
     "notificationGranted": "Android notification permissions granted",

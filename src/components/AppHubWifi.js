@@ -19,7 +19,6 @@ import {
 import { Close, Wifi, Wifi1Bar, Wifi2Bar } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { deviceService } from '@/services/deviceService';
-import { bleStateLabel } from '@/services/blePresentation';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import AppRefreshIndicator from './AppRefreshIndicator';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -70,7 +69,7 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
         </IconButton>
       </Box>
       {(failed || device?.hub?.wifiScanFailed) && <Alert severity="error">{t('lockSettings.failed')}</Alert>}
-      {!device?.bleConnected && <Alert severity="info">{bleStateLabel('noBleSignal')}</Alert>}
+      {!device?.bleConnected && <Alert severity="info">{t('bleStatus.noSignal')}</Alert>}
       <AppRefreshIndicator distance={pullDistance} refreshing={scanning} />
       <Box
         sx={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}

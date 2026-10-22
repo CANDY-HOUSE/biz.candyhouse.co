@@ -16,7 +16,7 @@ const stateLabels = new Map(
     moved: 'Moved',
     waitApConnect: 'waitApConnect',
     dfumode: 'dfumode',
-    // Product keeps the raw state name instead of a sentence.
+    // The registration list shows the raw state name; other pages use bleStatus.noSignal.
     noBleSignal: 'NoBleSignal',
   })
 );
@@ -28,5 +28,6 @@ export function bleStateLabel(state) {
 export function bleStatusText(device, bluetoothOff, t) {
   if (bluetoothOff) return t('bleStatus.off');
   if (!device || device.bleConnected) return '';
+  if (device.bleState === 'noBleSignal') return t('bleStatus.noSignal');
   return bleStateLabel(device.bleState);
 }
