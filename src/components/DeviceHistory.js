@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import {
   CircularProgress,
@@ -20,6 +20,7 @@ import MobileDeviceHistory from './MobileDeviceHistory';
 import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BlurOverlay from './BlurOverlay';
+import { isAppHome } from '@/services/deviceService';
 import { useTranslation } from 'react-i18next';
 
 export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false, fullHeight = true }) {
@@ -27,17 +28,32 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
   const navigate = useNavigate();
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [timestamp, setTimestamp] = useState(undefined);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadingTimer = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [searchParams] = useSearchParams();
   const searchDeviceUUID = searchParams.get('deviceUUID');
   const keyLevel = searchParams.get('keyLevel');
   const deviceUUID = propDeviceUUID || searchDeviceUUID;
   const noToolBar = gStripe.isFromApp || !showToolBar;
+  // 旧原生 APP 的 WebView 外壳自带加载转圈，不再叠加
+  const showLoading = isLoading && !(gStripe.isFromApp && !isAppHome);
   const [menuState, setMenuState] = useState({ open: false, item: null });
   const { t } = useTranslation();
 
   const loadHistory = (lastKey = null, cb) => {
+    // 只在首屏加载时居中转圈，加载更多沿用列表顶部的触发
+    if (!lastKey) {
+      setIsLoading(true);
+      // 无网络时请求不会返回，15 秒后停止转圈
+      clearTimeout(loadingTimer.current);
+      loadingTimer.current = setTimeout(() => setIsLoading(false), 15000);
+    }
     gManageGroup.getDeviceHistory([{ deviceUUID, lastKey }], (resp) => {
+      if (!lastKey) {
+        clearTimeout(loadingTimer.current);
+        setIsLoading(false);
+      }
       const res = resp.data || [];
       setDeviceHistory((prev) => [...prev, ...res]);
       if (res.length > 0) {
@@ -90,6 +106,8 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     }
   }, [deviceUUID]);
 
+  useEffect(() => () => clearTimeout(loadingTimer.current), []);
+
   const disableInteraction = useMemo(() => {
     return parseInt(keyLevel) === 2;
   }, [keyLevel]);
@@ -130,6 +148,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     <MobileDeviceHistory
       fullHeight={fullHeight}
       histories={deviceHistory}
+      loading={showLoading}
       onLoadMore={(cb) => {
         loadHistory(timestamp, (lastKey) => {
           cb(lastKey);
@@ -163,6 +182,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
           <MobileDeviceHistory
             fullHeight={false}
             histories={deviceHistory}
+            loading={showLoading}
             onLoadMore={(cb) => {
               loadHistory(timestamp, (lastKey) => {
                 cb(lastKey);

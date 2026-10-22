@@ -1,11 +1,18 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
+import { Box, CircularProgress, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { CmHistoryExt } from './biz/device/CmHistoryExt';
 import { Buffer } from 'buffer';
 import { biz3utils } from '@/utils/biz3utils';
 
-const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemLongPress, onItemClick }) => {
+const MobileDeviceHistory = ({
+  fullHeight = true,
+  histories,
+  loading = false,
+  onLoadMore,
+  onItemLongPress,
+  onItemClick,
+}) => {
   const [groupedHistories, setGroupedHistories] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollRef = useRef(null);
@@ -166,8 +173,23 @@ const MobileDeviceHistory = ({ fullHeight = true, histories, onLoadMore, onItemL
         width: '100%',
         height: fullHeight ? '100vh' : '100%',
         bgcolor: 'background.paper',
+        position: 'relative',
       }}
     >
+      {loading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <CircularProgress size={24} />
+        </Box>
+      )}
       <Box
         ref={scrollRef}
         sx={{
