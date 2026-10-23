@@ -18,12 +18,14 @@ async function rememberShell(response, resources = []) {
       .map((match) => assetUrl(match[1]))
       .filter(Boolean);
     let assets = resources.map(assetUrl).filter(Boolean);
+    let complete = false;
     try {
       const manifest = await fetch('/asset-manifest.json', { cache: 'no-store' });
       const { files } = await manifest.json();
       assets = Object.values(files).map(assetUrl).filter(Boolean);
       // A deployment changed between HTML and manifest requests: keep the last complete shell.
       if (required.some((url) => !assets.includes(url))) return;
+      complete = true;
     } catch (_) {
       // The dev server has no manifest. Cache its loaded entry resources, never hot-update traffic.
     }
@@ -46,6 +48,12 @@ async function rememberShell(response, resources = []) {
     await Promise.all(assets.map((url, index) => cache.put(url, responses[index])));
     // Publish the HTML only after its assets have been stored successfully.
     await cache.put(SHELL, response);
+    // Hashed names change per release; drop files the new shell no longer lists.
+    // Only a full manifest defines the release, so a partial dev resource list never prunes.
+    if (!complete) return;
+    const keep = new Set([...assets, new URL(SHELL, self.location.origin).href]);
+    const stale = (await cache.keys()).filter((request) => !keep.has(request.url));
+    await Promise.all(stale.map((request) => cache.delete(request)));
   })().finally(() => {
     warming = null;
   });

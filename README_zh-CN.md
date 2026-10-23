@@ -48,11 +48,13 @@ flowchart LR
   List --> BLE[Native BLE]
 ```
 
+宿主只加载一次入口 `/?appHome=1&fromType=app`，之后由 Biz 的 SPA 路由切换页面，不再按页面单独加载 URL。
+
 首页优先通过 bridge 读取本地设备，使用同一套列表展示本地和线上数据。线上完整列表到达后更新界面，并通知宿主更新本地数据。完整钥匙支持本地 BLE 操作；云端操作、注册和受限钥匙签名需要网络。
 
 游客通过 Cognito 匿名凭证签名 `POST /web_route`，获取会话 token 后建立 WebSocket。
 
-页面缓存仅在 Web App 宿主且浏览器支持 Service Worker 时注册，见 `src/services/appPageCache.js`；使用 HTTPS 或 localhost 等安全上下文，普通 PC 浏览器和仅添加 `appHome=1` 的预览不会主动注册。缓存只保存公共页面资源，不包含 API 响应、token 或钥匙。HTML 优先从网络加载，资源保存成功后更新离线入口；断网时使用已缓存页面。首次使用、切换域名或清除缓存后，需要联网加载一次。
+页面缓存仅在 Web App 宿主且浏览器支持 Service Worker 时注册，见 `src/services/appPageCache.js`；使用 HTTPS 或 localhost 等安全上下文，普通 PC 浏览器和仅添加 `appHome=1` 的预览不会主动注册。缓存只保存公共页面资源，不包含 API 响应、token 或钥匙。HTML 优先从网络加载，资源保存成功后更新离线入口，并按 `asset-manifest.json` 删除旧版本资源；断网时使用已缓存页面。首次使用、切换域名或清除缓存后，需要联网加载一次。
 
 ## 代码入口
 

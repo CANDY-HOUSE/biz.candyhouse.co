@@ -48,11 +48,13 @@ flowchart LR
   List --> BLE[Native BLE]
 ```
 
+The host loads the entry `/?appHome=1&fromType=app` once; Biz SPA routing handles all later page changes instead of loading a URL per page.
+
 The home page reads local devices through the bridge first. Local and online data use the same device list. A complete online list updates the UI and is passed to the host for local persistence. Full keys support local BLE operation; cloud actions, registration and restricted-key signing require connectivity.
 
 Guests sign `POST /web_route` with Cognito unauthenticated credentials to obtain a session token before connecting to WebSocket.
 
-The page cache is registered only in the Web App host when Service Worker support is available; see `src/services/appPageCache.js`. Use a secure context such as HTTPS or localhost. Regular PC browsers and previews using only `appHome=1` do not initiate registration. Only public page assets are cached, excluding API responses, tokens and keys. HTML is network-first; the offline entry is updated after its assets are stored. Offline starts use the cached page. First use, an origin change or cleared cache requires an online load.
+The page cache is registered only in the Web App host when Service Worker support is available; see `src/services/appPageCache.js`. Use a secure context such as HTTPS or localhost. Regular PC browsers and previews using only `appHome=1` do not initiate registration. Only public page assets are cached, excluding API responses, tokens and keys. HTML is network-first; the offline entry is updated after its assets are stored, and assets missing from `asset-manifest.json` are removed. Offline starts use the cached page. First use, an origin change or cleared cache requires an online load.
 
 ## Code entry points
 
