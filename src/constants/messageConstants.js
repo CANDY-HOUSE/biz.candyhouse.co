@@ -14,7 +14,6 @@ export const ACTION_TYPES = {
   BIZ3_GET_DEVICEHISTORY: 'biz3GetDeviceHistory',
   BIZ3_OPERATE_IOT: 'biz3OperateIoT',
   BIZ3_TRIGGER_LOCKER: 'biz3TriggerLocker',
-  BIZ3_LIST_FIRMWARE: 'biz3ListFirmware',
   BIZ3_INVOKE_WEBAPI: 'biz3InvokeWebAPIs',
   BIZ3_GET_BATTERY_RECORD: 'biz3GetDeviceBatteryRecord',
   BIZ3_IR_REMOTE: 'biz3IRRemote',

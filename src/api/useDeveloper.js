@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { ACTION_TYPES } from '@constants/messageConstants.js';
 import { useCallbacks } from '../hooks/useCallbacks.js';
@@ -13,16 +13,11 @@ const API = {
 
 export const useDeveloper = (gStripe, gAuth) => {
   const { registerCallback, invokeCallbacks } = useCallbacks();
-  const [firmwares, setFirmwares] = useState([]);
 
   const handleAPIInfoResponse = useCallback(
     (message) => {
       invokeCallbacks(message);
       switch (message.action) {
-        case ACTION_TYPES.BIZ3_LIST_FIRMWARE:
-          console.log('BIZ3_LIST_FIRMWARE ==> message', message);
-          setFirmwares(message.data);
-          break;
         case ACTION_TYPES.BIZ3_INVOKE_WEBAPI:
           gStripe.getDevApiInfo();
           break;
@@ -32,14 +27,6 @@ export const useDeveloper = (gStripe, gAuth) => {
     },
     [gAuth]
   );
-
-  useWebSocket(ACTION_TYPES.BIZ3_LIST_FIRMWARE, handleAPIInfoResponse);
-  const getDownloadFireware = async () => {
-    let msgData = {
-      action: ACTION_TYPES.BIZ3_LIST_FIRMWARE,
-    };
-    sendMessage(msgData);
-  };
 
   useWebSocket(ACTION_TYPES.BIZ3_INVOKE_WEBAPI, handleAPIInfoResponse);
   const invokeAPI = useCallback(
@@ -95,8 +82,6 @@ export const useDeveloper = (gStripe, gAuth) => {
   );
 
   return {
-    getDownloadFireware,
-    firmwares,
     getIoTDeviceState,
     getDeviceHistory,
     triggerDevice,

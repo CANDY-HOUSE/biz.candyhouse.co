@@ -3,19 +3,7 @@ import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
 import Paper from '@mui/material/Paper';
-import {
-  Typography,
-  TextField,
-  Card,
-  CardHeader,
-  CardContent,
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  ListItemText,
-} from '@mui/material';
+import { Typography, TextField, Card, CardHeader, CardContent, Box, Button, IconButton } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Refresh from '@mui/icons-material/Refresh';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -25,26 +13,16 @@ import { gUtils } from '@/utils/gUtils';
 import { biz3utils } from '@/utils/biz3utils';
 import { useTranslation } from 'react-i18next';
 import CheckTable from '@/components/biz/CheckTable';
-import DataTable from '@/components/biz/device/DataTable';
 import { gConfig } from '@constants/gConfig';
 import WebhookCard from './WebhookCard';
 
 export default function Developer() {
   const { t } = useTranslation(); // i18n
-  const {
-    gManageDevice,
-    gManageGroup,
-    gStripe,
-    setModalContent,
-    setCustomModalOpen,
-    gDeveloper,
-    setSnackbarValue,
-    gMediaType,
-  } = useContext(GlobalStateContext);
+  const { gManageDevice, gManageGroup, gStripe, setModalContent, setCustomModalOpen, gDeveloper, setSnackbarValue } =
+    useContext(GlobalStateContext);
   const [sesameKey, setSesameKey] = useState({ UUID: '', secretKey: '', deviceModel: '' });
   const [apiResponse, setApiResponse] = useState({});
   const [isKeyRefresing, setIsKeyRefresing] = useState(false);
-  const [selectAnchorEl, setSelectAnchorEl] = useState({ anchorEl: null, selectIndex: null });
   const [userDevices, setUserDevices] = useState([]);
   const fileInputRef = useRef(null);
   const [pending, setPending] = useState(false);
@@ -64,9 +42,6 @@ export default function Developer() {
 
   useEffect(() => {
     getApiInfo(false);
-    if (gDeveloper.firmwares.length < 1) {
-      gDeveloper.getDownloadFireware();
-    }
   }, [gStripe.customerInfo.companyID]);
 
   const CustomWidthTooltip = styled(({ className, ...props }) => (
@@ -132,72 +107,6 @@ export default function Developer() {
     overflowX: 'auto', // 如果内容过宽，添加滚动条
     border: '1px solid #F1F1F1',
   };
-
-  const columns = [
-    {
-      name: 'デバイス名',
-      label: 'デバイス名',
-      options: {
-        customBodyRenderLite: (dataIndex) => {
-          return gDeveloper.firmwares[dataIndex].device;
-        },
-      },
-    },
-    {
-      name: 'バージョン',
-      label: 'バージョン',
-      options: {
-        customBodyRenderLite: (dataIndex) => {
-          return (
-            <>
-              <Typography
-                href="#"
-                sx={{
-                  color: '#000000',
-                  textDecoration: 'none', // 默认没有下划线
-                  '&:hover': {
-                    textDecoration: 'underline', // 鼠标悬停时显示下划线
-                  },
-                  cursor: 'pointer', // 鼠标悬停时显示指针样式
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectAnchorEl({ anchorEl: e.currentTarget, selectIndex: dataIndex });
-                }}
-              >
-                {gDeveloper.firmwares[dataIndex].v}
-              </Typography>
-              <Menu
-                elevation={1}
-                sx={{
-                  '& .MuiPaper-root': {
-                    border: '1px solid #F1F1F1',
-                  },
-                }}
-                MenuListProps={{ disablePadding: true }}
-                keepMounted
-                anchorEl={selectAnchorEl.anchorEl}
-                open={Boolean(selectAnchorEl.anchorEl)}
-                onClose={() => setSelectAnchorEl({ anchorEl: null, selectIndex: null })}
-              >
-                <MenuItem
-                  onClick={() => {
-                    const url = gDeveloper.firmwares[selectAnchorEl.selectIndex].downloadUrl;
-                    if (url) {
-                      window.open(url, '_blank');
-                    }
-                    setSelectAnchorEl({ anchorEl: null, selectIndex: null });
-                  }}
-                >
-                  <ListItemText primary="ダウンロード" />
-                </MenuItem>
-              </Menu>
-            </>
-          );
-        },
-      },
-    },
-  ];
 
   const handleOpenModal = async () => {
     setModalContent(
@@ -469,18 +378,6 @@ export default function Developer() {
                 </>
               )}
             </Card>
-            <DataTable
-              isMobile={gMediaType.isMobile}
-              isAdd={false}
-              data={gDeveloper.firmwares}
-              isBind={false}
-              isDel={false}
-              isCsv={false}
-              isBack={false}
-              selectableRows={'none'}
-              text={`最新ファームウェア ダウンロード一覧`}
-              columns={columns}
-            />
           </CardContent>
         </Card>
       )}
