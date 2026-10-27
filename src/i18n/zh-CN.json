@@ -628,8 +628,6 @@
     "refresh": "↓您可以下拉刷新",
     "password": "请输入 WiFi 密码",
     "close": "关闭",
-    "connected": "WiFi模块已连接到网络",
-    "connectFailed": "很抱歉🙏\n请确认您的WiFi密码，或把WiFi模块设置于尽量接近WiFi路由器的地方\n\n然后多试几次，通常能成功连上线🙏",
     "status": {
       "ReceivedAdV": "收到蓝牙信号了",
       "BleConnecting": "蓝牙连接中",

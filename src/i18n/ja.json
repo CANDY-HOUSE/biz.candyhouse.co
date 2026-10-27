@@ -628,8 +628,6 @@
     "refresh": "↓引っ張って更新できます",
     "password": "WiFi環境のパスワードをご入力ください",
     "close": "閉じる",
-    "connected": "WiFiモジュールがネットに接続できました",
-    "connectFailed": "すみません🙏\nWiFiパスワードを再度確かめるか、WiFiルーターとの距離を近づけて、再度設定をお試し頂けますでしょうか？\n\n一度失敗した場合でも、通常数回お試し頂くと、接続に成功することがほとんどです。🙏",
     "status": {
       "ReceivedAdV": "Received Ble",
       "BleConnecting": "Ble Connecting",

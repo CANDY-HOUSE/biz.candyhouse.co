@@ -3,6 +3,7 @@ import { isPeripheralModel } from '@/services/peripheralSettings';
 import { initializeBotScripts, isScriptBotModel } from '@/services/botScripts';
 import { rememberGuestDevice } from '@/services/guestDevices';
 import { forgetRemovedDevice, removedDevices } from '@/services/removedDevices';
+import { forgetHub3LedPercent } from '@/services/hub3LedCache';
 import { isAppLockModel } from '@/services/appLockSettings';
 import { isGuestAppSession } from '@/services/appSession';
 import { appTopBarHeight } from '@/services/appNavigation';
@@ -117,6 +118,7 @@ export default function AppRegistration() {
     try {
       const result = await deviceService.request('register', { deviceUUID: device.deviceUUID });
       forgetRemovedDevice(device.deviceUUID);
+      forgetHub3LedPercent(device.deviceUUID);
       await cloudCallback((cb) => gManageDevice.addSesameDevicesToBiz3([result.data], cb));
       if (isGuestAppSession() && gStripe.customerInfo.isAnonymous)
         rememberGuestDevice(gStripe.customerInfo.subUUID, result.data);

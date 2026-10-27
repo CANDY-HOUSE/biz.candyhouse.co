@@ -1,4 +1,4 @@
-import { useContext, useRef, useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   Alert,
   Box,
@@ -21,12 +21,10 @@ import { useTranslation } from 'react-i18next';
 import { deviceService } from '@/services/deviceService';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import AppRefreshIndicator from './AppRefreshIndicator';
-import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { logOperationFailure } from '@/services/operationFailure';
 
 export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword = false }) {
   const { t } = useTranslation();
-  const { setSnackbarValue } = useContext(GlobalStateContext);
   const devices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const device = devices[deviceUUID.toUpperCase()];
   const networks = [...(device?.hub?.wifiScan || [])].sort((a, b) => b.rssi - a.rssi);
@@ -175,20 +173,11 @@ export default function AppHubWifi({ deviceUUID, onClose, connectAfterPassword =
               setFailed(false);
               try {
                 await request('password', { password });
-                // WM2 replies only after trying the AP; like the original app, close now and report later.
+                // WM2 replies only after trying the AP; close now and leave the result to the network status.
                 if (connectAfterPassword)
-                  request('connectWifi')
-                    .then(() => setSnackbarValue({ open: true, msg: t('hubWifi.connected'), severity: 'success' }))
-                    .catch(() => {
-                      logOperationFailure('components/AppHubWifi.connectWifi', 'hubWifi.connectFailed');
-                      // Error snackbars are log-only; this retry advice replaces the original app's alert.
-                      setSnackbarValue({
-                        open: true,
-                        msg: t('hubWifi.connectFailed'),
-                        severity: 'warning',
-                        duration: 6000,
-                      });
-                    });
+                  request('connectWifi').catch(() =>
+                    logOperationFailure('components/AppHubWifi.connectWifi', 'hubWifi.connectFailed')
+                  );
                 onClose();
               } catch (_) {
                 setFailed(true);

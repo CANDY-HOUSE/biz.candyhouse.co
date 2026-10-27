@@ -45,6 +45,7 @@ import UpgradeFirmware from '@/components/biz/device/UpgradeFirmware';
 import MobileRemoveDevice from '@/components/MobileRemoveDevice';
 import BatteryPercent from '@/components/biz/device/BatteryPercent';
 import SliderItem from '@/components/SliderItem';
+import { loadHub3LedPercent, saveHub3LedPercent } from '@/services/hub3LedCache';
 
 const MobileWifiModule = () => {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -114,7 +115,8 @@ const ExistingWifiModule = () => {
     isConnectingNetwork: false,
     isConnectingIoT: false,
   });
-  const [LEDBrightness, setLEDBrightness] = useState(0);
+  // null 表示尚未从 Hub3 读到亮度，期间显示缓存值
+  const [LEDBrightness, setLEDBrightness] = useState(null);
   const [isRequestMatter, setIsRequestMatter] = useState(false);
   const [networkConnectivity, setNetworkConnectivity] = useState({ wifi: false, lte: false, ethernet: false });
   const [relayEnable, setRelayEnable] = useState({ enable1: true, enable2: true });
@@ -267,6 +269,7 @@ const ExistingWifiModule = () => {
           duty: ledDuty,
         },
       });
+      saveHub3LedPercent(did, newValue);
     },
     [currentDevice]
   );
@@ -292,18 +295,20 @@ const ExistingWifiModule = () => {
     });
     registerIotCallback(gConfig.cmdCode.HUB3_ITEM_CODE_LED_DUTY, (iotDeviceUUID, data) => {
       console.log('[HUB3_ITEM_CODE_LED_DUTY]', iotDeviceUUID, data);
-      if (data.ledDuty) {
+      if (data.ledDuty != null) {
         const dutyPercent = Math.round((data.ledDuty / 255) * 100);
         console.log('Updated LED duty from device:', dutyPercent);
         setLEDBrightness(dutyPercent);
+        saveHub3LedPercent(did, dutyPercent);
       }
     });
   };
 
+  // 刚配网时 Hub3 尚未连上 IoT，此时发出的查询会丢失，需等 IoT 上线后再查
   useEffect(() => {
-    if (!currentDevice.secretKey) return;
+    if (!currentDevice.secretKey || !internetStatus.isIoTWork) return;
     getLEDBrightness();
-  }, [currentDevice.secretKey]);
+  }, [currentDevice.secretKey, internetStatus.isIoTWork]);
 
   const requestBLEConnectFromApp = useCallback(({ deviceUUID }) => {
     const requestId = Date.now().toString();
@@ -511,7 +516,7 @@ const ExistingWifiModule = () => {
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <SliderItem
           text={t('pages.sesameAccessControlDevice.index.LED')}
-          value={LEDBrightness}
+          value={LEDBrightness ?? loadHub3LedPercent(did)}
           onChangeCommitted={(val) => handleChangeLEDBrightness(val)}
         />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />

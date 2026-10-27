@@ -628,8 +628,6 @@
     "refresh": "↓You can pull to refresh",
     "password": "Please enter the WiFi password",
     "close": "Close",
-    "connected": "WiFi Module is connected to network successfully",
-    "connectFailed": "SORRY🙏\nPlease double check your WiFi password, or put WiFi Module as close to the WiFi router as possible.\n\nThen normally retry for a few times it will get connected successfully.🙏",
     "status": {
       "ReceivedAdV": "Received Ble",
       "BleConnecting": "Ble Connecting",

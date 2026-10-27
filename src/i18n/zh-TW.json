@@ -628,8 +628,6 @@
     "refresh": "↓您可以下拉刷新",
     "password": "請輸入 WiFi 密碼",
     "close": "關閉",
-    "connected": "WiFi模組已連接到網路",
-    "connectFailed": "很抱歉🙏\n請確認您的WiFi密碼，或把WiFi模組設置於盡量接近WiFi路由器的地方\n\n然後多試幾次，通常能成功連上線🙏",
     "status": {
       "ReceivedAdV": "收到藍芽訊號了",
       "BleConnecting": "藍芽連接中",

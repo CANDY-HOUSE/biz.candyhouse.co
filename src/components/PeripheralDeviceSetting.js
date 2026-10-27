@@ -50,7 +50,7 @@ import AppHubWifi from './AppHubWifi';
 export default function PeripheralDeviceSetting({ showBack = true }) {
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const { t } = useTranslation();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const id = params.get('deviceUUID') || '';
@@ -78,7 +78,15 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     }
   }, [id, native?.batteryPercentage]);
   const caps = peripheralCapabilities(model);
-  const [wifiOpen, setWifiOpen] = useState(false);
+  // WM2 has to join WiFi before it is usable, so registration opens the network list first.
+  const [wifiOpen, setWifiOpen] = useState(() => wifi && isAppHome && params.get('setup') === '1');
+  useEffect(() => {
+    if (!wifiOpen || !params.has('setup')) return;
+    // Drop the flag so returning from a sub-page does not reopen the list.
+    const next = new URLSearchParams(params);
+    next.delete('setup');
+    setParams(next, { replace: true });
+  }, []);
   const [bindOpen, setBindOpen] = useState(false);
   const [bindingTarget, setBindingTarget] = useState(null);
   const [delayOpen, setDelayOpen] = useState(false);

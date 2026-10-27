@@ -125,8 +125,7 @@ const EmployeeItem = () => {
         showButton
         showOwnerOption={items[0].keyLevel === 0}
         onConfirm={(keyLevel, cb) => {
-          const allItems = items.flatMap((device) => {
-            delete device['stateInfo'];
+          const allItems = items.flatMap(({ stateInfo: _stateInfo, ...device }) => {
             return {
               ...device,
               rank: 0,
