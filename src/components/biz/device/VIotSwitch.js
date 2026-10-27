@@ -13,8 +13,11 @@ import { keyframes } from '@mui/system';
 const shake = keyframes`from { transform: translateX(-3%); } to { transform: translateX(3%); }`;
 const isShakeModel = (model) =>
   gUtils.isBotModel(model) ||
+  model === gConfig.sesameDeviceModel.bike_1 ||
   model === gConfig.sesameDeviceModel.ssm_bike2 ||
   model === gConfig.sesameDeviceModel.ssm_bike3;
+// Bike 1 不属于 isLockModel（列表点击直接进入设置页），但列表中同样显示开锁按钮
+const isLockButtonModel = (model) => gUtils.isLockModel(model) || model === gConfig.sesameDeviceModel.bike_1;
 
 const VIotSwitch = ({
   gIot,
@@ -42,7 +45,7 @@ const VIotSwitch = ({
   };
   useEffect(() => () => clearTimeout(shakeTimer.current), []);
   const execute = async (command) => {
-    const lock = gUtils.isLockModel(model);
+    const lock = isLockButtonModel(model);
     const now = performance.now();
     if (disabled || inFlight.current || (lock && now - lastCommandAt.current < 1000)) return;
     lastCommandAt.current = now;
@@ -110,7 +113,7 @@ const VIotSwitch = ({
         </IconButton>
       );
     }
-    if (gUtils.isLockModel(model)) {
+    if (isLockButtonModel(model)) {
       return (
         <IconButton disabled={disabled} onClick={handleChange}>
           {checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
