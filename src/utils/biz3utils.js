@@ -119,22 +119,24 @@ const writeQrcode = (text, call) => {
   call(qrcode);
 };
 
+const parseUserQrcode = (text) => {
+  let urlParams;
+  try {
+    urlParams = new URL(text).searchParams;
+  } catch (_) {
+    return null;
+  }
+  const friendUUID = urlParams.get(qrMode.QR_FRIEND);
+  if (urlParams.get('t') !== qrMode.QR_FRIEND || !friendUUID) return null;
+  return { friendID: friendUUID.toLowerCase() };
+};
+
 const readUserQrcode = (imgUrl, call) => {
   if (!imgUrl) return;
   new Decoder()
     .scan(URL.createObjectURL(imgUrl))
     .then((result) => {
-      const url = new URL(result.data);
-      const urlParams = new URLSearchParams(url.search);
-      const type = urlParams.get('t');
-      const friendUUID = urlParams.get(qrMode.QR_FRIEND);
-      if (type !== qrMode.QR_FRIEND || !friendUUID) {
-        call(null);
-        return;
-      }
-      call(null, {
-        friendID: friendUUID.toLowerCase(),
-      });
+      call(null, parseUserQrcode(result.data));
     })
     .catch((error) => {
       console.error('数据data', error);
@@ -553,6 +555,7 @@ const hub3TopicId = (deviceUuid) => {
 
 export const biz3utils = {
   timestampToTime,
+  parseUserQrcode,
   readUserQrcode,
   readQrcode,
   readQrcodeUrl,

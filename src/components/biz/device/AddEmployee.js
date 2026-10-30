@@ -28,6 +28,8 @@ import { gUtils } from '@/utils/gUtils';
 import { CfpMsg } from './CfpMsg';
 import { biz3utils } from '@/utils/biz3utils';
 import { useTranslation } from 'react-i18next';
+import { isAppHome } from '@/services/deviceService';
+import { appQrScanner } from '@/services/appQrScanner';
 
 export default function AddEmployee({ tags, completionCallback }) {
   const navigate = useNavigate();
@@ -59,6 +61,28 @@ export default function AddEmployee({ tags, completionCallback }) {
       cb && cb();
       completionCallback && completionCallback(res);
     });
+  };
+
+  const addByUserQr = (userInfo) => {
+    if (!userInfo) {
+      setSnackbarValue({
+        open: true,
+        msg: t('contacts.qrReadFailed'),
+      });
+      return;
+    }
+    submit([{ ...userInfo, companyID: gStripe.customerInfo.companyID }]);
+  };
+
+  const scanUserQr = () => {
+    appQrScanner
+      .open()
+      .then((value) => {
+        if (value !== null) addByUserQr(biz3utils.parseUserQrcode(value));
+      })
+      .catch((error) => {
+        setSnackbarValue({ open: true, severity: 'error', msg: error.message || String(error) });
+      });
   };
 
   const handleSubmit = () => {
@@ -389,7 +413,18 @@ export default function AddEmployee({ tags, completionCallback }) {
             </Grid>
           )}
           {gStripe.customerInfo.isSesameApp && (
-            <Button varient="text" component="label" startIcon={<QrCodeIcon />} sx={{ ml: 1 }}>
+            <Button
+              varient="text"
+              component="label"
+              startIcon={<QrCodeIcon />}
+              sx={{ ml: 1 }}
+              onClick={(e) => {
+                // In the app the scanner offers camera and photo picker itself, so every platform behaves the same.
+                if (!isAppHome) return;
+                e.preventDefault();
+                scanUserQr();
+              }}
+            >
               {t('contacts.addByQr')}
               <input
                 type="file"
@@ -397,19 +432,8 @@ export default function AddEmployee({ tags, completionCallback }) {
                 onChange={(e) => {
                   const fileInput = e.target;
                   biz3utils.readUserQrcode(e.target.files[0], (e, userInfo) => {
-                    if (!userInfo) {
-                      setSnackbarValue({
-                        open: true,
-                        msg: t('contacts.qrReadFailed'),
-                      });
-                      return;
-                    }
-                    const sendParam = {
-                      ...userInfo,
-                      companyID: gStripe.customerInfo.companyID,
-                    };
-                    submit([sendParam]);
                     fileInput.value = '';
+                    addByUserQr(userInfo);
                   });
                 }}
               />
