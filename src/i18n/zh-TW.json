@@ -576,6 +576,7 @@
     "seconds": "{{count}} 秒",
     "connectBluetooth": "請開啟藍牙並連接裝置",
     "failed": "操作失敗，請重試",
+    "firmwareBusy": "其他CANDY HOUSE產品正在進行升級, 請稍候",
     "setLocked": "設置上鎖角度",
     "setUnlocked": "設置解鎖角度",
     "magnet": "水平校正",

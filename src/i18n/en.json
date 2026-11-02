@@ -576,6 +576,7 @@
     "seconds": "{{count}} sec",
     "connectBluetooth": "Turn on Bluetooth and connect to the device",
     "failed": "Operation failed. Please retry.",
+    "firmwareBusy": "Updating another CANDY HOUSE product. Please wait...",
     "setLocked": "Set Lock Position",
     "setUnlocked": "Set Unlock Position",
     "magnet": "Horizontal calibration",

@@ -25,6 +25,23 @@ const DFU_PROGRESS_CONNECTED = -8;
 const DFU_PROGRESS_STARTED = -9;
 const DFU_PROGRESS_DISCONNECTED = -10;
 
+// 网关 OTA 没有原生会话可查询：页面卸载后仍在模块内接收进度，用于单任务判断和重新进入页面时恢复进度
+let gatewayFirmware = null;
+let gatewayListener = null;
+const receiveGatewayFirmware = (iotDeviceUUID, data) => {
+  const deviceUUID = (data.UUID || iotDeviceUUID || '').toUpperCase();
+  if (deviceUUID === gatewayFirmware?.deviceUUID) {
+    const session = gatewayFirmware;
+    const progress = Number(data.progress);
+    if (data.versionTag || progress === DFU_PROGRESS_COMPLETED || progress === DFU_PROGRESS_ABORTED) {
+      gatewayFirmware = null;
+      // 页面在时由页面处理完成事件；已离开页面则在这里刷新版本号，重新进入即显示新版本
+      if (!gatewayListener && (data.versionTag || progress === DFU_PROGRESS_COMPLETED)) session.finish(data.versionTag);
+    } else gatewayFirmware = { ...session, progress, lastEvent: Date.now() };
+  }
+  gatewayListener?.(iotDeviceUUID, data);
+};
+
 const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable = false, readOnly = false }) => {
   const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const native = nativeDevices[currentDevice.deviceUUID?.toUpperCase()];
@@ -60,6 +77,15 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
   const gatewayCallback = useRef(null);
   const trace = (phase, progress = -1) => {
     if (appLock) deviceService.notify('firmwareTrace', { transport: transport.current || 'ble', phase, progress });
+  };
+  const releaseGatewayFirmware = () => {
+    if (gatewayFirmware?.deviceUUID === currentDevice.deviceUUID?.toUpperCase()) gatewayFirmware = null;
+  };
+  // 与旧版原生一致：同一时间只允许一台设备升级（蓝牙 DFU 与网关 OTA 合并计算）
+  const firmwareRunning = async () => {
+    if (gatewayFirmware) return true;
+    const status = await deviceService.request('firmwareStatus').catch(() => null);
+    return ['downloading', 'updating'].includes(status?.data?.state);
   };
 
   const DFU_STATUS_MESSAGES = {
@@ -243,60 +269,83 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
     });
   }, [currentDevice.deviceUUID]);
 
+  const receiveGatewayProgress = (iotDeviceUUID, data) => {
+    const progress = Number(data.progress);
+    const versionTag = data.versionTag || '';
+    const UUID = data.UUID || iotDeviceUUID || '';
+    if (UUID.toUpperCase() !== currentDevice.deviceUUID?.toUpperCase()) return;
+    if (appLock && (!gatewaySession.current || (gatewayTerminal.current && !versionTag))) return;
+    gatewayLastEvent.current = Date.now();
+    if (versionTag) {
+      const targetDeviceUUID = UUID || currentDevice.deviceUUID;
+      gManageDevice.updateDeviceState({
+        deviceUUID: targetDeviceUUID,
+        stateInfo: {
+          currentFwVer: versionTag,
+          latestFwVer: versionTag,
+        },
+      });
+      notifyAppDeviceFWVersionUpdated(targetDeviceUUID, versionTag);
+      gatewayTerminal.current = true;
+      releaseGatewayFirmware();
+      trace('completed');
+      transport.current = null;
+      setNativeUpdating(false);
+      setReportedProgress(null);
+    } else if (appLock && progress === DFU_PROGRESS_COMPLETED) {
+      gatewayTerminal.current = true;
+      releaseGatewayFirmware();
+      trace('completed');
+      transport.current = null;
+      setNativeUpdating(false);
+      setReportedProgress(null);
+      versionDue.current = true;
+      versionAttempts.current = 0;
+      gManageDevice.getDeviceStatus(currentDevice.deviceUUID);
+    } else {
+      trace('progress', progress);
+      setReportedProgress(progress);
+      if (appLock && progress === DFU_PROGRESS_ABORTED) {
+        gatewayTerminal.current = true;
+        releaseGatewayFirmware();
+        trace('failed');
+        transport.current = null;
+        setNativeUpdating(false);
+      }
+    }
+  };
+
   const handleOSUpdate = () => {
     if (appLock) {
       transport.current = 'gateway';
       gatewaySession.current = true;
       gatewayTerminal.current = false;
       gatewayLastEvent.current = Date.now();
+      gatewayFirmware = {
+        deviceUUID: currentDevice.deviceUUID?.toUpperCase(),
+        progress: DFU_PROGRESS_CONNECTING,
+        lastEvent: gatewayLastEvent.current,
+        finish: (versionTag) => {
+          if (!versionTag) {
+            gManageDevice.getDeviceStatus(currentDevice.deviceUUID);
+            return;
+          }
+          gManageDevice.updateDeviceState({
+            deviceUUID: currentDevice.deviceUUID,
+            stateInfo: { currentFwVer: versionTag, latestFwVer: versionTag },
+          });
+          notifyAppDeviceFWVersionUpdated(currentDevice.deviceUUID, versionTag);
+        },
+      };
       setNativeUpdating(true);
       setReportedProgress(DFU_PROGRESS_CONNECTING);
       trace('start');
     }
-    const receive = (iotDeviceUUID, data) => {
-      const progress = Number(data.progress);
-      const versionTag = data.versionTag || '';
-      const UUID = data.UUID || iotDeviceUUID || '';
-      if (UUID.toUpperCase() !== currentDevice.deviceUUID?.toUpperCase()) return;
-      if (appLock && (!gatewaySession.current || (gatewayTerminal.current && !versionTag))) return;
-      gatewayLastEvent.current = Date.now();
-      if (versionTag) {
-        const targetDeviceUUID = UUID || currentDevice.deviceUUID;
-        gManageDevice.updateDeviceState({
-          deviceUUID: targetDeviceUUID,
-          stateInfo: {
-            currentFwVer: versionTag,
-            latestFwVer: versionTag,
-          },
-        });
-        notifyAppDeviceFWVersionUpdated(targetDeviceUUID, versionTag);
-        gatewayTerminal.current = true;
-        trace('completed');
-        transport.current = null;
-        setNativeUpdating(false);
-        setReportedProgress(null);
-      } else if (appLock && progress === DFU_PROGRESS_COMPLETED) {
-        gatewayTerminal.current = true;
-        trace('completed');
-        transport.current = null;
-        setNativeUpdating(false);
-        setReportedProgress(null);
-        versionDue.current = true;
-        versionAttempts.current = 0;
-        gManageDevice.getDeviceStatus(currentDevice.deviceUUID);
-      } else {
-        trace('progress', progress);
-        setReportedProgress(progress);
-        if (appLock && progress === DFU_PROGRESS_ABORTED) {
-          gatewayTerminal.current = true;
-          trace('failed');
-          transport.current = null;
-          setNativeUpdating(false);
-        }
-      }
-    };
-    gatewayCallback.current = receive;
-    registerIotCallback(gConfig.cmdCode.ssmOSUpdate, receive);
+    gatewayCallback.current = receiveGatewayProgress;
+    if (appLock) {
+      gatewayListener = receiveGatewayProgress;
+      registerIotCallback(gConfig.cmdCode.ssmOSUpdate, receiveGatewayFirmware);
+    } else registerIotCallback(gConfig.cmdCode.ssmOSUpdate, receiveGatewayProgress);
     gIot
       .sendCommandToHub3WithConnectionId({
         device_id: currentDevice.deviceUUID,
@@ -307,6 +356,7 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       .catch(() => {
         if (appLock) {
           gatewayTerminal.current = true;
+          releaseGatewayFirmware();
           trace('failed');
           transport.current = null;
           setNativeUpdating(false);
@@ -320,8 +370,22 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       clearProgressInterval();
       if (gatewayCallback.current && getIotCallbacks(gConfig.cmdCode.ssmOSUpdate) === gatewayCallback.current)
         unregisterIotCallback(gConfig.cmdCode.ssmOSUpdate);
+      if (gatewayCallback.current && gatewayListener === gatewayCallback.current) gatewayListener = null;
     };
   }, []);
+
+  useEffect(() => {
+    const session = gatewayFirmware;
+    if (!appLock || session?.deviceUUID !== currentDevice.deviceUUID?.toUpperCase()) return;
+    transport.current = 'gateway';
+    gatewaySession.current = true;
+    gatewayTerminal.current = false;
+    gatewayLastEvent.current = session.lastEvent;
+    gatewayCallback.current = receiveGatewayProgress;
+    gatewayListener = receiveGatewayProgress;
+    setNativeUpdating(true);
+    setReportedProgress(session.progress);
+  }, [appLock, currentDevice.deviceUUID]);
 
   useEffect(() => {
     if (native?.bleConnected) {
@@ -342,6 +406,7 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
         if (transport.current === 'gateway') {
           if (Date.now() - gatewayLastEvent.current > 180000) {
             gatewayTerminal.current = true;
+            releaseGatewayFirmware();
             trace('failed');
             transport.current = null;
             setNativeUpdating(false);
@@ -412,7 +477,19 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
   }, [appLock, currentDevice.deviceUUID]);
 
   const startAppUpdate = async () => {
-    if (readOnly || nativeUpdating || preparingUpdate.current) return;
+    if (readOnly) return;
+    const showBusy = () => setSnackbarValue({ open: true, msg: t('lockSettings.firmwareBusy') });
+    if (nativeUpdating || preparingUpdate.current) {
+      showBusy();
+      return;
+    }
+    preparingUpdate.current = true;
+    const busy = await firmwareRunning();
+    preparingUpdate.current = false;
+    if (busy) {
+      showBusy();
+      return;
+    }
     if (!native?.bleConnected) {
       if (currentDevice.stateInfo?.wm2State === true && Hub3DeviceUUID) handleOSUpdate();
       else setSnackbarValue({ open: true, msg: t('lockSettings.connectBluetooth') });

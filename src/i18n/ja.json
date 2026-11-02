@@ -576,6 +576,7 @@
     "seconds": "{{count}} 秒",
     "connectBluetooth": "Bluetoothをオンにしてデバイスに接続してください",
     "failed": "操作に失敗しました。再試行してください",
+    "firmwareBusy": "他のCANDY HOUSE製品を更新中、お待ち下さいませ",
     "setLocked": "施錠の位置を固定する",
     "setUnlocked": "解錠の位置を固定する",
     "magnet": "水平の校正",
