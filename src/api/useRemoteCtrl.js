@@ -15,6 +15,7 @@ const IR_OPS = {
   updateRemoteState: 'updateRemoteState',
   addIRRemote: 'addIRRemote',
   deleteIRRemote: 'deleteIRRemote',
+  duplicateIRRemote: 'duplicateIRRemote',
   updateRemoteAlias: 'updateRemoteAlias',
   getIRMode: 'getIRMode',
   setIRMode: 'setIRMode',
@@ -136,6 +137,14 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
           console.log('infrared remote control deleted successfully:', message.data);
         } else {
           console.error('infrared remote control delete failed:', message.message);
+        }
+        break;
+
+      case IR_OPS.duplicateIRRemote:
+        if (message.success) {
+          console.log('infrared remote control duplicated successfully:', message.data);
+        } else {
+          console.error('infrared remote control duplicate failed:', message.message);
         }
         break;
 
@@ -628,6 +637,35 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
   );
 
   /**
+   * 复制红外遥控器（后台复制遥控器本体；自学习遥控器同时复制按键与红外数据）
+   * @param {string} hub3DeviceId - Hub3设备ID
+   * @param {string} uuid - 源遥控器 UUID
+   * @param {string} alias - 新遥控器别名
+   * @param {function} cb - 回调函数（可选），response.data 为新遥控器
+   */
+  const duplicateIRRemote = useCallback(
+    (hub3DeviceId, uuid, alias, cb) => {
+      console.log(`Duplicating IR remote - Device: ${hub3DeviceId}, Remote ID: ${uuid}`);
+      const companyID = gStripe.customerInfo.companyID;
+      const message = {
+        action: ACTION_TYPES.BIZ3_IR_REMOTE,
+        op: IR_OPS.duplicateIRRemote,
+        hub3DeviceId: hub3DeviceId,
+        uuid: uuid,
+        alias: alias,
+        companyID: companyID,
+      };
+
+      handleSendMessage(message);
+
+      if (cb && typeof cb === 'function') {
+        registerCallback(message.action, message.op, cb);
+      }
+    },
+    [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
+  );
+
+  /**
    * 修改红外遥控器别名
    * @param {string} hub3DeviceId - Hub3设备ID
    * @param {string} uuid - 遥控器 UUID
@@ -1028,6 +1066,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
     updateRemoteState,
     addIRRemote,
     deleteIRRemote,
+    duplicateIRRemote,
     modifyIRRemote,
     getIRMode,
     setIRMode,

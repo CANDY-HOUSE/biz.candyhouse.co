@@ -6,6 +6,7 @@ import { Add, MoreHoriz } from '@mui/icons-material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import { useRemoteCtrl } from '../api/useRemoteCtrl.js';
+import { buildMatterPowerCommands } from '@/pages/personal/devices/wifi-module/ir/utils/irMatterCommands.js';
 
 export default function MobileHub3RemoteList({ deviceUUID, editable = true, device: listDevice }) {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -22,7 +23,12 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const { gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
-  const { deleteIRRemote, updateLocalRemoteList } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const { deleteIRRemote, duplicateIRRemote, addRemoteToMatter, updateLocalRemoteList } = useRemoteCtrl(
+    gAuth,
+    gStripe,
+    setSnackbarValue
+  );
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const singleLineTextSx = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -86,6 +92,44 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
       }
     });
     setDrawerOpen(false);
+  };
+
+  // 复制遥控器：后台生成新 uuid（自学习同时复制按键与红外数据），成功后补一次 Matter 注册
+  const duplicateRemote = (remote = selectedRemote) => {
+    setDrawerOpen(false);
+    if (!remote?.uuid || isDuplicating) return;
+    setIsDuplicating(true);
+    // 保持原名称，后台缺省沿用源遥控器的 alias
+    duplicateIRRemote(device.deviceUUID, remote.uuid, remote.alias || '', (response) => {
+      setIsDuplicating(false);
+      if (!response.success || !response.data?.uuid) {
+        console.error('duplicateIRRemote failed:', response.message);
+        setSnackbarValue({
+          open: true,
+          msg: t('pages.ir.remote.duplicateFail'),
+          severity: 'error',
+        });
+        return;
+      }
+      const { skippedKeys } = response.data;
+      const newRemote = { ...response.data };
+      delete newRemote.duplicatedKeys;
+      delete newRemote.skippedKeys;
+      updateLocalRemoteList(device.deviceUUID, newRemote);
+      const commands = buildMatterPowerCommands(newRemote);
+      if (commands) {
+        addRemoteToMatter(device.deviceUUID, commands.cmdOn, commands.cmdOff, newRemote, (matterResponse) => {
+          console.log('addRemoteToMatter callback response:', matterResponse);
+        });
+      }
+      if (skippedKeys > 0) {
+        setSnackbarValue({
+          open: true,
+          msg: t('pages.ir.remote.duplicateSkippedKeys'),
+          severity: 'warning',
+        });
+      }
+    });
   };
 
   const gotoRemoteControl = (remote = selectedRemote) => {
@@ -186,6 +230,9 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
             </ListItem>
             <ListItem onClick={() => gotoRemoteControl(selectedRemote)}>
               <Typography>{t('pages.ir.remote.detail')}</Typography>
+            </ListItem>
+            <ListItem onClick={() => duplicateRemote(selectedRemote)}>
+              <Typography>{t('pages.ir.remote.duplicate')}</Typography>
             </ListItem>
             <ListItem onClick={() => deleteRemote(selectedRemote)}>
               <Typography color="error.main">{t('pages.ir.remote.delete')}</Typography>
