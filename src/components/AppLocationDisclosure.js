@@ -3,6 +3,9 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography }
 import { useTranslation } from 'react-i18next';
 import { onNativeEvent, requestNative } from '@/services/appBridge';
 
+// Amplify build variable; set to 'off' and redeploy to skip the disclosure.
+const disclosureEnabled = process.env.REACT_APP_LOCATION_DISCLOSURE !== 'off';
+
 // Store review requires this prominent disclosure before the first location prompt; the system prompt stays native.
 export default function AppLocationDisclosure() {
   const { t } = useTranslation();
@@ -11,7 +14,9 @@ export default function AppLocationDisclosure() {
   useEffect(
     () =>
       onNativeEvent(({ type }) => {
-        if (type === 'locationDisclosure') setOpen(true);
+        if (type !== 'locationDisclosure') return;
+        if (disclosureEnabled) setOpen(true);
+        else requestNative('locationDisclosure', { accepted: true }).catch(() => {});
       }),
     []
   );
