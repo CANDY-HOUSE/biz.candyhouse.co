@@ -16,6 +16,8 @@ const IR_OPS = {
   addIRRemote: 'addIRRemote',
   deleteIRRemote: 'deleteIRRemote',
   duplicateIRRemote: 'duplicateIRRemote',
+  setRemoteKeyOrder: 'setRemoteKeyOrder',
+  getRemoteKeyOrder: 'getRemoteKeyOrder',
   updateRemoteAlias: 'updateRemoteAlias',
   getIRMode: 'getIRMode',
   setIRMode: 'setIRMode',
@@ -145,6 +147,20 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
           console.log('infrared remote control duplicated successfully:', message.data);
         } else {
           console.error('infrared remote control duplicate failed:', message.message);
+        }
+        break;
+
+      case IR_OPS.setRemoteKeyOrder:
+        if (message.success) {
+          console.log('remote key order saved successfully:', message.data);
+        } else {
+          console.error('remote key order save failed:', message.message);
+        }
+        break;
+
+      case IR_OPS.getRemoteKeyOrder:
+        if (!message.success) {
+          console.error('remote key order get failed:', message.message);
         }
         break;
 
@@ -695,6 +711,60 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
   );
 
   /**
+   * 保存遥控器的按键排序（独立于保存遥控器：已保存的遥控器随时可以拖曳后调用）
+   * @param {string} hub3DeviceId - Hub 设备ID
+   * @param {string} uuid - 遥控器 uuid（必须已保存）
+   * @param {string[]} keyOrder - 按键 id 的顺序；空数组表示恢复默认顺序
+   * @param {function} cb - 回调函数（可选）
+   */
+  const setRemoteKeyOrder = useCallback(
+    (hub3DeviceId, uuid, keyOrder, cb) => {
+      const companyID = gStripe.customerInfo.companyID;
+      const message = {
+        action: ACTION_TYPES.BIZ3_IR_REMOTE,
+        op: IR_OPS.setRemoteKeyOrder,
+        deviceId: hub3DeviceId,
+        uuid: uuid,
+        keyOrder: keyOrder,
+        companyID: companyID,
+      };
+
+      handleSendMessage(message);
+
+      if (cb && typeof cb === 'function') {
+        registerCallback(message.action, message.op, cb);
+      }
+    },
+    [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
+  );
+
+  /**
+   * 取遥控器的按键排序（自学习页进入时和按键列表一起取，保证两者是同一时间的）
+   * @param {string} hub3DeviceId - Hub 设备ID
+   * @param {string} uuid - 遥控器 uuid
+   * @param {function} cb - 回调函数，response.data = { uuid, keyOrder }，没有记录时 keyOrder 为 []
+   */
+  const getRemoteKeyOrder = useCallback(
+    (hub3DeviceId, uuid, cb) => {
+      const companyID = gStripe.customerInfo.companyID;
+      const message = {
+        action: ACTION_TYPES.BIZ3_IR_REMOTE,
+        op: IR_OPS.getRemoteKeyOrder,
+        deviceId: hub3DeviceId,
+        uuid: uuid,
+        companyID: companyID,
+      };
+
+      handleSendMessage(message);
+
+      if (cb && typeof cb === 'function') {
+        registerCallback(message.action, message.op, cb);
+      }
+    },
+    [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
+  );
+
+  /**
    * 获取IR模式
    * @param {string} deviceId - 设备ID
    * @param {function} cb - 回调函数（可选）
@@ -1067,6 +1137,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
     addIRRemote,
     deleteIRRemote,
     duplicateIRRemote,
+    setRemoteKeyOrder,
+    getRemoteKeyOrder,
     modifyIRRemote,
     getIRMode,
     setIRMode,

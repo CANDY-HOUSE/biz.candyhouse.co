@@ -1,5 +1,5 @@
 import BackButton from '@/components/BackButton';
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import {
   Card,
   CardHeader,
@@ -7,7 +7,6 @@ import {
   Box,
   Typography,
   IconButton,
-  Grid,
   Paper,
   Alert,
   CircularProgress,
@@ -31,6 +30,8 @@ import irMatchImage from '@/assets/svg/ir/png_ir_match.png';
 import EditableText from '@/components/EditableText.js';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
+import SortableKeyGrid from '../components/SortableKeyGrid.js';
+import { useKeyOrder } from '../hooks/useKeyOrder.js';
 
 const RemoteLearn = () => {
   const navigate = useNavigate();
@@ -51,6 +52,8 @@ const RemoteLearn = () => {
     addIRRemote,
     modifyIRRemote,
     updateLocalRemoteList,
+    setRemoteKeyOrder,
+    getRemoteKeyOrder,
   } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
 
   // 状态管理
@@ -66,6 +69,23 @@ const RemoteLearn = () => {
   const { t } = useTranslation();
 
   const isMobile = gMediaType.isMobile;
+
+  // 按键排序：按键 id 就是 keyUUID，默认顺序是后台返回的录入先后。
+  // 顺序和按键列表在同一次刷新里一起取（serverKeyOrder），不用首页列表里可能过期的那份。
+  const [serverKeyOrder, setServerKeyOrder] = useState(undefined);
+  const defaultKeyIds = useMemo(() => irCodes.map((code) => code.keyUUID), [irCodes]);
+  const { orderedIds, handleReorder, removeKey } = useKeyOrder({
+    remote,
+    savedUuid: isRemoteSaved && remote?.uuid ? remote.uuid : '',
+    defaultIds: defaultKeyIds,
+    serverOrder: serverKeyOrder,
+    persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
+    onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
+  });
+  const orderedIrCodes = useMemo(
+    () => orderedIds.map((id) => irCodes.find((code) => code.keyUUID === id)).filter(Boolean),
+    [orderedIds, irCodes]
+  );
 
   // 对话框状态
   const [editDialog, setEditDialog] = useState({
@@ -412,6 +432,7 @@ const RemoteLearn = () => {
       if (response.success) {
         // 更新本地状态
         setIrCodes((prev) => prev.filter((code) => code.keyUUID !== irCode.keyUUID));
+        removeKey(irCode.keyUUID);
       } else {
         setSnackbarValue({
           logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleDeleteIRCode',
@@ -444,23 +465,27 @@ const RemoteLearn = () => {
 
       // 2. 获取按键列表
       getIRCodes(hub3DeviceId, remote.uuid, (response) => {
-        setIsLoading(false);
-
-        if (response.success) {
-          const keys = response.data || [];
-          setIrCodes(
-            keys.map((key) => ({
-              ...key,
-              name: key.name,
-            }))
-          );
-        } else {
+        if (!response.success) {
+          setIsLoading(false);
           console.error('failed to get IR code list:', response.message);
           setIsError(true);
+          return;
         }
+        const keys = (response.data || []).map((key) => ({
+          ...key,
+          name: key.name,
+        }));
+        // 再取一次最新的按键顺序，两者一起显示，避免先按默认顺序显示再跳动；取不到就用列表里带的顺序
+        getRemoteKeyOrder(hub3DeviceId, remote.uuid, (orderResponse) => {
+          if (orderResponse.success) {
+            setServerKeyOrder(orderResponse.data?.keyOrder || []);
+          }
+          setIrCodes(keys);
+          setIsLoading(false);
+        });
       });
     }
-  }, [hub3DeviceId, remote, saveRemoteToServer, getIRCodes]);
+  }, [hub3DeviceId, remote, saveRemoteToServer, getIRCodes, getRemoteKeyOrder]);
 
   // 初始化
   useEffect(() => {
@@ -520,130 +545,95 @@ const RemoteLearn = () => {
     }
   };
 
-  const renderIRCodeGrid = () => {
-    const gridRows = Math.ceil(irCodes.length / 3);
+  const renderIRCodeGrid = () => (
+    <Box sx={{ px: 1, padding: 0, marginBottom: 10 }} data-ir-grid="true">
+      <SortableKeyGrid
+        items={orderedIrCodes.map((irCode) => ({ id: irCode.keyUUID, irCode }))}
+        cellHeight={140}
+        onReorder={handleReorder}
+        renderItem={({ irCode }) => (
+          <Paper
+            elevation={0}
+            sx={{
+              height: '100%',
+              backgroundColor: 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              position: 'relative',
+              borderRadius: 0,
+              transition: 'opacity 0.2s, background-color 0.2s',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitUserDrag: 'none',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              '&:active': {
+                opacity: 0.3,
+              },
+            }}
+            onClick={() => handleEmitIRCode(irCode)}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                textAlign: 'center',
+                fontSize: '1.2rem',
+                lineHeight: 1.2,
+                fontWeight: 'normal',
+                wordBreak: 'break-word',
+                mb: 0.5,
+                pointerEvents: 'none',
+                whiteSpace: 'pre-line',
+              }}
+            >
+              {irCode.name || t('pages.ir.remote.mobileDefaultKeyName')}
+            </Typography>
 
-    return (
-      <Box sx={{ px: 1, padding: 0, marginBottom: 10 }} data-ir-grid="true">
-        <Grid container spacing={0}>
-          {Array.from({ length: gridRows }, (_, row) => (
-            <Grid item xs={12} key={row}>
-              <Grid container>
-                {[0, 1, 2].map((col) => {
-                  const index = row * 3 + col;
-                  const irCode = irCodes[index];
-
-                  if (!irCode) {
-                    return (
-                      <Grid item xs={4} key={`${row}-${col}`}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            height: 140,
-                            borderRight: 'none',
-                            borderBottom: 'none',
-                          }}
-                        />
-                      </Grid>
-                    );
-                  }
-
-                  const showRightBorder = col < 2;
-                  const showBottomBorder = row < gridRows - 1;
-
-                  return (
-                    <Grid item xs={4} key={irCode.keyUUID}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          height: 140,
-                          backgroundColor: 'background.paper',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          position: 'relative',
-                          borderRight: showRightBorder ? '1px solid' : 'none',
-                          borderBottom: showBottomBorder ? '1px solid' : 'none',
-                          borderColor: 'divider',
-                          borderRadius: 0,
-                          transition: 'opacity 0.2s, background-color 0.2s',
-                          userSelect: 'none',
-                          WebkitUserSelect: 'none',
-                          WebkitTouchCallout: 'none',
-                          WebkitUserDrag: 'none',
-                          WebkitTapHighlightColor: 'transparent',
-                          touchAction: 'manipulation',
-                          '&:active': {
-                            opacity: 0.3,
-                          },
-                        }}
-                        onClick={() => handleEmitIRCode(irCode)}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            textAlign: 'center',
-                            fontSize: '1.2rem',
-                            lineHeight: 1.2,
-                            fontWeight: 'normal',
-                            wordBreak: 'break-word',
-                            mb: 0.5,
-                            pointerEvents: 'none',
-                            whiteSpace: 'pre-line',
-                          }}
-                        >
-                          {irCode.name || t('pages.ir.remote.mobileDefaultKeyName')}
-                        </Typography>
-
-                        <Box
-                          onClick={(e) => handleMenuClick(e, irCode)}
-                          sx={{
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            width: 32,
-                            height: 32,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            borderRadius: '50%',
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                              transform: 'scale(1.1)',
-                              '& .menu-icon': {
-                                transform: 'scale(1.2)',
-                              },
-                            },
-                            '&:active': {
-                              transform: 'scale(0.95)',
-                              backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                            },
-                          }}
-                        >
-                          <MoreHoriz
-                            className="menu-icon"
-                            sx={{
-                              fontSize: '18px',
-                              color: 'text.secondary',
-                              transition: 'all 0.2s ease-in-out',
-                            }}
-                          />
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  );
-                })}
-              </Grid>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-    );
-  };
+            <Box
+              onClick={(e) => handleMenuClick(e, irCode)}
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                borderRadius: '50%',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                  transform: 'scale(1.1)',
+                  '& .menu-icon': {
+                    transform: 'scale(1.2)',
+                  },
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                },
+              }}
+            >
+              <MoreHoriz
+                className="menu-icon"
+                sx={{
+                  fontSize: '18px',
+                  color: 'text.secondary',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+              />
+            </Box>
+          </Paper>
+        )}
+      />
+    </Box>
+  );
 
   // 如果正在加载
   if (isLoading) {

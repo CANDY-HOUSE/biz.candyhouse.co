@@ -1,6 +1,6 @@
 import BackButton from '@/components/BackButton';
 import React, { useContext, useState, useMemo, useEffect } from 'react';
-import { Card, CardHeader, CardContent, Box, Typography, IconButton, Grid, Paper } from '@mui/material';
+import { Card, CardHeader, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
 import { getRemotePanel } from './panels/index.js';
 import { IR_TYPE } from '../utils/irTypes.js';
+import SortableKeyGrid from '../components/SortableKeyGrid.js';
+import { useKeyOrder } from '../hooks/useKeyOrder.js';
 import { getNonAirKeyId, isNonAirKeyAvailable, getNonAirPowerOnKeyId, getNonAirPowerOffKeyId } from './keyIds.js';
 
 const RemoteNonAir = () => {
@@ -23,8 +25,15 @@ const RemoteNonAir = () => {
 
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
   const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
-  const { sendIR, updateRemoteState, addIRRemote, modifyIRRemote, addRemoteToMatter, updateLocalRemoteList } =
-    useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const {
+    sendIR,
+    updateRemoteState,
+    addIRRemote,
+    modifyIRRemote,
+    addRemoteToMatter,
+    updateLocalRemoteList,
+    setRemoteKeyOrder,
+  } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
   const [hasRemoteSave, setHasRemoteSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [localRemoteAlias, setLocalRemoteAlias] = useState('');
@@ -89,6 +98,20 @@ const RemoteNonAir = () => {
     [remote.type, remote.code, t]
   );
 
+  // 按键排序：默认顺序 = 面板顺序；拖曳结果按按键 id 存（已保存的遥控器写后台，未保存的先存草稿）
+  const defaultKeyIds = useMemo(() => deviceConfig.map((item) => item.id), [deviceConfig]);
+  const { orderedIds, handleReorder, persistAfterSave, keepForReturn } = useKeyOrder({
+    remote,
+    savedUuid: hasRemoteSave ? remote.uuid : '',
+    defaultIds: defaultKeyIds,
+    persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
+    onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
+  });
+  const orderedItems = useMemo(
+    () => orderedIds.map((id) => deviceConfig.find((item) => item.id === id)).filter(Boolean),
+    [orderedIds, deviceConfig]
+  );
+
   // 获取设备类型显示名称
   const getDeviceTypeName = () => {
     const irTypeNum = parseInt(remote.type);
@@ -125,12 +148,6 @@ const RemoteNonAir = () => {
       console.error('buildCommand error:', error);
       return '';
     }
-  };
-
-  // 计算网格行数
-  const getGridRows = () => {
-    const maxRow = Math.max(...deviceConfig.map((item) => item.position.row));
-    return maxRow + 1;
   };
 
   // 处理项目点击
@@ -209,6 +226,7 @@ const RemoteNonAir = () => {
     }
   };
   const handleMatchClick = async () => {
+    keepForReturn();
     navigate({
       pathname: '/biz/access-control/remote-match',
       search: createSearchParams({
@@ -304,8 +322,9 @@ const RemoteNonAir = () => {
         if (response.success) {
           console.log('remote saved successfully:', response.data);
           remote.uuid = remoteToSave.uuid;
+          const keyOrder = persistAfterSave(remoteToSave.uuid);
           setHasRemoteSave(true);
-          updateLocalRemoteList(hub3DeviceId, remoteToSave);
+          updateLocalRemoteList(hub3DeviceId, keyOrder ? { ...remoteToSave, keyOrder } : remoteToSave);
           addIRRemoteToMatter(remoteToSave);
         } else {
           console.error('remote save failed:', response.message);
@@ -330,8 +349,6 @@ const RemoteNonAir = () => {
       });
     }
   };
-
-  const gridRows = getGridRows();
 
   return (
     <Card
@@ -421,75 +438,46 @@ const RemoteNonAir = () => {
             justifyContent: 'center',
           }}
         >
-          <Grid container spacing={0} sx={{ width: '100%' }}>
-            {Array.from({ length: gridRows }, (_, row) => (
-              <Grid item xs={12} key={row}>
-                <Grid container>
-                  {[0, 1, 2].map((col) => {
-                    const item = deviceConfig.find((item) => item.position.row === row && item.position.col === col);
-                    if (!item) {
-                      return (
-                        <Grid item xs={4} key={`${row}-${col}`}>
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              height: 80,
-                              borderRight: 'none',
-                              borderBottom: 'none',
-                            }}
-                          />
-                        </Grid>
-                      );
-                    }
-                    const showRightBorder = col < 2;
-                    const showBottomBorder = deviceConfig.some(
-                      (i) => i.position.row === row + 1 && i.position.col === col
-                    );
-
-                    const isClicked = clickedItem === item.id;
-
-                    return (
-                      <Grid item xs={4} key={item.id}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            height: 125,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: item.clickable ? 'pointer' : 'default',
-                            borderRight: showRightBorder ? '1px solid' : 'none',
-                            borderBottom: showBottomBorder ? '1px solid' : 'none',
-                            borderColor: 'divider',
-                            borderRadius: 0,
-                            opacity: isClicked ? 0.3 : 1,
-                            transition: 'opacity 0.2s',
-                            margin: 0,
-                          }}
-                          onClick={() => handleItemClick(item)}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontSize: '1.2rem',
-                              textAlign: 'center',
-                              opacity: isClicked ? 0.3 : 1,
-                              lineHeight: 1.2,
-                              fontWeight: 'normal',
-                              color: 'inherit',
-                            }}
-                          >
-                            {item.title}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Grid>
-            ))}
-          </Grid>
+          <SortableKeyGrid
+            items={orderedItems}
+            onReorder={handleReorder}
+            renderItem={(item) => {
+              const isClicked = clickedItem === item.id;
+              return (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: item.clickable ? 'pointer' : 'default',
+                    borderRadius: 0,
+                    opacity: isClicked ? 0.3 : 1,
+                    transition: 'opacity 0.2s',
+                    margin: 0,
+                    backgroundColor: 'transparent',
+                  }}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: '1.2rem',
+                      textAlign: 'center',
+                      opacity: isClicked ? 0.3 : 1,
+                      lineHeight: 1.2,
+                      fontWeight: 'normal',
+                      color: 'inherit',
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                </Paper>
+              );
+            }}
+          />
         </Box>
         <Box
           sx={{

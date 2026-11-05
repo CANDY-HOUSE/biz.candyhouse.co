@@ -1,7 +1,7 @@
 import BackButton from '@/components/BackButton';
 // src/components/AirConditionerRemote.js
 import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardContent, Box, Typography, IconButton, Grid, Paper } from '@mui/material';
+import { Card, CardHeader, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -34,6 +34,22 @@ import {
   PowerOff,
 } from '@assets/svg/ir/svgIR.js';
 
+import SortableKeyGrid from '../components/SortableKeyGrid.js';
+import { useKeyOrder } from '../hooks/useKeyOrder.js';
+
+// 空调页 9 个控件的默认顺序（id 与 airControlItems 一致）；模式、风速、风向、摆风各算一个整体按键
+const AIR_KEY_IDS = [
+  'power_on',
+  'temperature_display',
+  'power_off',
+  'temp_add',
+  'mode',
+  'temp_reduce',
+  'fan_speed',
+  'wind_direction',
+  'auto_swing',
+];
+
 const RemoteAir = () => {
   const navigate = useNavigate();
   const [currentState, setCurrentState] = useState({
@@ -50,8 +66,15 @@ const RemoteAir = () => {
   const parametersSwapper = useMemo(() => new HXDParametersSwapper(), []);
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
   const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
-  const { sendIR, updateRemoteState, addIRRemote, modifyIRRemote, addRemoteToMatter, updateLocalRemoteList } =
-    useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const {
+    sendIR,
+    updateRemoteState,
+    addIRRemote,
+    modifyIRRemote,
+    addRemoteToMatter,
+    updateLocalRemoteList,
+    setRemoteKeyOrder,
+  } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
   const [hasRemoteSave, setHasRemoteSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [remote, setRemote] = useState({});
@@ -319,6 +342,18 @@ const RemoteAir = () => {
     [currentState]
   );
 
+  const { orderedIds, handleReorder, persistAfterSave, keepForReturn } = useKeyOrder({
+    remote,
+    savedUuid: hasRemoteSave ? remote.uuid : '',
+    defaultIds: AIR_KEY_IDS,
+    persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
+    onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
+  });
+  const orderedItems = useMemo(
+    () => orderedIds.map((id) => airControlItems.find((item) => item.id === id)).filter(Boolean),
+    [orderedIds, airControlItems]
+  );
+
   // 处理项目点击
   const handleItemClick = async (item) => {
     // 防止重复点击或点击不可点击项
@@ -545,8 +580,9 @@ const RemoteAir = () => {
         if (response.success) {
           console.log('add IR remote success:', response.data);
           remote.uuid = remoteToSave.uuid;
+          const keyOrder = persistAfterSave(remoteToSave.uuid);
           setHasRemoteSave(true);
-          updateLocalRemoteList(hub3DeviceId, remoteToSave);
+          updateLocalRemoteList(hub3DeviceId, keyOrder ? { ...remoteToSave, keyOrder } : remoteToSave);
           addIRRemoteToMatter(remoteToSave);
         } else {
           console.error('add IR remote failed:', response.message);
@@ -573,6 +609,7 @@ const RemoteAir = () => {
   };
 
   const handleMatchClick = async () => {
+    keepForReturn();
     navigate({
       pathname: '/biz/access-control/remote-match',
       search: createSearchParams({
@@ -695,84 +732,53 @@ const RemoteAir = () => {
             justifyContent: 'center',
           }}
         >
-          <Grid container spacing={0} sx={{ width: '100%' }}>
-            {[0, 1, 2].map((row) => (
-              <Grid item xs={12} key={row}>
-                <Grid container>
-                  {[0, 1, 2].map((col) => {
-                    const item = airControlItems.find((item) => item.position.row === row && item.position.col === col);
+          <SortableKeyGrid
+            items={orderedItems}
+            onReorder={handleReorder}
+            renderItem={(item) => {
+              const isClicked = clickedItem === item.id;
+              const IconComponent = item.icon;
+              return (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: item.clickable ? 'pointer' : 'default',
+                    borderRadius: 0,
+                    opacity: isClicked ? 0.3 : 1,
+                    transition: 'opacity 0.2s',
+                    margin: 0,
+                    py: 1,
+                    backgroundColor: 'transparent',
+                  }}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <Box sx={{ flex: 1 }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: '1.2rem',
+                      textAlign: 'center',
+                      opacity: isClicked ? 0.3 : 1,
+                      lineHeight: 1.2,
+                      fontWeight: 'normal',
+                      color: 'inherit',
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
 
-                    if (!item) {
-                      return (
-                        <Grid item xs={4} key={`${row}-${col}`}>
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              height: 80,
-                              borderRight: col < 2 ? '1px solid' : 'none',
-                              borderBottom: row < 2 ? '1px solid' : 'none',
-                              borderColor: 'divider',
-                            }}
-                          />
-                        </Grid>
-                      );
-                    }
-
-                    const isClicked = clickedItem === item.id;
-                    const IconComponent = item.icon;
-
-                    return (
-                      <Grid item xs={4} key={item.id}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            height: 125,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'space-between', // 空间分布
-                            cursor: item.clickable ? 'pointer' : 'default',
-                            borderRight: col < 2 ? '1px solid' : 'none',
-                            borderBottom: row < 2 ? '1px solid' : 'none',
-                            borderColor: 'divider',
-                            borderRadius: 0,
-                            opacity: isClicked ? 0.3 : 1,
-                            transition: 'opacity 0.2s',
-                            margin: 0,
-                            py: 1,
-                          }}
-                          onClick={() => handleItemClick(item)}
-                        >
-                          <Box sx={{ flex: 1 }} />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontSize: '1.2rem',
-                              textAlign: 'center',
-                              opacity: isClicked ? 0.3 : 1,
-                              lineHeight: 1.2,
-                              fontWeight: 'normal',
-                              color: 'inherit',
-                            }}
-                          >
-                            {item.title}
-                          </Typography>
-
-                          <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                            {IconComponent ? (
-                              <IconComponent opacity={isClicked ? 0.3 : 1} />
-                            ) : (
-                              <Box sx={{ height: 24 }} />
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </Grid>
-            ))}
-          </Grid>
+                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                    {IconComponent ? <IconComponent opacity={isClicked ? 0.3 : 1} /> : <Box sx={{ height: 24 }} />}
+                  </Box>
+                </Paper>
+              );
+            }}
+          />
         </Box>
 
         <Box
