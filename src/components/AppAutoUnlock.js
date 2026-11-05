@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { deviceService } from '@/services/deviceService';
-import { onNativeEvent } from '@/services/appBridge';
+import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { mapTiles } from '@/constants/mapTiles';
 import markerIcon from '@assets/sesame-map-marker.png';
@@ -35,6 +35,8 @@ const validLocation = (data) => !!data && Number.isFinite(data.latitude) && Numb
 const FILLED = '#d32f2f';
 const UNFILLED = '#424242';
 const halo = '0 0 2px #fff, 0 0 4px #fff';
+// System label of the location option that grants background access.
+const ALWAYS_LOCATION_OPTION = isAndroidShell ? 'lockExtras.allowAllTheTime' : 'lockExtras.always';
 
 // Geofence storage, permissions and the foreground service stay native; the map and flow live here.
 export default function AppAutoUnlock() {
@@ -51,7 +53,7 @@ export default function AppAutoUnlock() {
   // Which permission step is waiting: 'locate' / 'enable' for the system dialog, 'settings' for app settings.
   const waiting = useRef(null);
   const [preferences, setPreferences] = useState({ radius: 150, autoUnlock: false });
-  const [disclosure, setDisclosure] = useState(false);
+  const [disclosure, setDisclosure] = useState(null);
   const error = () => {
     if (active.current)
       setSnackbarValue({
@@ -71,9 +73,10 @@ export default function AppAutoUnlock() {
       if (active.current) apply(data);
       return data;
     });
+  // Store review requires the background-location disclosure before any location permission prompt.
   const askLocationPermission = (step) => {
     waiting.current = step;
-    return request('requestPermission');
+    setDisclosure('permission');
   };
   // Like the original page: default the Sesame point to the first phone location, then keep the user's choice.
   const locate = async ({ recenter = false, ask = false } = {}) => {
@@ -101,11 +104,24 @@ export default function AppAutoUnlock() {
     }
     if (recenter) map.current?.setView(point, ZOOM);
   };
+  const closeDisclosure = () => {
+    if (disclosure === 'permission') waiting.current = null;
+    setDisclosure(null);
+  };
+  const confirmDisclosure = () => {
+    setDisclosure(null);
+    if (disclosure === 'permission') {
+      request('requestPermission').catch(error);
+      return;
+    }
+    waiting.current = 'settings';
+    request('openSettings').catch(error);
+  };
   const enable = async (value) => {
     const data = await request('enable', { value });
     if (!value || data.autoUnlock) return;
     if (data.permission === 'none') await askLocationPermission('enable');
-    else setDisclosure(true);
+    else setDisclosure('settings');
   };
 
   useEffect(() => {
@@ -142,7 +158,7 @@ export default function AppAutoUnlock() {
         const next = step === 'enable' ? request('enable', { value: true }) : Promise.resolve(null);
         next
           .then((data) => {
-            if (data && !data.autoUnlock && data.permission === 'foreground') setDisclosure(true);
+            if (data && !data.autoUnlock && data.permission === 'foreground') setDisclosure('settings');
             return locate();
           })
           .catch(error);
@@ -280,23 +296,17 @@ export default function AppAutoUnlock() {
           </Box>
         </Box>
       </Box>
-      <Dialog open={disclosure} onClose={() => setDisclosure(false)}>
+      <Dialog open={!!disclosure} onClose={closeDisclosure}>
         <DialogTitle sx={{ color: '#000', fontWeight: 'bold', fontSize: 20 }}>
           {t('lockExtras.locationTitle')}
         </DialogTitle>
         <DialogContent>
-          <Typography>{t('lockExtras.locationMessage')}</Typography>
+          <Typography>{t('lockExtras.locationMessage', { option: t(ALWAYS_LOCATION_OPTION) })}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDisclosure(false)}>{t('deviceMember.opt.cancel')}</Button>
-          <Button
-            onClick={() => {
-              setDisclosure(false);
-              waiting.current = 'settings';
-              request('openSettings').catch(error);
-            }}
-          >
-            {t('lockExtras.openSettings')}
+          <Button onClick={closeDisclosure}>{t('deviceMember.opt.cancel')}</Button>
+          <Button onClick={confirmDisclosure}>
+            {t(disclosure === 'permission' ? 'lockExtras.continue' : 'lockExtras.openSettings')}
           </Button>
         </DialogActions>
       </Dialog>

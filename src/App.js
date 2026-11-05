@@ -31,6 +31,7 @@ import { appTabPaths } from './services/appNavigation';
 import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
 import { currentAppToken } from './services/appSession';
 import AppHomeRuntime from './components/AppHomeRuntime';
+import AppLocationDisclosure from './components/AppLocationDisclosure';
 import { isAppHome } from './services/deviceService';
 
 const BizHomePage = deferredComponent(() => import('@biz/home'));
@@ -215,6 +216,8 @@ const App = () => {
         <AppFrame>
           <AppStartupReady />
           <AppUpdateRuntime />
+          {/* Outside AppBootstrap: the offline device list can trigger the first location prompt before it is ready. */}
+          {isAppHome && <AppLocationDisclosure />}
           <AppBootstrap>
             <GlobalContextProvider>
               <AppHomeRuntime />

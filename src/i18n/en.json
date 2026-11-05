@@ -610,8 +610,11 @@
     "autoUnlock": "Auto Unlock",
     "autoHint": "1. Set the red circle around your Sesame. Leaving the circle arms one Auto Unlock. When you return, the door unlocks only after this phone connects to the registered Sesame over nearby Bluetooth.\n2. If location detection is unstable, make the red circle larger. You can adjust Sesame\\'s location by tapping the map.\n3. Restart your smartphone if Auto Unlock is not functional.",
     "locationTitle": "Allow background location",
-    "locationMessage": "Auto Unlock uses the Geofence API to detect when you leave the area you set, even while the app is closed or in the background. Leaving the area only arms Auto Unlock. Your door unlocks only after this phone connects to your registered Sesame over nearby Bluetooth. Select “Allow all the time” for Location in system settings. You can turn Auto Unlock off at any time.",
+    "locationMessage": "Sesame collects location data to enable Auto Unlock even when the app is closed or not in use. Auto Unlock detects when you leave the area you set and does not send this location to Sesame servers. Leaving the area only arms Auto Unlock. Your door unlocks only after this phone connects to your registered Sesame over nearby Bluetooth. Select “{{option}}” for Location. You can turn Auto Unlock off at any time.",
     "openSettings": "Open settings",
+    "continue": "Continue",
+    "allowAllTheTime": "Allow all the time",
+    "always": "Always",
     "radius": "Radius: {{value}} m",
     "deleteName": "Delete {{deviceName}}"
   },
@@ -681,5 +684,10 @@
     "userNotFound": "User not found.",
     "addFailed": "Unable to add contact. Please try again.",
     "deleteFailed": "Unable to delete contact. Please try again."
+  },
+  "locationDisclosure": {
+    "title": "Location access",
+    "message": "Sesame collects location data to find and connect to nearby Sesame devices over Bluetooth, and to enable Auto Unlock even when the app is closed or not in use.",
+    "continue": "Continue"
   }
 }
