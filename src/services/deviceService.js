@@ -1,8 +1,8 @@
-import { isAndroidShell, requestNative, notifyNative } from './appBridge';
+import { isAppShell, requestNative, notifyNative } from './appBridge';
 
 // Captured once per document; client-side navigation must not change the runtime mode.
 // The host UA survives navigation and reloads even when a route drops the entry query.
-export const isAppHome = isAndroidShell || new URLSearchParams(window.location.search).get('appHome') === '1';
+export const isAppHome = isAppShell || new URLSearchParams(window.location.search).get('appHome') === '1';
 let snapshot = {};
 const listeners = new Set();
 const discoveryListeners = new Set();
@@ -25,7 +25,7 @@ export const deviceService = {
     listeners.forEach((listener) => listener());
   },
   request(action, payload = {}) {
-    return isAndroidShell ? requestNative(action, payload) : Promise.reject(new Error('Native bridge unavailable'));
+    return isAppShell ? requestNative(action, payload) : Promise.reject(new Error('Native bridge unavailable'));
   },
   notify(action, payload = {}) {
     notifyNative(action, payload);

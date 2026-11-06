@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { deviceService } from '@/services/deviceService';
-import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
+import { appAlwaysLocationOption, onNativeEvent } from '@/services/appBridge';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { mapTiles } from '@/constants/mapTiles';
 import markerIcon from '@assets/sesame-map-marker.png';
@@ -36,7 +36,7 @@ const FILLED = '#d32f2f';
 const UNFILLED = '#424242';
 const halo = '0 0 2px #fff, 0 0 4px #fff';
 // System label of the location option that grants background access.
-const ALWAYS_LOCATION_OPTION = isAndroidShell ? 'lockExtras.allowAllTheTime' : 'lockExtras.always';
+const ALWAYS_LOCATION_OPTION = appAlwaysLocationOption;
 
 // Geofence storage, permissions and the foreground service stay native; the map and flow live here.
 export default function AppAutoUnlock() {
@@ -148,7 +148,7 @@ export default function AppAutoUnlock() {
     request('get')
       .then((data) => {
         if (hasPoint(data)) view.setView([data.latitude, data.longitude], ZOOM);
-        return locate({ ask: true });
+        return locate();
       })
       .catch(error);
     const off = onNativeEvent(({ type }) => {

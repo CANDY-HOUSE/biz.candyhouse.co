@@ -3,7 +3,7 @@ import { Signer } from '@aws-amplify/core';
 import { Buffer } from 'buffer';
 import i18n from '../i18n';
 import { envConfig } from '../env_config';
-import { isAndroidShell, requestNative } from './appBridge';
+import { isAppShell, requestNative } from './appBridge';
 
 let nativeState;
 let nativeRefreshing;
@@ -39,6 +39,7 @@ const nativeSession = () => {
           signedIn: data.signedIn,
           guestIdentityId,
           language: data.language,
+          capabilities: Array.isArray(data.capabilities) ? data.capabilities : null,
         };
         return nativeState;
       })
@@ -102,9 +103,13 @@ const guestSession = () => {
   return guestRefreshing;
 };
 
+// Shells that predate the capabilities field support NFC binding and the notification widget.
+const LEGACY_CAPABILITIES = ['nfc', 'widget'];
+export const appHostSupports = (capability) => (nativeState?.capabilities ?? LEGACY_CAPABILITIES).includes(capability);
+
 export async function prepareAppSession() {
   // Native only hands over existing sessions/keys; new guest credentials belong to Biz.
-  if (isAndroidShell) {
+  if (isAppShell) {
     const { language } = await nativeSession();
     if (language) {
       const resolvedLanguage = /^zh(?:-|$)/i.test(language)
@@ -123,7 +128,7 @@ export async function currentAppToken() {
     anonymous = false;
     return token;
   } catch (error) {
-    if (!isAndroidShell) throw error;
+    if (!isAppShell) throw error;
     if (!nativeState || (nativeState.signedIn && !isFresh(nativeState.token))) await nativeSession();
     if (nativeState.signedIn) {
       if (!isFresh(nativeState.token)) throw new Error('User session unavailable');
@@ -141,7 +146,7 @@ export async function retireLegacySession() {
   guestToken = null;
   initialToken = null;
   anonymous = false;
-  if (isAndroidShell) await requestNative('retireSession');
+  if (isAppShell) await requestNative('retireSession');
 }
 
 // Account binding only; business requests do not need AWS credentials or API keys.

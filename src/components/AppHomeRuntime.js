@@ -360,7 +360,15 @@ export default function AppHomeRuntime() {
       try {
         const { data } = await requestNative('pushInfo');
         if (!sameAccount()) return;
-        if (!guest) await appOperation('bindPush', data.pushToken, { account });
+        // Hosts that report a platform bind with it; older hosts send the token alone.
+        if (!guest)
+          await appOperation(
+            'bindPush',
+            data.platform ? { pushToken: data.pushToken, platform: data.platform } : data.pushToken,
+            {
+              account,
+            }
+          );
         if (!sameAccount()) return;
         const response = await appOperation(
           'subscribePush',
@@ -369,7 +377,7 @@ export default function AppHomeRuntime() {
             topicName: 'app_announcements',
             pushToken: data.pushToken,
             appIdentifyId: data.appIdentifyId,
-            platform: 'android',
+            platform: data.platform || 'android',
             env: data.env,
           },
           { account, language: data.language }

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Box, Button, Drawer, IconButton, Radio, Switch, Typography } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -41,6 +41,7 @@ function InternalTestSheet({ onClose }) {
   const [firmwareDir, setFirmwareDir] = useState('prod');
   const [identifyId, setIdentifyId] = useState('');
   const [build, setBuild] = useState('Build: 加载中…');
+  const identifyIdRef = useRef(null);
   const session = useRef(0);
   const count = prefs.count || 0;
   const selected = locks.find((lock) => lock.deviceUUID === prefs.selectedId) || locks[0];
@@ -55,6 +56,15 @@ function InternalTestSheet({ onClose }) {
       writeStore(next);
       return next;
     });
+  // Keep the id on one line; shrink the font only as far as its length requires.
+  useLayoutEffect(() => {
+    const node = identifyIdRef.current;
+    if (!node) return;
+    node.style.fontSize = '';
+    if (!node.clientWidth || node.scrollWidth <= node.clientWidth) return;
+    const base = parseFloat(getComputedStyle(node).fontSize);
+    node.style.fontSize = `${Math.floor(((base * node.clientWidth) / node.scrollWidth) * 10) / 10}px`;
+  }, [identifyId]);
   useEffect(() => {
     requestNative('internalTest', { operation: 'devices' })
       .then(({ data }) => setLocks(data || []))
@@ -255,7 +265,7 @@ function InternalTestSheet({ onClose }) {
           </Typography>
         </Box>
         <Typography sx={{ ...sectionTitle, mt: 3.5 }}>AppIdentifyId</Typography>
-        <Typography sx={{ mt: 1, fontSize: 14, color: 'text.secondary', wordBreak: 'break-all' }}>
+        <Typography ref={identifyIdRef} sx={{ mt: 1, fontSize: 14, color: 'text.secondary', whiteSpace: 'nowrap' }}>
           {identifyId}
         </Typography>
         <Typography sx={{ ...sectionTitle, mt: 3.5 }}>Biz3</Typography>

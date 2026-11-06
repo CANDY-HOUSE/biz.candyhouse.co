@@ -6,8 +6,10 @@ import { isBotModel, isScriptBotModel } from '@/services/botScripts';
 import AppBotSettings from './AppBotSettings';
 import { isAppLockModel } from '@/services/appLockSettings';
 import { isAppHome } from '@/services/deviceService';
+import { appHostSupports } from '@/services/appSession';
 import LockSettingsExtras from './LockSettingsExtras';
 import AppLockSettings from './AppLockSettings';
+import AppVoiceShortcut from './AppVoiceShortcut';
 import React, { useContext, useMemo } from 'react';
 import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from './MobileDeviceSetting';
@@ -219,6 +221,9 @@ function ExistingDeviceSetting({ showBack = true }) {
               <Divider variant="middle" sx={{ opacity: 0.4 }} />
             </>
           )}
+        {isAppHome && appHostSupports('voiceShortcut') && (
+          <AppVoiceShortcut deviceUUID={did} deviceModel={deviceModel} />
+        )}
         <UpgradeFirmware
           key={`firmware:${did}`}
           device={currentDevice}

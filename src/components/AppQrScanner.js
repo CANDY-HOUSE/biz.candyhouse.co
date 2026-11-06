@@ -15,8 +15,6 @@ const boxSize = 240;
 const tipMargin = 24;
 // Transform runs on the compositor, so the line stays smooth while frames are decoded on the main thread.
 const scanLine = keyframes`from { transform: translateY(0); } to { transform: translateY(${boxSize - 2}px); }`;
-// The page WebView shows a grey play-button poster until the first camera frame; replace it with nothing.
-const blankPoster = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 // Frames are decoded at this width at most; enough for phone screens and printed codes.
 const decodeWidth = 720;
 
@@ -25,6 +23,7 @@ function Scanner() {
   const { t } = useTranslation();
   const { setSnackbarValue } = useContext(GlobalStateContext);
   const video = useRef(null);
+  const preview = useRef(null);
   const file = useRef(null);
   const done = useRef(false);
   const finish = (value, error) => {
@@ -38,13 +37,40 @@ function Scanner() {
     let timer;
     let active = true;
     let paused = false;
+    let attempt = 0;
     const decoder = new Decoder();
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { willReadFrequently: true });
+    const target = preview.current;
+    const previewContext = target.getContext('2d');
+    let frameRequest;
+    let frameTime = -1;
     const stop = () => {
       clearTimeout(timer);
+      cancelAnimationFrame(frameRequest);
+      frameTime = -1;
+      previewContext.clearRect(0, 0, target.width, target.height);
       stream?.getTracks().forEach((track) => track.stop());
       stream = null;
+    };
+    // WebKit draws the first camera frames of a <video> at the stream's natural size before scaling them to the
+    // element, so the hidden video only feeds this canvas, which is always drawn to cover the screen.
+    const draw = () => {
+      const view = video.current;
+      if (!active || paused || !view) return;
+      if (view.readyState >= 2 && view.videoWidth && view.currentTime !== frameTime) {
+        frameTime = view.currentTime;
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.round(target.clientWidth * ratio);
+        const height = Math.round(target.clientHeight * ratio);
+        if (target.width !== width) target.width = width;
+        if (target.height !== height) target.height = height;
+        const scale = Math.max(width / view.videoWidth, height / view.videoHeight);
+        const drawWidth = view.videoWidth * scale;
+        const drawHeight = view.videoHeight * scale;
+        previewContext.drawImage(view, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+      }
+      frameRequest = requestAnimationFrame(draw);
     };
     const scan = () => {
       const view = video.current;
@@ -64,22 +90,25 @@ function Scanner() {
       }
       timer = setTimeout(scan, 150);
     };
+    // A permission prompt pauses and resumes the page, so an earlier request may still resolve after a newer one.
     const start = async () => {
+      const current = ++attempt;
       try {
         const media = await navigator.mediaDevices.getUserMedia({
           audio: false,
           video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
         });
-        if (!active || paused) {
+        if (!active || paused || current !== attempt) {
           media.getTracks().forEach((track) => track.stop());
           return;
         }
         stream = media;
         video.current.srcObject = media;
         await video.current.play().catch(() => {});
+        draw();
         scan();
       } catch (error) {
-        if (active && !paused)
+        if (active && !paused && current === attempt)
           finish(null, new Error(error?.name === 'NotAllowedError' ? 'Permission denied' : 'Unable to open camera'));
       }
     };
@@ -129,12 +158,12 @@ function Scanner() {
       <Box
         component="video"
         ref={video}
-        poster={blankPoster}
         muted
         playsInline
         autoPlay
-        sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', bgcolor: '#000' }}
+        sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, pointerEvents: 'none' }}
       />
+      <Box component="canvas" ref={preview} sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
       <Box
         sx={{
           position: 'absolute',

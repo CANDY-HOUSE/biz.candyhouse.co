@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAndroidShell } from '@/services/appBridge';
+import { isAppShell } from '@/services/appBridge';
 import { prepareAppSession } from '@/services/appSession';
 import AppOfflineDevices, { AppOfflineStateContext } from './AppOfflineDevices';
 
 export default function AppBootstrap({ children }) {
   const location = useLocation();
-  const [ready, setReady] = useState(!isAndroidShell);
+  const [ready, setReady] = useState(!isAppShell);
   const [devices, setDevices] = useState(null);
   const localState = useMemo(() => ({ devices, setDevices }), [devices]);
   const [connecting, setConnecting] = useState(false);

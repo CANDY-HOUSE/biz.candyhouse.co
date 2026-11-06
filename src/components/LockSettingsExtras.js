@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
-import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
+import { isAppShell, onNativeEvent } from '@/services/appBridge';
+import { appHostSupports } from '@/services/appSession';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 
@@ -24,7 +25,9 @@ export default function LockSettingsExtras({
   const [power, setPower] = useState(-4);
   const [preferences, setPreferences] = useState({});
   const [reset, setReset] = useState(false);
-  const android = isAppHome && isAndroidShell && showPreferences;
+  const nativePreferences = isAppHome && isAppShell && showPreferences;
+  const nfc = nativePreferences && appHostSupports('nfc');
+  const widget = nativePreferences && appHostSupports('widget');
   const error = () =>
     setSnackbarValue({
       logScope: 'components/LockSettingsExtras.error',
@@ -41,17 +44,17 @@ export default function LockSettingsExtras({
     setPower(native?.settings?.bleTxPower ?? -4);
   }, [deviceUUID, native?.settings?.bleTxPower]);
   useEffect(() => {
-    if (!android) return;
-    request('watchNfc').catch(error);
+    if (!nativePreferences) return;
+    request(nfc ? 'watchNfc' : 'read').catch(error);
     const off = onNativeEvent(({ type, data }) => {
       if (type === 'devicePreferences') setPreferences(data);
       if (type === 'resume') request('read').catch(error);
     });
     return () => {
       off();
-      deviceService.notify('devicePreferences', { deviceUUID, operation: 'stopNfc' });
+      if (nfc) deviceService.notify('devicePreferences', { deviceUUID, operation: 'stopNfc' });
     };
-  }, [deviceUUID, android]);
+  }, [deviceUUID, nativePreferences, nfc]);
   if (!isAppHome) return null;
   const divider = <Divider variant="middle" sx={{ opacity: 0.4 }} />;
   return (
@@ -86,41 +89,49 @@ export default function LockSettingsExtras({
           />
         </Box>
       )}
-      {android && (
+      {nativePreferences && (
         <>
           <Box sx={{ bgcolor: 'secondary.main', height: 500 }} />
-          <ListItem onClick={() => preferences.nfc && setReset(true)}>
-            <ListItemText primary="NFC" sx={{ flex: '0 0 auto', mr: 2 }} />
-            <Typography
-              sx={{ ml: 'auto', color: 'title.other', fontSize: 14, textAlign: 'right', overflowWrap: 'anywhere' }}
-            >
-              {preferences.nfc || t('lockExtras.nfcHint')}
-            </Typography>
-          </ListItem>
-          {divider}
-          <ListItem onClick={() => deviceService.request('notificationSettings').catch(error)}>
-            <ListItemText
-              primary={t('lockExtras.widget')}
-              secondary={
-                preferences.notificationsEnabled === false
-                  ? t('lockExtras.notificationHint')
-                  : t('lockExtras.notificationGranted')
-              }
-              secondaryTypographyProps={{
-                sx: {
-                  fontSize: 11,
-                  color: preferences.notificationsEnabled === false ? 'error.main' : 'text.secondary',
-                },
-              }}
-            />
-            <Switch
-              disableRipple
-              checked={!!preferences.widget}
-              onClick={(event) => event.stopPropagation()}
-              onChange={(_, value) => request('widget', { value }).catch(error)}
-            />
-          </ListItem>
-          {divider}
+          {nfc && (
+            <>
+              <ListItem onClick={() => preferences.nfc && setReset(true)}>
+                <ListItemText primary="NFC" sx={{ flex: '0 0 auto', mr: 2 }} />
+                <Typography
+                  sx={{ ml: 'auto', color: 'title.other', fontSize: 14, textAlign: 'right', overflowWrap: 'anywhere' }}
+                >
+                  {preferences.nfc || t('lockExtras.nfcHint')}
+                </Typography>
+              </ListItem>
+              {divider}
+            </>
+          )}
+          {widget && (
+            <>
+              <ListItem onClick={() => deviceService.request('notificationSettings').catch(error)}>
+                <ListItemText
+                  primary={t('lockExtras.widget')}
+                  secondary={
+                    preferences.notificationsEnabled === false
+                      ? t('lockExtras.notificationHint')
+                      : t('lockExtras.notificationGranted')
+                  }
+                  secondaryTypographyProps={{
+                    sx: {
+                      fontSize: 11,
+                      color: preferences.notificationsEnabled === false ? 'error.main' : 'text.secondary',
+                    },
+                  }}
+                />
+                <Switch
+                  disableRipple
+                  checked={!!preferences.widget}
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(_, value) => request('widget', { value }).catch(error)}
+                />
+              </ListItem>
+              {divider}
+            </>
+          )}
           {autoUnlock && (
             <>
               <ListItem onClick={() => navigate({ pathname: '/device-setting/auto-unlock', search: location.search })}>

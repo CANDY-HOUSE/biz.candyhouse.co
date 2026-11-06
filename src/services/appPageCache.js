@@ -1,8 +1,8 @@
-import { isAndroidShell } from './appBridge';
+import { isAppShell } from './appBridge';
 
-// Install only inside the Android shell. The first successful visit warms the next cold start.
+// Install only inside an app shell. The first successful visit warms the next cold start.
 export function registerAppPageCache() {
-  if (!isAndroidShell || !('serviceWorker' in navigator)) return;
+  if (!isAppShell || !('serviceWorker' in navigator)) return;
   navigator.serviceWorker
     .register('/app-worker.js', { updateViaCache: 'none' })
     .then(async () => {

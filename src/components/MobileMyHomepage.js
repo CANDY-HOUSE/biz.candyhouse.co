@@ -1,5 +1,5 @@
 import { appPromotion } from '@/services/appPromotion';
-import { isAndroidShell, onNativeEvent } from '@/services/appBridge';
+import { appDistributesApk, onNativeEvent } from '@/services/appBridge';
 import { isAppHome } from '@/services/deviceService';
 import { appTopBarHeight } from '@/services/appNavigation';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
@@ -413,7 +413,7 @@ const MobileMyHomepage = () => {
         <Typography
           onClick={() => {
             let url = 'https://testflight.apple.com/join/Rok4GOFD';
-            if (isAndroidShell || window.AndroidHandler) {
+            if (appDistributesApk || window.AndroidHandler) {
               url =
                 'https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp/releases/latest/download/Sesame_android_release.apk';
             }

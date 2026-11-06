@@ -63,6 +63,7 @@ function LockAngle({ deviceUUID }) {
   };
   const changeMode = async () => {
     if (![21, 32].includes(settings.productType)) return;
+    if (isAppHome) deviceService.notify('haptic', { duration: 100 });
     const data = await command('slidingMode');
     if (data) {
       setPendingModel(data.deviceModel);
