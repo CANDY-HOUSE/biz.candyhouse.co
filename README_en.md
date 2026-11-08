@@ -63,7 +63,7 @@ The page cache is registered only in the Web App host when Service Worker suppor
 | src/components/AppBootstrap.js                                  | Session startup + offline fallback                                |
 | src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                         |
 | src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                             |
-| src/services/appBridge.js                                       | Trusted native MessagePort requests                               |
+| src/services/appBridge.js                                       | Trusted native bridge requests                                    |
 | src/services/appSession.js                                      | Web/legacy/guest session selection                                |
 | src/services/appOperations.js                                   | Existing socket app-operation adapter                             |
 | src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation |

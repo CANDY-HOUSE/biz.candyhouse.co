@@ -2,15 +2,17 @@
 const appShells = [
   {
     marker: 'SesameAndroid/1',
+    platform: 'android',
     transport: 'port',
     iotHistoryPrefix: '0010',
     distributesApk: true,
     alwaysLocationOption: 'lockExtras.allowAllTheTime',
   },
-  { marker: 'SesameiOS/1', transport: 'scriptHandler', iotHistoryPrefix: '0011' },
+  { marker: 'SesameiOS/1', platform: 'ios', transport: 'scriptHandler', iotHistoryPrefix: '0011' },
 ];
 const appShell = appShells.find(({ marker }) => navigator.userAgent.includes(marker));
 export const isAppShell = Boolean(appShell);
+export const appPlatform = appShell?.platform;
 export const appIotHistoryPrefix = appShell?.iotHistoryPrefix;
 export const appDistributesApk = appShell?.distributesApk === true;
 export const appAlwaysLocationOption = appShell?.alwaysLocationOption ?? 'lockExtras.always';

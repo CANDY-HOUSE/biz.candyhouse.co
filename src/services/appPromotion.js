@@ -1,3 +1,4 @@
+import { appPlatform } from './appBridge';
 import { appOperation } from './appOperations';
 
 let promotion = null;
@@ -26,7 +27,7 @@ export const appPromotion = {
   async markRead(promotionId, targetUrl) {
     const request = ++revision;
     if (promotion?.promotionId === promotionId) update({ ...promotion, visible: false });
-    const result = await appOperation('markPromotionRead', { promotionId, targetUrl });
+    const result = await appOperation('markPromotionRead', { promotionId, targetUrl, platform: appPlatform });
     if (result?.success && request === revision) update(result.promotion);
     return promotion;
   },
