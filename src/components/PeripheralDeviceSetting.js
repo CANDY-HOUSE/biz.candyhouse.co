@@ -46,6 +46,8 @@ import LockSettingsExtras from './LockSettingsExtras';
 import LockSettingsSlider from './LockSettingsSlider';
 import LockSettingWheel from './LockSettingWheel';
 import AppHubWifi from './AppHubWifi';
+import AppVoiceShortcut from './AppVoiceShortcut';
+import { appHostSupports } from '@/services/appSession';
 
 export default function PeripheralDeviceSetting({ showBack = true }) {
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
@@ -295,6 +297,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
         {caps.map((kind) =>
           row(t(`accessCtl.auth.${credentialLabels[kind]}`), <SvgIcon component={SvgArrow} />, () => openChild(kind))
         )}
+        {isAppHome && appHostSupports('voiceShortcut') && <AppVoiceShortcut deviceUUID={id} deviceModel={model} />}
         <UpgradeFirmware
           key={id}
           device={device}
