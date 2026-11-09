@@ -85,6 +85,7 @@ const MobileContacts = () => {
     >
       <MobileContactList
         contacts={tbData}
+        isEmpty={gManageEmployee.employees.Items.length === 0}
         callRowClick={handleRowClick}
         callSearch={handleSearch}
         onDragEnd={

@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cancelAppPullRefresh } from '@/services/appPullRefresh';
+import { ContactsNavIcon } from './biz/layout/navIcons';
 
 const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -59,7 +60,7 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
   );
 };
 
-const MobileContactList = ({ contacts, callRowClick, callSearch, onDragEnd }) => {
+const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDragEnd }) => {
   const [sortableData, setSortableData] = useState(contacts);
 
   useEffect(() => {
@@ -100,6 +101,22 @@ const MobileContactList = ({ contacts, callRowClick, callSearch, onDragEnd }) =>
       onDragEnd && onDragEnd(updatedContacts, oldIndex, newIndex);
     }
   };
+
+  if (isEmpty) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          color: 'text.disabled',
+        }}
+      >
+        <ContactsNavIcon size={96} />
+      </Box>
+    );
+  }
 
   return (
     <DndContext
