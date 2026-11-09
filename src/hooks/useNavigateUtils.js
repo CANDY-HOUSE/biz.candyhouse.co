@@ -9,11 +9,11 @@ export const useNavigateUtils = () => {
   const navigateToDeviceDetail = (device) => {
     if (!device) return;
     let path = '';
+    const isAppGuest = isAppHome && Number(device.keyLevel) === 2;
     if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
-      path =
-        isAppHome && isAppLockModel(device.deviceModel) && Number(device.keyLevel) === 2
-          ? '/device-setting'
-          : '/biz/devices/list-item';
+      path = isAppGuest ? '/device-setting' : '/biz/devices/list-item';
+    } else if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) {
+      path = '/device-setting';
     } else if (gUtils.isWifiModel(device.deviceModel)) {
       path = '/biz/wifi-module/index';
     } else {

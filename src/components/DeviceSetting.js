@@ -47,6 +47,7 @@ function ExistingDeviceSetting({ showBack = true }) {
     searchParams.get('deviceModel') ||
     '';
   const deviceName = searchParams.get('deviceName') || '';
+  const isGuest = Number(searchParams.get('keyLevel')) === 2;
 
   const currentDevice = useMemo(() => {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase()) || {};
@@ -88,7 +89,9 @@ function ExistingDeviceSetting({ showBack = true }) {
   const subFunctionsComp = useMemo(() => {
     return gUtils.isLockModel(deviceModel) || isAppLockModel(deviceModel) ? (
       isAppHome && isAppLockModel(deviceModel) ? (
-        <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} />
+        isGuest ? null : (
+          <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} />
+        )
       ) : !gStripe.isFromApp && isAppLockModel(deviceModel) ? (
         <>
           {['SetAngle', 'LockWithOpenSensor', 'AutoLockCountdown'].map((feature) => (
@@ -162,7 +165,7 @@ function ExistingDeviceSetting({ showBack = true }) {
         )}
       </>
     );
-  }, [deviceModel, onClickSetAngle]);
+  }, [deviceModel, onClickSetAngle, isGuest]);
 
   return (
     <Box

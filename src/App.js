@@ -19,6 +19,7 @@ import './styles/global.css';
 import NativePageTheme from './theme/NativePageTheme';
 import AppPullRefresh from './components/AppPullRefresh';
 import AppGuestGate from './components/AppGuestGate';
+import { ContactsEmpty } from './components/MobileContactList';
 import AppRegistration from './components/AppRegistration';
 import AppBootstrap from './components/AppBootstrap';
 import AppUpdateRuntime from './components/AppUpdateRuntime';
@@ -87,7 +88,7 @@ const AppContent = () => {
           path={route.router}
           element={
             isAppHome && ['/contacts', '/contact-add'].includes(route.router) ? (
-              <AppGuestGate>
+              <AppGuestGate fallback={route.router === '/contacts' ? <ContactsEmpty /> : null}>
                 <route.component />
               </AppGuestGate>
             ) : (

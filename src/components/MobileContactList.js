@@ -23,6 +23,20 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cancelAppPullRefresh } from '@/services/appPullRefresh';
 import { ContactsNavIcon } from './biz/layout/navIcons';
 
+export const ContactsEmpty = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '60vh',
+      color: 'text.disabled',
+    }}
+  >
+    <ContactsNavIcon size={96} />
+  </Box>
+);
+
 const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: user.subUUID,
@@ -103,19 +117,7 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
   };
 
   if (isEmpty) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60vh',
-          color: 'text.disabled',
-        }}
-      >
-        <ContactsNavIcon size={96} />
-      </Box>
-    );
+    return <ContactsEmpty />;
   }
 
   return (
