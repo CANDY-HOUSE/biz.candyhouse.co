@@ -131,6 +131,8 @@ export default function Face3LiveView({ device, onClose }) {
   const [mediaStates, setMediaStates] = useState({ camera: 'disabled', microphone: 'disabled' });
   const [mediaControlsReady, setMediaControlsReady] = useState(false);
   const [observationUnsupported, setObservationUnsupported] = useState(false);
+  // 通话中连接短暂断开、正在等 ICE 恢复（见 face3Viewer 的 DISCONNECT_GRACE_MS）。
+  const [reconnecting, setReconnecting] = useState(false);
   const [initialSpeaker] = useState(() => loadSpeakerPref(device?.deviceUUID));
   const [speakerEnabled, setSpeakerEnabled] = useState(initialSpeaker.enabled);
   const [volume, setVolume] = useState(initialSpeaker.volume);
@@ -196,6 +198,7 @@ export default function Face3LiveView({ device, onClose }) {
     setMediaStates({ camera: 'disabled', microphone: 'disabled' });
     setMediaControlsReady(false);
     setObservationUnsupported(false);
+    setReconnecting(false);
     setSpeakerEnabled(false);
     speakerEnabledRef.current = false;
     setHasLocalVideo(false);
@@ -228,6 +231,8 @@ export default function Face3LiveView({ device, onClose }) {
             if (state === 'answered') setMediaControlsReady(true);
             if (state === 'observation_supported') setObservationUnsupported(false);
             if (state === 'observation_unsupported') setObservationUnsupported(true);
+            if (state === 'reconnecting') setReconnecting(true);
+            if (state === 'reconnected') setReconnecting(false);
           },
           onLocalMediaState: ({ kind, state }) => {
             if (cancelled) return;
@@ -643,10 +648,17 @@ export default function Face3LiveView({ device, onClose }) {
       )}
 
       {(phase === 'connecting' || phase === 'playing') &&
-        (observationUnsupported || Object.keys(localMediaIssues).length > 0) && (
+        ((reconnecting && phase === 'playing') ||
+          observationUnsupported ||
+          Object.keys(localMediaIssues).length > 0) && (
           <Box
             sx={{ position: 'absolute', top: 8, left: 8, right: 48, zIndex: 3, maxHeight: '55%', overflowY: 'auto' }}
           >
+            {reconnecting && phase === 'playing' && (
+              <Alert role="status" severity="info" sx={{ mb: 0.5, py: 0, fontSize: '0.75rem' }}>
+                {t('face3.liveReconnecting')}
+              </Alert>
+            )}
             {observationUnsupported && (
               <Alert severity="warning" sx={{ mb: 0.5, py: 0, fontSize: '0.75rem' }}>
                 {t('face3.observationUnsupported')}

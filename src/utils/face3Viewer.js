@@ -17,8 +17,10 @@ import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
 
 /** 从发起到出画的整体超时。超过就当失败，让用户重试而不是无限转圈。 */
 const CONNECT_TIMEOUT_MS = 30000;
-// 给ICE短暂恢复的机会，超出宽限才提示通话中断。
-const DISCONNECT_GRACE_MS = 3000;
+/* 已接通后连接掉出 connected，给 ICE 多久自行恢复才判定通话中断(期间提示"正在重连")。
+ * 要够跨过手机走动时的 WiFi 信号低谷，又必须短于设备端 30 秒的 ICE consent 超时 ——
+ * 真断了由手机先收尾、给出提示。不做 ICE 重启：手机换网(IP 变)这里救不回来。 */
+const DISCONNECT_GRACE_MS = 15000;
 
 // Keep the Viewer camera at 15 fps; Face3 pauses its local preview work during a call.
 const CAMERA_STREAM_FPS = 15;
@@ -264,14 +266,18 @@ export function startFace3Viewer(
       else fail('errPeerFailed');
       return;
     }
-    if (connectedOnce && states.includes('disconnected')) {
+    /* 接通过之后，只要不在 connected 就进宽限：除了 disconnected，恢复途中的
+       connecting/checking 也算，否则卡在中间态就没有任何截止时间。 */
+    if (connectedOnce && peer.connectionState !== 'connected') {
       if (!disconnectTimer) {
+        say('reconnecting');
         disconnectTimer = setTimeout(() => {
           disconnectTimer = null;
-          if (!closed && peer && [peer.connectionState, peer.iceConnectionState].includes('disconnected')) ended();
+          if (!closed && peer && peer.connectionState !== 'connected') ended();
         }, DISCONNECT_GRACE_MS);
       }
     } else {
+      if (disconnectTimer) say('reconnected');
       clearTimeout(disconnectTimer);
       disconnectTimer = null;
     }
