@@ -16,6 +16,13 @@ import { startFace3Viewer, getFace3ViewerEnvironmentError } from '@utils/face3Vi
 const CRED_TIMEOUT_MS = 15000;
 const CRED_RETRY_MS = 2000;
 const CALL_TIMEOUT_MS = 45000;
+/* 已接通的通话断开后自动重新发起的次数上限（连续、未再出画面的次数）。重新出画即清零，
+   所以每次切网都能自动接回；连续失败到上限才提示中断，避免设备真离线时无限重试。 */
+const AUTO_RECONNECT_MAX = 2;
+/* 断开后等多久再自动重连。设备主动挂断(门铃挂断等)时，PeerConnection 往往先断、
+   streamState=stopped 稍后才经 WS 到达；先等一会儿，stopped 到了就按"设备已结束"
+   收尾(下方 effect 的 endPlayback 会顺带取消这次重连)，不把刚挂断的设备又唤醒。 */
+const AUTO_RECONNECT_DELAY_MS = 3000;
 
 const WAKE_ERROR_TEXT = {
   device_offline: 'face3.wakeOffline',
@@ -112,7 +119,7 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
-  const { wakeFace3Device, viewFace3Device, face3StreamStates } = gFace3;
+  const { wakeFace3Device, viewFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -129,10 +136,33 @@ export default function Face3LiveView({ device, onClose }) {
   const [attempt, setAttempt] = useState(0);
   const [hasLocalVideo, setHasLocalVideo] = useState(false);
   const [mediaStates, setMediaStates] = useState({ camera: 'disabled', microphone: 'disabled' });
+  // 回调里要读到最新值(断开那一刻麦克风/摄像头开没开)，state 的闭包拿不到。
+  const mediaStatesRef = useRef(mediaStates);
+  mediaStatesRef.current = mediaStates;
   const [mediaControlsReady, setMediaControlsReady] = useState(false);
   const [observationUnsupported, setObservationUnsupported] = useState(false);
   // 通话中连接短暂断开、正在等 ICE 恢复（见 face3Viewer 的 DISCONNECT_GRACE_MS）。
   const [reconnecting, setReconnecting] = useState(false);
+  /* 连接已经断掉、正在自动重新发起整通连接（见 AUTO_RECONNECT_MAX）。
+     与上面的 reconnecting 不同：那个是同一条连接在等 ICE 自愈，这个是换一条新连接。 */
+  const [autoReconnecting, setAutoReconnecting] = useState(false);
+  const autoReconnectsRef = useRef(0);
+  /* 供下方 stopped 处理读取最新值。在设置处同步写（见 setReconnectingNow /
+     setAutoReconnectingNow），不等下一次渲染。 */
+  const reconnectingRef = useRef(false);
+  const autoReconnectingRef = useRef(false);
+  const setReconnectingNow = useCallback((v) => {
+    reconnectingRef.current = v;
+    setReconnecting(v);
+  }, []);
+  const setAutoReconnectingNow = useCallback((v) => {
+    autoReconnectingRef.current = v;
+    setAutoReconnecting(v);
+  }, []);
+  // 当前这一轮连接是不是自动重连发起的(决定是否沿用断开前的扬声器/麦克风/摄像头)。
+  const autoModeRef = useRef(false);
+  // 断开那一刻的本地媒体状态，自动重连接通后恢复；应用一次即清空。
+  const restoreMediaRef = useRef(null);
   const [initialSpeaker] = useState(() => loadSpeakerPref(device?.deviceUUID));
   const [speakerEnabled, setSpeakerEnabled] = useState(initialSpeaker.enabled);
   const [volume, setVolume] = useState(initialSpeaker.volume);
@@ -147,6 +177,7 @@ export default function Face3LiveView({ device, onClose }) {
 
   const deviceUUID = device?.deviceUUID;
   const streamState = face3StreamStates?.[deviceUUID];
+  const streamReason = face3StreamReasons?.[deviceUUID];
   const previousStreamStateRef = useRef(streamState);
 
   const clearPlayback = useCallback(() => {
@@ -165,8 +196,17 @@ export default function Face3LiveView({ device, onClose }) {
     }
   }, []);
 
+  /* 自动重连的状态统一在这里清。出画、手动重试、结束、换设备都走它。 */
+  const resetAutoReconnect = useCallback(() => {
+    autoReconnectsRef.current = 0;
+    autoModeRef.current = false;
+    restoreMediaRef.current = null;
+    setAutoReconnectingNow(false);
+  }, [setAutoReconnectingNow]);
+
   const endPlayback = useCallback(
     (key) => {
+      resetAutoReconnect();
       cancelAttemptRef.current?.();
       clearPlayback();
       setHasLocalVideo(false);
@@ -175,8 +215,13 @@ export default function Face3LiveView({ device, onClose }) {
       setErrorKey(key);
       setPhase('ended');
     },
-    [clearPlayback]
+    [clearPlayback, resetAutoReconnect]
   );
+
+  // 换了设备：上一台的自动重连计数与媒体恢复不能带过来。必须在发起连接的 effect 之前。
+  useEffect(() => {
+    resetAutoReconnect();
+  }, [deviceUUID, resetAutoReconnect]);
 
   useEffect(() => {
     if (!deviceUUID) return undefined;
@@ -188,9 +233,10 @@ export default function Face3LiveView({ device, onClose }) {
     let credentialTimer;
     let retryTimer;
     let deadlineTimer;
+    let reconnectTimer;
     const cancel = () => {
       cancelled = true;
-      [wakeTimer, credentialTimer, retryTimer, deadlineTimer].forEach(clearTimeout);
+      [wakeTimer, credentialTimer, retryTimer, deadlineTimer, reconnectTimer].forEach(clearTimeout);
       clearPlayback();
     };
     cancelAttemptRef.current = cancel;
@@ -198,9 +244,12 @@ export default function Face3LiveView({ device, onClose }) {
     setMediaStates({ camera: 'disabled', microphone: 'disabled' });
     setMediaControlsReady(false);
     setObservationUnsupported(false);
-    setReconnecting(false);
-    setSpeakerEnabled(false);
-    speakerEnabledRef.current = false;
+    setReconnectingNow(false);
+    /* 自动重连沿用断开前的扬声器状态；手动重试/首次进入照旧从静音起。
+       否则通话中途切一次网，扬声器被静默关掉，用户以为恢复了其实听不到。 */
+    const keepSpeaker = autoModeRef.current && Boolean(restoreMediaRef.current?.speaker);
+    setSpeakerEnabled(keepSpeaker);
+    speakerEnabledRef.current = keepSpeaker;
     setHasLocalVideo(false);
     setLocalIsMain(false);
     setPipCorner('bottom-right');
@@ -209,8 +258,44 @@ export default function Face3LiveView({ device, onClose }) {
     setErrorKey('');
     setLocalMediaIssues({});
 
+    /* 安排一次自动重连。同一串自动重连沿用第一次断开时的媒体快照：还没出画就又断时，
+     * 本轮开头已把媒体状态重置成关闭，不能拿来覆盖。快照在出画时由 resetAutoReconnect 清空。
+     * 定时器由 cancel() 清理（组件卸载/新一轮开始），回调里不看 cancelled ——
+     * fail 路径里本轮已作废(cancelled=true)，但重连仍要发生。
+     * 返回 false = 次数已用完。 */
+    const scheduleAutoReconnect = () => {
+      if (autoReconnectsRef.current >= AUTO_RECONNECT_MAX) return false;
+      autoReconnectsRef.current += 1;
+      const n = autoReconnectsRef.current;
+      if (!restoreMediaRef.current) {
+        restoreMediaRef.current = {
+          speaker: speakerEnabledRef.current,
+          microphone: mediaStatesRef.current.microphone === 'enabled',
+          camera: mediaStatesRef.current.camera === 'enabled',
+        };
+      }
+      setReconnectingNow(true);
+      setAutoReconnectingNow(true);
+      reconnectTimer = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.info('[face3Live] call dropped, auto reconnect #' + n);
+        autoModeRef.current = true;
+        setAttempt((a) => a + 1);
+      }, AUTO_RECONNECT_DELAY_MS);
+      return true;
+    };
+
     const fail = (key) => {
       if (cancelled) return;
+      if (autoModeRef.current) {
+        /* 自动重连这一轮没成（新网络可能还没就绪）：还有次数就再试，用完才提示中断；
+           用户经历的是"通话中断"，不该突然看到唤醒/超时类错误。 */
+        cancelled = true;
+        [wakeTimer, credentialTimer, retryTimer, deadlineTimer].forEach(clearTimeout);
+        clearPlayback();
+        if (!scheduleAutoReconnect()) endPlayback('face3.liveInterrupted');
+        return;
+      }
       cancel();
       setHasLocalVideo(false);
       setNeedsTap(false);
@@ -221,6 +306,8 @@ export default function Face3LiveView({ device, onClose }) {
       if (cancelled || pictureReady || !videoRef.current?.videoWidth) return;
       pictureReady = true;
       clearTimeout(deadlineTimer);
+      // 重新出画就清零：之后再切一次网仍能自动接回。
+      resetAutoReconnect();
       setPhase('playing');
     };
     const startViewer = (data) => {
@@ -228,11 +315,17 @@ export default function Face3LiveView({ device, onClose }) {
         const viewer = startFace3Viewer(data, {
           onState: (state) => {
             if (cancelled) return;
-            if (state === 'answered') setMediaControlsReady(true);
+            if (state === 'answered') {
+              setMediaControlsReady(true);
+              /* 自动重连接通后，把断开前开着的麦克风/摄像头重新打开。 */
+              const restore = restoreMediaRef.current;
+              if (restore?.microphone) viewerRef.current?.setMicrophoneEnabled?.(true);
+              if (restore?.camera) viewerRef.current?.setCameraEnabled?.(true);
+            }
             if (state === 'observation_supported') setObservationUnsupported(false);
             if (state === 'observation_unsupported') setObservationUnsupported(true);
-            if (state === 'reconnecting') setReconnecting(true);
-            if (state === 'reconnected') setReconnecting(false);
+            if (state === 'reconnecting') setReconnectingNow(true);
+            if (state === 'reconnected') setReconnectingNow(false);
           },
           onLocalMediaState: ({ kind, state }) => {
             if (cancelled) return;
@@ -293,7 +386,15 @@ export default function Face3LiveView({ device, onClose }) {
           },
           onError: (key) => fail(VIEWER_ERROR_TEXT[key] || 'face3.errLiveUnknown'),
           onEnded: () => {
-            if (!cancelled) endPlayback('face3.liveInterrupted');
+            if (cancelled) return;
+            /* 已接通的通话断了：先自动重新发起一次，而不是直接让用户点重试。
+             *
+             * 宽限期(DISCONNECT_GRACE_MS)只救得回同一条连接的短暂断开。手机在两个
+             * 已存 SSID 之间切换、或 WiFi↔蜂窝切换时 IP 会变，原连接必死 ——
+             * 2026-11-09 Face3 1# 实测走动时就是这样断的。重新走一遍唤醒→取凭证→
+             * 连接即可接回：设备端旧会话要 30 秒才超时，期间一直醒着，新连接能立刻进来。
+             * 设备主动结束(streamState=stopped)不走这里，由下方 effect 直接结束。 */
+            if (!scheduleAutoReconnect()) endPlayback('face3.liveInterrupted');
           },
         });
         // 防御同步失败回调，不能把已取消的Viewer留在ref里。
@@ -354,14 +455,36 @@ export default function Face3LiveView({ device, onClose }) {
       cancel();
       if (cancelAttemptRef.current === cancel) cancelAttemptRef.current = null;
     };
-  }, [deviceUUID, wakeFace3Device, viewFace3Device, attempt, clearPlayback, endPlayback]);
+  }, [
+    deviceUUID,
+    wakeFace3Device,
+    viewFace3Device,
+    attempt,
+    clearPlayback,
+    endPlayback,
+    resetAutoReconnect,
+    setReconnectingNow,
+    setAutoReconnectingNow,
+  ]);
 
   useEffect(() => {
     // 忽略挂载时上一次通话残留的stopped，只响应本次看到的状态变化。
     const previous = previousStreamStateRef.current;
     previousStreamStateRef.current = streamState;
-    if (streamState === 'stopped' && previous !== 'stopped') endPlayback('face3.liveEndedByDevice');
-  }, [streamState, endPlayback]);
+    if (streamState === 'stopped' && previous !== 'stopped') {
+      /* 正在等 ICE 恢复或自动重连时收到的 stopped（原因不是门铃挂断），是设备因为
+       * 我们这条连接断了、没人在看而进了待机，不是设备主动结束通话：继续重连，
+       * 重连时的唤醒会把它重新拉起来。2026-11-09 Face3 1# 实测：手机切网后
+       * 设备先于手机的自动重连进入待机，原逻辑把这条 stopped 当成「设备已结束」，
+       * 自动重连被取消。门铃挂断（reason=doorbell）照旧立即结束。 */
+      if (streamReason !== 'doorbell' && (reconnectingRef.current || autoReconnectingRef.current)) {
+        // eslint-disable-next-line no-console
+        console.info('[face3Live] device stopped while reconnecting, keep reconnecting');
+        return;
+      }
+      endPlayback('face3.liveEndedByDevice');
+    }
+  }, [streamState, streamReason, endPlayback]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;
@@ -474,7 +597,10 @@ export default function Face3LiveView({ device, onClose }) {
     else viewerRef.current?.setMicrophoneEnabled?.(enabled);
   };
 
-  const retry = () => setAttempt((n) => n + 1);
+  const retry = () => {
+    resetAutoReconnect();
+    setAttempt((n) => n + 1);
+  };
 
   const PIP_MARGIN = 12;
   const pipCornerStyle = {
@@ -731,7 +857,7 @@ export default function Face3LiveView({ device, onClose }) {
             <>
               <CircularProgress size={28} />
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                {t('face3.liveConnecting')}
+                {t(autoReconnecting ? 'face3.liveReconnecting' : 'face3.liveConnecting')}
               </Typography>
             </>
           )}

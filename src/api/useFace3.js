@@ -25,6 +25,9 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
 const useFace3 = () => {
   const [face3Devices, setFace3Devices] = useState([]);
   const [face3StreamStates, setFace3StreamStates] = useState({});
+  /* 设备上报 streamState 时附带的原因（如 stopped 的 "doorbell" = 门铃挂断）。
+     与 face3StreamStates 分开存，不改变后者的取值形态。 */
+  const [face3StreamReasons, setFace3StreamReasons] = useState({});
   const { registerCallback, invokeCallbacks } = useCallbacks();
 
   const recordingRequests = useRef(null);
@@ -171,6 +174,11 @@ const useFace3 = () => {
           switch (message.op) {
             case 'streamState':
               if (message.data?.deviceId) {
+                // 先写 reason 再写 state：两次更新即使没被合并，state 变化那次渲染也能读到本次 reason。
+                setFace3StreamReasons((reasons) => ({
+                  ...reasons,
+                  [message.data.deviceId]: message.data.reason ?? null,
+                }));
                 setFace3StreamStates((states) => ({
                   ...states,
                   [message.data.deviceId]: message.data.state,
@@ -200,6 +208,7 @@ const useFace3 = () => {
   return {
     face3Devices,
     face3StreamStates,
+    face3StreamReasons,
     listFace3Recordings,
     playFace3Recording,
     listFace3Devices,
