@@ -170,6 +170,9 @@ function LockAngle({ deviceUUID }) {
           </Alert>
         )}
         <Box sx={{ height: 400 }} />
+        <Typography sx={{ px: 2, pb: 1, color: '#999', fontSize: 13, whiteSpace: 'pre-line' }}>
+          {t('lockSettings.frequencyHint')}
+        </Typography>
         <ButtonBase
           disabled={disabled}
           onClick={() => (settings.sensorInterval !== undefined ? setFrequencyOpen(!frequencyOpen) : coming())}

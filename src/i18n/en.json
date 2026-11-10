@@ -616,6 +616,7 @@
     "frequency": "Angle detection frequency",
     "stopped": "Power Saving Mode",
     "hertz": "{{count}} times/sec",
+    "frequencyHint": "For thumbturns rotating over 180°, fast manual turns may not be detected properly. Please set the detection frequency to “10 times/sec”.\nFor thumbturns rotating under 180°, please keep it on “Power Saving Mode”.",
     "downloading": "Downloading firmware",
     "retry": "Retry",
     "configure": "Please configure the locked/unlocked positions.",

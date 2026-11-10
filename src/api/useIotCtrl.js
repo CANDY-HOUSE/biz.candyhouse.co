@@ -125,7 +125,6 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
       const topic = `wm2${biz3utils.hub3TopicId(hub3_id)}cmd`;
       console.log('==> topic', topic);
 
-      console.log('==> secretKey', secretKey);
       const sign = await Cmac.cmacTime(secretKey);
       const signArray = biz3utils.hexStringToUint8Array(sign);
 

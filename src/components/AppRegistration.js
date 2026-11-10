@@ -37,7 +37,7 @@ export default function AppRegistration() {
       const owned = new Set(gManageDevice.companyDevices.map((item) => item.deviceUUID?.toUpperCase()));
       await deviceService.request('scanStart', { removedDevices: removedDevices().filter((id) => !owned.has(id)) });
     } catch (e) {
-      if (active.current) showNotice(e.message);
+      console.warn('scanStart failed', e);
     } finally {
       if (active.current) setRefreshing(false);
     }
@@ -151,13 +151,9 @@ export default function AppRegistration() {
       }
     } catch (e) {
       if (active.current) {
-        const message =
-          e.message === 'Registration requires network'
-            ? t('appHome.registrationNetworkRequired')
-            : e.message === 'Bluetooth disconnected'
-              ? t('lockSettings.connectBluetooth')
-              : e.message;
-        showNotice(message);
+        if (e.message === 'Registration requires network') showNotice(t('appHome.registrationNetworkRequired'));
+        else if (e.message === 'Bluetooth disconnected') showNotice(t('lockSettings.connectBluetooth'));
+        else console.warn('register failed', e);
       }
     } finally {
       registering.current = false;
