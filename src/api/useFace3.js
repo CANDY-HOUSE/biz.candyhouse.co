@@ -176,6 +176,23 @@ const useFace3 = () => {
    * @param {string} deviceUUID
    * @param {Function} cb 回调，收到 {success, code, message, data}
    */
+  /**
+   * 多人观看 / 多方通话：取 LiveKit 房间 token（Face3_qr op:"live"）。
+   * 和 viewer 一样只在连接可用时发，鉴权在云端（必须绑过这台设备）。
+   */
+  const liveFace3Device = useCallback(
+    (deviceUUID, cb) => {
+      if (!deviceUUID) return;
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_FACE3_QR,
+        op: 'live',
+        deviceId: deviceUUID,
+      };
+      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
+    },
+    [sendWithoutQueue]
+  );
+
   const viewFace3Device = useCallback(
     (deviceUUID, cb) => {
       if (!deviceUUID) return;
@@ -194,7 +211,7 @@ const useFace3 = () => {
       recordingRequests.current.handle(message);
       const callbackDeviceId = message.data?.deviceId;
       invokeCallbacks(
-        callbackDeviceId && (message.op === 'command' || message.op === 'viewer')
+        callbackDeviceId && ['command', 'viewer', 'live'].includes(message.op)
           ? { ...message, op: `${message.op}:${callbackDeviceId}` }
           : message
       );
@@ -248,6 +265,7 @@ const useFace3 = () => {
     sendFace3Command,
     wakeFace3Device,
     viewFace3Device,
+    liveFace3Device,
   };
 };
 

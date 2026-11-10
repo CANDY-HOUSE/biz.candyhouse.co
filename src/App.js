@@ -34,6 +34,8 @@ import { currentAppToken } from './services/appSession';
 import AppHomeRuntime from './components/AppHomeRuntime';
 import AppLocationDisclosure from './components/AppLocationDisclosure';
 import { isAppHome } from './services/deviceService';
+// Face3 LiveKit 灰度开关：必须在路由跳转（会丢掉地址栏 ?lk=）之前读取。
+import '@utils/face3LiveKitFlag';
 
 const BizHomePage = deferredComponent(() => import('@biz/home'));
 const Settings = deferredComponent(() => import('@biz/settings'));

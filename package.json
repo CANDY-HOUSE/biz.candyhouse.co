@@ -70,6 +70,7 @@
     "i18next": "^23.16.5",
     "i18next-browser-languagedetector": "^8.0.0",
     "leaflet": "1.9.4",
+    "livekit-client": "2.22.0",
     "loadash": "^1.0.0",
     "mui-datatables": "^4.3.0",
     "papaparse": "^5.4.1",

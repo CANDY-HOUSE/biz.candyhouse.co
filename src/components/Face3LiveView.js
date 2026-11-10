@@ -11,6 +11,7 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { startFace3Viewer, getFace3ViewerEnvironmentError } from '@utils/face3Viewer';
+import { isFace3LiveKitEnabled } from '@utils/face3LiveKitFlag';
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
 const CRED_TIMEOUT_MS = 15000;
@@ -53,6 +54,8 @@ const CRED_ERROR_TEXT = {
  * errTimeout 指的是"设备没在时限内出画"，和取凭证那步的网络超时完全是两回事，
  * 共用一条"网络没有响应"会把人引向错误的方向——实测就因此白查过一轮。 */
 const VIEWER_ERROR_TEXT = {
+  /* LiveKit：Bridge 重连门铃失败（face3.door=offline），与唤醒时离线同一提示。 */
+  errDoorOffline: 'face3.wakeOffline',
   errTimeout: 'face3.errLiveTimeout',
   errPeerFailed: 'face3.errPeerFailed',
   errSignaling: 'face3.errSignaling',
@@ -119,7 +122,7 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
 export default function Face3LiveView({ device, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
-  const { wakeFace3Device, viewFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
+  const { wakeFace3Device, viewFace3Device, liveFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -310,9 +313,9 @@ export default function Face3LiveView({ device, onClose }) {
       resetAutoReconnect();
       setPhase('playing');
     };
-    const startViewer = (data) => {
+    const startViewer = (data, start = startFace3Viewer) => {
       try {
-        const viewer = startFace3Viewer(data, {
+        const viewer = start(data, {
           onState: (state) => {
             if (cancelled) return;
             if (state === 'answered') {
@@ -373,6 +376,10 @@ export default function Face3LiveView({ device, onClose }) {
             startFrameProbe(el);
             el.muted = !speakerEnabledRef.current;
             el.volume = volumeRef.current / 100;
+            viewerRef.current?.setRemoteAudio?.({
+              muted: !speakerEnabledRef.current,
+              volume: volumeRef.current / 100,
+            });
             el.play()
               .then(markPictureReady)
               .catch(() => {
@@ -402,6 +409,48 @@ export default function Face3LiveView({ device, onClose }) {
         else viewerRef.current = viewer;
       } catch {
         fail('face3.errLiveUnknown');
+      }
+    };
+    /* 多人观看 / 多方通话（灰度）：先要 LiveKit token；云端没开通或出错就退回 KVS 直连，
+     * 只有鉴权类错误直接报（退回也一样会被拒）。 */
+    const requestLiveKit = () => {
+      if (cancelled) return;
+      let settled = false;
+      credentialTimer = setTimeout(() => {
+        if (cancelled || settled) return;
+        settled = true;
+        // eslint-disable-next-line no-console
+        console.info('[face3Live] live token timeout, fallback to KVS');
+        requestCredentials();
+      }, CRED_TIMEOUT_MS);
+      try {
+        liveFace3Device(deviceUUID, (message) => {
+          if (cancelled || settled) return;
+          settled = true;
+          clearTimeout(credentialTimer);
+          if (message?.success && message.data?.token) {
+            import('@utils/face3LiveKitViewer')
+              .then(({ startFace3LiveKitViewer }) => {
+                if (!cancelled) startViewer(message.data, startFace3LiveKitViewer);
+              })
+              .catch(() => {
+                // eslint-disable-next-line no-console
+                console.info('[face3Live] livekit module load failed, fallback to KVS');
+                requestCredentials();
+              });
+            return;
+          }
+          const reason = message?.message;
+          if (reason === 'not_bound' || reason === 'not_authenticated') {
+            fail(CRED_ERROR_TEXT[reason]);
+            return;
+          }
+          // eslint-disable-next-line no-console
+          console.info('[face3Live] live unavailable (' + reason + '), fallback to KVS');
+          requestCredentials();
+        });
+      } catch {
+        requestCredentials();
       }
     };
     const requestCredentials = () => {
@@ -444,7 +493,8 @@ export default function Face3LiveView({ device, onClose }) {
             fail(WAKE_ERROR_TEXT[message?.message] || 'face3.wakeFailed');
             return;
           }
-          requestCredentials();
+          if (isFace3LiveKitEnabled()) requestLiveKit();
+          else requestCredentials();
         });
       } catch {
         fail('face3.wakeFailed');
@@ -459,6 +509,7 @@ export default function Face3LiveView({ device, onClose }) {
     deviceUUID,
     wakeFace3Device,
     viewFace3Device,
+    liveFace3Device,
     attempt,
     clearPlayback,
     endPlayback,
@@ -564,6 +615,8 @@ export default function Face3LiveView({ device, onClose }) {
     setVolume(nextVolume);
     volumeRef.current = nextVolume;
     saveSpeakerPref(deviceUUID, enabled, nextVolume);
+    // 多方通话时其他手机的声音也跟随扬声器开关（KVS 直连没有这一路，方法不存在）。
+    viewerRef.current?.setRemoteAudio?.({ muted: !enabled, volume: nextVolume / 100 });
     const video = videoRef.current;
     if (!video) return;
     video.muted = !enabled;
@@ -581,6 +634,7 @@ export default function Face3LiveView({ device, onClose }) {
      否则这里先恢复出声，扬声器按钮的 onClick 紧接着又把它关掉。 */
   const resumeOnTap = (event) => {
     if (!needsTap || event.target.closest?.('button, .MuiSlider-root')) return;
+    viewerRef.current?.setRemoteAudio?.({ muted: !speakerEnabledRef.current, volume: volumeRef.current / 100 });
     const video = videoRef.current;
     if (!video) return;
     video.muted = !speakerEnabledRef.current;
