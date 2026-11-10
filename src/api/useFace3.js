@@ -58,6 +58,35 @@ const useFace3 = () => {
   );
 
   /**
+   * 人脸掌纹换机迁移（设备坏了换新机时，把旧设备云备份里的人脸/掌纹搬到新设备）。
+   * 只有旧设备开启云备份时设备上登录的那个账号能发起；新设备上也必须登录同一账号，
+   * 新设备库里 0 人、联网时会自己领取并导入。校验都在云端（Face3_qr）。
+   */
+  const listBioMigrateSources = useCallback(
+    (signal) => recordingRequests.current.request('bioMigrateCandidates', {}, signal),
+    []
+  );
+  const startBioMigrate = useCallback(
+    (fromDeviceUUID, toDeviceUUID, signal) =>
+      recordingRequests.current.request(
+        'bioMigrateStart',
+        { fromDeviceId: fromDeviceUUID.toUpperCase(), toDeviceId: toDeviceUUID.toUpperCase() },
+        signal
+      ),
+    []
+  );
+  const getBioMigrateStatus = useCallback(
+    (toDeviceUUID, signal) =>
+      recordingRequests.current.request('bioMigrateStatus', { toDeviceId: toDeviceUUID.toUpperCase() }, signal),
+    []
+  );
+  const cancelBioMigrate = useCallback(
+    (toDeviceUUID, signal) =>
+      recordingRequests.current.request('bioMigrateCancel', { toDeviceId: toDeviceUUID.toUpperCase() }, signal),
+    []
+  );
+
+  /**
    * 唤醒、取观看凭证这类请求只在连接可用时发送，不进断线队列：
    * 页面关掉后才重连补发，会把设备白白唤醒一次。断线时立即回调 ws_disconnected。
    */
@@ -211,6 +240,10 @@ const useFace3 = () => {
     face3StreamReasons,
     listFace3Recordings,
     playFace3Recording,
+    listBioMigrateSources,
+    startBioMigrate,
+    getBioMigrateStatus,
+    cancelBioMigrate,
     listFace3Devices,
     sendFace3Command,
     wakeFace3Device,

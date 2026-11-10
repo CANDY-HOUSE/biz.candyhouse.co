@@ -10,6 +10,8 @@ import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import Face3LiveView from '@/components/Face3LiveView';
 import Face3EventRecordings from '@/components/Face3EventRecordings';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import MoveDownIcon from '@mui/icons-material/MoveDown';
+import Face3BioMigrate from '@/components/Face3BioMigrate';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
@@ -45,7 +47,7 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, waking, isViewing }) => {
+const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, onMigrate, waking, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
@@ -214,9 +216,14 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, waking,
         </IconButton>
       </Box>
 
-      <Button startIcon={<VideoLibraryIcon />} onClick={() => onRecordings(device)} sx={{ m: 1 }}>
-        {t('face3.recordings.title')}
-      </Button>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+        <Button startIcon={<VideoLibraryIcon />} onClick={() => onRecordings(device)} sx={{ m: 1 }}>
+          {t('face3.recordings.title')}
+        </Button>
+        <Button startIcon={<MoveDownIcon />} onClick={() => onMigrate(device)} sx={{ m: 1 }}>
+          {t('face3.migrate.entry')}
+        </Button>
+      </Box>
 
       {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/设置按钮。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
@@ -300,6 +307,7 @@ export default function Face3DeviceList() {
 
   const [viewingIds, setViewingIds] = useState(() => new Set());
   const [recordingDevice, setRecordingDevice] = useState(null);
+  const [migrateDevice, setMigrateDevice] = useState(null);
 
   const handleWake = (device) => {
     if (!device?.deviceUUID) return;
@@ -414,6 +422,10 @@ export default function Face3DeviceList() {
                 setViewingIds(new Set());
                 setRecordingDevice(device);
               }}
+              onMigrate={(device) => {
+                setViewingIds(new Set());
+                setMigrateDevice(device);
+              }}
               onCloseView={() =>
                 setViewingIds((ids) => {
                   const next = new Set(ids);
@@ -431,6 +443,14 @@ export default function Face3DeviceList() {
             key={recordingDevice.deviceUUID}
             device={recordingDevice}
             onClose={() => setRecordingDevice(null)}
+          />
+        )}
+        {migrateDevice && (
+          <Face3BioMigrate
+            key={migrateDevice.deviceUUID}
+            device={migrateDevice}
+            devices={face3Devices}
+            onClose={() => setMigrateDevice(null)}
           />
         )}
       </Box>
