@@ -32,6 +32,13 @@ export default function IrTypeList() {
 
   // 红外设备类型列表
   const irTypes = [
+    // 学习始终排在最前
+    {
+      id: 'learn',
+      type: 0xfeff,
+      name: t('pages.ir.list.learn'),
+      icon: <SvgLearn />,
+    },
     {
       id: 'air',
       type: 0xc000,
@@ -109,13 +116,6 @@ export default function IrTypeList() {
       type: IR_TYPE.DC,
       name: t('pages.ir.list.camera'),
       icon: <PhotoCameraIcon sx={svgIconStyle} />,
-    },
-    // 学习始终排在最后
-    {
-      id: 'learn',
-      type: 0xfeff,
-      name: t('pages.ir.list.learn'),
-      icon: <SvgLearn />,
     },
   ];
 
