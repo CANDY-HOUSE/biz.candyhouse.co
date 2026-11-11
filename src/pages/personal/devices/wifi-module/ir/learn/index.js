@@ -10,19 +10,10 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  MenuItem,
-  Popover,
 } from '@mui/material';
-import { Delete as DeleteIcon, SignalWifiConnectedNoInternet4Rounded, MoreHoriz } from '@mui/icons-material';
+import { SignalWifiConnectedNoInternet4Rounded } from '@mui/icons-material';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
-import EditIcon from '@mui/icons-material/Edit';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -32,6 +23,11 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
+import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
+import { useIrLearning } from '../hooks/useIrLearning.js';
+import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
+import LearnHint from '../components/LearnHint.js';
+import { mergeRemoteKeys } from '../utils/remoteKeys.js';
 
 const RemoteLearn = () => {
   const navigate = useNavigate();
@@ -39,41 +35,52 @@ const RemoteLearn = () => {
   const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
 
   // 使用 useRemoteCtrl Hook
-  const {
-    getIRCodes,
-    getIRMode,
-    setIRMode,
-    subscribeIRMode,
-    subscribeIRData,
-    addIRCode,
-    updateIRCode,
-    deleteIRCode,
-    sendIR,
-    addIRRemote,
-    modifyIRRemote,
-    updateLocalRemoteList,
-    setRemoteKeyOrder,
-    getRemoteKeyOrder,
-  } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const remoteCtrl = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  const { sendIR, addIRRemote, modifyIRRemote, updateLocalRemoteList, setRemoteKeyOrder, getRemoteKeyOrder } =
+    remoteCtrl;
 
   // 状态管理
   const [hub3DeviceId, setHub3DeviceId] = useState('');
   const [remote, setRemote] = useState(null);
-  const [irCodes, setIrCodes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const [isLearnMode, setIsLearnMode] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
   const [isRemoteSaved, setIsRemoteSaved] = useState(false);
   const [shouldHideToggleButton, setShouldHideToggleButton] = useState(false);
   const { t } = useTranslation();
 
   const isMobile = gMediaType.isMobile;
 
+  const showError = useCallback(
+    (key) => setSnackbarValue({ open: true, msg: t(key), severity: 'error', logReason: key }),
+    [setSnackbarValue, t]
+  );
+
+  // 按键记录（自学习遥控器全是学习按键，本来就是全量的，没有面板），由 ir_device_key 读写；进入页面时和顺序一起取（handleRefresh）
+  const savedUuid = isRemoteSaved && remote?.uuid ? remote.uuid : '';
+  const { rows, setRows, renameKey, deleteKey, addLearnedRow } = useRemoteKeys({
+    remote,
+    hub3DeviceId,
+    savedUuid,
+    panelItems: [],
+    api: remoteCtrl,
+    autoLoad: false,
+  });
+  const irCodes = useMemo(() => mergeRemoteKeys([], rows, true, t('pages.ir.remote.mobileDefaultKeyName')), [rows, t]);
+
+  // 学习模式：学到的按键追加到最后
+  const { isLearnMode, isConnected, toggleLearnMode, enterLearnMode } = useIrLearning({
+    hub3DeviceId,
+    remoteUuid: remote?.uuid,
+    enabled: !!hub3DeviceId && !!remote,
+    api: remoteCtrl,
+    onLearned: addLearnedRow,
+    onError: showError,
+  });
+
   // 按键排序：按键 id 就是 keyUUID，默认顺序是后台返回的录入先后。
   // 顺序和按键列表在同一次刷新里一起取（serverKeyOrder），不用首页列表里可能过期的那份。
   const [serverKeyOrder, setServerKeyOrder] = useState(undefined);
-  const defaultKeyIds = useMemo(() => irCodes.map((code) => code.keyUUID), [irCodes]);
+  const defaultKeyIds = useMemo(() => irCodes.map((item) => item.id), [irCodes]);
   const { orderedIds, handleReorder, removeKey } = useKeyOrder({
     remote,
     savedUuid: isRemoteSaved && remote?.uuid ? remote.uuid : '',
@@ -83,28 +90,9 @@ const RemoteLearn = () => {
     onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
   });
   const orderedIrCodes = useMemo(
-    () => orderedIds.map((id) => irCodes.find((code) => code.keyUUID === id)).filter(Boolean),
+    () => orderedIds.map((id) => irCodes.find((item) => item.id === id)).filter(Boolean),
     [orderedIds, irCodes]
   );
-
-  // 对话框状态
-  const [editDialog, setEditDialog] = useState({
-    open: false,
-    irCode: null,
-    name: '',
-  });
-
-  // 菜单状态
-  const [menuState, setMenuState] = useState({
-    anchorEl: null,
-    irCode: null,
-  });
-
-  // 常量定义
-  const IR_MODE = {
-    CONTROL: 0,
-    LEARN: 1,
-  };
 
   // 从路由参数获取数据
   useEffect(() => {
@@ -168,111 +156,6 @@ const RemoteLearn = () => {
     setRemote(initialRemote);
   }, []);
 
-  // 设置IR模式
-  const setMode = useCallback(
-    (mode) => {
-      console.log('set IR mode:', mode);
-      setIRMode(hub3DeviceId, mode, (response) => {
-        if (!response.success) {
-          console.error('set IR mode error:', response.message);
-          setSnackbarValue({
-            logScope: 'pages/personal/devices/wifi-module/ir/learn/index.setMode',
-            logReason: 'pages.ir.remote.setIRModeFail',
-            open: true,
-            msg: t('pages.ir.remote.setIRModeFail'),
-            severity: 'error',
-          });
-        }
-      });
-    },
-    [hub3DeviceId, setIRMode, setSnackbarValue]
-  );
-
-  // 获取当前IR模式
-  const getCurrentIRMode = useCallback(() => {
-    getIRMode(hub3DeviceId, (response) => {
-      console.info('get current IR mode response:', response);
-      if (response.success) {
-        try {
-          let mode;
-          if (response.data && typeof response.data === 'object') {
-            mode = response.data.ir_mode || response.data.mode;
-          } else if (typeof response.data === 'number') {
-            mode = response.data;
-          }
-
-          if (mode !== undefined) {
-            console.log('current IR mode:', mode);
-            setIsLearnMode(mode === IR_MODE.LEARN);
-          }
-        } catch (error) {
-          console.error('parse IR mode data failed:', error);
-        }
-      } else {
-        console.error('get IR mode failed:', response.message);
-      }
-    });
-  }, [hub3DeviceId, getIRMode, setMode]);
-
-  // 订阅IR模式变化
-  const subscribeIRModeChanges = useCallback(() => {
-    subscribeIRMode(hub3DeviceId, (response) => {
-      console.log('receive IR mode notify:', response);
-      if (response.success) {
-        try {
-          let mode = response.data.data.ir_mode;
-          console.log('receive IR mode:', mode);
-          setIsLearnMode(mode === IR_MODE.LEARN);
-        } catch (error) {
-          console.error('parse IR mode data failed:', error);
-        }
-      } else {
-        console.error('subscribe IR mode failed:', response.message);
-        setIsConnected(false);
-      }
-    });
-  }, [hub3DeviceId, subscribeIRMode]);
-
-  // 订阅学习数据
-  const subscribeIRDataChanges = useCallback(() => {
-    subscribeIRData(hub3DeviceId, (response) => {
-      if (response.success) {
-        console.log('receive learn data, size:', response.data.data ? response.data.data.length : 0);
-
-        // 创建新的红外按键
-        const newIrCode = {
-          keyUUID: biz3utils.generateUUID(),
-          name: '',
-          uuid: remote.uuid,
-          deviceId: hub3DeviceId,
-          data: response.data.data,
-        };
-
-        // 先保存到服务器，成功后再添加到本地状态
-        addIRCode(newIrCode, (addResponse) => {
-          if (addResponse.success) {
-            // 只有保存成功后才添加到本地状态
-            setIrCodes((prev) => [...prev, newIrCode]);
-          } else {
-            console.error('add IR code failed:', addResponse.message);
-            setSnackbarValue({
-              logScope: 'pages/personal/devices/wifi-module/ir/learn/index.subscribeIRDataChanges',
-              logReason: 'pages.ir.remote.addIRCodeFail',
-              open: true,
-              msg: t('pages.ir.remote.addIRCodeFail'),
-              severity: 'error',
-            });
-          }
-          exitLearnMode();
-        });
-      } else {
-        console.error('subscribe learn data failed:', response.message);
-        setIsConnected(false);
-        exitLearnMode();
-      }
-    });
-  }, [hub3DeviceId, subscribeIRData, irCodes.length, remote, addIRCode, setSnackbarValue]);
-
   // 保存遥控器到服务器（首次保存整个遥控器）
   const saveRemoteToServer = useCallback(() => {
     console.log('save remote to server:', remote, isRemoteSaved);
@@ -310,25 +193,6 @@ const RemoteLearn = () => {
     });
   }, [hub3DeviceId, remote, isRemoteSaved, addIRRemote]);
 
-  // 进入学习模式
-  const enterLearnMode = useCallback(() => {
-    setMode(IR_MODE.LEARN);
-  }, [setMode]);
-
-  // 退出学习模式
-  const exitLearnMode = useCallback(() => {
-    setMode(IR_MODE.CONTROL);
-  }, [setMode]);
-
-  // 切换自学习模式
-  const toggleLearnMode = useCallback(() => {
-    if (isLearnMode) {
-      exitLearnMode();
-    } else {
-      enterLearnMode();
-    }
-  }, [isLearnMode, enterLearnMode, exitLearnMode]);
-
   // 发送红外信号
   const handleEmitIRCode = useCallback(
     (irCode) => {
@@ -362,93 +226,21 @@ const RemoteLearn = () => {
     [hub3DeviceId, remote, isLearnMode]
   );
 
-  // 处理菜单按钮点击
-  const handleMenuClick = useCallback((e, irCode) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setMenuState({
-      anchorEl: e.currentTarget,
-      irCode: irCode,
-    });
-  }, []);
-
-  // 打开编辑对话框
-  const handleEditIRCode = (irCode) => {
-    setEditDialog({
-      open: true,
-      irCode: irCode,
-      name: irCode.name,
-    });
-    setMenuState({ anchorEl: null, irCode: null });
-  };
-
-  // 关闭编辑对话框
-  const handleCloseEditDialog = () => {
-    setEditDialog({
-      open: false,
-      irCode: null,
-      name: '',
-    });
-  };
-
-  // 保存按键名称
-  const handleSaveIRCodeName = () => {
-    const { irCode, name } = editDialog;
-    console.info('save IR code name:', name, 'remote:', irCode);
-    handleCloseEditDialog();
-    if (!name.trim()) {
-      setSnackbarValue({
-        open: true,
-        msg: t('pages.ir.remote.nameCannotBeEmpty'),
-        severity: 'warning',
-      });
-      return;
-    }
-
-    updateIRCode(hub3DeviceId, irCode.uuid, irCode.keyUUID, name.trim(), (response) => {
-      if (response.success) {
-        // 更新本地状态
-        setIrCodes((prev) =>
-          prev.map((code) => (code.keyUUID === irCode.keyUUID ? { ...code, name: name.trim() } : code))
-        );
-      } else {
-        setSnackbarValue({
-          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleSaveIRCodeName',
-          logReason: 'pages.ir.remote.updateIRCodeFail',
-          open: true,
-          msg: t('pages.ir.remote.updateIRCodeFail'),
-          severity: 'error',
-        });
-      }
-    });
-  };
-
-  // 删除按键
-  const handleDeleteIRCode = (irCode) => {
-    setMenuState({ anchorEl: null, irCode: null });
-
-    deleteIRCode(hub3DeviceId, irCode.uuid, irCode.keyUUID, (response) => {
-      if (response.success) {
-        // 更新本地状态
-        setIrCodes((prev) => prev.filter((code) => code.keyUUID !== irCode.keyUUID));
-        removeKey(irCode.keyUUID);
-      } else {
-        setSnackbarValue({
-          logScope: 'pages/personal/devices/wifi-module/ir/learn/index.handleDeleteIRCode',
-          logReason: 'pages.ir.remote.deleteIRCodeFail',
-          open: true,
-          msg: t('pages.ir.remote.deleteIRCodeFail'),
-          severity: 'error',
-        });
-      }
-    });
-  };
-
-  // 关闭菜单
-  const handleCloseMenu = () => {
-    setMenuState({ anchorEl: null, irCode: null });
-  };
+  // 按键的「…」菜单：编辑名称、删除
+  const { openMenu, menuElement } = useKeyEditMenu({
+    getName: (item) => item.customName || '',
+    onEmptyName: () =>
+      setSnackbarValue({ open: true, msg: t('pages.ir.remote.nameCannotBeEmpty'), severity: 'warning' }),
+    onRename: (item, name) =>
+      renameKey(item, name, (success) => {
+        if (!success) showError('pages.ir.remote.updateIRCodeFail');
+      }),
+    onDelete: (item) =>
+      deleteKey(item, (success) => {
+        if (success) removeKey(item.id);
+        else showError('pages.ir.remote.deleteIRCodeFail');
+      }),
+  });
 
   // 重新加载数据
   const handleRefresh = useCallback(() => {
@@ -464,43 +256,32 @@ const RemoteLearn = () => {
       }
 
       // 2. 获取按键列表
-      getIRCodes(hub3DeviceId, remote.uuid, (response) => {
+      remoteCtrl.getRemoteKeys(hub3DeviceId, remote.uuid, (response) => {
         if (!response.success) {
           setIsLoading(false);
           console.error('failed to get IR code list:', response.message);
           setIsError(true);
           return;
         }
-        const keys = (response.data || []).map((key) => ({
-          ...key,
-          name: key.name,
-        }));
+        const keys = response.data?.keys || [];
         // 再取一次最新的按键顺序，两者一起显示，避免先按默认顺序显示再跳动；取不到就用列表里带的顺序
         getRemoteKeyOrder(hub3DeviceId, remote.uuid, (orderResponse) => {
           if (orderResponse.success) {
             setServerKeyOrder(orderResponse.data?.keyOrder || []);
           }
-          setIrCodes(keys);
+          setRows(keys);
           setIsLoading(false);
         });
       });
     }
-  }, [hub3DeviceId, remote, saveRemoteToServer, getIRCodes, getRemoteKeyOrder]);
+  }, [hub3DeviceId, remote, saveRemoteToServer, remoteCtrl, getRemoteKeyOrder, setRows]);
 
   // 初始化
   useEffect(() => {
     console.log('initializing data load...');
     if (hub3DeviceId && remote) {
-      subscribeIRModeChanges();
-      subscribeIRDataChanges();
-      getCurrentIRMode();
       handleRefresh();
     }
-
-    // 清理函数
-    return () => {
-      setMode(IR_MODE.CONTROL);
-    };
   }, [hub3DeviceId, remote]);
 
   // 处理修改
@@ -548,10 +329,10 @@ const RemoteLearn = () => {
   const renderIRCodeGrid = () => (
     <Box sx={{ px: 1, padding: 0, marginBottom: 10 }} data-ir-grid="true">
       <SortableKeyGrid
-        items={orderedIrCodes.map((irCode) => ({ id: irCode.keyUUID, irCode }))}
+        items={orderedIrCodes}
         cellHeight={140}
         onReorder={handleReorder}
-        renderItem={({ irCode }) => (
+        renderItem={(item) => (
           <Paper
             elevation={0}
             sx={{
@@ -575,7 +356,7 @@ const RemoteLearn = () => {
                 opacity: 0.3,
               },
             }}
-            onClick={() => handleEmitIRCode(irCode)}
+            onClick={() => handleEmitIRCode(item.irCode)}
           >
             <Typography
               variant="body2"
@@ -590,45 +371,10 @@ const RemoteLearn = () => {
                 whiteSpace: 'pre-line',
               }}
             >
-              {irCode.name || t('pages.ir.remote.mobileDefaultKeyName')}
+              {item.title}
             </Typography>
 
-            <Box
-              onClick={(e) => handleMenuClick(e, irCode)}
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                borderRadius: '50%',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                  transform: 'scale(1.1)',
-                  '& .menu-icon': {
-                    transform: 'scale(1.2)',
-                  },
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.12)',
-                },
-              }}
-            >
-              <MoreHoriz
-                className="menu-icon"
-                sx={{
-                  fontSize: '18px',
-                  color: 'text.secondary',
-                  transition: 'all 0.2s ease-in-out',
-                }}
-              />
-            </Box>
+            <KeyMoreButton onClick={(e) => openMenu(e, item)} />
           </Paper>
         )}
       />
@@ -718,6 +464,9 @@ const RemoteLearn = () => {
     );
   }
 
+  // 学习说明行：右上角有 ⊕、而且已经有按键时才显示（没有按键时页面中间的空白引导已经是这段说明）
+  const showLearnHint = !shouldHideToggleButton && irCodes.length > 0;
+
   // 正常界面
   return (
     <>
@@ -780,7 +529,8 @@ const RemoteLearn = () => {
             </Box>
           }
           sx={{
-            pb: 1,
+            // 有学习说明时标题栏下边距收小，让说明贴近右上角的 ⊕
+            pb: showLearnHint ? 0 : 1,
             paddingLeft: '10px',
             '& .MuiCardHeader-content': {
               minWidth: 0,
@@ -788,6 +538,9 @@ const RemoteLearn = () => {
             },
           }}
         />
+        {/* 学习说明：和码库遥控器页同一行；网页靠右对齐，结尾落在右上角 ⊕ 下方。
+            没有按键时页面中间已经显示这段说明，这里不再重复 */}
+        {showLearnHint && <LearnHint align={isMobile ? 'left' : 'right'} onAdd={enterLearnMode} />}
         <Box
           sx={{
             flex: 1,
@@ -859,61 +612,7 @@ const RemoteLearn = () => {
         </Box>
       </Card>
 
-      {/* 按键菜单 */}
-      <Popover
-        anchorEl={menuState.anchorEl}
-        open={Boolean(menuState.anchorEl)}
-        onClose={handleCloseMenu}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
-        }}
-        PaperProps={{
-          sx: {
-            minWidth: 120,
-            boxShadow: 3,
-          },
-        }}
-      >
-        <MenuItem onClick={() => handleEditIRCode(menuState.irCode)}>
-          <EditIcon sx={{ mr: 1 }} fontSize="small" />
-          {t('pages.ir.remote.edit')}
-        </MenuItem>
-        <MenuItem onClick={() => handleDeleteIRCode(menuState.irCode)} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          {t('pages.ir.remote.delete')}
-        </MenuItem>
-      </Popover>
-
-      {/* 编辑对话框 */}
-      <Dialog open={editDialog.open} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{t('pages.ir.remote.edit')}</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            fullWidth
-            variant="outlined"
-            value={editDialog.name}
-            onChange={(e) => setEditDialog((prev) => ({ ...prev, name: e.target.value }))}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSaveIRCodeName();
-              }
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>{t('pages.ir.remote.cancel')}</Button>
-          <Button onClick={handleSaveIRCodeName} variant="contained">
-            {t('pages.ir.remote.save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {menuElement}
     </>
   );
 };

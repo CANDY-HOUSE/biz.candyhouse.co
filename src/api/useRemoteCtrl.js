@@ -18,6 +18,10 @@ const IR_OPS = {
   duplicateIRRemote: 'duplicateIRRemote',
   setRemoteKeyOrder: 'setRemoteKeyOrder',
   getRemoteKeyOrder: 'getRemoteKeyOrder',
+  getRemoteKeys: 'getRemoteKeys',
+  renameRemoteKey: 'renameRemoteKey',
+  deleteRemoteKey: 'deleteRemoteKey',
+  storeRemoteKeys: 'storeRemoteKeys',
   updateRemoteAlias: 'updateRemoteAlias',
   getIRMode: 'getIRMode',
   setIRMode: 'setIRMode',
@@ -161,6 +165,15 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       case IR_OPS.getRemoteKeyOrder:
         if (!message.success) {
           console.error('remote key order get failed:', message.message);
+        }
+        break;
+
+      case IR_OPS.getRemoteKeys:
+      case IR_OPS.renameRemoteKey:
+      case IR_OPS.deleteRemoteKey:
+      case IR_OPS.storeRemoteKeys:
+        if (!message.success) {
+          console.error(`${message.op} failed:`, message.message);
         }
         break;
 
@@ -764,6 +777,71 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
     [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
   );
 
+  // 按键（预置按键与学习按键）的查询、改名、删除，后台是 ir_device_key。
+  // 预置按键 = 面板里写死的按键（id 如 power），学习按键 = 学到的码（id 是 keyUUID）。
+  const sendKeyMessage = useCallback(
+    (op, payload, cb) => {
+      const message = {
+        action: ACTION_TYPES.BIZ3_IR_REMOTE,
+        op,
+        ...payload,
+        companyID: gStripe.customerInfo.companyID,
+      };
+      handleSendMessage(message);
+      if (cb && typeof cb === 'function') {
+        registerCallback(message.action, message.op, cb);
+      }
+    },
+    [handleSendMessage, registerCallback, gStripe.customerInfo.companyID]
+  );
+
+  /**
+   * 取遥控器的按键（全量存储后一键一行；还没全量存储时只有学习按键）
+   * @param {function} cb - response.data = { uuid, keysStored, keys: [...] }
+   */
+  const getRemoteKeys = useCallback(
+    (hub3DeviceId, uuid, cb) => sendKeyMessage(IR_OPS.getRemoteKeys, { deviceId: hub3DeviceId, uuid }, cb),
+    [sendKeyMessage]
+  );
+
+  /**
+   * 按键改名
+   * @param {'preset'|'learned'} kind - 预置按键 / 学习按键
+   * @param {function} cb - response.data = { uuid, key }
+   */
+  const renameRemoteKey = useCallback(
+    (hub3DeviceId, uuid, keyId, kind, name, cb) =>
+      sendKeyMessage(IR_OPS.renameRemoteKey, { deviceId: hub3DeviceId, uuid, keyId, kind, name }, cb),
+    [sendKeyMessage]
+  );
+
+  /**
+   * 删除按键：预置按键删掉这一行；学习按键连同学到的码一起删掉
+   * @param {'preset'|'learned'} kind - 预置按键 / 学习按键
+   */
+  const deleteRemoteKey = useCallback(
+    (hub3DeviceId, uuid, keyId, kind, cb) =>
+      sendKeyMessage(IR_OPS.deleteRemoteKey, { deviceId: hub3DeviceId, uuid, keyId, kind }, cb),
+    [sendKeyMessage]
+  );
+
+  /**
+   * 全量写入预置按键（保存遥控器时、第一次拖拽 / 增删改前）：后台为每个按键生成 keyUUID，把顺序里的面板 id 换成 keyUUID，
+   * 写完遥控器带 keysStored。已全量存储时后台不再写。
+   * @param {{presetId: string, name?: string}[]} keys - 面板全部按键（去掉删除的，带上改过的名称）
+   * @param {string[]} [keyOrder] - 要一起转换写入的顺序（面板 id / 学习按键 keyUUID）；不传就转换线上已有的顺序
+   * @param {function} cb - response.data = { uuid, stored, keysStored, keys, keyOrder, idMap }，idMap = 面板 id → keyUUID
+   */
+  const storeRemoteKeys = useCallback(
+    (hub3DeviceId, uuid, keys, keyOrder, cb) =>
+      sendKeyMessage(
+        IR_OPS.storeRemoteKeys,
+        { deviceId: hub3DeviceId, uuid, keys, ...(Array.isArray(keyOrder) ? { keyOrder } : {}) },
+        cb
+      ),
+    [sendKeyMessage]
+  );
+
   /**
    * 获取IR模式
    * @param {string} deviceId - 设备ID
@@ -1139,6 +1217,10 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
     duplicateIRRemote,
     setRemoteKeyOrder,
     getRemoteKeyOrder,
+    getRemoteKeys,
+    renameRemoteKey,
+    deleteRemoteKey,
+    storeRemoteKeys,
     modifyIRRemote,
     getIRMode,
     setIRMode,

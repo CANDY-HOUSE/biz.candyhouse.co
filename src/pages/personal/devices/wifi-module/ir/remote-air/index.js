@@ -4,6 +4,8 @@ import React, { useContext, useState, useMemo, useEffect, useCallback } from 're
 import { Card, CardHeader, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
+import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { HXDParametersSwapper } from '../utils/HXDParametersSwapper';
 import { HXDCommandProcessor } from '../utils/HXDCommandProcessor';
@@ -36,19 +38,14 @@ import {
 
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
+import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
+import { useIrLearning } from '../hooks/useIrLearning.js';
+import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
+import LearnHint from '../components/LearnHint.js';
+import { KEY_KIND, mergeRemoteKeys, mapKeyIds } from '../utils/remoteKeys.js';
 
-// 空调页 9 个控件的默认顺序（id 与 airControlItems 一致）；模式、风速、风向、摆风各算一个整体按键
-const AIR_KEY_IDS = [
-  'power_on',
-  'temperature_display',
-  'power_off',
-  'temp_add',
-  'mode',
-  'temp_reduce',
-  'fan_speed',
-  'wind_direction',
-  'auto_swing',
-];
+// 可以改名的空调控件：开机、关机。其余是组合控件（标题随状态变化，如温度、模式、风速），只能删除、不能改名
+const AIR_RENAMABLE_IDS = ['power_on', 'power_off'];
 
 const RemoteAir = () => {
   const navigate = useNavigate();
@@ -66,6 +63,7 @@ const RemoteAir = () => {
   const parametersSwapper = useMemo(() => new HXDParametersSwapper(), []);
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
   const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
+  const remoteCtrl = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
   const {
     sendIR,
     updateRemoteState,
@@ -74,7 +72,7 @@ const RemoteAir = () => {
     addRemoteToMatter,
     updateLocalRemoteList,
     setRemoteKeyOrder,
-  } = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
+  } = remoteCtrl;
   const [hasRemoteSave, setHasRemoteSave] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [remote, setRemote] = useState({});
@@ -342,24 +340,108 @@ const RemoteAir = () => {
     [currentState]
   );
 
-  const { orderedIds, handleReorder, persistAfterSave, keepForReturn } = useKeyOrder({
-    remote,
-    savedUuid: hasRemoteSave ? remote.uuid : '',
-    defaultIds: AIR_KEY_IDS,
-    persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
-    onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
-  });
-  const orderedItems = useMemo(
-    () => orderedIds.map((id) => airControlItems.find((item) => item.id === id)).filter(Boolean),
-    [orderedIds, airControlItems]
+  const showError = useCallback(
+    (key) => setSnackbarValue({ open: true, msg: t(key), severity: 'error', logReason: key }),
+    [setSnackbarValue, t]
   );
+
+  // 按键 = 空调控件（全量存储后以后台为准，之前是全部 9 个；开关机可改名）+ 学习按键；未保存的遥控器只能改空调控件，先存草稿
+  const savedUuid = hasRemoteSave ? remote.uuid : '';
+  const remoteKeys = useRemoteKeys({
+    remote,
+    hub3DeviceId,
+    savedUuid,
+    panelItems: airControlItems,
+    api: remoteCtrl,
+    // 全量写入后：本地顺序里的面板 id 换成 keyUUID，同步本地遥控器列表（keysStored、转换后的顺序）
+    onStored: (data) => {
+      if (Array.isArray(data?.keyOrder) && data.keyOrder.length > 0) remote.keyOrder = data.keyOrder;
+      remapIds(data?.idMap);
+      updateLocalRemoteList(hub3DeviceId, { ...remote, keysStored: true });
+    },
+  });
+  const allItems = useMemo(
+    () =>
+      mergeRemoteKeys(airControlItems, remoteKeys.rows, remoteKeys.stored, t('pages.ir.remote.mobileDefaultKeyName')),
+    [airControlItems, remoteKeys.rows, remoteKeys.stored, t]
+  );
+  const defaultKeyIds = useMemo(() => allItems.map((item) => item.id), [allItems]);
+
+  // 右上角「+」学习新按键：遥控器保存后才显示；从 App 打开且为第一级页面时不显示（同自学习页）
+  const isFirstLevelFromApp =
+    (searchParams.get('fromType') === 'app' || gStripe.isFromApp) && window.history.length < 2;
+  const { isLearnMode, toggleLearnMode, enterLearnMode } = useIrLearning({
+    hub3DeviceId,
+    remoteUuid: remote.uuid,
+    enabled: !!hasRemoteSave && !!hub3DeviceId,
+    lazy: true,
+    api: remoteCtrl,
+    onLearned: remoteKeys.addLearnedRow,
+    onError: showError,
+  });
+
+  const { orderedIds, handleReorder, keepForReturn, removeKey, remapIds, replaceOrder, takeOrderForSave } = useKeyOrder(
+    {
+      remote,
+      savedUuid: hasRemoteSave ? remote.uuid : '',
+      defaultIds: defaultKeyIds,
+      persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
+      onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
+    }
+  );
+  const orderedItems = useMemo(
+    () => orderedIds.map((id) => allItems.find((item) => item.id === id)).filter(Boolean),
+    [orderedIds, allItems]
+  );
+
+  // 拖拽：第一次拖时先把按键全量写入后台（已全量存储时不做），顺序照常由 ir_device_key_order 保存
+  const onReorder = (ids) => {
+    if (hasRemoteSave && !remoteKeys.stored) {
+      // 先在页面上换成拖完的顺序；全量写入时后台把这份顺序一起换成 keyUUID，写完再按新的 id 写一次（防止写入排在别的操作后面）
+      replaceOrder(ids, false);
+      remoteKeys.ensureStored((ok, data) => {
+        if (ok && data?.idMap) replaceOrder(mapKeyIds(ids, data.idMap), true);
+      }, ids);
+      return;
+    }
+    handleReorder(ids);
+  };
+
+  // 按键的「…」菜单：编辑名称（组合控件置灰）、删除
+  const { openMenu, menuElement } = useKeyEditMenu({
+    canRename: (item) => item.kind === KEY_KIND.LEARNED || AIR_RENAMABLE_IDS.includes(item.presetId ?? item.id),
+    getName: (item) => item.customName || item.title || '',
+    onEmptyName: () =>
+      setSnackbarValue({ open: true, msg: t('pages.ir.remote.nameCannotBeEmpty'), severity: 'warning' }),
+    onRename: (item, name) =>
+      remoteKeys.renameKey(item, name, (success) => {
+        if (!success) showError('pages.ir.remote.updateIRCodeFail');
+      }),
+    onDelete: (item) =>
+      remoteKeys.deleteKey(item, (success, keyId) => {
+        if (success) removeKey(keyId);
+        else showError('pages.ir.remote.deleteIRCodeFail');
+      }),
+  });
 
   // 处理项目点击
   const handleItemClick = async (item) => {
     // 防止重复点击或点击不可点击项
     if (!item.clickable || clickedItem) return;
+    if (isLearnMode) {
+      setSnackbarValue({ open: true, msg: t('pages.ir.remote.cannotSendInLearnMode'), severity: 'warning' });
+      return;
+    }
 
     setClickedItem(item.id);
+    // 学习按键：发学到的码（learnEmit），不改空调的状态
+    if (item.kind === KEY_KIND.LEARNED) {
+      sendIR(hub3DeviceId, remote.uuid, item.id, 'learnEmit', remote.type, (response) => {
+        if (!response.success) console.error('learned IR code send failed:', response.message);
+      });
+      setTimeout(() => setClickedItem(null), 1000);
+      return;
+    }
 
     try {
       let newState = { ...currentState };
@@ -580,7 +662,11 @@ const RemoteAir = () => {
         if (response.success) {
           console.log('add IR remote success:', response.data);
           remote.uuid = remoteToSave.uuid;
-          const keyOrder = persistAfterSave(remoteToSave.uuid);
+          // 拖过的顺序随按键全量写入一起交给后台，后台换成 keyUUID 后写入
+          const keyOrder = takeOrderForSave();
+          remoteKeys.persistAfterSave(remoteToSave.uuid, keyOrder, (success) => {
+            if (!success) showError('pages.ir.remote.updateIRCodeFail');
+          });
           setHasRemoteSave(true);
           updateLocalRemoteList(hub3DeviceId, keyOrder ? { ...remoteToSave, keyOrder } : remoteToSave);
           addIRRemoteToMatter(remoteToSave);
@@ -610,6 +696,7 @@ const RemoteAir = () => {
 
   const handleMatchClick = async () => {
     keepForReturn();
+    remoteKeys.keepForReturn();
     navigate({
       pathname: '/biz/access-control/remote-match',
       search: createSearchParams({
@@ -698,10 +785,16 @@ const RemoteAir = () => {
                 <CheckCircleOutlineIcon />
               </IconButton>
             )}
+            {hasRemoteSave && !isFirstLevelFromApp && (
+              <IconButton onClick={toggleLearnMode} sx={{ flexShrink: 0 }}>
+                {isLearnMode ? <HighlightOffRoundedIcon /> : <AddCircleOutlineOutlinedIcon />}
+              </IconButton>
+            )}
           </Box>
         }
         sx={{
-          pb: 1,
+          // 有学习说明时标题栏下边距收小，让说明贴近右上角的 ⊕
+          pb: hasRemoteSave && !isFirstLevelFromApp ? 0 : 1,
           px: '10px',
           '& .MuiCardHeader-content': {
             overflow: 'hidden',
@@ -712,8 +805,11 @@ const RemoteAir = () => {
       <CardContent
         sx={{
           display: 'flex',
-          overflow: 'hidden',
-          height: '100vh',
+          // 学习按键多了会超出一屏，需可滚动
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+          minHeight: 0,
           width: '100%',
           padding: 0,
           margin: 0,
@@ -721,6 +817,10 @@ const RemoteAir = () => {
           alignItems: 'center',
         }}
       >
+        {/* 学习说明：标题栏下单独一行；网页靠右对齐，结尾落在右上角 ⊕ 下方 */}
+        {hasRemoteSave && !isFirstLevelFromApp && (
+          <LearnHint align={isMobile ? 'left' : 'right'} onAdd={enterLearnMode} />
+        )}
         <Box
           sx={{
             px: 1,
@@ -729,12 +829,14 @@ const RemoteAir = () => {
             display: 'flex',
             padding: 0,
             margin: 0,
+            // 给底部的「自动匹配」提示和来源说明留出空间，避免压住最后一行按键
+            pb: '104px',
             justifyContent: 'center',
           }}
         >
           <SortableKeyGrid
             items={orderedItems}
-            onReorder={handleReorder}
+            onReorder={onReorder}
             renderItem={(item) => {
               const isClicked = clickedItem === item.id;
               const IconComponent = item.icon;
@@ -754,6 +856,7 @@ const RemoteAir = () => {
                     margin: 0,
                     py: 1,
                     backgroundColor: 'transparent',
+                    position: 'relative',
                   }}
                   onClick={() => handleItemClick(item)}
                 >
@@ -769,12 +872,13 @@ const RemoteAir = () => {
                       color: 'inherit',
                     }}
                   >
-                    {item.title}
+                    {item.customName || item.title}
                   </Typography>
 
                   <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
                     {IconComponent ? <IconComponent opacity={isClicked ? 0.3 : 1} /> : <Box sx={{ height: 24 }} />}
                   </Box>
+                  <KeyMoreButton onClick={(e) => openMenu(e, item)} />
                 </Paper>
               );
             }}
@@ -828,6 +932,7 @@ const RemoteAir = () => {
           </Typography>
         </Box>
       </CardContent>
+      {menuElement}
     </Card>
   );
 };

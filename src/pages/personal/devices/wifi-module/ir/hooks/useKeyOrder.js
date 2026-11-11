@@ -110,10 +110,49 @@ export const useKeyOrder = ({ remote, savedUuid, defaultIds, persist, onPersiste
     [flush]
   );
 
+  // 预置按键全量写入后，按键 id 从面板 id 变成了 keyUUID：按 idMap（面板 id → keyUUID）换掉本地顺序和还没写的顺序里的 id
+  const remapIds = useCallback((idMap) => {
+    if (!idMap) return;
+    const map = (ids) => ids.map((id) => idMap[id] ?? id);
+    setState((prev) => ({ ...prev, order: map(prev.order) }));
+    if (pending.current) pending.current = { ...pending.current, keyOrder: map(pending.current.keyOrder) };
+  }, []);
+
+  // 直接换成给定的顺序；persist 为 true 且已保存时立即写后台（第一次拖拽：全量写入后按新的 keyUUID 写入拖完的顺序）
+  const replaceOrder = useCallback(
+    (ids, persist) => {
+      setState({ order: ids, type: latest.current.remoteType });
+      if (persist && latest.current.savedUuid) {
+        pending.current = { uuid: latest.current.savedUuid, keyOrder: ids };
+        flush();
+      }
+    },
+    [flush]
+  );
+
+  // 保存遥控器时调用：取出要随按键全量写入一起交给后台转换的顺序（没拖过返回 null），清掉草稿，不单独写后台。
+  // remote 是页面上的遥控器对象，同样写入 keyOrder，免得「已保存遥控器以 remote.keyOrder 为准」的同步把刚拖的顺序冲掉。
+  const takeOrderForSave = useCallback(() => {
+    const { orderedIds: ids } = latest.current;
+    clearKeyOrderDraft();
+    if (sameOrder(ids, defaultIds)) return null;
+    remote.keyOrder = ids;
+    return ids;
+  }, [defaultIds, remote]);
+
   // 跳去自动匹配页前调用：返回后恢复拖曳结果
   const keepForReturn = useCallback(() => {
     markKeyOrderDraftForReturn(latest.current.remoteType, latest.current.orderedIds);
   }, []);
 
-  return { orderedIds, handleReorder, persistAfterSave, keepForReturn, removeKey };
+  return {
+    orderedIds,
+    handleReorder,
+    persistAfterSave,
+    keepForReturn,
+    removeKey,
+    remapIds,
+    replaceOrder,
+    takeOrderForSave,
+  };
 };
