@@ -1,6 +1,9 @@
 /* eslint-disable no-restricted-globals -- Service Worker APIs are exposed on self. */
 // Public page assets only. Tokens, API responses and device keys never enter this cache.
 const CACHE = 'sesame-app-shell-v1';
+// Kept apart from CACHE so the shell's release pruning never removes it.
+const FONT_CACHE = 'sesame-app-fonts-v1';
+const FONT_CSS_ORIGIN = 'https://fonts.googleapis.com';
 const SHELL = '/?appHome=1&fromType=app';
 let warming;
 const assetUrl = (value) => {
@@ -72,6 +75,23 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+  if (request.method === 'GET' && url.origin === FONT_CSS_ORIGIN) {
+    // The font stylesheet blocks the first render; serve the stored copy and refresh it for the next start.
+    const network = fetch(request).then(async (response) => {
+      if (response.ok || response.type === 'opaque') {
+        await caches
+          .open(FONT_CACHE)
+          .then((cache) => cache.put(request, response.clone()))
+          .catch(() => {});
+      }
+      return response;
+    });
+    event.waitUntil(network.catch(() => {}));
+    event.respondWith(
+      caches.match(request, { cacheName: FONT_CACHE, ignoreVary: true }).then((cached) => cached || network)
+    );
+    return;
+  }
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (request.mode === 'navigate' && url.searchParams.get('appHome') === '1') {
     // Keep the cached shell usable when the network hangs, as well as when it is disconnected.

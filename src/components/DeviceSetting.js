@@ -5,12 +5,12 @@ import { isPeripheralModel } from '@/services/peripheralSettings';
 import { isBotModel, isScriptBotModel } from '@/services/botScripts';
 import AppBotSettings from './AppBotSettings';
 import { isAppLockModel } from '@/services/appLockSettings';
-import { isAppHome } from '@/services/deviceService';
+import { deviceService, isAppHome } from '@/services/deviceService';
 import { appHostSupports } from '@/services/appSession';
 import LockSettingsExtras from './LockSettingsExtras';
 import AppLockSettings from './AppLockSettings';
 import AppVoiceShortcut from './AppVoiceShortcut';
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useSyncExternalStore } from 'react';
 import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from './MobileDeviceSetting';
 import { Box, Divider, List, ListItem, ListItemText, Typography, SvgIcon, Switch } from '@mui/material';
@@ -52,6 +52,8 @@ function ExistingDeviceSetting({ showBack = true }) {
   const currentDevice = useMemo(() => {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase()) || {};
   }, [gManageDevice.companyDevices, did]);
+  const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
+  const nativeBattery = isAppHome ? nativeDevices[did.toUpperCase()]?.batteryPercentage : null;
 
   const onClickSetAngle = () => {
     setSnackbarValue({
@@ -233,7 +235,13 @@ function ExistingDeviceSetting({ showBack = true }) {
           Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID}
         />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <BatteryPercent device={currentDevice} />
+        <BatteryPercent
+          device={
+            nativeBattery != null
+              ? { ...currentDevice, stateInfo: { ...currentDevice.stateInfo, batteryPercentage: nativeBattery } }
+              : currentDevice
+          }
+        />
 
         {currentDevice?.stateInfo?.registerTime && (
           <>
