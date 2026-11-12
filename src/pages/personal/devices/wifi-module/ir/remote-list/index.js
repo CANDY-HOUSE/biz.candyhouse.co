@@ -1,16 +1,7 @@
-import BackButton from '@/components/BackButton';
+import IrPageHeader from '../components/IrPageHeader.js';
+import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import React, { useContext, useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Card,
-  CardHeader,
-  CardContent,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Card, CardContent, Typography, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import { DataSearch } from '@/components/biz/device/DataSearch.js';
@@ -45,8 +36,10 @@ export default function RemoteList() {
   const formRemoteControlKey = 'formRemoteControlKey';
   console.info('RemoteList initialized with  irType:', irType);
   const [searchTerm, setSearchTerm] = useState('');
-  const { gMediaType } = useContext(GlobalStateContext);
-  const isMobile = gMediaType.isMobile;
+  const { showBack, goBack, frameSx, scrollSx, contentSx } = useRemotePageFrame(() => {
+    localStorage.removeItem(formRemoteControlKey);
+    deleteSearchCache(irType);
+  });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     pageSize: 200,
@@ -412,34 +405,11 @@ export default function RemoteList() {
     [handleItemClick, t]
   );
 
-  const handleReturn = () => {
-    localStorage.removeItem(formRemoteControlKey);
-    deleteSearchCache(irType);
-    navigate(-1);
-  };
-
   // Loading State
   if (restoring || (isLoading && !hasRestoredFromCache.current)) {
     return (
-      <Card sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <CardHeader
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && <BackButton onClick={() => handleReturn()}></BackButton>}
-              <Typography
-                variant="h6"
-                sx={{
-                  fontSize: '1.2em',
-                  fontWeight: 'bold',
-                  lineHeight: '1.3',
-                  ml: 1,
-                }}
-              >
-                {t('pages.ir.remote.selectRemote')}
-              </Typography>
-            </Box>
-          }
-        />
+      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
+        <IrPageHeader showBack={showBack} onBack={goBack} title={t('pages.ir.remote.selectRemote')} />
         <CardContent sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <CircularProgress />
@@ -454,27 +424,22 @@ export default function RemoteList() {
 
   // Main Render
   return (
-    <Card sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <CardHeader
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && <BackButton onClick={() => handleReturn()}></BackButton>}
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: '1.2em',
-                fontWeight: 'bold',
-                lineHeight: '1.3',
-                ml: 1,
-              }}
-            >
-              {t('pages.ir.remote.selectRemote')}
-            </Typography>
-          </Box>
-        }
-      />
+    <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
+      <IrPageHeader showBack={showBack} onBack={goBack} title={t('pages.ir.remote.selectRemote')} />
 
-      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', pt: 0 }}>
+      <CardContent
+        sx={{
+          ...contentSx,
+          flex: 1,
+          minHeight: 0,
+          // 外层不滚动：标题、搜索框和提示固定在上方，只有下面的遥控器列表滚动
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          pt: 0,
+          pb: '0 !important',
+        }}
+      >
         <Box sx={{ mb: 2 }}>
           <DataSearch callSearch={handleSearch} initialValue={searchTerm} />
         </Box>
@@ -483,14 +448,15 @@ export default function RemoteList() {
             {t('pages.ir.remote.searchHint')}
           </Typography>
         )}
-        <Box sx={{ flex: 1, display: 'flex', position: 'relative' }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', position: 'relative' }}>
           <Box
             ref={listRef}
             sx={{
               flex: 1,
               overflowY: 'auto',
               pr: isSearchingMode ? 0 : 1,
-              maxHeight: 'calc(100vh - 200px)',
+              minHeight: 0,
+              ...scrollSx,
               scrollbarWidth: 'none',
               '&::-webkit-scrollbar': {
                 display: 'none',

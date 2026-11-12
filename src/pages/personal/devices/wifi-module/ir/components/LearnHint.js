@@ -40,8 +40,9 @@ const LearnHint = ({ align = 'left', onAdd }) => {
         boxSizing: 'border-box',
         flexShrink: 0,
         backgroundColor: 'background.paper',
-        // 上方不留白、贴近标题栏的 ⊕（不用负边距：内容区会把伸出顶部的部分裁掉），和下方按键拉开距离；网页右边距与标题栏一致（10px），文字结尾对齐 ⊕
-        ...(align === 'right' ? { pt: 0, pb: 3, pl: 2, pr: '10px' } : { pt: 0.5, pb: 2.5, px: 2 }),
+        // 上方不留白、贴近标题栏的 ⊕（不用负边距：内容区会把伸出顶部的部分裁掉），和下方按键拉开距离；
+        // 网页右边距与标题栏（IrPageHeader，32px）一致，文字结尾对齐 ⊕ 按钮的右边
+        ...(align === 'right' ? { pt: 0, pb: 3, pl: 2, pr: 4 } : { pt: 0.5, pb: 2.5, px: 2 }),
       }}
     >
       <Typography component="div" sx={{ fontSize: '1rem', lineHeight: 1.5, color: 'text.secondary', textAlign: align }}>

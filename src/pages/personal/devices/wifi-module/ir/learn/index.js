@@ -1,16 +1,6 @@
-import BackButton from '@/components/BackButton';
+import IrPageHeader, { IR_TITLE_STYLE } from '../components/IrPageHeader.js';
 import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  Box,
-  Typography,
-  IconButton,
-  Paper,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { Card, CardContent, Box, Typography, IconButton, Paper, Alert, CircularProgress } from '@mui/material';
 import { SignalWifiConnectedNoInternet4Rounded } from '@mui/icons-material';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
@@ -23,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
+import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
 import { useIrLearning } from '../hooks/useIrLearning.js';
 import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
@@ -49,6 +40,7 @@ const RemoteLearn = () => {
   const { t } = useTranslation();
 
   const isMobile = gMediaType.isMobile;
+  const { showBack, goBack, frameSx, scrollSx } = useRemotePageFrame();
 
   const showError = useCallback(
     (key) => setSnackbarValue({ open: true, msg: t(key), severity: 'error', logReason: key }),
@@ -391,26 +383,8 @@ const RemoteLearn = () => {
   // 如果正在加载
   if (isLoading) {
     return (
-      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        <CardHeader
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
-
-              <Typography
-                variant="h6"
-                sx={{
-                  fontSize: '1.2em',
-                  fontWeight: 'bold',
-                  lineHeight: '1.3',
-                  ml: 1,
-                }}
-              >
-                {remote?.alias}
-              </Typography>
-            </Box>
-          }
-        />
+      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
+        <IrPageHeader showBack={showBack} onBack={goBack} title={remote?.alias} />
         <CardContent
           sx={{
             flex: 1,
@@ -430,26 +404,8 @@ const RemoteLearn = () => {
   // 如果有错误
   if (isError) {
     return (
-      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        <CardHeader
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
-
-              <Typography
-                variant="h6"
-                sx={{
-                  fontSize: '1.2em',
-                  fontWeight: 'bold',
-                  lineHeight: '1.3',
-                  ml: 1,
-                }}
-              >
-                {remote?.alias}
-              </Typography>
-            </Box>
-          }
-        />
+      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
+        <IrPageHeader showBack={showBack} onBack={goBack} title={remote?.alias} />
         <CardContent
           sx={{
             flex: 1,
@@ -489,61 +445,35 @@ const RemoteLearn = () => {
           '& .MuiCardContent-root': {
             padding: 0,
           },
+          ...frameSx,
         }}
       >
-        <CardHeader
+        <IrPageHeader
+          showBack={showBack}
+          onBack={goBack}
           title={
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                minWidth: 0,
+            <EditableText
+              style={IR_TITLE_STYLE}
+              initialValue={remote.alias}
+              onSave={(newValue, callback) => {
+                if (!newValue || !callback) {
+                  return;
+                }
+                handleModify(newValue, (success) => {
+                  callback(success);
+                });
               }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
-                <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <EditableText
-                    style={{
-                      fontSize: '1.1em',
-                      fontWeight: 'bold',
-                      lineHeight: '1.3',
-                      width: '100%',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                    initialValue={remote.alias}
-                    onSave={(newValue, callback) => {
-                      if (!newValue || !callback) {
-                        return;
-                      }
-                      handleModify(newValue, (success) => {
-                        callback(success);
-                      });
-                    }}
-                  />
-                </Box>
-              </Box>
-
+            />
+          }
+          action={
+            <>
               {!shouldHideToggleButton && (
                 <IconButton onClick={toggleLearnMode}>
                   {isLearnMode ? <HighlightOffRoundedIcon /> : <AddCircleOutlineOutlinedIcon />}
                 </IconButton>
               )}
-            </Box>
+            </>
           }
-          sx={{
-            // 有学习说明时标题栏下边距收小，让说明贴近右上角的 ⊕
-            pb: showLearnHint ? 0 : 1,
-            paddingLeft: '10px',
-            '& .MuiCardHeader-content': {
-              minWidth: 0,
-              overflow: 'hidden',
-            },
-          }}
         />
         {/* 学习说明：和码库遥控器页同一行；网页靠右对齐，结尾落在右上角 ⊕ 下方。
             没有按键时页面中间已经显示这段说明，这里不再重复 */}
@@ -579,7 +509,7 @@ const RemoteLearn = () => {
             )}
 
             {/* 内容区域 */}
-            <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', ...scrollSx }}>
               {irCodes.length === 0 ? (
                 <Box
                   sx={{

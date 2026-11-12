@@ -1,7 +1,8 @@
-import BackButton from '@/components/BackButton';
+import IrPageHeader from '../components/IrPageHeader.js';
+import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 // /biz/ir/ir-type-list/index.js
 import React, { useContext } from 'react';
-import { Box, Card, CardContent, CardHeader, IconButton, List, ListItem, Typography } from '@mui/material';
+import { Box, Card, CardContent, IconButton, List, ListItem, Typography } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +26,8 @@ export default function IrTypeList() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const hub3DeviceId = searchParams.get('hub3DeviceId') || '';
-  const { gMediaType, gStripe } = useContext(GlobalStateContext);
-  const isMobile = gMediaType.isMobile;
+  const { gStripe } = useContext(GlobalStateContext);
+  const { showBack, goBack, frameSx, scrollSx, contentSx } = useRemotePageFrame();
   // 新增品类的 MUI 图标尺寸，与既有 32x32 的 png 图标对齐
   const svgIconStyle = { width: 32, height: 32, color: 'text.primary' };
 
@@ -153,26 +154,9 @@ export default function IrTypeList() {
   };
 
   return (
-    <Card>
-      <CardHeader
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: '1.2em',
-                fontWeight: 'bold',
-                lineHeight: '1.3',
-                ml: 1,
-              }}
-            >
-              {t('remoteControl.selectType', 'リモコンタイプを選択')}
-            </Typography>
-          </Box>
-        }
-      />
-      <CardContent>
+    <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
+      <IrPageHeader showBack={showBack} onBack={goBack} title={t('remoteControl.selectType', 'リモコンタイプを選択')} />
+      <CardContent sx={{ flex: 1, minHeight: 0, overflowY: 'auto', ...scrollSx, ...contentSx }}>
         <List disablePadding>
           {irTypes.map((type, _index) => (
             <ListItem key={type.id} sx={listItemStyle} onClick={() => handleTypeSelect(type)}>

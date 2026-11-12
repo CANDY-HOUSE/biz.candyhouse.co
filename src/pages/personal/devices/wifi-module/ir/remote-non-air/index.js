@@ -1,6 +1,5 @@
-import BackButton from '@/components/BackButton';
 import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
+import { Card, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
@@ -15,6 +14,8 @@ import { getRemotePanel } from './panels/index.js';
 import { IR_TYPE } from '../utils/irTypes.js';
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
+import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
+import IrPageHeader, { IR_TITLE_STYLE } from '../components/IrPageHeader.js';
 import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
 import { useIrLearning } from '../hooks/useIrLearning.js';
 import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
@@ -49,6 +50,7 @@ const RemoteNonAir = () => {
   const [matchedRemotes, setMatchedRemotes] = useState([]);
   const { t } = useTranslation();
   const isMobile = gMediaType.isMobile;
+  const { showBack, goBack, frameSx, scrollSx } = useRemotePageFrame();
 
   useEffect(() => {
     const initializeRemote = () => {
@@ -461,38 +463,32 @@ const RemoteNonAir = () => {
         '& .MuiCardContent-root': {
           padding: 0,
         },
+        ...frameSx,
       }}
     >
-      <CardHeader
+      <IrPageHeader
+        showBack={showBack}
+        onBack={goBack}
         title={
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-            {!isMobile && <BackButton onClick={() => navigate(-1)} sx={{ flexShrink: 0, mr: 1 }}></BackButton>}
-            <Box sx={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden', mr: 1 }}>
-              <EditableText
-                style={{
-                  fontSize: '1.1em',
-                  fontWeight: 'bold',
-                  lineHeight: '1.3',
-                  width: '100%',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-                initialValue={remote.alias}
-                onSave={
-                  hasRemoteSave
-                    ? (newValue, callback) => {
-                        if (!newValue || !callback) {
-                          return;
-                        }
-                        handleModify(newValue, (success) => {
-                          callback(success);
-                        });
-                      }
-                    : null
-                }
-              />
-            </Box>
+          <EditableText
+            style={IR_TITLE_STYLE}
+            initialValue={remote.alias}
+            onSave={
+              hasRemoteSave
+                ? (newValue, callback) => {
+                    if (!newValue || !callback) {
+                      return;
+                    }
+                    handleModify(newValue, (success) => {
+                      callback(success);
+                    });
+                  }
+                : null
+            }
+          />
+        }
+        action={
+          <>
             {!hasRemoteSave && (
               <IconButton onClick={handleSave} sx={{ flexShrink: 0 }}>
                 <CheckCircleOutlineIcon />
@@ -503,16 +499,8 @@ const RemoteNonAir = () => {
                 {isLearnMode ? <HighlightOffRoundedIcon /> : <AddCircleOutlineOutlinedIcon />}
               </IconButton>
             )}
-          </Box>
+          </>
         }
-        sx={{
-          // 有学习说明时标题栏下边距收小，让说明贴近右上角的 ⊕
-          pb: hasRemoteSave && !isFirstLevelFromApp ? 0 : 1,
-          px: '10px',
-          '& .MuiCardHeader-content': {
-            overflow: 'hidden',
-          },
-        }}
       />
 
       <CardContent
@@ -520,9 +508,9 @@ const RemoteNonAir = () => {
           display: 'flex',
           // 按键多的品类（如音响 29 键、DVD 31 键）内容会超出一屏，需可滚动
           overflowY: 'auto',
-          overflowX: 'hidden',
           flex: 1,
           minHeight: 0,
+          ...scrollSx,
           width: '100%',
           padding: 0,
           margin: 0,

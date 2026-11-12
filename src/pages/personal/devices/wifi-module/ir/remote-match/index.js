@@ -1,6 +1,7 @@
-import BackButton from '@/components/BackButton';
+import IrPageHeader from '../components/IrPageHeader.js';
+import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import React, { useState, useEffect, useContext } from 'react';
-import { Card, CardHeader, CardContent, Box, Typography, List, ListItem, Alert, CircularProgress } from '@mui/material';
+import { Card, CardContent, Box, Typography, List, ListItem, Alert, CircularProgress } from '@mui/material';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
@@ -11,7 +12,7 @@ const RemoteMatch = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
+  const { gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const { getIRMode, setIRMode, subscribeIRMode, subscribeIRData, unsubscribeIRMode, unsubscribeIRData, matchRemote } =
     useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
 
@@ -27,7 +28,7 @@ const RemoteMatch = () => {
 
   const existingResults = location.state?.searchResults || [];
   const { t } = useTranslation();
-  const isMobile = gMediaType.isMobile;
+  const { showBack, goBack, frameSx, scrollSx, contentSx } = useRemotePageFrame();
 
   // 常量定义
   const IR_MODE = {
@@ -261,39 +262,25 @@ const RemoteMatch = () => {
   return (
     <Card
       sx={{
-        height: '100vh',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        ...frameSx,
       }}
     >
-      <CardHeader
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!isMobile && <BackButton onClick={() => navigate(-1)}></BackButton>}
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: '1.2em',
-                fontWeight: 'bold',
-                lineHeight: '1.3',
-                ml: 1,
-              }}
-            >
-              {remote.model}
-            </Typography>
-          </Box>
-        }
-      />
+      <IrPageHeader showBack={showBack} onBack={goBack} title={remote.model} />
 
       <CardContent
         sx={{
+          ...contentSx,
           flex: 1,
           pt: 0,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          pb: 0,
+          minHeight: 0,
+          pb: '0 !important',
         }}
       >
         {!isConnected && (
@@ -328,7 +315,6 @@ const RemoteMatch = () => {
             minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
-            mb: '80px',
           }}
         >
           {isSearching && matchedRemotes.length === 0 && (
@@ -353,8 +339,9 @@ const RemoteMatch = () => {
             <Box
               sx={{
                 flex: 1,
-                overflow: 'auto',
+                overflowY: 'auto',
                 minHeight: 0,
+                ...scrollSx,
               }}
             >
               <List sx={{ padding: 0 }}>
@@ -432,33 +419,30 @@ const RemoteMatch = () => {
             </Box>
           )}
         </Box>
-
-        <Box
+      </CardContent>
+      <Box
+        sx={{
+          flexShrink: 0,
+          height: 40,
+          pb: 'env(safe-area-inset-bottom)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'background.paper',
+        }}
+      >
+        <Typography
+          variant="caption"
+          color="text.secondary"
           sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'background.paper',
+            display: 'block',
+            textAlign: 'center',
+            fontSize: '0.7rem',
           }}
         >
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              display: 'block',
-              textAlign: 'center',
-              fontSize: '0.7rem',
-            }}
-          >
-            HXD
-          </Typography>
-        </Box>
-      </CardContent>
+          HXD
+        </Typography>
+      </Box>
     </Card>
   );
 };

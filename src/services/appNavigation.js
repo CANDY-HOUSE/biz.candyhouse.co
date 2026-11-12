@@ -14,6 +14,12 @@ const appPageHeaderPaths = [
   '/biz/access-control/region',
   '/biz/wifi-module',
   '/biz/wifi-module/index',
+  '/biz/access-control/ir-type',
+  '/biz/access-control/remotes',
+  '/biz/access-control/remote-match',
+  '/biz/access-control/remote-air',
+  '/biz/access-control/remote-non-air',
+  '/biz/access-control/learn',
 ];
 // Open page layers (menu, QR scanner, sheets) close before system back leaves a page or the app.
 const layers = [];
