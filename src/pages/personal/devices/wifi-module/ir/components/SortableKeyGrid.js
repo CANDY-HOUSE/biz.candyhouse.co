@@ -25,6 +25,8 @@ const SortableCell = ({ id, index, count, cellHeight, suppressClickRef, children
       }}
       sx={{
         height: cellHeight,
+        minWidth: 0,
+        overflow: isDragging ? 'visible' : 'hidden',
         transform: transform ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)` : undefined,
         transition,
         zIndex: isDragging ? 2 : 'auto',
@@ -78,7 +80,7 @@ const SortableKeyGrid = ({ items, renderItem, onReorder, cellHeight = DEFAULT_CE
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, width: '100%' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`, width: '100%' }}>
           {items.map((item, index) => (
             <SortableCell
               key={item.id}

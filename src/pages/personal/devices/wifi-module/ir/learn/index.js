@@ -362,10 +362,17 @@ const RemoteLearn = () => {
               variant="body2"
               sx={{
                 textAlign: 'center',
-                fontSize: '1.2rem',
+                fontSize: { xs: '1rem', sm: '1.2rem' },
                 lineHeight: 1.2,
                 fontWeight: 'normal',
-                wordBreak: 'break-word',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                px: 1,
+                overflowWrap: 'anywhere',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
                 mb: 0.5,
                 pointerEvents: 'none',
                 whiteSpace: 'pre-line',
@@ -384,7 +391,7 @@ const RemoteLearn = () => {
   // 如果正在加载
   if (isLoading) {
     return (
-      <Card sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -423,7 +430,7 @@ const RemoteLearn = () => {
   // 如果有错误
   if (isError) {
     return (
-      <Card sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -472,7 +479,7 @@ const RemoteLearn = () => {
     <>
       <Card
         sx={{
-          height: '100vh',
+          height: '100dvh',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -547,6 +554,7 @@ const RemoteLearn = () => {
             display: 'flex',
             justifyContent: 'center',
             overflow: 'hidden',
+            minHeight: 0,
           }}
         >
           <CardContent
@@ -556,7 +564,7 @@ const RemoteLearn = () => {
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
-              height: '100vh',
+              minHeight: 0,
               width: '100%',
               padding: 0,
               margin: 0,

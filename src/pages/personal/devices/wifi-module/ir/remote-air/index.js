@@ -739,7 +739,7 @@ const RemoteAir = () => {
   return (
     <Card
       sx={{
-        height: '100vh',
+        height: '100dvh',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -829,8 +829,7 @@ const RemoteAir = () => {
             display: 'flex',
             padding: 0,
             margin: 0,
-            // 给底部的「自动匹配」提示和来源说明留出空间，避免压住最后一行按键
-            pb: '104px',
+            pb: 2,
             justifyContent: 'center',
           }}
         >
@@ -864,8 +863,16 @@ const RemoteAir = () => {
                   <Typography
                     variant="caption"
                     sx={{
-                      fontSize: '1.2rem',
+                      fontSize: { xs: '1rem', sm: '1.2rem' },
                       textAlign: 'center',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      px: 1,
+                      overflowWrap: 'anywhere',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                       opacity: isClicked ? 0.3 : 1,
                       lineHeight: 1.2,
                       fontWeight: 'normal',
@@ -875,8 +882,24 @@ const RemoteAir = () => {
                     {item.customName || item.title}
                   </Typography>
 
-                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                    {IconComponent ? <IconComponent opacity={isClicked ? 0.3 : 1} /> : <Box sx={{ height: 24 }} />}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      width: '100%',
+                      maxWidth: 140,
+                      boxSizing: 'border-box',
+                      px: 1,
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      justifyContent: 'center',
+                      mb: '24px',
+                    }}
+                  >
+                    {IconComponent ? (
+                      <IconComponent opacity={isClicked ? 0.3 : 1} width="100%" height="auto" />
+                    ) : (
+                      <Box sx={{ height: 24 }} />
+                    )}
                   </Box>
                   <KeyMoreButton onClick={(e) => openMenu(e, item)} />
                 </Paper>
@@ -884,54 +907,53 @@ const RemoteAir = () => {
             }}
           />
         </Box>
-
-        <Box
+      </CardContent>
+      <Box
+        sx={{
+          flexShrink: 0,
+          width: '100%',
+          pt: 1,
+          pb: 'max(12px, env(safe-area-inset-bottom))',
+          backgroundColor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+        }}
+      >
+        {!hasRemoteSave && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              px: 2,
+              py: 1,
+              cursor: 'pointer',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+            }}
+            onClick={() => handleMatchClick()}
+          >
+            <Typography variant="body2" color="text.secondary">
+              {t('pages.ir.remote.cannotControlAirConditionerAutoMatchRemote')} &gt;
+            </Typography>
+          </Box>
+        )}
+        <Typography
+          variant="caption"
+          color="text.secondary"
           sx={{
-            position: 'absolute',
-            bottom: 20,
-            pt: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            left: 0,
-            right: 0,
-            alignItems: 'center',
+            display: 'block',
+            textAlign: 'center',
+            mt: 1,
+            fontSize: '0.7rem',
           }}
         >
-          {!hasRemoteSave && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                px: 2,
-                py: 1,
-                cursor: 'pointer',
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                width: '100%',
-              }}
-              onClick={() => handleMatchClick()}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {t('pages.ir.remote.cannotControlAirConditionerAutoMatchRemote')} &gt;
-              </Typography>
-            </Box>
-          )}
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              display: 'block',
-              textAlign: 'center',
-              mt: 1,
-              fontSize: '0.7rem',
-            }}
-          >
-            {`${getRemoteSource(remote, t)} ${remote?.alias ?? ''}`}
-          </Typography>
-        </Box>
-      </CardContent>
+          {`${getRemoteSource(remote, t)} ${remote?.alias ?? ''}`}
+        </Typography>
+      </Box>
       {menuElement}
     </Card>
   );

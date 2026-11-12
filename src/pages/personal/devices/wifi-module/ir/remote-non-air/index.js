@@ -452,7 +452,7 @@ const RemoteNonAir = () => {
   return (
     <Card
       sx={{
-        height: '100vh',
+        height: '100dvh',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -542,8 +542,7 @@ const RemoteNonAir = () => {
             display: 'flex',
             padding: 0,
             margin: 0,
-            // 给底部固定的「自动匹配」提示条留出空间，避免压住最后一行按键
-            pb: '104px',
+            pb: 2,
             justifyContent: 'center',
           }}
         >
@@ -574,8 +573,16 @@ const RemoteNonAir = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      fontSize: '1.2rem',
+                      fontSize: { xs: '1rem', sm: '1.2rem' },
                       textAlign: 'center',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      px: 1,
+                      overflowWrap: 'anywhere',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
                       opacity: isClicked ? 0.3 : 1,
                       lineHeight: 1.2,
                       fontWeight: 'normal',
@@ -590,56 +597,53 @@ const RemoteNonAir = () => {
             }}
           />
         </Box>
-        <Box
+      </CardContent>
+      <Box
+        sx={{
+          flexShrink: 0,
+          width: '100%',
+          pt: 1,
+          pb: 'max(12px, env(safe-area-inset-bottom))',
+          backgroundColor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+        }}
+      >
+        {!hasRemoteSave && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              px: 2,
+              py: 1,
+              cursor: 'pointer',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+            }}
+            onClick={() => handleMatchClick()}
+          >
+            <Typography variant="body2" color="text.secondary">
+              {t('pages.ir.remote.cannotControlAutoMatchRemote', { type: getDeviceTypeName() })} &gt;
+            </Typography>
+          </Box>
+        )}
+        <Typography
+          variant="caption"
+          color="text.secondary"
           sx={{
-            position: 'fixed',
-            // 贴到视口底边：若留出间隙，滚动内容会从底部缝隙里透出来
-            bottom: 0,
-            pt: 4,
-            pb: '20px',
-            backgroundColor: 'background.paper',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            left: 0,
-            right: 0,
-            alignItems: 'center',
+            display: 'block',
+            textAlign: 'center',
+            mt: 1,
+            fontSize: '0.7rem',
           }}
         >
-          {!hasRemoteSave && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                px: 2,
-                py: 1,
-                cursor: 'pointer',
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                width: '100%',
-              }}
-              onClick={() => handleMatchClick()}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {t('pages.ir.remote.cannotControlAutoMatchRemote', { type: getDeviceTypeName() })} &gt;
-              </Typography>
-            </Box>
-          )}
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              display: 'block',
-              textAlign: 'center',
-              mt: 1,
-              fontSize: '0.7rem',
-            }}
-          >
-            HXD {remote?.alias}
-          </Typography>
-        </Box>
-      </CardContent>
+          HXD {remote?.alias}
+        </Typography>
+      </Box>
       {menuElement}
     </Card>
   );
