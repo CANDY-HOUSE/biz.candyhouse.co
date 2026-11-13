@@ -57,7 +57,9 @@
       "And": "和",
       "Login": "登錄",
       "EnterVerificationCode": "輸入電子郵件發送的驗證碼",
-      "ReturnToMailInput": "返回上一頁"
+      "ReturnToMailInput": "返回上一頁",
+      "LoginFailed": "登入失敗，請稍後再試",
+      "VerificationCodeIncorrect": "驗證碼錯誤，請重新登入"
     },
     "sesameAccessControlDevice": {
       "index": {

@@ -69,7 +69,11 @@ export default function AppTopBar() {
       }}
     >
       {!route.tab && (
-        <BackButton aria-label={t('peripheral.back')} onClick={() => appEvent('app-back')} sx={{ height: '100%' }} />
+        <BackButton
+          aria-label={t('peripheral.back')}
+          onClick={() => appEvent('app-back')}
+          sx={{ height: '100%', justifyContent: 'flex-start' }}
+        />
       )}
       {pathname === '/' && (
         <Box

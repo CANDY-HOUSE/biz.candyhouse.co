@@ -1,4 +1,4 @@
-import IrPageHeader from '../components/IrPageHeader.js';
+import PageHeader from '@/components/PageHeader';
 import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 // /biz/ir/ir-type-list/index.js
 import React, { useContext } from 'react';
@@ -155,7 +155,10 @@ export default function IrTypeList() {
 
   return (
     <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
-      <IrPageHeader showBack={showBack} onBack={goBack} title={t('remoteControl.selectType', 'リモコンタイプを選択')} />
+      <PageHeader
+        onBack={showBack ? goBack : undefined}
+        title={t('remoteControl.selectType', 'リモコンタイプを選択')}
+      />
       <CardContent sx={{ flex: 1, minHeight: 0, overflowY: 'auto', ...scrollSx, ...contentSx }}>
         <List disablePadding>
           {irTypes.map((type, _index) => (

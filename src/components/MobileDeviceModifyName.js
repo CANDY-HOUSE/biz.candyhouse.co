@@ -1,4 +1,5 @@
 import BackButton from '@/components/BackButton';
+import PageHeader from '@/components/PageHeader';
 import { isAppHome } from '@/services/deviceService';
 import React, { useContext } from 'react';
 import EditableText from './EditableText';
@@ -33,14 +34,18 @@ const MobileDeviceModifyName = () => {
 
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-      {(!gStripe.isFromApp || isAppHome) && (
-        <Box sx={{ display: 'flex', alignItems: 'center', pt: isAppHome ? 0 : 1, pl: 2 }}>
-          <BackButton onClick={() => navigate(-1)} disableRipple>
-            <Typography variant="h3" sx={{ color: 'title.main' }}>
-              {t('pages.login.ReturnToMailInput')}
-            </Typography>
-          </BackButton>
-        </Box>
+      {isAppHome ? (
+        <PageHeader onBack={() => navigate(-1)} />
+      ) : (
+        !gStripe.isFromApp && (
+          <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
+            <BackButton onClick={() => navigate(-1)} disableRipple>
+              <Typography variant="h3" sx={{ color: 'title.main' }}>
+                {t('pages.login.ReturnToMailInput')}
+              </Typography>
+            </BackButton>
+          </Box>
+        )
       )}
       <Box sx={{ bgcolor: 'secondary.light', p: 2 }}>
         <Typography sx={{ fontWeight: 'bold', color: 'info.main' }}>

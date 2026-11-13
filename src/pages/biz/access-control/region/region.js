@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import React, { useContext, useMemo } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, IconButton, Typography, Grid2 } from '@mui/material';
@@ -47,23 +46,18 @@ export default function SesameAccessControlDeviceRegion() {
           position: gMediaType.isMobile ? 'sticky' : 'static',
           zIndex: gMediaType.isMobile ? 1100 : 'auto',
           top: 'var(--page-header-offset, 0px)',
-          justifyContent: 'space-between',
-          px: gMediaType.isMobile ? 0 : 4,
         }}
-      >
-        <BackButton onClick={() => navigate(-1)} disableRipple>
-          <Typography variant="h3" sx={{ color: 'black' }}>
-            {deviceName}
-          </Typography>
-        </BackButton>
-        {gMediaType.isMobile ? (
-          !gUtils.isOPSModel(device.deviceModel) ? null : (
+        onBack={() => navigate(-1)}
+        title={deviceName}
+        action={
+          gMediaType.isMobile &&
+          gUtils.isOPSModel(device.deviceModel) && (
             <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
               <MoreHoriz sx={{ color: 'black' }} />
             </IconButton>
           )
-        ) : null}
-      </PageHeader>
+        }
+      />
       <Grid2
         container
         spacing={2}

@@ -28,7 +28,6 @@ import AppNavigation from './components/AppNavigation';
 import AppTopBar from './components/AppTopBar';
 import AppQrScanner from './components/AppQrScanner';
 import AppInternalTest from './components/AppInternalTest';
-import { appTabPaths } from './services/appNavigation';
 import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
 import { currentAppToken } from './services/appSession';
 import AppHomeRuntime from './components/AppHomeRuntime';
@@ -162,35 +161,26 @@ const AppFrame = ({ children }) => {
       contentRef.current.scrollTop = location.pathname === '/' ? homeScrollTop.current : 0;
     }
   }, [location.pathname]);
-  const appTab = isAppHome && appTabPaths.includes(location.pathname);
   if (!isAppHome) return children;
   return (
-    <Box
-      sx={
-        appTab
-          ? { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
-          : undefined
-      }
-    >
+    // Pages scroll inside the content box, never the document: the WebView moves even fixed elements while the
+    // document scrolls, which drags the title bar along.
+    <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <AppTopBar />
       <Box
         ref={contentRef}
         onScroll={(event) => {
           if (location.pathname === '/') homeScrollTop.current = event.currentTarget.scrollTop;
         }}
-        sx={
-          appTab
-            ? {
-                flex: 1,
-                minHeight: 0,
-                minWidth: 0,
-                position: 'relative',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                overscrollBehaviorX: 'none',
-              }
-            : undefined
-        }
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          minWidth: 0,
+          position: 'relative',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          overscrollBehaviorX: 'none',
+        }}
       >
         {children}
       </Box>
@@ -209,6 +199,8 @@ const App = () => {
             styles={{
               // Include dialogs rendered into body through portals; keep text editing available.
               body: { WebkitUserSelect: 'none', userSelect: 'none' },
+              // The WebView's own overscroll stretch moves the whole page, title bar included.
+              'html, body': { overscrollBehavior: 'none' },
               'input, textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]': {
                 WebkitUserSelect: 'text',
                 userSelect: 'text',

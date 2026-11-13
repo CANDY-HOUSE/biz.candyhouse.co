@@ -57,7 +57,9 @@
       "And": "と",
       "Login": "ログイン",
       "EnterVerificationCode": "メールに送信された確認コードを入力して下さい",
-      "ReturnToMailInput": "前ページに戻る"
+      "ReturnToMailInput": "前ページに戻る",
+      "LoginFailed": "ログインに失敗しました。しばらくしてから再度お試しください",
+      "VerificationCodeIncorrect": "確認コードが正しくありません。もう一度ログインしてください"
     },
     "sesameAccessControlDevice": {
       "index": {

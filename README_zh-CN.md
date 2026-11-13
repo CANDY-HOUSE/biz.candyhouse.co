@@ -71,3 +71,29 @@ flowchart LR
 | src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
 | src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
 | src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
+
+## Toast
+
+所有 toast 统一使用公共的 `GSnackbar`（`src/components/SnackBar.js`），不要新增其他实现。通过 `GlobalStateContext` 的 `setSnackbarValue` 调用：
+
+```js
+const { setSnackbarValue } = useContext(GlobalStateContext);
+setSnackbarValue({ open: true, msg: t('...') });
+```
+
+`severity: 'error'` 的通知不会显示，只记录日志（见 `src/services/operationFailure.js`）。
+
+## App 标题栏
+
+App 页面的标题栏统一使用公共组件 `PageHeader`（`src/components/PageHeader.js`），不在页面里各自实现。PC 不在此范围内，保持现有布局。
+
+```js
+<PageHeader onBack={() => navigate(-1)} title={deviceName} action={<IconButton>...</IconButton>} />
+```
+
+- `title`：紧挨返回箭头，用于纯文字标题。字符串按 h3 显示，点击也会返回。
+- `centerTitle`：位于箭头与右侧按钮之间的中间，用于带数字（如数量）或可编辑的标题。
+- 传 `EditableText` 等元素时使用 `pageHeaderTitleStyle`。
+- `action`：右侧按钮。
+- 自带标题栏的页面需加入 `src/services/appNavigation.js` 的 `appPageHeaderPaths`（会隐藏公共返回栏 `AppTopBar`）。
+- App 中文档本身不滚动，页面在 `AppFrame`（`src/App.js`）内滚动。WebView 在文档滚动时会连同 fixed 元素一起移动，因此不要依赖 `window` 的滚动。

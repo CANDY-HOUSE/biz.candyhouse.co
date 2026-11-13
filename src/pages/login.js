@@ -25,6 +25,11 @@ const LoginIndex = () => {
   const redirectPath = searchParams.get('redirect') || '/';
   const loginBtn = useRef(null);
 
+  const notifyLoginFailure = (logScope, msgKey) => {
+    setSnackbarValue({ logScope, severity: 'error', open: true });
+    setSnackbarValue({ open: true, severity: 'warning', msg: t(msgKey) });
+  };
+
   const handleAutoLogin = async () => {
     setMail(searchParams.get('email').trim());
     setMailChk(true);
@@ -34,12 +39,8 @@ const LoginIndex = () => {
       loginMail: searchParams.get('email').trim(),
       cb: (resp) => {
         if (resp instanceof Error) {
-          setSnackbarValue({
-            logScope: 'pages/login.handleAutoLogin',
-            severity: 'error',
-            open: true,
-            msg: resp.message,
-          });
+          setBtnState({ ready: true, loading: false });
+          notifyLoginFailure('pages/login.handleAutoLogin', 'pages.login.LoginFailed');
           return;
         }
         setVerifying(true);
@@ -72,9 +73,10 @@ const LoginIndex = () => {
       gAuth.handleChallenge({
         pagePwd,
         cb: (resp) => {
+          setIsSigning(false);
           setVerifying(false);
           if (resp instanceof Error) {
-            setSnackbarValue({ logScope: 'pages/login.LoginIndex', severity: 'error', open: true, msg: resp.message });
+            notifyLoginFailure('pages/login.LoginIndex', 'pages.login.VerificationCodeIncorrect');
             return;
           }
           // App 内登录成功由 native 接管（关闭 webview + 刷新），无需 Web 侧跳转
@@ -102,12 +104,8 @@ const LoginIndex = () => {
       cb: (resp) => {
         setPagePwd('');
         if (resp instanceof Error) {
-          setSnackbarValue({
-            logScope: 'pages/login.handleLoginBtnClick',
-            severity: 'error',
-            open: true,
-            msg: resp.message,
-          });
+          setBtnState({ ready: btnState.ready, loading: false });
+          notifyLoginFailure('pages/login.handleLoginBtnClick', 'pages.login.LoginFailed');
           return;
         }
         setVerifying(true);

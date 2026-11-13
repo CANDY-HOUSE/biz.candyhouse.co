@@ -15,7 +15,7 @@ import { IR_TYPE } from '../utils/irTypes.js';
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
 import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
-import IrPageHeader, { IR_TITLE_STYLE } from '../components/IrPageHeader.js';
+import PageHeader, { pageHeaderTitleStyle } from '@/components/PageHeader';
 import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
 import { useIrLearning } from '../hooks/useIrLearning.js';
 import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
@@ -466,12 +466,11 @@ const RemoteNonAir = () => {
         ...frameSx,
       }}
     >
-      <IrPageHeader
-        showBack={showBack}
-        onBack={goBack}
+      <PageHeader
+        onBack={showBack ? goBack : undefined}
         title={
           <EditableText
-            style={IR_TITLE_STYLE}
+            style={pageHeaderTitleStyle}
             initialValue={remote.alias}
             onSave={
               hasRemoteSave

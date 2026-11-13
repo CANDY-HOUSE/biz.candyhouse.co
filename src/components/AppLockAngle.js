@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Alert, Box, Button, ButtonBase, IconButton, Typography } from '@mui/material';
+import { Alert, Box, Button, ButtonBase, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
@@ -9,6 +9,7 @@ import LockSettingWheel from './LockSettingWheel';
 import LockCalibrationGraphic from './LockCalibrationGraphic';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import BleStatusBar from './BleStatusBar';
+import PageHeader from './PageHeader';
 import locked from '@/assets/lock-settings/locked.svg';
 import unlocked from '@/assets/lock-settings/unlocked.svg';
 
@@ -107,23 +108,7 @@ function LockAngle({ deviceUUID }) {
         color: '#111',
       }}
     >
-      <Box
-        component="header"
-        sx={{ height: 44, flexShrink: 0, position: 'relative', display: 'grid', placeItems: 'center', bgcolor: '#fff' }}
-      >
-        <IconButton
-          onClick={() => navigate(-1)}
-          aria-label={t('lockSettings.back')}
-          sx={{ position: 'absolute', left: 0, width: 44, height: 44, color: '#111' }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24">
-            <path d="M15 4 7 12l8 8" fill="none" stroke="currentColor" strokeWidth="1.7" />
-          </svg>
-        </IconButton>
-        <Typography sx={{ fontSize: 18, fontWeight: 'bold' }}>
-          {t('pages.sesameAccessControlDevice.index.SetAngle')}
-        </Typography>
-      </Box>
+      <PageHeader onBack={() => navigate(-1)} title={t('pages.sesameAccessControlDevice.index.SetAngle')} />
       <BleStatusBar deviceUUID={deviceUUID} />
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', pb: '30px', overscrollBehavior: 'contain' }}>
         <Typography sx={{ mt: 2, textAlign: 'center', fontSize: 18, color: '#999' }}>

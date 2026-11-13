@@ -1,4 +1,4 @@
-import BackButton from '@/components/BackButton';
+import PageHeader from '@/components/PageHeader';
 import LockSettingsSlider from './LockSettingsSlider';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
@@ -208,9 +208,7 @@ export default function AppAutoUnlock() {
 
   return (
     <Box sx={{ ...lockSettingsInteraction, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 48, flexShrink: 0, bgcolor: 'background.paper' }}>
-        <BackButton disableRipple onClick={() => navigate(-1)}></BackButton>
-      </Box>
+      <PageHeader onBack={() => navigate(-1)} />
       <ListItem sx={{ bgcolor: 'background.paper', flexShrink: 0 }}>
         <ListItemText primary={t('lockExtras.autoUnlock')} />
         <Switch disableRipple checked={preferences.autoUnlock} onChange={(_, value) => enable(value).catch(error)} />

@@ -57,7 +57,9 @@
       "And": "和",
       "Login": "登录",
       "EnterVerificationCode": "输入电子邮件中发送的验证码",
-      "ReturnToMailInput": "返回上一页"
+      "ReturnToMailInput": "返回上一页",
+      "LoginFailed": "登录失败，请稍后再试",
+      "VerificationCodeIncorrect": "验证码错误，请重新登录"
     },
     "sesameAccessControlDevice": {
       "index": {

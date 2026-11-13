@@ -1,4 +1,4 @@
-import IrPageHeader, { IR_TITLE_STYLE } from '../components/IrPageHeader.js';
+import PageHeader, { pageHeaderTitleStyle } from '@/components/PageHeader';
 import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Card, CardContent, Box, Typography, IconButton, Paper, Alert, CircularProgress } from '@mui/material';
 import { SignalWifiConnectedNoInternet4Rounded } from '@mui/icons-material';
@@ -384,7 +384,7 @@ const RemoteLearn = () => {
   if (isLoading) {
     return (
       <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
-        <IrPageHeader showBack={showBack} onBack={goBack} title={remote?.alias} />
+        <PageHeader onBack={showBack ? goBack : undefined} title={remote?.alias} />
         <CardContent
           sx={{
             flex: 1,
@@ -405,7 +405,7 @@ const RemoteLearn = () => {
   if (isError) {
     return (
       <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
-        <IrPageHeader showBack={showBack} onBack={goBack} title={remote?.alias} />
+        <PageHeader onBack={showBack ? goBack : undefined} title={remote?.alias} />
         <CardContent
           sx={{
             flex: 1,
@@ -448,12 +448,11 @@ const RemoteLearn = () => {
           ...frameSx,
         }}
       >
-        <IrPageHeader
-          showBack={showBack}
-          onBack={goBack}
+        <PageHeader
+          onBack={showBack ? goBack : undefined}
           title={
             <EditableText
-              style={IR_TITLE_STYLE}
+              style={pageHeaderTitleStyle}
               initialValue={remote.alias}
               onSave={(newValue, callback) => {
                 if (!newValue || !callback) {

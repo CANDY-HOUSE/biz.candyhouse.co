@@ -71,3 +71,29 @@ The page cache is registered only in the Web App host when Service Worker suppor
 | src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
 | src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
 | src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
+
+## Toast
+
+All toasts use the shared `GSnackbar` (`src/components/SnackBar.js`); do not add other implementations. Call `setSnackbarValue` from `GlobalStateContext`.
+
+```js
+const { setSnackbarValue } = useContext(GlobalStateContext);
+setSnackbarValue({ open: true, msg: t('...') });
+```
+
+Notifications with `severity: 'error'` are not shown, only logged (`src/services/operationFailure.js`).
+
+## App title bar
+
+App page title bars all use the shared `PageHeader` (`src/components/PageHeader.js`); pages do not build their own. PC is out of scope and keeps its existing layouts.
+
+```js
+<PageHeader onBack={() => navigate(-1)} title={deviceName} action={<IconButton>...</IconButton>} />
+```
+
+- `title`: right after the back arrow, for a plain text title. A string renders as h3 and also goes back on tap.
+- `centerTitle`: centered between the arrow and the right buttons, for a title that contains a number such as a count, or that can be edited.
+- For an element such as `EditableText`, use `pageHeaderTitleStyle`.
+- `action`: right side buttons.
+- Pages with their own header go in `appPageHeaderPaths` in `src/services/appNavigation.js` (this hides the shared back bar `AppTopBar`).
+- In the App the document never scrolls; pages scroll inside `AppFrame` (`src/App.js`). The WebView moves even fixed elements while the document scrolls, so do not rely on `window` scrolling.

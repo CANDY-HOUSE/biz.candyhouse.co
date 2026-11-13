@@ -1,4 +1,4 @@
-import IrPageHeader from '../components/IrPageHeader.js';
+import PageHeader from '@/components/PageHeader';
 import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import React, { useState, useEffect, useContext } from 'react';
 import { Card, CardContent, Box, Typography, List, ListItem, Alert, CircularProgress } from '@mui/material';
@@ -269,7 +269,7 @@ const RemoteMatch = () => {
         ...frameSx,
       }}
     >
-      <IrPageHeader showBack={showBack} onBack={goBack} title={remote.model} />
+      <PageHeader onBack={showBack ? goBack : undefined} title={remote.model} />
 
       <CardContent
         sx={{

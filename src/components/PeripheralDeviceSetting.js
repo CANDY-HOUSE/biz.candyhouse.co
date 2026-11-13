@@ -232,13 +232,27 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   const title = device.deviceName || params.get('deviceName') || model;
   return (
     <Box sx={{ height: showBack ? '100dvh' : '100%', overflowY: 'auto', bgcolor: 'background.default' }}>
-      {showBack && (
-        <PageHeader>
-          <BackButton onClick={() => navigate(-1)}></BackButton>
-          <Typography variant="h3">{title}</Typography>
-        </PageHeader>
-      )}
-      {isAppHome && !sleeping && <BleStatusBar deviceUUID={id} />}
+      {showBack &&
+        (isAppHome ? (
+          <PageHeader onBack={() => navigate(-1)} title={title} />
+        ) : (
+          <Box
+            component="header"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              minHeight: 48,
+              bgcolor: 'background.paper',
+              position: 'sticky',
+              top: 0,
+              zIndex: 1100,
+            }}
+          >
+            <BackButton onClick={() => navigate(-1)}></BackButton>
+            <Typography variant="h3">{title}</Typography>
+          </Box>
+        ))}
+      {isAppHome && !sleeping && <BleStatusBar deviceUUID={id} top={showBack ? undefined : 0} />}
       <List>
         {!wifi && (
           <>

@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import { isAppHome } from '@/services/deviceService';
 import { deviceDetailFor } from '@/services/deviceDetail';
 import React, { useContext, useMemo } from 'react';
@@ -36,15 +35,10 @@ const WifiModuleIndex = () => {
           position: gMediaType.isMobile ? 'sticky' : 'static',
           zIndex: gMediaType.isMobile ? 1100 : 'auto',
           top: 'var(--page-header-offset, 0px)',
-          px: gMediaType.isMobile ? 0 : 4,
         }}
-      >
-        <BackButton onClick={() => navigate(-1)} disableRipple>
-          <Typography variant="h3" sx={{ color: 'black' }}>
-            {deviceName}
-          </Typography>
-        </BackButton>
-      </PageHeader>
+        onBack={() => navigate(-1)}
+        title={deviceName}
+      />
       <Grid2
         container
         spacing={2}

@@ -57,7 +57,9 @@
       "And": "and",
       "Login": "Login",
       "EnterVerificationCode": "Enter the verification code sent to your email",
-      "ReturnToMailInput": "Back to previous page"
+      "ReturnToMailInput": "Back to previous page",
+      "LoginFailed": "Login failed. Please try again later.",
+      "VerificationCodeIncorrect": "Incorrect verification code. Please log in again."
     },
     "sesameAccessControlDevice": {
       "index": {

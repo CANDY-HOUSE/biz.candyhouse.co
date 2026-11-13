@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import { syncCredentials } from '@/services/credentialSync';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
@@ -312,39 +311,47 @@ export default function AppCredentials() {
   if (!supported) return <Alert severity="warning">{t('peripheral.unsupported')}</Alert>;
   return (
     <Box sx={{ height: '100vh', overflow: 'auto', bgcolor: 'background.default' }}>
-      <PageHeader>
-        <BackButton onClick={() => navigate(-1)} aria-label={t('peripheral.back')}></BackButton>
-        <Typography sx={{ flex: 1, textAlign: 'center' }}>
-          {items.length}/{limit}
-        </Typography>
-        {(busy ||
-          syncing ||
-          (isAppHome && native?.bleConnected && data?.loading !== false && !error && !data?.loadFailed)) && (
-          <CircularProgress size={20} sx={{ color: '#28aeb1' }} />
-        )}
-        <IconButton
-          {...longPress}
-          disabled={
-            !isAppHome ||
-            busy ||
-            !native?.bleConnected ||
-            !data ||
-            data.loading !== false ||
-            data.loadFailed ||
-            (data?.mode !== 1 && items.length >= limit)
-          }
-          aria-label={t(data?.mode === 1 ? 'peripheral.stopEnroll' : 'peripheral.enroll')}
-          onClick={() => {
-            if (longPressed.current) {
-              longPressed.current = false;
-              return;
-            }
-            act(() => request('credentialMode', { value: data?.mode === 1 ? (kind === 'fingerprint' ? 2 : 0) : 1 }));
-          }}
-        >
-          {data?.mode === 1 ? <Close /> : <Add />}
-        </IconButton>
-      </PageHeader>
+      <PageHeader
+        onBack={() => navigate(-1)}
+        centerTitle={
+          <Typography>
+            {items.length}/{limit}
+          </Typography>
+        }
+        action={
+          <>
+            {(busy ||
+              syncing ||
+              (isAppHome && native?.bleConnected && data?.loading !== false && !error && !data?.loadFailed)) && (
+              <CircularProgress size={20} sx={{ color: '#28aeb1' }} />
+            )}
+            <IconButton
+              {...longPress}
+              disabled={
+                !isAppHome ||
+                busy ||
+                !native?.bleConnected ||
+                !data ||
+                data.loading !== false ||
+                data.loadFailed ||
+                (data?.mode !== 1 && items.length >= limit)
+              }
+              aria-label={t(data?.mode === 1 ? 'peripheral.stopEnroll' : 'peripheral.enroll')}
+              onClick={() => {
+                if (longPressed.current) {
+                  longPressed.current = false;
+                  return;
+                }
+                act(() =>
+                  request('credentialMode', { value: data?.mode === 1 ? (kind === 'fingerprint' ? 2 : 0) : 1 })
+                );
+              }}
+            >
+              {data?.mode === 1 ? <Close /> : <Add />}
+            </IconButton>
+          </>
+        }
+      />
       {isAppHome && <BleStatusBar deviceUUID={id} />}
       {!isAppHome && <Alert severity="info">Coming soon</Alert>}
       {error && (

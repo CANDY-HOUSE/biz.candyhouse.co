@@ -1,4 +1,3 @@
-import BackButton from '@/components/BackButton';
 import PageHeader from '@/components/PageHeader';
 import React, { useContext, useEffect, useMemo } from 'react';
 import { Box, Grid2, IconButton, Typography } from '@mui/material';
@@ -47,22 +46,18 @@ const DeviceItem = () => {
           position: gMediaType.isMobile ? 'sticky' : 'static',
           zIndex: gMediaType.isMobile ? 1100 : 'auto',
           top: 'var(--page-header-offset, 0px)',
-          justifyContent: 'space-between',
-          px: gMediaType.isMobile ? 0 : 4,
         }}
-      >
-        <BackButton onClick={() => navigate(-1)} disableRipple>
-          <Typography variant="h3" sx={{ color: 'black' }}>
-            {/* The list carries renames made in device settings; the query keeps the name from entry. */}
-            {device.deviceName || deviceName}
-          </Typography>
-        </BackButton>
-        {gMediaType.isMobile ? (
-          <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
-            <MoreHoriz sx={{ color: 'black' }} />
-          </IconButton>
-        ) : null}
-      </PageHeader>
+        onBack={() => navigate(-1)}
+        // The list carries renames made in device settings; the query keeps the name from entry.
+        title={device.deviceName || deviceName}
+        action={
+          gMediaType.isMobile && (
+            <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
+              <MoreHoriz sx={{ color: 'black' }} />
+            </IconButton>
+          )
+        }
+      />
       <Grid2
         container
         spacing={2}

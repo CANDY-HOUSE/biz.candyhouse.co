@@ -1,4 +1,4 @@
-import IrPageHeader from '../components/IrPageHeader.js';
+import PageHeader from '@/components/PageHeader';
 import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import React, { useContext, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Box, Card, CardContent, Typography, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
@@ -409,7 +409,7 @@ export default function RemoteList() {
   if (restoring || (isLoading && !hasRestoredFromCache.current)) {
     return (
       <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
-        <IrPageHeader showBack={showBack} onBack={goBack} title={t('pages.ir.remote.selectRemote')} />
+        <PageHeader onBack={showBack ? goBack : undefined} title={t('pages.ir.remote.selectRemote')} />
         <CardContent sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <CircularProgress />
@@ -425,7 +425,7 @@ export default function RemoteList() {
   // Main Render
   return (
     <Card sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', ...frameSx }}>
-      <IrPageHeader showBack={showBack} onBack={goBack} title={t('pages.ir.remote.selectRemote')} />
+      <PageHeader onBack={showBack ? goBack : undefined} title={t('pages.ir.remote.selectRemote')} />
 
       <CardContent
         sx={{

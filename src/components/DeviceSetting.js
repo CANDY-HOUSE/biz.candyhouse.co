@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import PeripheralDeviceSetting from './PeripheralDeviceSetting';
 import { isPeripheralModel } from '@/services/peripheralSettings';
 import { isBotModel, isScriptBotModel } from '@/services/botScripts';
@@ -37,7 +36,7 @@ export default function DeviceSetting(props) {
 }
 
 function ExistingDeviceSetting({ showBack = true }) {
-  const { gStripe, gManageDevice, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
+  const { gStripe, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -182,16 +181,8 @@ function ExistingDeviceSetting({ showBack = true }) {
         scrollbarWidth: 'none',
       }}
     >
-      {showBack && (
-        <PageHeader sx={{ justifyContent: 'space-between', px: gMediaType.isMobile ? 0 : 4 }}>
-          <BackButton onClick={() => navigate(-1)} disableRipple>
-            <Typography variant="h3" sx={{ color: 'black' }}>
-              {currentDevice.deviceName || deviceName}
-            </Typography>
-          </BackButton>
-        </PageHeader>
-      )}
-      {isAppHome && <BleStatusBar deviceUUID={did} />}
+      {showBack && <PageHeader onBack={() => navigate(-1)} title={currentDevice.deviceName || deviceName} />}
+      {isAppHome && <BleStatusBar deviceUUID={did} top={showBack ? undefined : 0} />}
       <List>
         <ListItem disablePadding>
           <MobileDeviceSetting />

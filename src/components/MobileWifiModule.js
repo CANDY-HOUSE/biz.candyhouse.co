@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import WifiNetworkStatus from './WifiNetworkStatus';
 import PeripheralDeviceSetting from './PeripheralDeviceSetting';
 import AppHubWifi from './AppHubWifi';
@@ -409,11 +408,7 @@ const ExistingWifiModule = () => {
         scrollbarWidth: 'none',
       }}
     >
-      {isAppHome && (
-        <PageHeader>
-          <BackButton onClick={() => navigate(-1)} disableRipple aria-label={t('lockSettings.back')}></BackButton>
-        </PageHeader>
-      )}
+      {isAppHome && <PageHeader onBack={() => navigate(-1)} />}
       {isAppHome && <BleStatusBar deviceUUID={did} />}
       {showBleStatus && (
         <Box

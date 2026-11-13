@@ -71,3 +71,29 @@ flowchart LR
 | src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
 | src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
 | src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
+
+## Toast
+
+Toast は共通の `GSnackbar`（`src/components/SnackBar.js`）に統一し、他の実装は追加しません。`GlobalStateContext` の `setSnackbarValue` を使います。
+
+```js
+const { setSnackbarValue } = useContext(GlobalStateContext);
+setSnackbarValue({ open: true, msg: t('...') });
+```
+
+`severity: 'error'` を指定すると表示されず、ログのみ記録されます（`src/services/operationFailure.js`）。
+
+## App のタイトルバー
+
+App のページのタイトルバーは共通の `PageHeader`（`src/components/PageHeader.js`）に統一し、ページごとに作りません。PC は対象外で、既存のレイアウトを変えません。
+
+```js
+<PageHeader onBack={() => navigate(-1)} title={deviceName} action={<IconButton>...</IconButton>} />
+```
+
+- `title`：戻る矢印のすぐ右。文字だけのタイトルに使います。文字列は h3 で表示され、タップでも戻ります。
+- `centerTitle`：矢印と右側ボタンの間の中央。件数などの数字を含むタイトルや、編集できるタイトルに使います。
+- `EditableText` などの要素を渡すときは `pageHeaderTitleStyle` を使います。
+- `action`：右側のボタン。
+- 独自のヘッダーを持つページは `src/services/appNavigation.js` の `appPageHeaderPaths` に追加します（共通の戻るバー `AppTopBar` が非表示になります）。
+- App ではドキュメント自体はスクロールせず、ページは `AppFrame`（`src/App.js`）の中でスクロールします。WebView はドキュメントのスクロール中に fixed 要素ごと動かすため、`window` のスクロールに依存しないでください。

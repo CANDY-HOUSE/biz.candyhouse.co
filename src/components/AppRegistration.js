@@ -176,7 +176,7 @@ export default function AppRegistration() {
       }}
     >
       <AppRefreshIndicator distance={pullDistance} refreshing={refreshing} />
-      <BleStatusBar bluetoothOff={discovery.bluetoothOff} />
+      <BleStatusBar bluetoothOff={discovery.bluetoothOff} top={0} />
       <List sx={{ px: 2, display: discovery.devices.length ? 'block' : 'none' }}>
         {devices.map((device) => {
           const connected = ['readyToRegister', 'bleConnecting', 'waitingGatt', 'bleLogining', 'registering'].includes(

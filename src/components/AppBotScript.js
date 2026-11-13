@@ -1,5 +1,4 @@
 import PageHeader from '@/components/PageHeader';
-import BackButton from '@/components/BackButton';
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -132,9 +131,10 @@ export default function AppBotScript() {
   const disabled = busy || !bot.connected || !script || !!pendingCloud;
   return (
     <Box sx={lockSettingsInteraction}>
-      <PageHeader sx={{ pl: 0, pr: 2 }}>
-        <BackButton disableRipple onClick={() => navigate(-1)}></BackButton>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+      <PageHeader
+        sx={{ pr: 2 }}
+        onBack={() => navigate(-1)}
+        centerTitle={
           <Button
             disableRipple
             disabled={!script || busy}
@@ -143,16 +143,18 @@ export default function AppBotScript() {
           >
             {alias} 🖊 ({script?.actions.length ?? 0}/20)
           </Button>
-        </Box>
-        <IconButton
-          disableRipple
-          aria-label={t('botSettings.add')}
-          disabled={disabled || script.actions.length >= 20}
-          onClick={() => persist({ ...script, actions: [...script.actions, { type: 0, time: 0 }] })}
-        >
-          <AddCircleOutline />
-        </IconButton>
-      </PageHeader>
+        }
+        action={
+          <IconButton
+            disableRipple
+            aria-label={t('botSettings.add')}
+            disabled={disabled || script.actions.length >= 20}
+            onClick={() => persist({ ...script, actions: [...script.actions, { type: 0, time: 0 }] })}
+          >
+            <AddCircleOutline />
+          </IconButton>
+        }
+      />
       <BleStatusBar deviceUUID={deviceUUID} />
       <Typography sx={{ bgcolor: 'secondary.main', p: 2, color: 'text.secondary', whiteSpace: 'pre-line' }}>
         {t('botSettings.hint', {
