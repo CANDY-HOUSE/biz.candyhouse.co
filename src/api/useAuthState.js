@@ -50,6 +50,7 @@ export const useAuthState = () => {
     isAppHome && initialAppToken() ? gConfig.loginState.login : gConfig.loginState.loginOut
   );
   const [isClearData, setIsClearData] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [user, setUser] = useState({});
 
   useEffect(() => {
@@ -172,6 +173,7 @@ export const useAuthState = () => {
   };
 
   const handleSignout = async (cb) => {
+    if (isAppHome) setIsSigningOut(true);
     try {
       if (isAppHome) await retireLegacySession();
       await Auth.forgetDevice().catch(() => {});
@@ -240,6 +242,7 @@ export const useAuthState = () => {
     loginState,
     setLoginState,
     isClearData,
+    isSigningOut,
     handleSign,
     handleChallenge,
     handleSignout,

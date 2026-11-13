@@ -1,5 +1,5 @@
 import { bleStateLabel } from '@/services/blePresentation';
-import { isPeripheralModel } from '@/services/peripheralSettings';
+import { isBike, isPeripheralModel } from '@/services/peripheralSettings';
 import { initializeBotScripts, isScriptBotModel } from '@/services/botScripts';
 import { rememberGuestDevice } from '@/services/guestDevices';
 import { forgetRemovedDevice, removedDevices } from '@/services/removedDevices';
@@ -124,13 +124,18 @@ export default function AppRegistration() {
         rememberGuestDevice(gStripe.customerInfo.subUUID, result.data);
       await deviceService.request('keysUploaded', { deviceUUID: device.deviceUUID });
       if (isScriptBotModel(result.data.deviceModel)) {
-        await initializeBotScripts(device.deviceUUID, [], 0, true);
+        initializeBotScripts(device.deviceUUID, [], 0, true)
+          .then((rows) =>
+            gManageDevice.updateDeviceState({ deviceUUID: result.data.deviceUUID, stateInfo: { scriptList: rows } })
+          )
+          .catch((e) => console.warn('initializeBotScripts failed', e));
       }
       gManageDevice.getCompanyDevices(true);
       if (active.current) {
         navigate('/?appHome=1&fromType=app', { replace: true });
         const isHub = ['hub_3', 'hub_3_pro'].includes(result.data.deviceModel);
-        if (isAppLockModel(result.data.deviceModel) || isHub || isPeripheralModel(result.data.deviceModel)) {
+        const isPeripheral = isPeripheralModel(result.data.deviceModel) && !isBike(result.data.deviceModel);
+        if (isAppLockModel(result.data.deviceModel) || isHub || isPeripheral) {
           const params = new URLSearchParams({
             appHome: '1',
             fromType: 'app',
@@ -140,11 +145,7 @@ export default function AppRegistration() {
             setup: '1',
           });
           navigate({
-            pathname: isHub
-              ? '/biz/wifi-module/index'
-              : isPeripheralModel(result.data.deviceModel)
-                ? '/device-setting'
-                : '/device-setting/angle',
+            pathname: isHub ? '/biz/wifi-module/index' : isPeripheral ? '/device-setting' : '/device-setting/angle',
             search: params.toString(),
           });
         }

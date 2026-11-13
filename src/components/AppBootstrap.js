@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { isAppShell } from '@/services/appBridge';
 import { prepareAppSession } from '@/services/appSession';
 import AppOfflineDevices, { AppOfflineStateContext } from './AppOfflineDevices';
+import { DeferredLoading } from './deferredComponent';
 
 export default function AppBootstrap({ children }) {
   const location = useLocation();
@@ -48,6 +49,8 @@ export default function AppBootstrap({ children }) {
         children
       ) : location.pathname === '/' ? (
         <AppOfflineDevices retry={() => setAttempt((value) => value + 1)} connecting={connecting} />
+      ) : connecting ? (
+        <DeferredLoading />
       ) : null}
     </AppOfflineStateContext.Provider>
   );

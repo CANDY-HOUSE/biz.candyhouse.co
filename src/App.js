@@ -1,6 +1,6 @@
 import { gUtils } from '@/utils/gUtils';
 import { Amplify } from '@aws-amplify/core';
-import deferredComponent from './components/deferredComponent';
+import deferredComponent, { DeferredLoading } from './components/deferredComponent';
 import Layout from '@components/biz/layout';
 import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
 import { Box } from '@mui/material';
@@ -127,7 +127,9 @@ const AppContent = () => {
     );
   }
 
-  if (isAppHome && !allowedRoutes.length && location.pathname !== '/login') return null;
+  if (isAppHome && gAuth.isSigningOut) return <DeferredLoading />;
+
+  if (isAppHome && !allowedRoutes.length && location.pathname !== '/login') return <DeferredLoading />;
 
   if (!isAppHome && gStripe.isPending) {
     return <LoadingPage />;
