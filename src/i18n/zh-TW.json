@@ -344,7 +344,15 @@
         "wind3": "風速3",
         "windDirectionCenter": "置中風向",
         "windDirectionDown": "向下風向",
-        "windDirectionUp": "向上風向"
+        "windDirectionUp": "向上風向",
+        "learnNewKey": "學習新按鍵",
+        "exitLearn": "退出學習",
+        "learnGuide": "點擊「學習新按鍵」進入學習模式，將遙控器對準 Hub3，按下遙控器按鍵，以便新增新的紅外線按鍵",
+        "hintKeyEdit": "長按可刪除或重新命名；按住拖曳可重新排序",
+        "editKey": "編輯按鍵",
+        "nameDuplicate": "已有同名按鍵",
+        "cannotRename": "此按鍵不支援重新命名",
+        "gotIt": "知道了"
       },
       "list": {
         "airConditioner": "冷氣",

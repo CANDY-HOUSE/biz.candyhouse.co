@@ -344,7 +344,15 @@
         "wind3": "Speed 3",
         "windDirectionCenter": "Wind direction center",
         "windDirectionDown": "Wind direction down",
-        "windDirectionUp": "Wind direction up"
+        "windDirectionUp": "Wind direction up",
+        "learnNewKey": "Learn new button",
+        "exitLearn": "Exit learning",
+        "learnGuide": "Tap \"Learn new button\" to enter learning mode, point the remote at Hub3 and press a button to add a new IR button",
+        "hintKeyEdit": "Long-press to rename or delete; hold and drag to reorder",
+        "editKey": "Edit button",
+        "nameDuplicate": "A button with this name already exists",
+        "cannotRename": "This button can't be renamed",
+        "gotIt": "Got it"
       },
       "list": {
         "airConditioner": "Air Conditioner",

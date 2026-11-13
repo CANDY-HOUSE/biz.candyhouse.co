@@ -2,7 +2,6 @@ import PageHeader, { pageHeaderTitleStyle } from '@/components/PageHeader';
 import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Card, CardContent, Box, Typography, IconButton, Paper, Alert, CircularProgress } from '@mui/material';
 import { SignalWifiConnectedNoInternet4Rounded } from '@mui/icons-material';
-import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
@@ -16,14 +15,15 @@ import { useKeyOrder } from '../hooks/useKeyOrder.js';
 import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
 import { useIrLearning } from '../hooks/useIrLearning.js';
-import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
-import LearnHint from '../components/LearnHint.js';
+import { useKeyEditMenu } from '../components/KeyEditMenu.js';
+import LearnKeyCell from '../components/LearnKeyCell.js';
+import KeyHints from '../components/KeyHints.js';
 import { mergeRemoteKeys } from '../utils/remoteKeys.js';
 
 const RemoteLearn = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
+  const { gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
 
   // 使用 useRemoteCtrl Hook
   const remoteCtrl = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
@@ -39,7 +39,6 @@ const RemoteLearn = () => {
   const [shouldHideToggleButton, setShouldHideToggleButton] = useState(false);
   const { t } = useTranslation();
 
-  const isMobile = gMediaType.isMobile;
   const { showBack, goBack, frameSx, scrollSx } = useRemotePageFrame();
 
   const showError = useCallback(
@@ -60,7 +59,7 @@ const RemoteLearn = () => {
   const irCodes = useMemo(() => mergeRemoteKeys([], rows, true, t('pages.ir.remote.mobileDefaultKeyName')), [rows, t]);
 
   // 学习模式：学到的按键追加到最后
-  const { isLearnMode, isConnected, toggleLearnMode, enterLearnMode } = useIrLearning({
+  const { isLearnMode, isConnected, toggleLearnMode } = useIrLearning({
     hub3DeviceId,
     remoteUuid: remote?.uuid,
     enabled: !!hub3DeviceId && !!remote,
@@ -81,6 +80,8 @@ const RemoteLearn = () => {
     persist: (uuid, keyOrder) => setRemoteKeyOrder(hub3DeviceId, uuid, keyOrder),
     onPersisted: (keyOrder) => updateLocalRemoteList(hub3DeviceId, { ...remote, keyOrder }),
   });
+  // 能学习（自学习页隐藏学习入口时不显示学习格）
+  const canLearn = !shouldHideToggleButton;
   const orderedIrCodes = useMemo(
     () => orderedIds.map((id) => irCodes.find((item) => item.id === id)).filter(Boolean),
     [orderedIds, irCodes]
@@ -221,8 +222,7 @@ const RemoteLearn = () => {
   // 按键的「…」菜单：编辑名称、删除
   const { openMenu, menuElement } = useKeyEditMenu({
     getName: (item) => item.customName || '',
-    onEmptyName: () =>
-      setSnackbarValue({ open: true, msg: t('pages.ir.remote.nameCannotBeEmpty'), severity: 'warning' }),
+    isNameTaken: (item, name) => orderedIrCodes.some((other) => other.id !== item.id && other.title === name),
     onRename: (item, name) =>
       renameKey(item, name, (success) => {
         if (!success) showError('pages.ir.remote.updateIRCodeFail');
@@ -319,11 +319,17 @@ const RemoteLearn = () => {
   };
 
   const renderIRCodeGrid = () => (
-    <Box sx={{ px: 1, padding: 0, marginBottom: 10 }} data-ir-grid="true">
+    <Box sx={{ px: 1, padding: 0, pb: 2 }} data-ir-grid="true">
       <SortableKeyGrid
         items={orderedIrCodes}
         cellHeight={140}
         onReorder={handleReorder}
+        onLongPress={openMenu}
+        trailing={
+          canLearn ? (
+            <LearnKeyCell learning={isLearnMode} onClick={toggleLearnMode} showGuide={irCodes.length > 0} />
+          ) : null
+        }
         renderItem={(item) => (
           <Paper
             elevation={0}
@@ -372,11 +378,10 @@ const RemoteLearn = () => {
             >
               {item.title}
             </Typography>
-
-            <KeyMoreButton onClick={(e) => openMenu(e, item)} />
           </Paper>
         )}
       />
+      <KeyHints show={irCodes.length > 0} />
     </Box>
   );
 
@@ -427,9 +432,6 @@ const RemoteLearn = () => {
     );
   }
 
-  // 学习说明行：右上角有 ⊕、而且已经有按键时才显示（没有按键时页面中间的空白引导已经是这段说明）
-  const showLearnHint = !shouldHideToggleButton && irCodes.length > 0;
-
   // 正常界面
   return (
     <>
@@ -466,17 +468,14 @@ const RemoteLearn = () => {
           }
           action={
             <>
-              {!shouldHideToggleButton && (
+              {canLearn && isLearnMode && (
                 <IconButton onClick={toggleLearnMode}>
-                  {isLearnMode ? <HighlightOffRoundedIcon /> : <AddCircleOutlineOutlinedIcon />}
+                  <HighlightOffRoundedIcon />
                 </IconButton>
               )}
             </>
           }
         />
-        {/* 学习说明：和码库遥控器页同一行；网页靠右对齐，结尾落在右上角 ⊕ 下方。
-            没有按键时页面中间已经显示这段说明，这里不再重复 */}
-        {showLearnHint && <LearnHint align={isMobile ? 'left' : 'right'} onAdd={enterLearnMode} />}
         <Box
           sx={{
             flex: 1,
@@ -509,7 +508,8 @@ const RemoteLearn = () => {
 
             {/* 内容区域 */}
             <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', ...scrollSx }}>
-              {irCodes.length === 0 ? (
+              {/* 还没有按键：上方显示学习示意图和说明，下方网格里只有「学习新按键」一格 */}
+              {irCodes.length === 0 && (
                 <Box
                   sx={{
                     display: 'flex',
@@ -517,11 +517,13 @@ const RemoteLearn = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     flex: 1,
-                    gap: 3,
-                    p: 4,
+                    gap: 2,
+                    px: 4,
+                    pt: 3,
+                    pb: 2,
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
                     <Box
                       component="img"
                       src={irMatchImage}
@@ -537,13 +539,12 @@ const RemoteLearn = () => {
 
                   <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" sx={{ mb: 1, fontSize: '1.2rem' }}>
-                      {t('pages.ir.remote.learnInstruction')}
+                      {t('pages.ir.remote.learnGuide')}
                     </Typography>
                   </Box>
                 </Box>
-              ) : (
-                renderIRCodeGrid()
               )}
+              {renderIRCodeGrid()}
             </Box>
           </CardContent>
         </Box>

@@ -3,7 +3,6 @@ import React, { useContext, useState, useMemo, useEffect, useCallback } from 're
 import { Card, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
 import { useRemoteCtrl } from '@/api/useRemoteCtrl.js';
 import { HXDParametersSwapper } from '../utils/HXDParametersSwapper';
@@ -41,8 +40,9 @@ import { useRemotePageFrame } from '../hooks/useRemotePageFrame.js';
 import PageHeader, { pageHeaderTitleStyle } from '@/components/PageHeader';
 import { useRemoteKeys } from '../hooks/useRemoteKeys.js';
 import { useIrLearning } from '../hooks/useIrLearning.js';
-import { KeyMoreButton, useKeyEditMenu } from '../components/KeyEditMenu.js';
-import LearnHint from '../components/LearnHint.js';
+import { useKeyEditMenu } from '../components/KeyEditMenu.js';
+import LearnKeyCell from '../components/LearnKeyCell.js';
+import KeyHints from '../components/KeyHints.js';
 import { KEY_KIND, mergeRemoteKeys, mapKeyIds } from '../utils/remoteKeys.js';
 
 // 可以改名的空调控件：开机、关机。其余是组合控件（标题随状态变化，如温度、模式、风速），只能删除、不能改名
@@ -63,7 +63,7 @@ const RemoteAir = () => {
   const hub3DeviceId = searchParams.get('hub3DeviceId');
   const parametersSwapper = useMemo(() => new HXDParametersSwapper(), []);
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
-  const { gAuth, gStripe, setSnackbarValue, gMediaType } = useContext(GlobalStateContext);
+  const { gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const remoteCtrl = useRemoteCtrl(gAuth, gStripe, setSnackbarValue);
   const {
     sendIR,
@@ -81,7 +81,6 @@ const RemoteAir = () => {
   const [command, setCommand] = useState('');
   const [matchedRemotes, setMatchedRemotes] = useState([]);
   const { t } = useTranslation();
-  const isMobile = gMediaType.isMobile;
   const { showBack, goBack, frameSx, scrollSx } = useRemotePageFrame();
 
   useEffect(() => {
@@ -372,7 +371,9 @@ const RemoteAir = () => {
   // 右上角「+」学习新按键：遥控器保存后才显示；从 App 打开且为第一级页面时不显示（同自学习页）
   const isFirstLevelFromApp =
     (searchParams.get('fromType') === 'app' || gStripe.isFromApp) && window.history.length < 2;
-  const { isLearnMode, toggleLearnMode, enterLearnMode } = useIrLearning({
+  // 能学习：遥控器已保存，且不是从 App 直接打开的一级页
+  const canLearn = hasRemoteSave && !isFirstLevelFromApp;
+  const { isLearnMode, toggleLearnMode } = useIrLearning({
     hub3DeviceId,
     remoteUuid: remote.uuid,
     enabled: !!hasRemoteSave && !!hub3DeviceId,
@@ -413,8 +414,8 @@ const RemoteAir = () => {
   const { openMenu, menuElement } = useKeyEditMenu({
     canRename: (item) => item.kind === KEY_KIND.LEARNED || AIR_RENAMABLE_IDS.includes(item.presetId ?? item.id),
     getName: (item) => item.customName || item.title || '',
-    onEmptyName: () =>
-      setSnackbarValue({ open: true, msg: t('pages.ir.remote.nameCannotBeEmpty'), severity: 'warning' }),
+    isNameTaken: (item, name) =>
+      orderedItems.some((other) => other.id !== item.id && (other.customName || other.title) === name),
     onRename: (item, name) =>
       remoteKeys.renameKey(item, name, (success) => {
         if (!success) showError('pages.ir.remote.updateIRCodeFail');
@@ -780,9 +781,9 @@ const RemoteAir = () => {
                 <CheckCircleOutlineIcon />
               </IconButton>
             )}
-            {hasRemoteSave && !isFirstLevelFromApp && (
+            {canLearn && isLearnMode && (
               <IconButton onClick={toggleLearnMode} sx={{ flexShrink: 0 }}>
-                {isLearnMode ? <HighlightOffRoundedIcon /> : <AddCircleOutlineOutlinedIcon />}
+                <HighlightOffRoundedIcon />
               </IconButton>
             )}
           </>
@@ -804,25 +805,24 @@ const RemoteAir = () => {
           alignItems: 'center',
         }}
       >
-        {/* 学习说明：标题栏下单独一行；网页靠右对齐，结尾落在右上角 ⊕ 下方 */}
-        {hasRemoteSave && !isFirstLevelFromApp && (
-          <LearnHint align={isMobile ? 'left' : 'right'} onAdd={enterLearnMode} />
-        )}
         <Box
           sx={{
             px: 1,
             width: '100%',
             maxWidth: 1080,
             display: 'flex',
+            flexDirection: 'column',
             padding: 0,
             margin: 0,
             pb: 2,
-            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
           <SortableKeyGrid
             items={orderedItems}
             onReorder={onReorder}
+            onLongPress={openMenu}
+            trailing={canLearn ? <LearnKeyCell learning={isLearnMode} onClick={toggleLearnMode} /> : null}
             renderItem={(item) => {
               const isClicked = clickedItem === item.id;
               const IconComponent = item.icon;
@@ -888,11 +888,11 @@ const RemoteAir = () => {
                       <Box sx={{ height: 24 }} />
                     )}
                   </Box>
-                  <KeyMoreButton onClick={(e) => openMenu(e, item)} />
                 </Paper>
               );
             }}
           />
+          <KeyHints show={orderedItems.length > 0} />
         </Box>
       </CardContent>
       <Box

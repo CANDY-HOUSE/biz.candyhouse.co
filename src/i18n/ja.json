@@ -344,7 +344,15 @@
         "wind3": "風量3",
         "windDirectionCenter": "中央風向",
         "windDirectionDown": "下向き風向",
-        "windDirectionUp": "上向き風向"
+        "windDirectionUp": "上向き風向",
+        "learnNewKey": "新しいボタンを学習",
+        "exitLearn": "学習を終了",
+        "learnGuide": "「新しいボタンを学習」をタップして学習モードに入り、リモコンをHub3に向けてボタンを押すと、新しい赤外線ボタンを追加できます",
+        "hintKeyEdit": "長押しで名前の変更・削除、長押ししたままドラッグで並べ替え",
+        "editKey": "ボタンを編集",
+        "nameDuplicate": "同じ名前のボタンが既にあります",
+        "cannotRename": "このボタンは名前を変更できません",
+        "gotIt": "OK"
       },
       "list": {
         "airConditioner": "エアコン",
