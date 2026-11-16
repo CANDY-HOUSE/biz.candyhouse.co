@@ -10,7 +10,10 @@ export const useNavigateUtils = () => {
     if (!device) return;
     let path = '';
     const isAppGuest = isAppHome && Number(device.keyLevel) === 2;
-    if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
+    // Bot 1 keeps no device history; open its settings directly.
+    if (isAppHome && device.deviceModel === 'ssmbot_1') {
+      path = '/device-setting';
+    } else if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
       path = isAppGuest ? '/device-setting' : '/biz/devices/list-item';
     } else if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) {
       path = '/device-setting';

@@ -3,6 +3,7 @@ import PeripheralDeviceSetting from './PeripheralDeviceSetting';
 import { isPeripheralModel } from '@/services/peripheralSettings';
 import { isBotModel, isScriptBotModel } from '@/services/botScripts';
 import AppBotSettings from './AppBotSettings';
+import AppBotMode from './AppBotMode';
 import { isAppLockModel } from '@/services/appLockSettings';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { appHostSupports } from '@/services/appSession';
@@ -193,6 +194,17 @@ function ExistingDeviceSetting({ showBack = true }) {
           <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(deviceModel)}</Typography>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
+        {deviceModel === 'ssmbot_1' &&
+          (isAppHome ? (
+            <AppBotMode key={`botMode:${did}`} deviceUUID={did} />
+          ) : (
+            <>
+              <ListItem onClick={onClickSetAngle}>
+                <ListItemText primary={t('botSettings.mode')} />
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </>
+          ))}
         {isScriptBotModel(deviceModel) ? (
           isAppHome ? (
             <AppBotSettings deviceUUID={did} />

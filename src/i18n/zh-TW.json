@@ -659,6 +659,12 @@
     "deleteName": "刪除{{deviceName}}"
   },
   "botSettings": {
+    "mode": "模式",
+    "modes": {
+      "normal": "下壓後歸位",
+      "circle": "繞一圈",
+      "longPress": "放開後歸位"
+    },
     "script": "劇本",
     "add": "新增動作",
     "duration": "執行時間",

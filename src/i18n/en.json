@@ -659,6 +659,12 @@
     "deleteName": "Delete {{deviceName}}"
   },
   "botSettings": {
+    "mode": "Mode",
+    "modes": {
+      "normal": "Click then return",
+      "circle": "Make a circle",
+      "longPress": "Release then return"
+    },
     "script": "Script",
     "add": "Add action",
     "duration": "Duration",

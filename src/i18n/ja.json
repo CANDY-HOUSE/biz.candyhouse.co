@@ -659,6 +659,12 @@
     "deleteName": "{{deviceName}}を削除"
   },
   "botSettings": {
+    "mode": "モード",
+    "modes": {
+      "normal": "押して戻る",
+      "circle": "一回りする",
+      "longPress": "離して戻る"
+    },
     "script": "スクリプト",
     "add": "動作を追加",
     "duration": "実行時間",
