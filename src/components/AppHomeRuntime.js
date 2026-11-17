@@ -16,6 +16,7 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { onNativeEvent, requestNative, notifyNative, takeEarlyNavigate } from '@/services/appBridge';
 import { appQrScanner } from '@/services/appQrScanner';
 import { currentAppToken, isGuestAppSession } from '@/services/appSession';
+import { rememberBleSnapshotRows } from '@/services/bleSnapshot';
 import { modelNameByProductType } from '@/constants/sesameDeviceModel';
 import { qrMode } from '@/constants/qrType';
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
@@ -236,8 +237,10 @@ export default function AppHomeRuntime() {
         appOperation(data.op, data.body, { deviceUUID: data.deviceUUID })
           .then((result) => notifyNative('cloudResponse', { requestId: data.requestId, success: true, data: result }))
           .catch(() => notifyNative('cloudResponse', { requestId: data.requestId, success: false }));
-      } else if (type === 'snapshot') deviceService.receiveSnapshot(data);
-      else if (type === 'discovery') deviceService.receiveDiscovery(data);
+      } else if (type === 'snapshot') {
+        deviceService.receiveSnapshot(data);
+        rememberBleSnapshotRows(data);
+      } else if (type === 'discovery') deviceService.receiveDiscovery(data);
       // Pushes carrying a route (e.g. a Face3 doorbell opening /vision) navigate inside the page.
       else if (type === 'navigate') go(data);
       else if (type === 'back') back();

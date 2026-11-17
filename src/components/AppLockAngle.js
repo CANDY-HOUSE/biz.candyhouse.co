@@ -18,11 +18,11 @@ export default function AppLockAngle() {
   const [params] = useSearchParams();
   return <LockAngle key={params.get('deviceUUID')} deviceUUID={params.get('deviceUUID') || ''} />;
 }
-function LockAngle({ deviceUUID }) {
+export function LockAngle({ deviceUUID, onBack, embedded = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
-  const { settings, connected, busy, error, command } = useAppLockSettings(deviceUUID);
+  const { settings, connected, busy, error, readOnly, command } = useAppLockSettings(deviceUUID);
   const [frequencyOpen, setFrequencyOpen] = useState(false);
   const [pendingModel, setPendingModel] = useState(null);
   const [syncFailed, setSyncFailed] = useState(false);
@@ -101,14 +101,18 @@ function LockAngle({ deviceUUID }) {
     <Box
       sx={{
         ...lockSettingsInteraction,
-        height: '100dvh',
+        height: embedded ? '100%' : '100dvh',
         display: 'flex',
         flexDirection: 'column',
         bgcolor: '#ededed',
         color: '#111',
       }}
     >
-      <PageHeader onBack={() => navigate(-1)} title={t('pages.sesameAccessControlDevice.index.SetAngle')} />
+      <PageHeader
+        sx={embedded ? { px: 0 } : undefined}
+        onBack={onBack ?? (() => navigate(-1))}
+        title={t('pages.sesameAccessControlDevice.index.SetAngle')}
+      />
       <BleStatusBar deviceUUID={deviceUUID} />
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', pb: '30px', overscrollBehavior: 'contain' }}>
         <Typography sx={{ mt: 2, textAlign: 'center', fontSize: 18, color: '#999' }}>
@@ -160,7 +164,13 @@ function LockAngle({ deviceUUID }) {
         </Typography>
         <ButtonBase
           disabled={disabled}
-          onClick={() => (settings.sensorInterval !== undefined ? setFrequencyOpen(!frequencyOpen) : coming())}
+          onClick={() =>
+            readOnly
+              ? command('sensorInterval')
+              : settings.sensorInterval !== undefined
+                ? setFrequencyOpen(!frequencyOpen)
+                : coming()
+          }
           sx={{ width: '100%', minHeight: 53, px: 2, justifyContent: 'space-between', bgcolor: '#fff', gap: 2 }}
         >
           <Typography>{t('lockSettings.frequency')}</Typography>

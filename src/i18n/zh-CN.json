@@ -621,6 +621,7 @@
     "off": "关闭",
     "seconds": "{{count}} 秒",
     "connectBluetooth": "请开启蓝牙并连接设备",
+    "useApp": "请使用APP操作",
     "failed": "操作失败，请重试",
     "firmwareBusy": "其他CANDY HOUSE产品正在进行升级, 请稍候",
     "setLocked": "设置上锁角度",

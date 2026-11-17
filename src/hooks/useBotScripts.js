@@ -3,8 +3,9 @@ import { useContext, useEffect, useRef, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { botScriptRows, initializeBotScripts, isScriptBotModel, saveBotScript } from '@/services/botScripts';
+import { useAppOnlyNotice, useBleSnapshot } from './useBleSnapshot';
 
-export function useBotScripts(deviceUUID, model, localOnly = false) {
+export function useBotScripts(deviceUUID, model, localOnly = false, settingsPage = false) {
   const { t } = useTranslation();
   const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const devices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
@@ -24,6 +25,9 @@ export function useBotScripts(deviceUUID, model, localOnly = false) {
     });
   };
   const enabled = isAppHome && isScriptBotModel(model || device?.deviceModel);
+  const readOnly = !isAppHome && settingsPage && isScriptBotModel(model || device?.deviceModel);
+  const cloud = useBleSnapshot(readOnly ? deviceUUID : null);
+  const appOnly = useAppOnlyNotice();
   const connected = enabled && native?.bleConnected;
   const ready = native?.scripts?.length === 10;
   useEffect(() => {
@@ -47,8 +51,8 @@ export function useBotScripts(deviceUUID, model, localOnly = false) {
       active = false;
     };
   }, [deviceUUID, connected, ready, gManageDevice?.devicesLoaded, localOnly]);
-  const scripts = botScriptRows(metadata, native?.scripts);
-  const selected = scripts.find((row) => row.isDefault)?.id ?? native?.scriptIndex ?? 0;
+  const scripts = botScriptRows(metadata, native?.scripts ?? cloud?.bot?.scripts);
+  const selected = scripts.find((row) => row.isDefault)?.id ?? native?.scriptIndex ?? cloud?.bot?.scriptIndex ?? 0;
   const save = async (index, patch) => {
     const row = scripts.find((item) => item.id === index);
     await saveBotScript(deviceUUID, { actionIndex: String(index), displayOrder: row.displayOrder, ...patch });
@@ -62,6 +66,10 @@ export function useBotScripts(deviceUUID, model, localOnly = false) {
     update(rows);
   };
   const select = async (index) => {
+    if (readOnly) {
+      appOnly();
+      return;
+    }
     await deviceService.request('botSettings', { deviceUUID, operation: 'select', index });
     await save(index, { isDefault: 1 });
   };
@@ -78,5 +86,16 @@ export function useBotScripts(deviceUUID, model, localOnly = false) {
       }))
     );
   };
-  return { scripts, selected, select, save, reorder, connected, enabled, deviceName: device?.deviceName };
+  return {
+    scripts,
+    selected,
+    select,
+    save,
+    reorder,
+    connected,
+    enabled,
+    readOnly,
+    scriptData: cloud?.scripts,
+    deviceName: device?.deviceName,
+  };
 }

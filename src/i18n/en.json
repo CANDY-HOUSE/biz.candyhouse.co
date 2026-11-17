@@ -621,6 +621,7 @@
     "off": "Off",
     "seconds": "{{count}} sec",
     "connectBluetooth": "Turn on Bluetooth and connect to the device",
+    "useApp": "Please use the app for this operation",
     "failed": "Operation failed. Please retry.",
     "firmwareBusy": "Updating another CANDY HOUSE product. Please wait...",
     "setLocked": "Set Lock Position",

@@ -37,6 +37,8 @@ import {
   peripheralCapabilities,
 } from '@/services/peripheralSettings';
 import usePeripheralSettings from '@/hooks/usePeripheralSettings';
+import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
+import { loadCredentials } from '@/services/bleSnapshot';
 import BleStatusBar from './BleStatusBar';
 import fingerImage from '@/assets/peripheral/gif_finger.gif';
 import faceImage from '@/assets/peripheral/face_tips.png';
@@ -45,20 +47,30 @@ import palmImage from '@/assets/peripheral/palm_tips.png';
 import palmProImage from '@/assets/peripheral/palmpro_tips.png';
 
 export default function AppCredentials() {
+  const [params] = useSearchParams();
+  return (
+    <Credentials
+      deviceUUID={params.get('deviceUUID') || ''}
+      kind={params.get('kind') || ''}
+      deviceModel={params.get('deviceModel')}
+    />
+  );
+}
+export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedded = false }) {
   const { t } = useTranslation();
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
-  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const id = params.get('deviceUUID') || '';
   const account = gStripe.customerInfo.subUUID;
-  const kind = params.get('kind') || '';
   const device = gManageDevice.companyDevices.find((d) => d.deviceUUID?.toUpperCase() === id.toUpperCase());
-  const model = device?.deviceModel || params.get('deviceModel');
+  const model = device?.deviceModel || deviceModel;
   const supported = peripheralCapabilities(model).includes(kind);
   const { native, request, ready, session } = usePeripheralSettings(id);
   const current = native?.peripheral?.credentials;
   const data = current?.session === session && current.kind === kind ? current : null;
-  const items = data?.items || [];
+  const [cloudItems, setCloudItems] = useState(null);
+  const [reload, setReload] = useState(0);
+  const items = (isAppHome ? data?.items : cloudItems) || [];
+  const appOnly = useAppOnlyNotice();
   const [names, setNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [edit, setEdit] = useState(false);
@@ -99,6 +111,27 @@ export default function AppCredentials() {
       generation.current++;
     };
   }, [session, kind]);
+  useEffect(() => {
+    if (isAppHome || !supported) return;
+    let active = true;
+    setCloudItems(null);
+    loadCredentials(id, kind)
+      .then((list) => {
+        if (!active) return;
+        setNames(
+          Object.fromEntries(
+            list.filter((item) => item.name).map((item) => [item.credentialId.toUpperCase(), item.name])
+          )
+        );
+        setCloudItems(list);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, kind, supported, reload]);
   useEffect(() => {
     if (!isAppHome || !ready || !native?.bleConnected || !supported) return;
     let active = true;
@@ -310,9 +343,10 @@ export default function AppCredentials() {
           : null;
   if (!supported) return <Alert severity="warning">{t('peripheral.unsupported')}</Alert>;
   return (
-    <Box sx={{ height: '100vh', overflow: 'auto', bgcolor: 'background.default' }}>
+    <Box sx={{ height: embedded ? '100%' : '100vh', overflow: 'auto', bgcolor: 'background.default' }}>
       <PageHeader
-        onBack={() => navigate(-1)}
+        sx={embedded ? { pl: 0, pr: 2 } : undefined}
+        onBack={onBack ?? (() => navigate(-1))}
         centerTitle={
           <Typography>
             {items.length}/{limit}
@@ -322,22 +356,27 @@ export default function AppCredentials() {
           <>
             {(busy ||
               syncing ||
+              (!isAppHome && cloudItems === null && !error) ||
               (isAppHome && native?.bleConnected && data?.loading !== false && !error && !data?.loadFailed)) && (
               <CircularProgress size={20} sx={{ color: '#28aeb1' }} />
             )}
             <IconButton
               {...longPress}
               disabled={
-                !isAppHome ||
-                busy ||
-                !native?.bleConnected ||
-                !data ||
-                data.loading !== false ||
-                data.loadFailed ||
-                (data?.mode !== 1 && items.length >= limit)
+                isAppHome &&
+                (busy ||
+                  !native?.bleConnected ||
+                  !data ||
+                  data.loading !== false ||
+                  data.loadFailed ||
+                  (data?.mode !== 1 && items.length >= limit))
               }
               aria-label={t(data?.mode === 1 ? 'peripheral.stopEnroll' : 'peripheral.enroll')}
               onClick={() => {
+                if (!isAppHome) {
+                  appOnly();
+                  return;
+                }
                 if (longPressed.current) {
                   longPressed.current = false;
                   return;
@@ -353,15 +392,18 @@ export default function AppCredentials() {
         }
       />
       {isAppHome && <BleStatusBar deviceUUID={id} />}
-      {!isAppHome && <Alert severity="info">Coming soon</Alert>}
       {error && (
         <Alert
           severity="error"
           action={
             <Button
               onClick={() => {
-                revision.current = -1;
                 setError(false);
+                if (!isAppHome) {
+                  setReload((n) => n + 1);
+                  return;
+                }
+                revision.current = -1;
                 request('credentials', { kind })
                   .then(() => setError(false))
                   .catch(() => setError(true));
@@ -400,6 +442,10 @@ export default function AppCredentials() {
           <Box key={item.credentialId}>
             <ListItem
               onClick={() => {
+                if (!isAppHome) {
+                  appOnly();
+                  return;
+                }
                 setSelected(item);
                 setName(label(item));
               }}

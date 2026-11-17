@@ -1,5 +1,5 @@
 import PageHeader from '@/components/PageHeader';
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, IconButton, Typography, Grid2 } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -8,12 +8,14 @@ import { gConfig } from '@constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
 import DeviceUserList from '@/components/DeviceUserList';
 import { useTranslation } from 'react-i18next';
-import MobileBindDevice from '@/components/MobileBindDevice';
 import MobileBatteryChart from '@/components/MobileBatteryChart';
 import DeviceSetting from '@/components/DeviceSetting';
 import DeviceHistory from '@/components/DeviceHistory';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
 import { MoreHoriz } from '@mui/icons-material';
+import { isAppHome } from '@/services/deviceService';
+import { useCredentialCounts } from '@/hooks/useBleSnapshot';
+import { Credentials } from '@/components/AppCredentials';
 
 export default function SesameAccessControlDeviceRegion() {
   const navigate = useNavigate();
@@ -27,6 +29,21 @@ export default function SesameAccessControlDeviceRegion() {
   const device = useMemo(() => {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
   }, [gManageDevice.companyDevices, did]);
+  const hasHistory = gUtils.isOPSModel(device.deviceModel);
+  const webCounts = !isAppHome && gUtils.isSesameAccessControlDevice(device.deviceModel);
+  const counts = useCredentialCounts(webCounts ? did : null, device.deviceModel);
+  const [credential, setCredential] = useState(null);
+  const credentialKinds = {
+    [gConfig.sesameTouchProAuthType.finger]: 'fingerprint',
+    [gConfig.sesameTouchProAuthType.face]: 'face',
+    [gConfig.sesameTouchProAuthType.palm]: 'palm',
+  };
+  const count = (kind, fallback) =>
+    !webCounts
+      ? fallback
+      : counts[kind] === undefined
+        ? '—'
+        : (counts[kind] ?? (kind === 'card' || kind === 'passcode' ? fallback : '—'));
 
   return (
     <Box
@@ -88,31 +105,36 @@ export default function SesameAccessControlDeviceRegion() {
           </Grid2>
         ) : (
           <>
-            <Grid2 size={4} sx={{ height: '500px', overflowY: 'auto' }}>
+            <Grid2 size={hasHistory ? 4 : 6} sx={{ height: '500px', overflowY: 'auto' }}>
               <Box>
                 <Typography variant="h4">{t('deviceMember.user')}</Typography>
                 <DeviceUserList deviceUUID={did} defaultManageMode />
               </Box>
             </Grid2>
-            <Grid2 size={4} sx={{ height: '500px' }}>
-              <Box>
-                <Typography variant="h4">{t('連携済みセサミ')}</Typography>
-                <Box sx={{ px: 2 }}>
-                  <MobileBindDevice device={device} editable={false} />
-                </Box>
-              </Box>
-            </Grid2>
-            <Grid2 size={4} sx={{ height: '500px' }}>
-              <DeviceSetting showBack={false} />
-            </Grid2>
-            {gUtils.isOPSModel(device.deviceModel) && (
-              <Grid2 size={12} sx={{ height: '560px' }}>
+            {hasHistory && (
+              <Grid2 size={4} sx={{ height: '500px' }}>
                 <Box>
                   <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.history', '履歴')}</Typography>
                   <DeviceHistory deviceUUID={did} showToolBar />
                 </Box>
               </Grid2>
             )}
+            <Grid2 size={hasHistory ? 4 : 6} sx={{ height: '500px' }}>
+              {credential?.did === did ? (
+                <Box>
+                  <Credentials
+                    key={credential.kind}
+                    deviceUUID={did}
+                    kind={credential.kind}
+                    deviceModel={device.deviceModel}
+                    embedded
+                    onBack={() => setCredential(null)}
+                  />
+                </Box>
+              ) : (
+                <DeviceSetting showBack={false} />
+              )}
+            </Grid2>
             <Grid2 size={12}>
               <Box>
                 <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.Battery')}</Typography>
@@ -125,9 +147,20 @@ export default function SesameAccessControlDeviceRegion() {
                   <CfpContent
                     isMobile={gMediaType.isMobile}
                     model={device.deviceModel}
-                    cc={device.stateInfo?.cards_num || 0}
-                    pc={device.stateInfo?.keyboards_num || 0}
+                    cc={count('card', device.stateInfo?.cards_num || 0)}
+                    pc={count('passcode', device.stateInfo?.keyboards_num || 0)}
+                    {...(webCounts && {
+                      fc: count('fingerprint'),
+                      faceCount: count('face'),
+                      palmCount: count('palm'),
+                    })}
                     call={(type) => {
+                      if (credentialKinds[type]) {
+                        if (!webCounts) return;
+                        setCredential({ did, kind: credentialKinds[type] });
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return;
+                      }
                       let mstate = {
                         title: device.deviceName,
                         uuid: device.deviceUUID,

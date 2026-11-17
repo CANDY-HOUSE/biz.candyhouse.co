@@ -36,6 +36,7 @@ import {
 import { isAppLockModel } from '@/services/appLockSettings';
 import { isBotModel } from '@/services/botScripts';
 import usePeripheralSettings from '@/hooks/usePeripheralSettings';
+import { Credentials } from './AppCredentials';
 import MobileDeviceSetting from './MobileDeviceSetting';
 import MobileBindDevice from './MobileBindDevice';
 import MobileRemoveDevice from './MobileRemoveDevice';
@@ -48,6 +49,7 @@ import LockSettingWheel from './LockSettingWheel';
 import AppHubWifi from './AppHubWifi';
 import AppVoiceShortcut from './AppVoiceShortcut';
 import { appHostSupports } from '@/services/appSession';
+import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 
 export default function PeripheralDeviceSetting({ showBack = true }) {
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
@@ -67,8 +69,11 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   const wifi = model === 'wm_2';
   const pcConnector = !isAppHome && !wifi && !isBike(model);
   const { native, request, ready } = usePeripheralSettings(id, wifi);
+  const cloud = useBleSnapshot(isAppHome || wifi ? null : id);
+  const appOnly = useAppOnlyNotice();
+  const peripheral = isAppHome ? native?.peripheral : cloud?.peripheral;
   if (native?.batteryPercentage != null) device.stateInfo.batteryPercentage = native.batteryPercentage;
-  const sleeping = isSleepy(model) && !native?.peripheral?.setup;
+  const sleeping = isAppHome && isSleepy(model) && !native?.peripheral?.setup;
   useEffect(() => {
     if (native?.batteryPercentage == null) return;
     const listed = gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === id.toUpperCase());
@@ -90,6 +95,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     setParams(next, { replace: true });
   }, []);
   const [bindOpen, setBindOpen] = useState(false);
+  const [panel, setPanel] = useState(null);
   const [bindingTarget, setBindingTarget] = useState(null);
   const [delayOpen, setDelayOpen] = useState(false);
   const trackingRadar = useRef(false);
@@ -110,10 +116,9 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
       msg: t('lockSettings.failed'),
       severity: 'error',
     });
-  const coming = () => setSnackbarValue({ open: true, msg: 'Coming soon', severity: 'info' });
   const available = () => {
     if (!isAppHome) {
-      coming();
+      appOnly();
       return false;
     }
     if (!native?.bleConnected) {
@@ -142,9 +147,9 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     setSnackbarValue({ open: true, msg: t(`peripheral.${warning.code}`), severity: 'warning' });
   }, [native?.peripheral?.bindingWarning?.revision]);
   useEffect(() => {
-    const value = native?.peripheral?.radar;
+    const value = peripheral?.radar;
     if (value === undefined || !caps.includes('face')) return;
-    if (shouldFixLegacyRadarValue(model, value)) {
+    if (isAppHome && shouldFixLegacyRadarValue(model, value)) {
       if (native?.bleConnected && fixingRadar.current !== `${id}:${value}`) {
         fixingRadar.current = `${id}:${value}`;
         request('radar', { value: radarMaximumDistanceValue(model), command: radarCommand(model) }).catch(fail);
@@ -153,7 +158,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     }
     fixingRadar.current = null;
     if (!trackingRadar.current) setDistance(radarDistance(model, value));
-  }, [id, model, native?.peripheral?.radar, native?.bleConnected]);
+  }, [id, model, peripheral?.radar, native?.bleConnected]);
   useEffect(() => {
     if (!wifi || !ready || !native?.bleConnected) return;
     deviceService.request('hubSettings', { deviceUUID: id, operation: 'scan' }).catch(fail);
@@ -180,11 +185,14 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     </React.Fragment>
   );
   const openChild = (kind) => {
-    if (!isAppHome) {
-      const path =
-        kind === 'card' ? '/biz/access-control/cards' : kind === 'passcode' ? '/biz/access-control/passwords' : '';
-      if (!path) return coming();
-      navigate(path, { state: { title: device.deviceName || params.get('deviceName') || '', uuid: id } });
+    if (!isAppHome && (kind === 'card' || kind === 'passcode')) {
+      navigate(kind === 'card' ? '/biz/access-control/cards' : '/biz/access-control/passwords', {
+        state: { title: device.deviceName || params.get('deviceName') || '', uuid: id },
+      });
+      return;
+    }
+    if (!showBack && !isAppHome) {
+      setPanel({ id, kind });
       return;
     }
     const search = new URLSearchParams(location.search);
@@ -230,6 +238,19 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     return lockTarget(target) || target.deviceModel === 'hub_3';
   });
   const title = device.deviceName || params.get('deviceName') || model;
+  if (id && panel?.id === id)
+    return (
+      <Box>
+        <Credentials
+          key={panel.kind}
+          deviceUUID={id}
+          kind={panel.kind}
+          deviceModel={model}
+          embedded
+          onBack={() => setPanel(null)}
+        />
+      </Box>
+    );
   return (
     <Box sx={{ height: showBack ? '100dvh' : '100%', overflowY: 'auto', bgcolor: 'background.default' }}>
       {showBack &&
@@ -265,7 +286,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
           <>
             {row(
               t('peripheral.triggerDelay'),
-              t('peripheral.delayValue', { value: ((native?.peripheral?.triggerDelay || 0) * 0.3).toFixed(1) }),
+              t('peripheral.delayValue', { value: ((peripheral?.triggerDelay || 0) * 0.3).toFixed(1) }),
               () => {
                 if (available()) setDelayOpen((open) => !open);
               }
@@ -273,7 +294,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
             {delayOpen && (
               <LockSettingWheel
                 values={[0, 10]}
-                value={native?.peripheral?.triggerDelay || 0}
+                value={peripheral?.triggerDelay || 0}
                 label={(value) => t('peripheral.delayValue', { value: (value * 0.3).toFixed(1) })}
                 title={t('peripheral.triggerDelay')}
                 disabled={busy || !native?.bleConnected}
@@ -334,6 +355,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
                 aria-label={t('accessCtl.auth.radarDetectionDistance')}
                 disabled={isAppHome && !native?.bleConnected}
                 onChange={(_, value) => {
+                  if (!isAppHome) return;
                   trackingRadar.current = true;
                   if (value !== distance && isAppHome) deviceService.notify('haptic');
                   setDistance(value);
@@ -356,13 +378,20 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
             })}
           </Typography>
         )}
-        {pcConnector && (
+        {pcConnector && !isSleepy(model) && (
           <>
             <Typography sx={{ bgcolor: 'secondary.main', color: 'text.secondary', px: 2, pt: 4, pb: 1, fontSize: 13 }}>
               {t('peripheral.boundDevicesHint', { device: title })}
             </Typography>
             <Box sx={{ px: 2 }}>
-              <MobileBindDevice device={device} editable={false} />
+              <MobileBindDevice
+                device={
+                  peripheral?.bound
+                    ? { ...device, stateInfo: { ...device.stateInfo, sesameDevices: peripheral.bound } }
+                    : device
+                }
+                editable={false}
+              />
             </Box>
           </>
         )}

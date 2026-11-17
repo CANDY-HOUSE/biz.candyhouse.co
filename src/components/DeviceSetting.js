@@ -9,11 +9,13 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { appHostSupports } from '@/services/appSession';
 import LockSettingsExtras from './LockSettingsExtras';
 import AppLockSettings from './AppLockSettings';
+import { LockAngle } from './AppLockAngle';
+import { BotScript } from './AppBotScript';
 import AppVoiceShortcut from './AppVoiceShortcut';
-import React, { useContext, useMemo, useSyncExternalStore } from 'react';
+import React, { useContext, useMemo, useState, useSyncExternalStore } from 'react';
 import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from './MobileDeviceSetting';
-import { Box, Divider, List, ListItem, ListItemText, Typography, SvgIcon, Switch } from '@mui/material';
+import { Box, Divider, List, ListItem, ListItemText, Typography, SvgIcon } from '@mui/material';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import MobileRemoveDevice from './MobileRemoveDevice';
@@ -54,6 +56,10 @@ function ExistingDeviceSetting({ showBack = true }) {
   }, [gManageDevice.companyDevices, did]);
   const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const nativeBattery = isAppHome ? nativeDevices[did.toUpperCase()]?.batteryPercentage : null;
+  const [panel, setPanel] = useState(null);
+  const inColumn = !showBack && !isAppHome;
+  const openAngle = inColumn ? () => setPanel({ did, kind: 'angle' }) : undefined;
+  const openScript = inColumn ? (index) => setPanel({ did, kind: 'script', index }) : undefined;
 
   const onClickSetAngle = () => {
     setSnackbarValue({
@@ -90,33 +96,10 @@ function ExistingDeviceSetting({ showBack = true }) {
 
   const subFunctionsComp = useMemo(() => {
     return gUtils.isLockModel(deviceModel) || isAppLockModel(deviceModel) ? (
-      isAppHome && isAppLockModel(deviceModel) ? (
+      isAppLockModel(deviceModel) && (isAppHome || !gStripe.isFromApp) ? (
         isGuest ? null : (
-          <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} />
+          <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} onOpenAngle={openAngle} />
         )
-      ) : !gStripe.isFromApp && isAppLockModel(deviceModel) ? (
-        <>
-          {['SetAngle', 'LockWithOpenSensor', 'AutoLockCountdown'].map((feature) => (
-            <React.Fragment key={feature}>
-              <ListItem onClick={onClickSetAngle} sx={{ cursor: 'pointer' }}>
-                <ListItemText primary={t(`pages.sesameAccessControlDevice.index.${feature}`)} />
-                {feature === 'SetAngle' && <SvgIcon component={SvgArrow} />}
-                {feature === 'LockWithOpenSensor' && (
-                  <Typography sx={{ color: '#999' }}>{t('lockSettings.immediate')}</Typography>
-                )}
-                {feature === 'AutoLockCountdown' && (
-                  <Switch
-                    checked={false}
-                    inputProps={{ 'aria-label': t('pages.sesameAccessControlDevice.index.AutoLockCountdown') }}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={onClickSetAngle}
-                  />
-                )}
-              </ListItem>
-              <Divider variant="middle" sx={{ opacity: 0.4 }} />
-            </React.Fragment>
-          ))}
-        </>
       ) : null
     ) : (
       <>
@@ -169,6 +152,17 @@ function ExistingDeviceSetting({ showBack = true }) {
     );
   }, [deviceModel, onClickSetAngle, isGuest]);
 
+  if (did && panel?.did === did)
+    return (
+      <Box>
+        {panel.kind === 'angle' ? (
+          <LockAngle deviceUUID={did} embedded onBack={() => setPanel(null)} />
+        ) : (
+          <BotScript deviceUUID={did} index={panel.index} embedded onBack={() => setPanel(null)} />
+        )}
+      </Box>
+    );
+
   return (
     <Box
       sx={{
@@ -206,8 +200,8 @@ function ExistingDeviceSetting({ showBack = true }) {
             </>
           ))}
         {isScriptBotModel(deviceModel) ? (
-          isAppHome ? (
-            <AppBotSettings deviceUUID={did} />
+          isAppHome || !gStripe.isFromApp ? (
+            <AppBotSettings deviceUUID={did} onOpenScript={openScript} />
           ) : (
             <>
               <ListItem onClick={onClickSetAngle}>
@@ -223,7 +217,9 @@ function ExistingDeviceSetting({ showBack = true }) {
           !isAppHome &&
           isAppLockModel(deviceModel) && (
             <>
-              <ListItem onClick={onClickSetAngle}>
+              <ListItem
+                onClick={() => setSnackbarValue({ open: true, msg: t('lockSettings.useApp'), severity: 'info' })}
+              >
                 <ListItemText primary={t('pages.sesameAccessControlDevice.index.SiriCustomPhrase')} />
               </ListItem>
               <Divider variant="middle" sx={{ opacity: 0.4 }} />

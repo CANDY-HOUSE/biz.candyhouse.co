@@ -21,11 +21,11 @@ import LockSettingWheel from './LockSettingWheel';
 const seconds = [0, 3, 5, 7, 10, 15, 30, 60, 120, 180, 240, 300, 600, 900, 1800, 3600];
 const sensorSeconds = [65535, 0, 1, 2, 3, 4, ...seconds.slice(2)];
 
-export default function AppLockSettings({ deviceUUID }) {
+export default function AppLockSettings({ deviceUUID, onOpenAngle }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { settings, connected, busy, error, readFailed, retryRead, command } = useAppLockSettings(deviceUUID);
+  const { settings, connected, busy, error, readFailed, readOnly, retryRead, command } = useAppLockSettings(deviceUUID);
   const [sensorOpen, setSensorOpen] = useState(false);
   const [autoOpen, setAutoOpen] = useState(false);
   const [enabling, setEnabling] = useState(false);
@@ -59,7 +59,11 @@ export default function AppLockSettings({ deviceUUID }) {
   return (
     <Box sx={lockSettingsInteraction}>
       {error && <Alert severity="error">{t('lockSettings.failed')}</Alert>}
-      <ListItemButton onClick={() => navigate({ pathname: '/device-setting/angle', search: location.search })}>
+      <ListItemButton
+        onClick={() =>
+          onOpenAngle ? onOpenAngle() : navigate({ pathname: '/device-setting/angle', search: location.search })
+        }
+      >
         <ListItemText primary={t('pages.sesameAccessControlDevice.index.SetAngle')} />
         <SvgIcon component={SvgArrow} />
       </ListItemButton>
@@ -69,7 +73,8 @@ export default function AppLockSettings({ deviceUUID }) {
           <ListItemButton
             aria-disabled={!connected || busy || settings.sensorLockSeconds === undefined}
             onClick={() => {
-              if (connected && !busy && settings.sensorLockSeconds !== undefined) setSensorOpen(!sensorOpen);
+              if (readOnly) command('sensorLock');
+              else if (connected && !busy && settings.sensorLockSeconds !== undefined) setSensorOpen(!sensorOpen);
             }}
           >
             <ListItemText primary={t('pages.sesameAccessControlDevice.index.LockWithOpenSensor')} />
@@ -99,7 +104,7 @@ export default function AppLockSettings({ deviceUUID }) {
           <Button
             disabled={!connected || busy}
             sx={{ color: '#999', minWidth: 0 }}
-            onClick={() => setAutoOpen(!autoOpen)}
+            onClick={() => (readOnly ? command('autoLock') : setAutoOpen(!autoOpen))}
           >
             {duration(settings.autoLockSeconds)}
           </Button>
@@ -109,7 +114,8 @@ export default function AppLockSettings({ deviceUUID }) {
           disabled={!connected || busy || settings.autoLockSeconds === undefined}
           inputProps={{ 'aria-label': t('pages.sesameAccessControlDevice.index.AutoLockCountdown') }}
           onChange={(_, checked) => {
-            if (checked) {
+            if (readOnly) command('autoLock');
+            else if (checked) {
               setEnabling(true);
               setAutoOpen(true);
             } else if (settings.autoLockSeconds > 0) choose('autoLock', 0);

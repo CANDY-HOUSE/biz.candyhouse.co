@@ -5,11 +5,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useBotScripts } from '@/hooks/useBotScripts';
+import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
 import LockSettingWheel from './LockSettingWheel';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 
-export default function AppBotSettings({ deviceUUID }) {
-  const bot = useBotScripts(deviceUUID);
+export default function AppBotSettings({ deviceUUID, onOpenScript }) {
+  const bot = useBotScripts(deviceUUID, undefined, false, true);
+  const appOnly = useAppOnlyNotice();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -78,7 +80,7 @@ export default function AppBotSettings({ deviceUUID }) {
         <ListItemText primary={t('botSettings.script')} />
         <Box
           component="button"
-          onClick={() => setOpen(!open)}
+          onClick={() => (bot.readOnly ? appOnly() : setOpen(!open))}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -99,7 +101,9 @@ export default function AppBotSettings({ deviceUUID }) {
           sx={{ justifySelf: 'end', mr: -1 }}
           disableRipple
           onClick={() =>
-            navigate({ pathname: '/device-setting/bot-script', search: `${location.search}&index=${bot.selected}` })
+            onOpenScript
+              ? onOpenScript(bot.selected)
+              : navigate({ pathname: '/device-setting/bot-script', search: `${location.search}&index=${bot.selected}` })
           }
         >
           <SvgIcon component={SvgArrow} />
@@ -118,7 +122,7 @@ export default function AppBotSettings({ deviceUUID }) {
               </Box>
             </Box>
           )}
-          disabled={busy || !bot.connected}
+          disabled={busy || !(bot.connected || bot.readOnly)}
           onChange={async (index) => {
             setBusy(true);
             setFailed(false);

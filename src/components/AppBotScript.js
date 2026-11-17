@@ -21,6 +21,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { deviceService } from '@/services/deviceService';
 import { useBotScripts } from '@/hooks/useBotScripts';
+import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
+import { rememberBleSnapshot } from '@/services/bleSnapshot';
 import LockSettingWheel from './LockSettingWheel';
 import BleStatusBar from './BleStatusBar';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
@@ -68,14 +70,17 @@ function ActionRow({ position, disabled, onDelete, children }) {
 }
 export default function AppBotScript() {
   const [params] = useSearchParams();
+  return <BotScript deviceUUID={params.get('deviceUUID') || ''} index={Number(params.get('index'))} />;
+}
+export function BotScript({ deviceUUID, index, onBack, embedded = false }) {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 350, tolerance: 8 } })
   );
-  const deviceUUID = params.get('deviceUUID') || '';
-  const index = Number(params.get('index'));
-  const bot = useBotScripts(deviceUUID);
+  const bot = useBotScripts(deviceUUID, undefined, false, true);
+  const appOnly = useAppOnlyNotice();
   const { t } = useTranslation();
   const [script, setScript] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -86,6 +91,9 @@ export default function AppBotScript() {
   const [pendingCloud, setPendingCloud] = useState(null);
   const alias = bot.scripts.find((row) => row.id === index)?.name || `🎬 ${index}`;
   useEffect(() => {
+    if (bot.readOnly) setScript(bot.scriptData?.[index] ?? null);
+  }, [bot.readOnly, bot.scriptData, index]);
+  useEffect(() => {
     if (!bot.connected || !Number.isInteger(index) || index < 0 || index > 9) return;
     let active = true;
     setBusy(true);
@@ -93,6 +101,7 @@ export default function AppBotScript() {
     deviceService
       .request('botSettings', { deviceUUID, index, operation: 'read' })
       .then(({ data }) => {
+        rememberBleSnapshot(deviceUUID, `script${index}`, { actions: data.actions });
         if (active) setScript(data);
       })
       .catch(() => {
@@ -106,12 +115,17 @@ export default function AppBotScript() {
     };
   }, [deviceUUID, index, bot.connected, retry]);
   const persist = async (next) => {
+    if (bot.readOnly) {
+      appOnly();
+      return;
+    }
     if (busy || !bot.connected) return;
     setBusy(true);
     setError(false);
     try {
       const { data } = await deviceService.request('botSettings', { deviceUUID, index, operation: 'write', ...next });
       setScript(next);
+      rememberBleSnapshot(deviceUUID, `script${index}`, { actions: next.actions });
       setPendingCloud(data);
       await bot.save(index, { ...data, isDefault: 1 });
       setPendingCloud(null);
@@ -128,17 +142,17 @@ export default function AppBotScript() {
     });
   const label = (value) =>
     value === 255 ? t('botSettings.forever') : t('botSettings.seconds', { value: (value / 10).toFixed(1) });
-  const disabled = busy || !bot.connected || !script || !!pendingCloud;
+  const disabled = busy || !(bot.connected || bot.readOnly) || !script || !!pendingCloud;
   return (
     <Box sx={lockSettingsInteraction}>
       <PageHeader
-        sx={{ pr: 2 }}
-        onBack={() => navigate(-1)}
+        sx={{ pr: 2, ...(embedded && { pl: 0 }) }}
+        onBack={onBack ?? (() => navigate(-1))}
         centerTitle={
           <Button
             disableRipple
             disabled={!script || busy}
-            onClick={() => setRename(alias.replace(/^🎬\s*/, ''))}
+            onClick={() => (bot.readOnly ? appOnly() : setRename(alias.replace(/^🎬\s*/, '')))}
             sx={{ minWidth: 0, p: 0, color: 'text.primary' }}
           >
             {alias} 🖊 ({script?.actions.length ?? 0}/20)
@@ -229,6 +243,7 @@ export default function AppBotScript() {
                     fontSize: 17,
                   }}
                   onClick={() => {
+                    if (bot.readOnly) return appOnly();
                     setEditing(position);
                     if (!action.time) change(position, { time: 1 });
                   }}

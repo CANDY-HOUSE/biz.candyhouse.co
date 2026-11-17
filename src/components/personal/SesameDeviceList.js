@@ -3,6 +3,8 @@ import { logOperationFailure } from '@/services/operationFailure';
 import { reportDeviceLocation } from '@/services/deviceLocation';
 import { cancelAppPullRefresh } from '@/services/appPullRefresh';
 import { useBotScripts } from '@/hooks/useBotScripts';
+import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
+import { isScriptBotModel } from '@/services/botScripts';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import BotScriptList from './BotScriptList';
@@ -94,6 +96,8 @@ const SortableItemComponent = ({
   const { setSnackbarValue, gStripe } = useContext(GlobalStateContext);
   const bot = useBotScripts(device.deviceUUID, device.deviceModel, localOnly);
   const isScriptBot = bot.enabled;
+  const webScripts = !isAppHome && isScriptBotModel(device.deviceModel);
+  const appOnly = useAppOnlyNotice();
   const reportError = (error) => {
     if (localOnly) return logOperationFailure('SesameDeviceList', 'localCommand');
     setSnackbarValue({
@@ -182,7 +186,7 @@ const SortableItemComponent = ({
             )}
           </Stack>
           <Stack direction="row" spacing="0px" alignItems="center">
-            {!localOnly && (isHub3 || isScriptBot) && (
+            {!localOnly && (isHub3 || isScriptBot || webScripts) && (
               <Box
                 onClick={handleArrowClick}
                 sx={{
@@ -270,21 +274,23 @@ const SortableItemComponent = ({
         </Box>
       </ListItem>
 
-      {!localOnly && isScriptBot && !sortableIsDragging && (
+      {!localOnly && (isScriptBot || webScripts) && !sortableIsDragging && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
           <BotScriptList
             deviceUUID={device.deviceUUID}
             scripts={bot.scripts}
-            onReorder={bot.reorder}
+            onReorder={webScripts ? appOnly : bot.reorder}
             onError={reportError}
             onRun={(scriptIndex) =>
-              native.bleConnected
-                ? runNative(scriptIndex)
-                : gIot.sendCommandToWM2({
-                    device_id: device.deviceUUID,
-                    sescretKey: device.secretKey,
-                    cmd: 170 + scriptIndex,
-                  })
+              webScripts && device.stateInfo?.wm2State !== true
+                ? appOnly()
+                : native?.bleConnected
+                  ? runNative(scriptIndex)
+                  : gIot.sendCommandToWM2({
+                      device_id: device.deviceUUID,
+                      sescretKey: device.secretKey,
+                      cmd: 170 + scriptIndex,
+                    })
             }
           />
         </Collapse>

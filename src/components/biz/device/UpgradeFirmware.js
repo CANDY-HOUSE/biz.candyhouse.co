@@ -542,8 +542,13 @@ const UpgradeFirmware = ({ device: currentDevice, Hub3DeviceUUID, bleAvailable =
       <ListItem
         onClick={() => {
           if (readOnly) return;
-          if (peripheral && !isAppHome && !gatewayPeripheral) {
-            setSnackbarValue({ open: true, msg: 'Coming soon', severity: 'info' });
+          if (
+            !isAppHome &&
+            !gUtils.isWifiModel(currentDevice.deviceModel) &&
+            (isAppLockModel(currentDevice.deviceModel) || isBotModel(currentDevice.deviceModel) || peripheral) &&
+            (!Hub3DeviceUUID || currentDevice.stateInfo?.wm2State !== true || (peripheral && !gatewayPeripheral))
+          ) {
+            setSnackbarValue({ open: true, msg: t('lockSettings.useApp'), severity: 'info' });
             return;
           }
           setDrawerOpen(true);

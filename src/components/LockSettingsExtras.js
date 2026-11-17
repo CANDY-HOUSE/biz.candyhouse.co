@@ -8,6 +8,7 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { isAppShell, onNativeEvent } from '@/services/appBridge';
 import { appHostSupports } from '@/services/appSession';
 import { SvgArrow } from '@/assets/svg/svgLock';
+import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 
 export default function LockSettingsExtras({
@@ -22,6 +23,9 @@ export default function LockSettingsExtras({
   const location = useLocation();
   const devices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const native = devices[deviceUUID.toUpperCase()];
+  const cloud = useBleSnapshot(isAppHome ? null : deviceUUID);
+  const appOnly = useAppOnlyNotice();
+  const txPower = isAppHome ? native?.settings?.bleTxPower : cloud?.settings?.bleTxPower;
   const [power, setPower] = useState(-4);
   const [preferences, setPreferences] = useState({});
   const [reset, setReset] = useState(false);
@@ -41,8 +45,8 @@ export default function LockSettingsExtras({
       .request('devicePreferences', { deviceUUID, operation, ...extra })
       .then(({ data }) => setPreferences(data));
   useEffect(() => {
-    setPower(native?.settings?.bleTxPower ?? -4);
-  }, [deviceUUID, native?.settings?.bleTxPower]);
+    setPower(txPower ?? -4);
+  }, [deviceUUID, txPower]);
   useEffect(() => {
     if (!nativePreferences) return;
     request(nfc ? 'watchNfc' : 'read').catch(error);
@@ -55,12 +59,12 @@ export default function LockSettingsExtras({
       if (nfc) deviceService.notify('devicePreferences', { deviceUUID, operation: 'stopNfc' });
     };
   }, [deviceUUID, nativePreferences, nfc]);
-  if (!isAppHome) return null;
+  if (!isAppHome && txPower === undefined) return null;
   const divider = <Divider variant="middle" sx={{ opacity: 0.4 }} />;
   return (
     <Box sx={lockSettingsInteraction}>
       <Box sx={{ bgcolor: 'secondary.main', height: 500 }} />
-      {isAppHome && native?.settings?.bleTxPower !== undefined && (
+      {txPower !== undefined && (
         <Box sx={{ px: 2, minHeight: 53, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography sx={{ color: 'text.primary', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {t('lockExtras.txPower')}
@@ -75,16 +79,19 @@ export default function LockSettingsExtras({
             max={20}
             step={1}
             value={power ?? -4}
-            disabled={!native?.bleConnected}
+            disabled={isAppHome && !native?.bleConnected}
             aria-label={t('lockExtras.txPower')}
             valueLabelDisplay="auto"
             valueLabelFormat={(value) => `${value} dBm`}
             onChange={(_, value) => {
+              if (!isAppHome) return;
               if (value !== power) deviceService.notify('haptic');
               setPower(value);
             }}
             onChangeCommitted={(_, value) =>
-              deviceService.request(settingsAction, { deviceUUID, operation: 'txPower', value }).catch(error)
+              isAppHome
+                ? deviceService.request(settingsAction, { deviceUUID, operation: 'txPower', value }).catch(error)
+                : appOnly()
             }
           />
         </Box>

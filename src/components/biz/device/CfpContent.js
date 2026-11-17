@@ -53,7 +53,16 @@ const CfpContentCount = ({ count, onClick, name, isShow = true }) => {
     </>
   );
 };
-export default function CfpContent({ cc, pc, call, model, isMobile = false }) {
+export default function CfpContent({
+  cc,
+  pc,
+  fc = 'Coming soon',
+  faceCount = 'Coming soon',
+  palmCount = 'Coming soon',
+  call,
+  model,
+  isMobile = false,
+}) {
   const { t } = useTranslation(); // i18n
   return (
     <>
@@ -84,21 +93,21 @@ export default function CfpContent({ cc, pc, call, model, isMobile = false }) {
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.password)}
           />
           <CfpContentCount
-            count={'Coming soon'}
+            count={fc}
             name={t('accessCtl.auth.fingerprint')}
-            onClick={() => {}}
+            onClick={() => call(gConfig.sesameTouchProAuthType.finger)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.finger)}
           />
           <CfpContentCount
-            count={'Coming soon'}
+            count={faceCount}
             name={t('accessCtl.auth.face')}
-            onClick={() => {}}
+            onClick={() => call(gConfig.sesameTouchProAuthType.face)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.face)}
           />
           <CfpContentCount
-            count={'Coming soon'}
+            count={palmCount}
             name={t('accessCtl.auth.palm')}
-            onClick={() => {}}
+            onClick={() => call(gConfig.sesameTouchProAuthType.palm)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.palm)}
           />
           {/* <CfpContentCount
