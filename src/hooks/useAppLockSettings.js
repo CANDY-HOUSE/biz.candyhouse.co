@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState, useSyncExternalStore } from 'r
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import { rememberBleSnapshot } from '@/services/bleSnapshot';
+import { biz3utils } from '@/utils/biz3utils.js';
 import { useAppOnlyNotice, useBleSnapshot } from './useBleSnapshot';
 
 // Settings come from BLE snapshots. Firmware version is read separately after DFU.
@@ -74,7 +75,11 @@ export function useAppLockSettings(deviceUUID) {
         ? Math.round((device.stateInfo.position * 360) / 1024)
         : undefined;
     return {
-      settings: { ...cloud?.settings, position },
+      settings: {
+        ...cloud?.settings,
+        position,
+        productType: biz3utils.getProductTypeFromModelName(device?.deviceModel),
+      },
       connected: true,
       busy: false,
       error: false,
