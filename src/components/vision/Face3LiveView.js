@@ -11,6 +11,7 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { getFace3ViewerEnvironmentError, kvsProtocol, protocolForMode } from './protocols';
+import Face3RouteBadge from './Face3RouteBadge'; // 临时调试：中继/点对点标识，上线后删除
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
 const CRED_TIMEOUT_MS = 15000;
@@ -992,6 +993,8 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
       >
         <CloseIcon fontSize="small" />
       </IconButton>
+
+      <Face3RouteBadge viewerRef={viewerRef} active={phase === 'playing'} />
     </Box>
   );
 }

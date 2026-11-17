@@ -30,11 +30,14 @@ const CAMERA_MAX_BITRATE_BPS = 256000;
 /**
  * 重发 offer 的间隔。
  *
- * 唤醒只是把命令递到 WiFi 模块，T32 还要冷启动、连 KVS 信令，实测约 7 秒。
+ * 唤醒只是把命令递到 WiFi 模块，T32 还要冷启动、连 KVS 信令，实测约 18～24 秒。
  * 而 KVS 信令不替不在线的 MASTER 暂存 SDP —— offer 发出去没人收就直接丢，
  * 且不回错误。只发一次的话 viewer 会一直停在 have-local-offer 等到超时。
+ *
+ * 设备上线后要等到下一次重发才收得到，平均多等半个间隔，所以从 2 秒缩到 1 秒。
+ * 不再往下压：设备从收到 offer 到回 answer 约 0.5～1.5 秒，间隔太短它会收到多份重复 offer。
  */
-const OFFER_RETRY_MS = 2000;
+const OFFER_RETRY_MS = 1000;
 
 /**
  * offer 的 SDP 字节数上限。
@@ -865,6 +868,7 @@ export function startFace3Viewer(
 
   return {
     close,
+    getStats: () => (peer && !closed ? peer.getStats() : Promise.resolve(null)), // 临时调试：供 Face3RouteBadge 判断中继/点对点
     setCameraEnabled: (enabled) => setLocalMediaEnabled('camera', enabled),
     setMicrophoneEnabled: (enabled) => setLocalMediaEnabled('microphone', enabled),
   };
