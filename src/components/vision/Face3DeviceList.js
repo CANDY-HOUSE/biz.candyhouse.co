@@ -1,20 +1,33 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Box, Typography, Card, CardActionArea, IconButton, Button, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Card,
+  CardActionArea,
+  IconButton,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+} from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
-import Face3LiveView from '@/components/Face3LiveView';
-import Face3EventRecordings from '@/components/Face3EventRecordings';
+import Face3LiveView from './Face3LiveView';
+import Face3EventRecordings from './Face3EventRecordings';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import MoveDownIcon from '@mui/icons-material/MoveDown';
-import Face3BioMigrate from '@/components/Face3BioMigrate';
+import Face3BioMigrate from './Face3BioMigrate';
+import { selectFace3Protocol } from './protocols';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
+import { isGuestAppSession } from '@/services/appSession';
+import { gConfig } from '@constants/gConfig';
 
 /** 在线状态的刷新间隔。
  *
@@ -27,6 +40,26 @@ const REFRESH_INTERVAL_MS = 30000;
 const PREVIEW_ICON_SIZE = 56;
 /** 图标底边到按钮顶边的间距 */
 const WAKE_BTN_GAP = 14;
+
+/* AI 开关按设备只记在本机（与 Face3LiveView 的扬声器偏好同样的做法）。
+   暂时也用它选实时画面的协议：开 → LiveKit，关 → KVS 直连（见 ./protocols）。
+   localStorage 在无痕/禁用存储时会抛，读不到就当关。 */
+const aiPrefKey = (deviceUUID) => `face3.ai.${String(deviceUUID || '').toUpperCase()}`;
+const loadAiPref = (deviceUUID) => {
+  try {
+    return localStorage.getItem(aiPrefKey(deviceUUID)) === '1';
+  } catch (_) {
+    return false;
+  }
+};
+const saveAiPref = (deviceUUID, enabled) => {
+  try {
+    if (enabled) localStorage.setItem(aiPrefKey(deviceUUID), '1');
+    else localStorage.removeItem(aiPrefKey(deviceUUID));
+  } catch (_) {
+    /* 存不下就只在本次页面内生效 */
+  }
+};
 
 /** 把 lastSeenAt 说成人话。列表上只要"多久以前"，不需要精确时刻。 */
 const useRelativeTime = () => {
@@ -47,7 +80,18 @@ const useRelativeTime = () => {
  * 预览区现在是占位 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接把 <VisionIcon> 换成 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, onMigrate, waking, isViewing }) => {
+const DeviceCard = ({
+  device,
+  onOpen,
+  onWake,
+  onCloseView,
+  onRecordings,
+  onMigrate,
+  aiOn,
+  onToggleAi,
+  waking,
+  isViewing,
+}) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
@@ -216,20 +260,28 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, onMigra
         </IconButton>
       </Box>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
         <Button startIcon={<VideoLibraryIcon />} onClick={() => onRecordings(device)} sx={{ m: 1 }}>
           {t('face3.recordings.title')}
         </Button>
         <Button startIcon={<MoveDownIcon />} onClick={() => onMigrate(device)} sx={{ m: 1 }}>
           {t('face3.migrate.entry')}
         </Button>
+        {/* AI 开关：按设备记在本机；开启须登录（访客在 onToggleAi 里拦下） */}
+        <FormControlLabel
+          sx={{ m: 1 }}
+          control={
+            <Switch size="small" checked={aiOn} onChange={(event) => onToggleAi(device, event.target.checked)} />
+          }
+          label={t('face3.ai.label')}
+        />
       </Box>
 
       {/* 就地播放：观看该设备时，实时画面直接铺在预览框位置，盖住占位/唤醒/设置按钮。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
       {isViewing && (
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: '16 / 9' }}>
-          <Face3LiveView device={device} onClose={onCloseView} />
+          <Face3LiveView device={device} protocol={selectFace3Protocol({ aiEnabled: aiOn })} onClose={onCloseView} />
         </Box>
       )}
     </Card>
@@ -245,7 +297,7 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, onRecordings, onMigra
 export default function Face3DeviceList() {
   const { t } = useTranslation();
   const { navigateToDeviceDetail } = useNavigateUtils();
-  const { gFace3, gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
+  const { gAuth, gFace3, gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const [attempt, setAttempt] = useState(0);
   const floatingAddRef = useRef(null);
 
@@ -308,6 +360,31 @@ export default function Face3DeviceList() {
   const [viewingIds, setViewingIds] = useState(() => new Set());
   const [recordingDevice, setRecordingDevice] = useState(null);
   const [migrateDevice, setMigrateDevice] = useState(null);
+
+  /* AI 开关。登录态 = 已拿到登录用户信息且不是 APP 访客会话：
+     PC 只能登录后进来；APP 访客的 customerInfo.isAnonymous 为 true。未登录时一律显示关。 */
+  const signedIn =
+    gAuth.loginState !== gConfig.loginState.loginOut &&
+    !isGuestAppSession() &&
+    Boolean(gStripe.customerInfo.subUUID) &&
+    gStripe.customerInfo.isAnonymous !== true;
+  /* 本次页面内切换过的设备 -> 开关值；没切换过的读本机存储 */
+  const [aiPrefs, setAiPrefs] = useState({});
+  const isAiOn = (deviceUUID) => {
+    if (!signedIn) return false;
+    const id = deviceUUID.toUpperCase();
+    return id in aiPrefs ? aiPrefs[id] : loadAiPref(id);
+  };
+
+  const handleToggleAi = (device, enabled) => {
+    if (enabled && !signedIn) {
+      setSnackbarValue({ open: true, severity: 'info', msg: t('face3.ai.loginRequired') });
+      return;
+    }
+    const id = device.deviceUUID.toUpperCase();
+    saveAiPref(id, enabled);
+    setAiPrefs((prefs) => ({ ...prefs, [id]: enabled }));
+  };
 
   const handleWake = (device) => {
     if (!device?.deviceUUID) return;
@@ -426,6 +503,8 @@ export default function Face3DeviceList() {
                 setViewingIds(new Set());
                 setMigrateDevice(device);
               }}
+              aiOn={isAiOn(d.deviceUUID)}
+              onToggleAi={handleToggleAi}
               onCloseView={() =>
                 setViewingIds((ids) => {
                   const next = new Set(ids);

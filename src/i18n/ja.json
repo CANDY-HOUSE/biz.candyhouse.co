@@ -587,6 +587,10 @@
       "errInProgress": "このデバイスではすでに移行が進行中です。",
       "errSourceBusy": "このバックアップは別のデバイスへ移行中です。",
       "errNotCancellable": "新デバイスが取り込みを始めたため、取り消せません。"
+    },
+    "ai": {
+      "label": "AI",
+      "loginRequired": "AIをオンにするにはログインしてください。"
     }
   },
   "appHome": {

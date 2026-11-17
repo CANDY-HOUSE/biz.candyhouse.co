@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { alawWavToPcm, syncRecordingAudio } from '@/utils/eventRecordingAudio';
+import { alawWavToPcm, syncRecordingAudio } from './eventRecordingAudio';
 
 export default function Face3RecordingPlayer({ media, onRetry }) {
   const { t } = useTranslation();

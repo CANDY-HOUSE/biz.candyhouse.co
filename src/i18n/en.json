@@ -587,6 +587,10 @@
       "errInProgress": "A move to this device is already in progress.",
       "errSourceBusy": "This backup is being moved to another device.",
       "errNotCancellable": "The new device has started importing, so the move can no longer be cancelled."
+    },
+    "ai": {
+      "label": "AI",
+      "loginRequired": "Sign in to turn on AI."
     }
   },
   "appHome": {

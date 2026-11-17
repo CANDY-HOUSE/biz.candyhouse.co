@@ -16,7 +16,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import Face3RecordingPlayer from '@/components/Face3RecordingPlayer';
+import Face3RecordingPlayer from './Face3RecordingPlayer';
 
 export default function Face3EventRecordings({ device, onClose }) {
   const { t, i18n } = useTranslation();

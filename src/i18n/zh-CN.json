@@ -587,6 +587,10 @@
       "errInProgress": "这台设备已有进行中的迁移。",
       "errSourceBusy": "这份备份正在迁往另一台设备。",
       "errNotCancellable": "新设备已开始导入，无法取消。"
+    },
+    "ai": {
+      "label": "AI",
+      "loginRequired": "开启 AI 需要先登录"
     }
   },
   "appHome": {

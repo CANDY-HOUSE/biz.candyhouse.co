@@ -101,7 +101,7 @@ export function getFace3ViewerEnvironmentError() {
 }
 
 /**
- * @param {object} cfg  op:"viewer" 返回的 data
+ * @param {object} cfg  op:"viewer" 返回的 data（mode "kvs"）
  * @param {object} handlers
  * @param {(stream: MediaStream) => void} handlers.onStream  拿到远端流
  * @param {(stream: MediaStream|null) => void} [handlers.onLocalStream] 拿到本地摄像头流，用于画中画预览

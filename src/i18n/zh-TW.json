@@ -587,6 +587,10 @@
       "errInProgress": "這台裝置已有進行中的遷移。",
       "errSourceBusy": "這份備份正在遷往另一台裝置。",
       "errNotCancellable": "新裝置已開始匯入，無法取消。"
+    },
+    "ai": {
+      "label": "AI",
+      "loginRequired": "開啟 AI 需要先登入"
     }
   },
   "appHome": {

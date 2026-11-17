@@ -13,7 +13,7 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  *     op: 'issue'    设备侧调用，签发一张券        —— 手机不会用到
  *     op: 'list'     本 hook 调用，列出我绑过的设备
  *     op: 'command'  本 hook 调用，给设备下发一条命令（cmd 决定做什么，通用入口）
- *     op: 'viewer'   本 hook 调用，取观看端临时凭证
+ *     op: 'viewer'   本 hook 调用，按 mode 取观看端凭证（KVS 临时凭证 / LiveKit token）
  *
  * 唤醒（wake）只是 op:'command' 的一个特例（cmd='face3Wake'）：今后所有发给
  * face3 的命令都走 sendFace3Command，由 H5 通过 cmd 决定是哪个 action。
@@ -164,42 +164,27 @@ const useFace3 = () => {
   );
 
   /**
-   * 取一台设备的观看端凭证。
+   * 取一台设备的观看端凭证（Face3_qr op:"viewer"）。mode 是想要的协议，云端按它签凭证，
+   * 响应 data.mode 是实际签的那种（要 LiveKit 但签不出时云端退回 KVS），按它选 SDK：
    *
-   * 云端校验绑定关系后，AssumeRole 签发一组**只能连这一个频道**的临时凭证
-   * （15 分钟），连同频道 ARN 和 ICE 服务器一起返回。浏览器里不放长期凭证，
-   * 也不需要给 Cognito 未认证角色开 KVS 权限。
+   *   'kvs'      KVS 直连：AssumeRole 签一组**只能连这一个频道**的临时凭证（15 分钟），
+   *              连同频道 ARN 和 ICE 服务器。频道尚未创建时云端回 channel_not_ready。
+   *   'livekit'  LiveKit 房间 token（多人观看 / 多方通话 / AI 分析）。
    *
-   * 先决条件：设备得先被唤醒并把流推上来，否则频道存在但没人发画面。
-   * 频道尚未创建时云端回 channel_not_ready。
+   * 先决条件：设备得先被唤醒。只在连接可用时发，鉴权在云端（必须绑过这台设备）。
    *
    * @param {string} deviceUUID
+   * @param {'kvs'|'livekit'} mode
    * @param {Function} cb 回调，收到 {success, code, message, data}
    */
-  /**
-   * 多人观看 / 多方通话：取 LiveKit 房间 token（Face3_qr op:"live"）。
-   * 和 viewer 一样只在连接可用时发，鉴权在云端（必须绑过这台设备）。
-   */
-  const liveFace3Device = useCallback(
-    (deviceUUID, cb) => {
-      if (!deviceUUID) return;
-      const messageData = {
-        action: ACTION_TYPES.BIZ3_FACE3_QR,
-        op: 'live',
-        deviceId: deviceUUID,
-      };
-      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
-    },
-    [sendWithoutQueue]
-  );
-
   const viewFace3Device = useCallback(
-    (deviceUUID, cb) => {
+    (deviceUUID, mode, cb) => {
       if (!deviceUUID) return;
       const messageData = {
         action: ACTION_TYPES.BIZ3_FACE3_QR,
         op: 'viewer',
         deviceId: deviceUUID,
+        mode,
       };
       sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
     },
@@ -211,7 +196,7 @@ const useFace3 = () => {
       recordingRequests.current.handle(message);
       const callbackDeviceId = message.data?.deviceId;
       invokeCallbacks(
-        callbackDeviceId && ['command', 'viewer', 'live'].includes(message.op)
+        callbackDeviceId && ['command', 'viewer'].includes(message.op)
           ? { ...message, op: `${message.op}:${callbackDeviceId}` }
           : message
       );
@@ -265,7 +250,6 @@ const useFace3 = () => {
     sendFace3Command,
     wakeFace3Device,
     viewFace3Device,
-    liveFace3Device,
   };
 };
 

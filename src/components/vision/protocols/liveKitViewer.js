@@ -3,12 +3,12 @@ import { Room, RoomEvent, Track, ConnectionState } from 'livekit-client';
 /**
  * Face3 多人观看 / 多方通话观看端（LiveKit）。
  *
- * 与 face3Viewer.js（KVS 直连）接口完全一致，Face3LiveView 按开关二选一：
+ * 与 kvsViewer.js（KVS 直连）接口完全一致，Face3LiveView 按协议策略二选一（见 ./index.js）：
  *
  *   手机 ──LiveKit 房间 face3-<UUID>──▶ face3_media_bridge ──KVS──▶ 设备
  *
  * 设备只跟 Bridge 连一条，看的人再多设备也只传一份；Bridge 在手机进房时
- * （LiveKit webhook）自动连设备。凭证由 Face3_qr 的 op:"live" 签发。
+ * （LiveKit webhook）自动连设备。凭证由 Face3_qr 的 op:"viewer"（mode "livekit"）签发。
  *
  * 房间里的参与者：
  *   bridge:<UUID>  发布门口画面 door-video 和声音 door-audio → 交给 onStream 播放
@@ -21,10 +21,10 @@ import { Room, RoomEvent, Track, ConnectionState } from 'livekit-client';
 /** 从进房到出门口画面的整体超时：Bridge 连设备要等设备冷启动（约 7~15 秒）。 */
 const CONNECT_TIMEOUT_MS = 45000;
 /* 已接通后门口画面消失（Bridge 离开房间 / 与 LiveKit 断开）多久判定中断。
-   与 face3Viewer 一致，期间提示"正在重连"。LiveKit 自己的断线重连也在这段时间里完成。 */
+   与 kvsViewer 一致，期间提示"正在重连"。LiveKit 自己的断线重连也在这段时间里完成。 */
 const DISCONNECT_GRACE_MS = 15000;
 
-/* 门口屏幕是 450x600 竖屏，设备只解 H.264。参数与 face3Viewer 保持一致。 */
+/* 门口屏幕是 450x600 竖屏，设备只解 H.264。参数与 kvsViewer 保持一致。 */
 const CAMERA_STREAM_FPS = 15;
 const CAMERA_MAX_BITRATE_BPS = 256000;
 
@@ -42,8 +42,8 @@ const logi = (...args) => {
 };
 
 /**
- * @param {{url: string, token: string, identity?: string}} cfg op:"live" 返回的 data
- * @param {object} handlers 同 startFace3Viewer
+ * @param {{url: string, token: string, identity?: string}} cfg op:"viewer" 返回的 data（mode "livekit"）
+ * @param {object} handlers 同 kvsViewer.js 的 startFace3Viewer
  * @returns {{ close, setCameraEnabled, setMicrophoneEnabled, setRemoteAudio }}
  */
 export function startFace3LiveKitViewer(
@@ -107,7 +107,7 @@ export function startFace3LiveKitViewer(
     if (!closed) onLocalMediaState?.({ kind, state });
   };
 
-  /* 摄像头：和 face3Viewer 一样经 canvas 转成 450x600 竖屏再发，门口屏不缩放不旋转。 */
+  /* 摄像头：和 kvsViewer 一样经 canvas 转成 450x600 竖屏再发，门口屏不缩放不旋转。 */
   const openCamera = async (active) => {
     const raw = await navigator.mediaDevices.getUserMedia({
       audio: false,

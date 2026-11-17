@@ -10,8 +10,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { startFace3Viewer, getFace3ViewerEnvironmentError } from '@utils/face3Viewer';
-import { isFace3LiveKitEnabled } from '@utils/face3LiveKitFlag';
+import { getFace3ViewerEnvironmentError, kvsProtocol, protocolForMode } from './protocols';
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
 const CRED_TIMEOUT_MS = 15000;
@@ -48,7 +47,7 @@ const CRED_ERROR_TEXT = {
   ws_disconnected: 'face3.errTimeout',
 };
 
-/** face3Viewer 的错误 key → 文案。
+/** 观看端（kvsViewer / liveKitViewer）的错误 key → 文案。
  *
  * 由本组件决定措辞，而不是让 viewer 的 key 直接当 i18n key 用：viewer 里的
  * errTimeout 指的是"设备没在时限内出画"，和取凭证那步的网络超时完全是两回事，
@@ -92,8 +91,12 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * （关 RTCPeerConnection 和信令 WebSocket），所以不需要 open 开关。
  *
  * 设备是 MASTER，这里是 VIEWER。开播前提是设备已被唤醒并开始推流 —— 唤醒是异步的，
- * T32 冷启动加上 KVS 信令握手要好几秒，所以拿不到画面时优先提示"设备正在启动"
+ * T32 冷启动加上信令握手要好几秒，所以拿不到画面时优先提示"设备正在启动"
  * 而不是直接报错。
+ *
+ * 本组件只有一套 UI 和流程：唤醒 → 带着父组件传入的 protocol（想要的协议）取凭证 →
+ * 按云端返回的 data.mode 选协议策略、启动对应 SDK 的观看端（见 ./protocols）。
+ * 通话中换了想要的协议（如切了 AI 开关）会重新连接。
  */
 /* 扬声器开关与音量按设备记住，下次打开（包括门铃推送点进来自动打开）沿用。
    localStorage 在无痕/禁用存储时会抛，读不到就用默认（关、70）。 */
@@ -119,10 +122,10 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
   }
 };
 
-export default function Face3LiveView({ device, onClose }) {
+export default function Face3LiveView({ device, protocol = kvsProtocol, onClose }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
-  const { wakeFace3Device, viewFace3Device, liveFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
+  const { wakeFace3Device, viewFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -144,7 +147,7 @@ export default function Face3LiveView({ device, onClose }) {
   mediaStatesRef.current = mediaStates;
   const [mediaControlsReady, setMediaControlsReady] = useState(false);
   const [observationUnsupported, setObservationUnsupported] = useState(false);
-  // 通话中连接短暂断开、正在等 ICE 恢复（见 face3Viewer 的 DISCONNECT_GRACE_MS）。
+  // 通话中连接短暂断开、正在等 ICE 恢复（见 protocols/kvsViewer.js 的 DISCONNECT_GRACE_MS）。
   const [reconnecting, setReconnecting] = useState(false);
   /* 连接已经断掉、正在自动重新发起整通连接（见 AUTO_RECONNECT_MAX）。
      与上面的 reconnecting 不同：那个是同一条连接在等 ICE 自愈，这个是换一条新连接。 */
@@ -313,7 +316,7 @@ export default function Face3LiveView({ device, onClose }) {
       resetAutoReconnect();
       setPhase('playing');
     };
-    const startViewer = (data, start = startFace3Viewer) => {
+    const startViewer = (data, start) => {
       try {
         const viewer = start(data, {
           onState: (state) => {
@@ -411,66 +414,47 @@ export default function Face3LiveView({ device, onClose }) {
         fail('face3.errLiveUnknown');
       }
     };
-    /* 多人观看 / 多方通话（灰度）：先要 LiveKit token；云端没开通或出错就退回 KVS 直连，
-     * 只有鉴权类错误直接报（退回也一样会被拒）。 */
-    const requestLiveKit = () => {
+    /* 带着想要的协议（wanted.mode）取凭证，按云端返回的 data.mode 选 SDK 启动观看端。
+     * 要 LiveKit 签不出时云端已退回 KVS。频道未就绪稍后再取；本机加载 SDK 失败按该协议的
+     * fallback 改要；其余报错。 */
+    const requestSession = (wanted) => {
       if (cancelled) return;
       let settled = false;
       credentialTimer = setTimeout(() => {
         if (cancelled || settled) return;
         settled = true;
-        // eslint-disable-next-line no-console
-        console.info('[face3Live] live token timeout, fallback to KVS');
-        requestCredentials();
+        fail('face3.errTimeout');
       }, CRED_TIMEOUT_MS);
       try {
-        liveFace3Device(deviceUUID, (message) => {
-          if (cancelled || settled) return;
-          settled = true;
-          clearTimeout(credentialTimer);
-          if (message?.success && message.data?.token) {
-            import('@utils/face3LiveKitViewer')
-              .then(({ startFace3LiveKitViewer }) => {
-                if (!cancelled) startViewer(message.data, startFace3LiveKitViewer);
-              })
-              .catch(() => {
-                // eslint-disable-next-line no-console
-                console.info('[face3Live] livekit module load failed, fallback to KVS');
-                requestCredentials();
-              });
-            return;
-          }
-          const reason = message?.message;
-          if (reason === 'not_bound' || reason === 'not_authenticated') {
-            fail(CRED_ERROR_TEXT[reason]);
-            return;
-          }
-          // eslint-disable-next-line no-console
-          console.info('[face3Live] live unavailable (' + reason + '), fallback to KVS');
-          requestCredentials();
-        });
-      } catch {
-        requestCredentials();
-      }
-    };
-    const requestCredentials = () => {
-      if (cancelled) return;
-      let settled = false;
-      credentialTimer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
-      try {
-        viewFace3Device(deviceUUID, (message) => {
+        viewFace3Device(deviceUUID, wanted.mode, (message) => {
           if (cancelled || settled) return;
           settled = true;
           clearTimeout(credentialTimer);
           if (!message?.success) {
             if (message?.message === 'channel_not_ready') {
-              retryTimer = setTimeout(requestCredentials, CRED_RETRY_MS);
+              retryTimer = setTimeout(() => requestSession(wanted), CRED_RETRY_MS);
             } else {
               fail(CRED_ERROR_TEXT[message?.message] || 'face3.errLiveUnknown');
             }
             return;
           }
-          startViewer(message.data);
+          const granted = protocolForMode(message.data?.mode);
+          // eslint-disable-next-line no-console
+          console.info(`[face3Live] protocol wanted ${wanted.mode}, granted ${granted.mode}`);
+          granted
+            .loadViewer()
+            .then((start) => {
+              if (!cancelled) startViewer(message.data, start);
+            })
+            .catch(() => {
+              if (!granted.fallback) {
+                fail('face3.errLiveUnknown');
+                return;
+              }
+              // eslint-disable-next-line no-console
+              console.info(`[face3Live] ${granted.mode} sdk load failed, request ${granted.fallback.mode}`);
+              requestSession(granted.fallback);
+            });
         });
       } catch {
         fail('face3.errLiveUnknown');
@@ -493,8 +477,7 @@ export default function Face3LiveView({ device, onClose }) {
             fail(WAKE_ERROR_TEXT[message?.message] || 'face3.wakeFailed');
             return;
           }
-          if (isFace3LiveKitEnabled()) requestLiveKit();
-          else requestCredentials();
+          requestSession(protocol);
         });
       } catch {
         fail('face3.wakeFailed');
@@ -507,9 +490,9 @@ export default function Face3LiveView({ device, onClose }) {
     };
   }, [
     deviceUUID,
+    protocol,
     wakeFace3Device,
     viewFace3Device,
-    liveFace3Device,
     attempt,
     clearPlayback,
     endPlayback,
