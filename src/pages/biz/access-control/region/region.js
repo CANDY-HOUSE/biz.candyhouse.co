@@ -46,7 +46,7 @@ export default function SesameAccessControlDeviceRegion() {
         ? '—'
         : (counts[kind] ?? (kind === 'card' || kind === 'passcode' ? fallback : '—'));
 
-  /* Face3：新增「录像」卡片（录像、AI 开关、人脸掌纹迁移）。PC 放在电池电量之上；
+  /* Face3：新增「录像」卡片（录像、AI 开关）。PC 放在最上面一行；
      手机上本页默认显示录像，设置走页头 ⋯（与开关传感器默认显示履历同样的做法）。 */
   const isFace3 = (device.deviceModel || searchParams.get('deviceModel')) === gConfig.sesameDeviceModel.sesame_face_3;
   const openFace3Setting = () =>
@@ -128,6 +128,13 @@ export default function SesameAccessControlDeviceRegion() {
           </Grid2>
         ) : (
           <>
+            {isFace3 && (
+              <Grid2 size={12}>
+                <Box sx={{ overflow: 'hidden' }}>
+                  <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
+                </Box>
+              </Grid2>
+            )}
             <Grid2 size={hasHistory ? 4 : 6} sx={{ height: '500px', overflowY: 'auto' }}>
               <Box>
                 <Typography variant="h4">{t('deviceMember.user')}</Typography>
@@ -158,13 +165,6 @@ export default function SesameAccessControlDeviceRegion() {
                 <DeviceSetting showBack={false} />
               )}
             </Grid2>
-            {isFace3 && (
-              <Grid2 size={12}>
-                <Box sx={{ overflow: 'hidden' }}>
-                  <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
-                </Box>
-              </Grid2>
-            )}
             <Grid2 size={12}>
               <Box>
                 <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.Battery')}</Typography>

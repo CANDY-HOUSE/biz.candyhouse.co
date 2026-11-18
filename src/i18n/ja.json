@@ -497,6 +497,7 @@
       "noAudio": "音声なし",
       "more": "もっと見る",
       "playing": "再生中",
+      "tag": "録画",
       "seek": "再生位置",
       "reason": {
         "presence": "人を検出",
@@ -519,6 +520,8 @@
     "errLiveTimeout": "デバイスから応答がありません。起動直後は準備に少し時間がかかります。しばらくしてからお試しください。",
     "errLiveUnknown": "再生できませんでした。しばらくしてからお試しください。",
     "live": "ライブ",
+    "liveView": "ライブ映像",
+    "liveViewHint": "いまの玄関の様子を見る",
     "offline": "オフライン",
     "justNow": "たった今",
     "minutesAgo": "{{n}} 分前",

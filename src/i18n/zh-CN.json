@@ -497,6 +497,7 @@
       "noAudio": "无声音",
       "more": "加载更多",
       "playing": "播放中",
+      "tag": "录像",
       "seek": "播放进度",
       "reason": {
         "presence": "有人经过",
@@ -519,6 +520,8 @@
     "errLiveTimeout": "设备没有响应。刚唤醒的设备需要一点时间启动，请稍候再试",
     "errLiveUnknown": "播放失败，请稍后重试",
     "live": "直播中",
+    "liveView": "实时画面",
+    "liveViewHint": "查看当下门口的画面",
     "offline": "离线",
     "justNow": "刚刚",
     "minutesAgo": "{{n}} 分钟前",

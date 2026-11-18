@@ -497,6 +497,7 @@
       "noAudio": "No audio",
       "more": "Load more",
       "playing": "Playing",
+      "tag": "Recording",
       "seek": "Playback position",
       "reason": {
         "presence": "Presence detected",
@@ -519,6 +520,8 @@
     "errLiveTimeout": "The device didn't respond. A device that was just woken needs a moment to start up — please try again shortly.",
     "errLiveUnknown": "Playback failed. Please try again later.",
     "live": "Live",
+    "liveView": "Live view",
+    "liveViewHint": "See what is happening at the door right now",
     "offline": "Offline",
     "justNow": "just now",
     "minutesAgo": "{{n}} min ago",

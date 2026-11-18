@@ -4,12 +4,14 @@ import { Box, Typography, Card, CardActionArea, IconButton, Button } from '@mui/
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import QrCodeIcon from '@mui/icons-material/QrCode';
+import WifiIcon from '@mui/icons-material/Wifi';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import Face3LiveView from './Face3LiveView';
 import { selectFace3Protocol } from './protocols';
 import { useFace3Ai } from './face3AiPref';
+import { useRelativeTime } from './face3RelativeTime';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
@@ -34,19 +36,6 @@ const face3DetailLocation = (device, companyDevices) => {
       deviceModel: listed?.deviceModel || device.deviceModel || gConfig.sesameDeviceModel.sesame_face_3,
       deviceName: device.deviceName || '',
     }).toString(),
-  };
-};
-
-/** 把 lastSeenAt 说成人话。列表上只要"多久以前"，不需要精确时刻。 */
-const useRelativeTime = () => {
-  const { t } = useTranslation();
-  return (ms) => {
-    if (!ms) return '';
-    const diff = Date.now() - ms;
-    if (diff < 60_000) return t('face3.justNow');
-    if (diff < 3600_000) return t('face3.minutesAgo', { n: Math.floor(diff / 60_000) });
-    if (diff < 86400_000) return t('face3.hoursAgo', { n: Math.floor(diff / 3600_000) });
-    return t('face3.daysAgo', { n: Math.floor(diff / 86400_000) });
   };
 };
 
@@ -79,7 +68,8 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) =>
         {!online && <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.45)' }} />}
       </Box>
 
-      {/* 名称行：点了进详情页。在线显示绿点，离线在名称后写"离线 · 多久以前" */}
+      {/* 名称行：点了进详情页。名称前是 Wi-Fi 图标，在线 / 离线配色与设备列表一致；
+          离线在名称后写"离线 · 多久以前" */}
       <CardActionArea
         disableRipple
         onClick={() => onOpen(device)}
@@ -97,6 +87,11 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) =>
             bgcolor: 'white',
           }}
         >
+          <WifiIcon
+            fontSize="small"
+            aria-label={online ? t('face3.live') : t('face3.offline')}
+            sx={{ color: online ? 'primary.main' : 'info.light', flexShrink: 0 }}
+          />
           <Typography
             variant="body2"
             sx={{
@@ -109,13 +104,7 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) =>
           >
             {name}
           </Typography>
-          {online ? (
-            <Box
-              component="span"
-              aria-label={t('face3.live')}
-              sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }}
-            />
-          ) : (
+          {!online && (
             <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap', flexShrink: 0 }}>
               {lastSeenAt > 0 ? `${t('face3.offline')} · ${rel(lastSeenAt)}` : t('face3.offline')}
             </Typography>

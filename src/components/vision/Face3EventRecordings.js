@@ -17,10 +17,10 @@ export const recordingErrorKey = (message, playing = false) => {
 /**
  * 详情页的「事件录像」：分组标题 + 录像列表（从新到旧，翻页加载）。
  *
- * 播放不在这里：点一行只回调 onSelect，详情页在上方画面框里播放，并把正在播的
- * recId 传回 selectedRecId，这一行的缩略图压蒙层显示「播放中」。
+ * 播放不在这里：点一行只回调 onSelect，详情页在画面框里播放，并把正在播的
+ * recId 传回 selectedRecId，这一行时间加粗、行尾写「播放中」（背景不变色）。
  *
- * 触发原因（reason）固件目前区分不了，先不显示；缩略图云端还没有字段，先放占位底色。
+ * 触发原因（reason）固件目前区分不了，先不显示；云端也还没有缩略图，行里只放时间和时长。
  */
 export default function Face3EventRecordings({ device, selectedRecId, onSelect }) {
   const { t, i18n } = useTranslation();
@@ -78,15 +78,22 @@ export default function Face3EventRecordings({ device, selectedRecId, onSelect }
   const titleId = `face3-recordings-${deviceId}`;
 
   return (
-    <Box component="section" aria-labelledby={titleId}>
-      {/* 分组标题在白色卡片外面 */}
-      <Box sx={{ px: 2, pt: 1.75, pb: 0.75, bgcolor: 'secondary.main' }}>
+    /* 父级给了高度时（详情页）：标题栏固定，下面的列表在自己里面滚动；没给高度时照常往下排 */
+    <Box
+      component="section"
+      aria-labelledby={titleId}
+      sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+    >
+      {/* 分组标题在白色卡片外面：灰底一栏，文字垂直居中 */}
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, minHeight: 30, px: 2, bgcolor: 'secondary.main' }}
+      >
         <Typography id={titleId} component="h2" sx={{ fontSize: 13, fontWeight: 500, color: 'title.light' }}>
           {t('face3.recordings.title')}
         </Typography>
       </Box>
 
-      <Box sx={{ bgcolor: 'background.paper' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', bgcolor: 'background.paper' }}>
         {listError && (
           <Alert
             severity="error"
@@ -106,7 +113,8 @@ export default function Face3EventRecordings({ device, selectedRecId, onSelect }
                 selected={selected}
                 aria-current={selected || undefined}
                 onClick={() => onSelect(item)}
-                sx={{ gap: 1.5, px: 2, py: 1 }}
+                /* 选中只靠加粗和行尾"播放中"表达，背景不变色 */
+                sx={{ gap: 1.5, px: 2, py: 1, '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'transparent' } }}
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography
@@ -114,7 +122,7 @@ export default function Face3EventRecordings({ device, selectedRecId, onSelect }
                     sx={{
                       fontVariantNumeric: 'tabular-nums',
                       fontWeight: selected ? 700 : 400,
-                      color: selected ? 'primary.dark' : 'text.primary',
+                      color: 'common.black',
                     }}
                   >
                     {timestamp(item)}
@@ -123,37 +131,11 @@ export default function Face3EventRecordings({ device, selectedRecId, onSelect }
                     {meta(item)}
                   </Typography>
                 </Box>
-                {/* 第一帧缩略图：云端还没有字段，先放占位底色；正在播的这条压蒙层 */}
-                <Box
-                  sx={{
-                    position: 'relative',
-                    width: 96,
-                    height: 54,
-                    flexShrink: 0,
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                    bgcolor: '#1C1D20',
-                    boxShadow: selected ? (theme) => `0 0 0 2px ${theme.palette.primary.main}` : 'none',
-                  }}
-                >
-                  {selected && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        bgcolor: 'rgba(0,0,0,0.55)',
-                        color: 'common.white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {t('face3.recordings.playing')}
-                    </Box>
-                  )}
-                </Box>
+                {selected && (
+                  <Typography variant="caption" sx={{ flexShrink: 0, color: 'common.black', fontWeight: 500 }}>
+                    {t('face3.recordings.playing')}
+                  </Typography>
+                )}
               </ListItemButton>
             );
           })}

@@ -98,6 +98,12 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * 本组件只有一套 UI 和流程：唤醒 → 带着父组件传入的 protocol（想要的协议）取凭证 →
  * 按云端返回的 data.mode 选协议策略、启动对应 SDK 的观看端（见 ./protocols）。
  * 通话中换了想要的协议（如切了 AI 开关）会重新连接。
+ *
+ * label（可选）：出画后在左上角显示小号标签（红点 + 文字，无底色，如 LIVE），位置与录像播放器的时间标签一致，
+ * 让同一个画面框里"现在看的是什么"一眼可辨。不传则不显示（Vision 首页不传）。
+ *
+ * onPlayingChange（可选）：真正出画（phase 进入 / 离开 playing）时回调 true / false，
+ * 父组件据此只在对方画面显示出来后才提示"直播中"，唤醒、连接中不算。
  */
 /* 扬声器开关与音量按设备记住，下次打开（包括门铃推送点进来自动打开）沿用。
    localStorage 在无痕/禁用存储时会抛，读不到就用默认（关、70）。 */
@@ -123,7 +129,7 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
   }
 };
 
-export default function Face3LiveView({ device, protocol = kvsProtocol, onClose }) {
+export default function Face3LiveView({ device, protocol = kvsProtocol, onClose, label, onPlayingChange }) {
   const { t } = useTranslation();
   const { gFace3 } = useContext(GlobalStateContext);
   const { wakeFace3Device, viewFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
@@ -138,6 +144,13 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
   const viewerRef = useRef(null);
   const cancelAttemptRef = useRef(null);
   const [phase, setPhase] = useState('connecting'); // connecting | playing | error | ended
+  /* 出画与否告诉父组件。回调放 ref 里，父组件每次渲染传新函数也不会重复触发。 */
+  const onPlayingChangeRef = useRef(onPlayingChange);
+  onPlayingChangeRef.current = onPlayingChange;
+  const isPlaying = phase === 'playing';
+  useEffect(() => {
+    onPlayingChangeRef.current?.(isPlaying);
+  }, [isPlaying]);
   const [errorKey, setErrorKey] = useState('');
   const [localMediaIssues, setLocalMediaIssues] = useState({});
   const [attempt, setAttempt] = useState(0);
@@ -816,7 +829,16 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
           observationUnsupported ||
           Object.keys(localMediaIssues).length > 0) && (
           <Box
-            sx={{ position: 'absolute', top: 8, left: 8, right: 48, zIndex: 3, maxHeight: '55%', overflowY: 'auto' }}
+            sx={{
+              position: 'absolute',
+              /* 有左上角标签时让出它那一行 */
+              top: label && phase === 'playing' ? 24 : 8,
+              left: 8,
+              right: 48,
+              zIndex: 3,
+              maxHeight: '55%',
+              overflowY: 'auto',
+            }}
           >
             {reconnecting && phase === 'playing' && (
               <Alert role="status" severity="info" sx={{ mb: 0.5, py: 0, fontSize: '0.75rem' }}>
@@ -835,6 +857,40 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
             ))}
           </Box>
         )}
+
+      {/* 小号、无底色，只靠红点和文字阴影在亮暗画面上都看得清，尽量不挡画面 */}
+      {label && phase === 'playing' && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 3,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            color: 'common.white',
+            fontSize: 10,
+            fontWeight: 700,
+            lineHeight: 1,
+            letterSpacing: '0.06em',
+            textShadow: '0 0 2px rgba(0,0,0,0.8)',
+            pointerEvents: 'none',
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              bgcolor: 'error.main',
+              boxShadow: '0 0 2px rgba(0,0,0,0.6)',
+            }}
+          />
+          {label}
+        </Box>
+      )}
 
       {phase === 'playing' && needsTap && (
         <Box

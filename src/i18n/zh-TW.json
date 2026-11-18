@@ -497,6 +497,7 @@
       "noAudio": "無聲音",
       "more": "載入更多",
       "playing": "播放中",
+      "tag": "錄影",
       "seek": "播放進度",
       "reason": {
         "presence": "有人經過",
@@ -519,6 +520,8 @@
     "errLiveTimeout": "裝置沒有回應。剛喚醒的裝置需要一點時間啟動，請稍候再試",
     "errLiveUnknown": "播放失敗，請稍後重試",
     "live": "直播中",
+    "liveView": "即時畫面",
+    "liveViewHint": "查看當下門口的畫面",
     "offline": "離線",
     "justNow": "剛剛",
     "minutesAgo": "{{n}} 分鐘前",
