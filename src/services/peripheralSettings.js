@@ -10,7 +10,7 @@ const profiles = {
   ssm_touch_2_pro: ['card', 'fingerprint', 'passcode'],
   sesame_face: ['card', 'fingerprint', 'face', 'palm'],
   sesame_face_2: ['card', 'fingerprint', 'face', 'palm'],
-  sesame_face_3: ['card', 'fingerprint', 'face', 'palm'],
+  sesame_face_3: ['card', 'fingerprint', 'passcode', 'face', 'palm'],
   sesame_face_Pro: ['card', 'fingerprint', 'passcode', 'face', 'palm'],
   ssm_face_2_pro: ['card', 'fingerprint', 'passcode', 'face', 'palm'],
   sesame_face_ai: ['face', 'palm'],

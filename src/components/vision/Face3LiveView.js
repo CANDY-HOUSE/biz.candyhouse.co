@@ -644,8 +644,8 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
   const pipCornerStyle = {
     'top-left': { top: PIP_MARGIN, left: PIP_MARGIN },
     'top-right': { top: PIP_MARGIN, right: PIP_MARGIN },
-    'bottom-left': { bottom: PIP_MARGIN + 52, left: PIP_MARGIN },
-    'bottom-right': { bottom: PIP_MARGIN + 52, right: PIP_MARGIN },
+    'bottom-left': { bottom: PIP_MARGIN + 36, left: PIP_MARGIN },
+    'bottom-right': { bottom: PIP_MARGIN + 36, right: PIP_MARGIN },
   }[pipCorner];
 
   const beginPipDrag = (event) => {
@@ -906,15 +906,15 @@ export default function Face3LiveView({ device, protocol = kvsProtocol, onClose 
         <Box
           sx={{
             position: 'absolute',
-            bottom: 8,
-            left: 8,
-            right: 8,
+            bottom: 0,
+            left: 0,
+            right: 0,
             zIndex: 4,
             display: 'flex',
             alignItems: 'center',
             gap: 0.5,
-            p: 0.5,
-            borderRadius: 1,
+            height: 36,
+            px: 0.5,
             bgcolor: 'rgba(20,20,20,0.85)',
             color: 'white',
           }}

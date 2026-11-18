@@ -2,7 +2,7 @@ import PageHeader from '@/components/PageHeader';
 import React, { useContext, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, IconButton, Typography, Grid2 } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
 import CfpContent from '@/components/biz/device/CfpContent';
 import { gConfig } from '@constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
@@ -16,6 +16,7 @@ import { MoreHoriz } from '@mui/icons-material';
 import { isAppHome } from '@/services/deviceService';
 import { useCredentialCounts } from '@/hooks/useBleSnapshot';
 import { Credentials } from '@/components/AppCredentials';
+import Face3DevicePanel from '@/components/vision/Face3DevicePanel';
 
 export default function SesameAccessControlDeviceRegion() {
   const navigate = useNavigate();
@@ -45,6 +46,21 @@ export default function SesameAccessControlDeviceRegion() {
         ? '—'
         : (counts[kind] ?? (kind === 'card' || kind === 'passcode' ? fallback : '—'));
 
+  /* Face3：新增「录像」卡片（录像、AI 开关、人脸掌纹迁移）。PC 放在电池电量之上；
+     手机上本页默认显示录像，设置走页头 ⋯（与开关传感器默认显示履历同样的做法）。 */
+  const isFace3 = (device.deviceModel || searchParams.get('deviceModel')) === gConfig.sesameDeviceModel.sesame_face_3;
+  const openFace3Setting = () =>
+    navigate({
+      pathname: '/device-setting',
+      search: createSearchParams({
+        ...(isAppHome ? { appHome: '1', fromType: 'app' } : {}),
+        deviceUUID: did,
+        keyLevel: String(device.keyLevel ?? searchParams.get('keyLevel') ?? ''),
+        deviceModel: gConfig.sesameDeviceModel.sesame_face_3,
+        deviceName: device.deviceName || deviceName,
+      }).toString(),
+    });
+
   return (
     <Box
       sx={{
@@ -58,18 +74,21 @@ export default function SesameAccessControlDeviceRegion() {
         }),
       }}
     >
+      {/* 手机上本页根节点是 overflow: hidden 的定高容器，sticky 以它为参照：
+          top 只能是 0。若用 --page-header-offset（端外浏览器为顶栏高度 60px），
+          页头会被整体下推 60px，上面露出空白和下方画面的一截。 */}
       <PageHeader
         sx={{
           position: gMediaType.isMobile ? 'sticky' : 'static',
           zIndex: gMediaType.isMobile ? 1100 : 'auto',
-          top: 'var(--page-header-offset, 0px)',
+          top: 0,
         }}
         onBack={() => navigate(-1)}
         title={deviceName}
         action={
           gMediaType.isMobile &&
-          gUtils.isOPSModel(device.deviceModel) && (
-            <IconButton onClick={() => navigateToDeviceSetting(device)} disableRipple>
+          (gUtils.isOPSModel(device.deviceModel) || isFace3) && (
+            <IconButton onClick={() => (isFace3 ? openFace3Setting() : navigateToDeviceSetting(device))} disableRipple>
               <MoreHoriz sx={{ color: 'black' }} />
             </IconButton>
           )
@@ -97,7 +116,11 @@ export default function SesameAccessControlDeviceRegion() {
       >
         {gMediaType.isMobile ? (
           <Grid2 size={12} sx={{ height: '100%', minHeight: 0 }}>
-            {gUtils.isOPSModel(device.deviceModel) ? (
+            {isFace3 ? (
+              <Box sx={{ height: '100%', overflowY: 'auto' }}>
+                <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
+              </Box>
+            ) : gUtils.isOPSModel(device.deviceModel) ? (
               <DeviceHistory fullHeight={false} />
             ) : (
               <DeviceSetting showBack={false} />
@@ -135,6 +158,13 @@ export default function SesameAccessControlDeviceRegion() {
                 <DeviceSetting showBack={false} />
               )}
             </Grid2>
+            {isFace3 && (
+              <Grid2 size={12}>
+                <Box sx={{ overflow: 'hidden' }}>
+                  <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
+                </Box>
+              </Grid2>
+            )}
             <Grid2 size={12}>
               <Box>
                 <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.Battery')}</Typography>

@@ -496,6 +496,8 @@
       "duration": "{{seconds}} 秒",
       "noAudio": "無聲音",
       "more": "載入更多",
+      "playing": "播放中",
+      "seek": "播放進度",
       "reason": {
         "presence": "有人經過",
         "doorbell": "門鈴",

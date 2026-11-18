@@ -496,6 +496,8 @@
       "duration": "{{seconds}}秒",
       "noAudio": "音声なし",
       "more": "もっと見る",
+      "playing": "再生中",
+      "seek": "再生位置",
       "reason": {
         "presence": "人を検出",
         "doorbell": "呼び鈴",

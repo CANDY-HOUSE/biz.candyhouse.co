@@ -496,6 +496,8 @@
       "duration": "{{seconds}} seconds",
       "noAudio": "No audio",
       "more": "Load more",
+      "playing": "Playing",
+      "seek": "Playback position",
       "reason": {
         "presence": "Presence detected",
         "doorbell": "Doorbell",
