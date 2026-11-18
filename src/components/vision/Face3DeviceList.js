@@ -21,6 +21,10 @@ import Face3LiveView from './Face3LiveView';
 import Face3EventRecordings from './Face3EventRecordings';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import MoveDownIcon from '@mui/icons-material/MoveDown';
+import WifiIcon from '@mui/icons-material/Wifi';
+import Wifi2BarIcon from '@mui/icons-material/Wifi2Bar';
+import Wifi1BarIcon from '@mui/icons-material/Wifi1Bar';
+import BatteryStdIcon from '@mui/icons-material/BatteryStd';
 import Face3BioMigrate from './Face3BioMigrate';
 import { selectFace3Protocol } from './protocols';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
@@ -72,6 +76,65 @@ const useRelativeTime = () => {
     if (diff < 86400_000) return t('face3.hoursAgo', { n: Math.floor(diff / 3600_000) });
     return t('face3.daysAgo', { n: Math.floor(diff / 86400_000) });
   };
+};
+
+/** 信号强度分三档显示；数值照样写出来，排查时有用。 */
+const wifiSignalIcon = (rssi) => {
+  if (rssi >= -60) return WifiIcon;
+  if (rssi >= -75) return Wifi2BarIcon;
+  return Wifi1BarIcon;
+};
+
+/**
+ * 设备最近一次上报的 WiFi 与电量（云端 face3_status，每次联网上报时更新，不过期）。
+ *
+ * 设备离线很久也照样显示最后一次的值，所以必须带"更新于多久以前"，
+ * 否则用户分不清这是现在的状态还是几个月前的。没上报过的设备（旧固件）整行不显示。
+ */
+const DeviceStatusLine = ({ stateInfo }) => {
+  const { t } = useTranslation();
+  const rel = useRelativeTime();
+  const { wifiSsid, wifiRssi, wifiUpdatedAt, batteryPct, batteryUpdatedAt } = stateInfo || {};
+  const hasWifi = typeof wifiSsid === 'string' && wifiSsid !== '';
+  const hasBattery = typeof batteryPct === 'number';
+  if (!hasWifi && !hasBattery) return null;
+  const SignalIcon = typeof wifiRssi === 'number' ? wifiSignalIcon(wifiRssi) : WifiIcon;
+  const updatedAt = Math.max(Number(wifiUpdatedAt) || 0, Number(batteryUpdatedAt) || 0);
+  const iconSx = { fontSize: 14, flexShrink: 0 };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary', minWidth: 0, mt: 0.25 }}>
+      {hasWifi && (
+        <>
+          <SignalIcon sx={iconSx} aria-label={t('face3.wifi')} />
+          <Typography
+            variant="caption"
+            sx={{ minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            {wifiSsid}
+          </Typography>
+          {typeof wifiRssi === 'number' && (
+            <Typography variant="caption" sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+              {`${wifiRssi} dBm`}
+            </Typography>
+          )}
+        </>
+      )}
+      {hasBattery && (
+        <>
+          <BatteryStdIcon sx={{ ...iconSx, ml: hasWifi ? 0.5 : 0 }} aria-label={t('face3.battery')} />
+          <Typography variant="caption" sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+            {`${Math.round(batteryPct)}%`}
+          </Typography>
+        </>
+      )}
+      {updatedAt > 0 && (
+        <Typography variant="caption" sx={{ flexShrink: 0, ml: 0.5, color: 'text.disabled' }}>
+          {t('face3.statusUpdated', { time: rel(updatedAt) })}
+        </Typography>
+      )}
+    </Box>
+  );
 };
 
 /**
@@ -208,6 +271,7 @@ const DeviceCard = ({
                 {t(`deviceMember.role.${roleKey}`)}
               </Typography>
             )}
+            <DeviceStatusLine stateInfo={device.stateInfo} />
           </Box>
 
           <KeyboardArrowRightIcon sx={{ color: 'text.disabled', mr: -0.5 }} />
