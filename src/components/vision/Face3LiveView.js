@@ -111,9 +111,9 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * label（可选）：出画后在画面正上方居中显示小号标签（红点 + 文字，无底色，如 LIVE），
  * 让同一个画面框里"现在看的是什么"一眼可辨。不传则不显示（Vision 首页和详情页都传 LIVE）。
  *
- * 画质标签：出画后若媒体是点对点直连（设备原始码流，未经 TURN 中继），左上角显示"4K"。
- * 依据 getStats 里选中的 candidate-pair：两端都不是 relay 即点对点。只有 KVS 观看端提供
- * getStats；LiveKit 经 SFU 转发，不显示。
+ * 画质标签：出画后左上角显示实际收到的画面档位（见 QUALITY_LEVELS：4K / 2K / FHD / HD / SD），
+ * 按 <video> 的 videoWidth / videoHeight 判断。与线路无关：TURN 中继只原样转发、不重新编码，
+ * 中继下照样是设备发出的分辨率；经服务器转发后变小的，显示变小后的档位。
  *
  * onPlayingChange（可选）：真正出画（phase 进入 / 离开 playing）时回调 true / false，
  * 父组件据此只在对方画面显示出来后才提示"直播中"，唤醒、连接中不算。
@@ -122,8 +122,12 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * toolsTarget（可选）：其余工具（拍照、录制、视频对讲，见 Face3Toolbar）渲染到父组件给的这个 DOM 节点里
  * （详情页放在画面下方，图标 + 文字一排）；还没出画时灰色不可点。不传则不显示 —— Vision 首页只有话筒、扬声器。
  */
-/** 画面顶部一排（左上 4K、正中 LIVE / REC、右上关闭）共用的中线高度：各自 translateY(-50%) 对齐到这里 */
-const TOP_BAR_CENTER = 22;
+/** 画面顶部一排（左上画质、正中 LIVE / REC、右上关闭）离画面左右边缘的距离：
+    左上画质标签的边框、右上关闭叉的笔画都到这里 */
+const TOP_BAR_EDGE = 8;
+/** 顶部一排共用的中线高度（各自 translateY(-50%) 对齐到这里）。
+    定在约 13px 高的画质标签上边框离顶也是 TOP_BAR_EDGE 处，四周留白一致 */
+const TOP_BAR_CENTER = 14;
 
 /** 画面上的话筒 / 扬声器开关：小号、无底色、白色图标 */
 const overlayToggleSx = {
@@ -143,22 +147,17 @@ const MAX_RECORD_MS = 3 * 60 * 1000;
 const RECORD_LOG_SCOPE = 'components/vision/Face3LiveView.record';
 const RECORD_VIDEO_BPS = 6_000_000;
 
-/** 点对点 / 中继：首选 transport.selectedCandidatePairId，拿不到退回 nominated + succeeded 的 pair */
-const ROUTE_POLL_MS = 2000;
-const detectRoute = (report) => {
-  const byId = new Map();
-  report.forEach((r) => byId.set(r.id, r));
-  let pair = null;
-  report.forEach((r) => {
-    if (!pair && r.type === 'transport' && r.selectedCandidatePairId) pair = byId.get(r.selectedCandidatePairId);
-  });
-  report.forEach((r) => {
-    if (!pair && r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r;
-  });
-  if (!pair) return null;
-  const local = byId.get(pair.localCandidateId);
-  const remote = byId.get(pair.remoteCandidateId);
-  return local?.candidateType === 'relay' || remote?.candidateType === 'relay' ? 'relay' : 'p2p';
+/** 画质档位：按实际画面的长边（横竖都算）从高到低取第一个满足的，都不满足为 SD */
+const QUALITY_LEVELS = [
+  [3840, '4K'],
+  [2560, '2K'],
+  [1920, 'FHD'],
+  [1280, 'HD'],
+];
+const qualityLabel = (width, height) => {
+  const longEdge = Math.max(width || 0, height || 0);
+  if (!longEdge) return null; // 还没拿到画面尺寸
+  return (QUALITY_LEVELS.find(([min]) => longEdge >= min) || [0, 'SD'])[1];
 };
 
 /* 扬声器开关与音量按设备记住，下次打开（包括门铃推送点进来自动打开）沿用。
@@ -367,32 +366,21 @@ export default function Face3LiveView({
   }, [isPlaying, stopRecording]);
   useEffect(() => stopRecording, [stopRecording]);
 
-  /* 出画期间每 2 秒查一次线路（网络切换后会跟着变），点对点时左上角显示 4K */
-  const [route, setRoute] = useState(null);
+  /* 出画后按实际分辨率决定左上角的画质档位（4K / 2K / FHD / HD / SD）。分辨率中途变了
+     （设备切码流、重连后换了流）<video> 会触发 resize，跟着更新 */
+  const [quality, setQuality] = useState(null);
   useEffect(() => {
-    if (!isPlaying) {
-      setRoute(null);
+    const video = videoRef.current;
+    if (!isPlaying || !video) {
+      setQuality(null);
       return undefined;
     }
-    let stopped = false;
-    const check = async () => {
-      try {
-        const report = await viewerRef.current?.getStats?.();
-        if (stopped || !report) return;
-        const next = detectRoute(report);
-        if (next) setRoute(next);
-      } catch (_) {
-        /* 查不到就不显示 */
-      }
-    };
+    const check = () => setQuality(qualityLabel(video.videoWidth, video.videoHeight));
     check();
-    const timer = setInterval(check, ROUTE_POLL_MS);
-    return () => {
-      stopped = true;
-      clearInterval(timer);
-    };
+    video.addEventListener('resize', check);
+    return () => video.removeEventListener('resize', check);
   }, [isPlaying]);
-  const showQuality = isPlaying && route === 'p2p';
+  const showQuality = isPlaying && Boolean(quality);
   const [errorKey, setErrorKey] = useState('');
   const [localMediaIssues, setLocalMediaIssues] = useState({});
   const [attempt, setAttempt] = useState(0);
@@ -1123,7 +1111,7 @@ export default function Face3LiveView({
           </Box>
         )}
 
-      {/* 画质：点对点直连时左上角"4K"。细描边、无底色，与 LIVE 同样尽量不挡画面 */}
+      {/* 画质档位（4K / 2K / FHD / HD / SD）：左上角，细描边、无底色，与 LIVE 同样尽量不挡画面 */}
       {showQuality && (
         <Box
           sx={{
@@ -1131,14 +1119,22 @@ export default function Face3LiveView({
             /* 与 LIVE、右上角关闭按钮同一条中线 */
             top: TOP_BAR_CENTER,
             transform: 'translateY(-50%)',
-            left: 8,
+            left: TOP_BAR_EDGE,
             zIndex: 3,
-            px: 0.5,
-            py: 0.25,
+            px: '3px',
+            /* 上下留白要看起来一样：大写字母 / 数字在行盒里并不居中（下方留了降部的空间，
+               各平台字体还不同）。支持 text-box 的浏览器把行盒裁到大写字母顶和基线，
+               上下内边距就是实际留白；不支持的（旧 WebView）按默认字体实测的偏移补 */
+            pt: '0.8px',
+            pb: '1.2px',
+            '@supports (text-box: trim-both cap alphabetic)': {
+              textBox: 'trim-both cap alphabetic',
+              py: '2px',
+            },
             border: '1px solid rgba(255,255,255,0.85)',
             borderRadius: 0.5,
             color: 'common.white',
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: 700,
             lineHeight: 1,
             letterSpacing: '0.04em',
@@ -1147,7 +1143,7 @@ export default function Face3LiveView({
             pointerEvents: 'none',
           }}
         >
-          4K
+          {quality}
         </Box>
       )}
 
@@ -1343,10 +1339,13 @@ export default function Face3LiveView({
         aria-label={t('face3.cancel')}
         sx={{
           position: 'absolute',
-          /* 与左上角 4K、正上方 LIVE 同一条中线 */
+          /* 与左上角画质、正上方 LIVE 同一条中线 */
           top: TOP_BAR_CENTER,
           transform: 'translateY(-50%)',
-          right: 8,
+          /* 看得见的叉离右边 = 画质标签离左边（TOP_BAR_EDGE）。按钮四周有 8px 内边距，
+             叉在 20px 图标框里右侧还空约 4px，都要扣掉；按钮因此略伸出画面框（被裁掉），
+             可点范围不变 */
+          right: TOP_BAR_EDGE - 8 - 4,
           color: 'white',
           zIndex: 3,
           /* 无底色：和话筒 / 扬声器一样靠阴影在亮、暗画面上都看得清 */

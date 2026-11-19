@@ -868,7 +868,6 @@ export function startFace3Viewer(
 
   return {
     close,
-    getStats: () => (peer && !closed ? peer.getStats() : Promise.resolve(null)), // 供 Face3LiveView 判断点对点（显示 4K）
     setCameraEnabled: (enabled) => setLocalMediaEnabled('camera', enabled),
     setMicrophoneEnabled: (enabled) => setLocalMediaEnabled('microphone', enabled),
   };
