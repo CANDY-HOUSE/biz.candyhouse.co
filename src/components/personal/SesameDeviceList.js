@@ -234,11 +234,12 @@ const SortableItemComponent = ({
             ? {
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                minHeight: 104,
+                alignItems: expandable ? 'flex-end' : 'center',
+                minHeight: expandable ? 80 : 104,
                 pl: '20px',
                 pr: '10px',
-                py: '14px',
+                pt: expandable ? '8px' : '14px',
+                pb: expandable ? 0 : '14px',
                 transition: 'background-color 0.2s ease',
                 '&:active:not(:has(button:active))': { bgcolor: ios.pressed },
               }
@@ -261,36 +262,6 @@ const SortableItemComponent = ({
             </Stack>
             <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mt: '8px' }}>
               <FitName>{device.deviceName}</FitName>
-              {expandable && (
-                <ButtonBase
-                  onClick={handleArrowClick}
-                  aria-expanded={isExpanded}
-                  sx={{
-                    flexShrink: 0,
-                    ml: '10px',
-                    height: 30,
-                    pl: '12px',
-                    pr: '8px',
-                    gap: '2px',
-                    borderRadius: '15px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    bgcolor: isExpanded ? ios.tintFill : ios.fill,
-                    color: isExpanded ? ios.tint : 'rgba(60,60,67,0.85)',
-                    transition: `background-color 0.25s ease, color 0.25s ease, transform 0.2s ${ios.spring}`,
-                    '&:active': { transform: 'scale(0.94)' },
-                  }}
-                >
-                  {t(isHub3 ? 'pages.ir.remote.remoteControl' : 'botSettings.script')}
-                  <KeyboardArrowDownRoundedIcon
-                    sx={{
-                      fontSize: 20,
-                      transform: isExpanded ? 'none' : 'rotate(-90deg)',
-                      transition: `transform 0.3s ${ios.spring}`,
-                    }}
-                  />
-                </ButtonBase>
-              )}
             </Box>
             {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
               <Typography sx={{ display: 'block', mt: '4px', fontSize: 13, color: ios.tertiaryLabel }}>
@@ -410,6 +381,37 @@ const SortableItemComponent = ({
           )}
         </Box>
       </ListItem>
+      {isAppHome && expandable && (
+        <ButtonBase
+          {...(enableDrag ? listeners : {})}
+          onClick={handleArrowClick}
+          aria-expanded={isExpanded}
+          sx={{
+            width: '100%',
+            justifyContent: 'flex-start',
+            pt: '6px',
+            pb: '16px',
+            gap: '2px',
+            pl: '20px',
+            pr: '16px',
+            fontSize: 16,
+            fontWeight: 500,
+            color: isExpanded ? ios.tint : ios.label,
+            transition: 'background-color 0.2s ease, color 0.25s ease',
+            '&:active': { bgcolor: ios.pressed },
+          }}
+        >
+          {t(isHub3 ? 'pages.ir.remote.remoteControl' : 'botSettings.script')}
+          <KeyboardArrowDownRoundedIcon
+            sx={{
+              fontSize: 24,
+              color: isExpanded ? ios.tint : ios.tertiaryLabel,
+              transform: isExpanded ? 'none' : 'rotate(-90deg)',
+              transition: `transform 0.3s ${ios.spring}, color 0.25s ease`,
+            }}
+          />
+        </ButtonBase>
+      )}
 
       {!localOnly && (isScriptBot || webScripts) && !sortableIsDragging && (
         <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={isAppHome ? appExpandedSx : undefined}>
@@ -446,16 +448,6 @@ const SortableItemComponent = ({
 
 const appSwitchProps = isAppHome ? { tinted: true, size: 56 } : {};
 const appExpandedSx = {
-  position: 'relative',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 0,
-    height: '0.5px',
-    bgcolor: ios.separator,
-  },
   // Line the script play buttons up under the card's main button.
   '& .MuiIconButton-root': { width: 60 },
 };
