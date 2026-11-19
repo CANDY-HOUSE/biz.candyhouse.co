@@ -47,14 +47,16 @@ export function useFace3Ai() {
     return id in aiPrefs ? aiPrefs[id] : loadAiPref(id);
   };
 
+  /** 返回是否真的切换了（未登录时开启会被拦下、只提示登录） */
   const toggleAi = (device, enabled) => {
     if (enabled && !signedIn) {
       setSnackbarValue({ open: true, severity: 'info', msg: t('face3.ai.loginRequired') });
-      return;
+      return false;
     }
     const id = device.deviceUUID.toUpperCase();
     saveAiPref(id, enabled);
     setAiPrefs((prefs) => ({ ...prefs, [id]: enabled }));
+    return true;
   };
 
   return { isAiOn, toggleAi };

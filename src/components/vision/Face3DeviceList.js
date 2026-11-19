@@ -8,7 +8,7 @@ import WifiIcon from '@mui/icons-material/Wifi';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
-import Face3LiveView from './Face3LiveView';
+import { carryFace3Live, Face3LiveSlot, useFace3LiveSession } from './face3LiveSession';
 import { selectFace3Protocol } from './protocols';
 import { useFace3Ai } from './face3AiPref';
 import { useRelativeTime } from './face3RelativeTime';
@@ -46,7 +46,7 @@ const face3DetailLocation = (device, companyDevices) => {
  * 预览区现在是空的 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接在预览区放 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) => {
+const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
   const { t } = useTranslation();
   const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
@@ -145,11 +145,12 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) =>
         </Box>
       )}
 
-      {/* 就地播放：实时画面直接铺在预览框位置，盖住 ▶。
+      {/* 就地播放：实时画面直接铺在预览框位置，盖住 ▶。画面由全局会话渲染（见 face3LiveSession），
+          这里只放槽位 —— 点进详情页时连接不断，画面跟着挪过去。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
       {isViewing && (
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, aspectRatio: '16 / 9' }}>
-          <Face3LiveView device={device} protocol={selectFace3Protocol({ aiEnabled: aiOn })} onClose={onCloseView} />
+          <Face3LiveSlot />
         </Box>
       )}
     </Card>
@@ -161,7 +162,8 @@ const DeviceCard = ({ device, onOpen, onWake, onCloseView, aiOn, isViewing }) =>
  *
  * 数据来自 WS 路由 biz3Face3Qr 的 op:"list" —— 云端从连接记录取 subUUID，
  * 只会返回当前登录用户名下的设备（见 doc/face3-identity-model.md 第 5.7 节）。
- * 实时画面只在首页看；录像、AI 开关、人脸掌纹迁移在设备详情页的录像卡片（Face3DevicePanel）。
+ * 首页和设备详情页（Face3DevicePanel）都能看实时画面，正在看的那台点进详情页不断开（见 face3LiveSession）；
+ * 录像、AI 开关和拍照 / 录制等工具在详情页。
  */
 export default function Face3DeviceList() {
   const { t } = useTranslation();
@@ -227,12 +229,13 @@ export default function Face3DeviceList() {
 
   const face3Devices = gFace3.face3Devices || [];
 
-  const [viewingIds, setViewingIds] = useState(() => new Set());
+  /* 实时画面是全局会话（同一时刻一路），换页面不断开；关闭按钮在画面里，关了即结束会话 */
+  const liveSession = useFace3LiveSession();
 
   const handleWake = (device) => {
     if (!device?.deviceUUID) return;
     // 通话组件统一负责环境预检、唤醒和连接，关闭即取消本轮异步工作。
-    setViewingIds((ids) => new Set(ids).add(device.deviceUUID));
+    liveSession.start(device, selectFace3Protocol({ aiEnabled: isAiOn(device.deviceUUID) }));
   };
 
   /* 门铃推送点进来：/vision?deviceUUID=<id>&live=1 直接打开这台的实时画面。
@@ -343,17 +346,14 @@ export default function Face3DeviceList() {
           <DeviceCard
             key={d.deviceUUID}
             device={d}
-            onOpen={(device) => navigate(face3DetailLocation(device, gManageDevice.companyDevices))}
-            onWake={handleWake}
-            aiOn={isAiOn(d.deviceUUID)}
-            onCloseView={() =>
-              setViewingIds((ids) => {
-                const next = new Set(ids);
-                next.delete(d.deviceUUID);
-                return next;
+            onOpen={(device) =>
+              /* 正在看这台就把实时画面带进详情页（见 face3LiveSession） */
+              navigate(face3DetailLocation(device, gManageDevice.companyDevices), {
+                state: carryFace3Live(device.deviceUUID),
               })
             }
-            isViewing={viewingIds.has(d.deviceUUID)}
+            onWake={handleWake}
+            isViewing={liveSession.liveUUID === (d.deviceUUID || '').toUpperCase()}
           />
         ))}
       </Box>

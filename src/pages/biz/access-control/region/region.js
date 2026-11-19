@@ -49,6 +49,8 @@ export default function SesameAccessControlDeviceRegion() {
   /* Face3：新增「录像」卡片（录像、AI 开关）。PC 放在最上面一行；
      手机上本页默认显示录像，设置走页头 ⋯（与开关传感器默认显示履历同样的做法）。 */
   const isFace3 = (device.deviceModel || searchParams.get('deviceModel')) === gConfig.sesameDeviceModel.sesame_face_3;
+  /* 录像的删除只给拥有者 / 管理员（访客 keyLevel 2 只能看），云端也会再校验 */
+  const face3KeyLevel = device.keyLevel ?? searchParams.get('keyLevel');
   const openFace3Setting = () =>
     navigate({
       pathname: '/device-setting',
@@ -118,7 +120,11 @@ export default function SesameAccessControlDeviceRegion() {
           <Grid2 size={12} sx={{ height: '100%', minHeight: 0 }}>
             {isFace3 ? (
               <Box sx={{ height: '100%', overflowY: 'auto' }}>
-                <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
+                <Face3DevicePanel
+                  deviceUUID={did}
+                  deviceName={device.deviceName || deviceName}
+                  keyLevel={face3KeyLevel}
+                />
               </Box>
             ) : gUtils.isOPSModel(device.deviceModel) ? (
               <DeviceHistory fullHeight={false} />
@@ -131,7 +137,11 @@ export default function SesameAccessControlDeviceRegion() {
             {isFace3 && (
               <Grid2 size={12}>
                 <Box sx={{ overflow: 'hidden' }}>
-                  <Face3DevicePanel deviceUUID={did} deviceName={device.deviceName || deviceName} />
+                  <Face3DevicePanel
+                    deviceUUID={did}
+                    deviceName={device.deviceName || deviceName}
+                    keyLevel={face3KeyLevel}
+                  />
                 </Box>
               </Grid2>
             )}

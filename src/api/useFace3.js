@@ -56,6 +56,12 @@ const useFace3 = () => {
       recordingRequests.current.request('eventRecPlay', { deviceId: deviceUUID.toUpperCase(), recId }, signal),
     []
   );
+  /** 删一段录像（云端记录和 S3 文件）。只有拥有者 / 管理员能删，访客回 no_permission。 */
+  const deleteFace3Recording = useCallback(
+    (deviceUUID, recId, signal) =>
+      recordingRequests.current.request('eventRecDelete', { deviceId: deviceUUID.toUpperCase(), recId }, signal),
+    []
+  );
 
   /**
    * 人脸掌纹换机迁移（设备坏了换新机时，把旧设备云备份里的人脸/掌纹搬到新设备）。
@@ -242,6 +248,7 @@ const useFace3 = () => {
     face3StreamReasons,
     listFace3Recordings,
     playFace3Recording,
+    deleteFace3Recording,
     listBioMigrateSources,
     startBioMigrate,
     getBioMigrateStatus,

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-/** 把 lastSeenAt 说成人话。Vision 首页卡片和详情页的「实时画面」行只要"多久以前"，不需要精确时刻。 */
+/** 把 lastSeenAt 说成人话。Vision 首页卡片和详情页的「观看实时画面」按钮只要"多久以前"，不需要精确时刻。 */
 export const useRelativeTime = () => {
   const { t } = useTranslation();
   return (ms) => {

@@ -13,6 +13,7 @@ import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import awsconfig from './aws-exports';
 import GlobalContextProvider, { GlobalStateContext } from './context/GlobalContextProvider';
+import { Face3LiveSessionProvider } from './components/vision/face3LiveSession';
 import './i18n';
 import { routerComponentMap } from './router_config';
 import './styles/global.css';
@@ -216,7 +217,10 @@ const App = () => {
           <AppBootstrap>
             <GlobalContextProvider>
               <AppHomeRuntime />
-              <AppContent />
+              {/* Face3 实时画面挂在路由之外：Vision 首页点进详情页时连接不断 */}
+              <Face3LiveSessionProvider>
+                <AppContent />
+              </Face3LiveSessionProvider>
               {isAppHome && <AppQrScanner />}
               {isAppHome && <AppInternalTest />}
             </GlobalContextProvider>

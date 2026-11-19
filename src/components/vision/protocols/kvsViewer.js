@@ -868,7 +868,7 @@ export function startFace3Viewer(
 
   return {
     close,
-    getStats: () => (peer && !closed ? peer.getStats() : Promise.resolve(null)), // 临时调试：供 Face3RouteBadge 判断中继/点对点
+    getStats: () => (peer && !closed ? peer.getStats() : Promise.resolve(null)), // 供 Face3LiveView 判断点对点（显示 4K）
     setCameraEnabled: (enabled) => setLocalMediaEnabled('camera', enabled),
     setMicrophoneEnabled: (enabled) => setLocalMediaEnabled('microphone', enabled),
   };

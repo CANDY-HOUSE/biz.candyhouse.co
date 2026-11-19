@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils';
 import { gUtils } from '@/utils/gUtils';
+import { gConfig } from '@constants/gConfig';
 
 const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const { gManageDevice, gMediaType } = useContext(GlobalStateContext);
@@ -30,6 +31,8 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   // 通过机型来判断是否是 WiFi 模块，不再仅通过 UUID 前缀判断。
   const deviceModel = device?.deviceModel || searchParams.get('deviceModel') || '';
   const isWifiModule = gUtils.isWifiModel(deviceModel);
+  // WiFi 模块和 Face3 不显示「3.7V 可充电电池」开关。
+  const showRechargeableSwitch = !isWifiModule && deviceModel !== gConfig.sesameDeviceModel.sesame_face_3;
 
   const getBatteryRecordCallback = useCallback((message) => {
     if (message.action !== ACTION_TYPES.BIZ3_GET_BATTERY_RECORD) return;
@@ -161,7 +164,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
           isMenuOpen={menuState.open}
           enablePressDeleteTrigger={!gMediaType.isMobile && !isFromApp}
         />
-        {!gUtils.isWifiModel(device?.deviceModel) && (
+        {showRechargeableSwitch && (
           <List disablePadding>
             <ListItem disablePadding>
               <ListItemText
