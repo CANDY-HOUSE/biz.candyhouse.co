@@ -1,5 +1,5 @@
 import deferredComponent from '@/components/deferredComponent';
-import { appTabPaths } from '@/services/appNavigation';
+import { appTabBarHeight, appTabPaths } from '@/services/appNavigation';
 import { isAppHome } from '@/services/deviceService';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
@@ -400,6 +400,7 @@ const Layout = () => {
               minHeight: appTab ? '100%' : isAppHome ? '100dvh' : undefined,
               minWidth: 0,
               position: appTab ? 'relative' : undefined,
+              pb: appTab ? `calc(${appTabBarHeight}px + env(safe-area-inset-bottom))` : undefined,
             }}
           >
             <Outlet />

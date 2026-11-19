@@ -645,7 +645,12 @@
     "addContacts": "連絡先の追加",
     "gallery": "写真ライブラリ",
     "close": "閉じる",
-    "qrNotFound": "画像にQRコードが見つかりません"
+    "qrNotFound": "画像にQRコードが見つかりません",
+    "searchDevices": "デバイスを検索",
+    "deviceCount": "デバイス（{{count}}台）",
+    "searchContacts": "名前・メールアドレスで検索",
+    "contactCount": "連絡先（{{count}}人）",
+    "account": "アカウント"
   },
   "lockSettings": {
     "immediate": "すぐに",

@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Box, Typography, Card, CardActionArea, IconButton, Button } from '@mui/material';
+import { Box, Typography, Card, CardActionArea, IconButton, Button, ButtonBase } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import { ios } from '@/theme/appHomeStyle';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import WifiIcon from '@mui/icons-material/Wifi';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +54,94 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
   const name = device.deviceName || device.deviceUUID;
   const online = device.stateInfo?.wm2State === true;
   const lastSeenAt = device.stateInfo?.lastSeenAt;
+
+  if (isAppHome) {
+    return (
+      <Box sx={{ bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }}>
+        <ButtonBase
+          onClick={() => onOpen(device)}
+          sx={{
+            width: '100%',
+            minHeight: 60,
+            justifyContent: 'flex-start',
+            gap: '10px',
+            pl: '20px',
+            pr: '12px',
+            py: '14px',
+            transition: 'background-color 0.2s ease',
+            '&:active': { bgcolor: ios.pressed },
+          }}
+        >
+          <WifiIcon
+            aria-label={online ? t('face3.live') : t('face3.offline')}
+            sx={{ fontSize: 20, color: online ? 'rgba(60,60,67,0.85)' : ios.tertiaryLabel, flexShrink: 0 }}
+          />
+          <Typography
+            sx={{
+              minWidth: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: ios.label,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {name}
+          </Typography>
+          {!online && (
+            <Typography sx={{ fontSize: 14, color: ios.secondaryLabel, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {lastSeenAt > 0 ? `${t('face3.offline')} · ${rel(lastSeenAt)}` : t('face3.offline')}
+            </Typography>
+          )}
+          <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, ml: 'auto', flexShrink: 0 }} />
+        </ButtonBase>
+        <Box
+          sx={{
+            position: 'relative',
+            mx: '12px',
+            mb: '12px',
+            aspectRatio: '16 / 9',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            background: 'linear-gradient(160deg, #3A3A3C 0%, #1C1C1E 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+          }}
+        >
+          <Box sx={{ display: 'flex', color: online ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.22)' }}>
+            <VisionIcon width={48} height={48} />
+          </Box>
+          {online && (
+            <IconButton
+              onClick={() => onWake(device)}
+              aria-label={t('face3.wake')}
+              sx={{
+                width: 60,
+                height: 60,
+                bgcolor: 'rgba(255,255,255,0.9)',
+                color: ios.label,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                transition: `transform 0.2s ${ios.spring}`,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+                '&:active': { transform: 'scale(0.9)' },
+              }}
+            >
+              <PlayArrowRoundedIcon sx={{ fontSize: 36 }} />
+            </IconButton>
+          )}
+          {isViewing && (
+            <Box sx={{ position: 'absolute', inset: 0 }}>
+              <Face3LiveSlot />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Card
@@ -338,8 +428,8 @@ export default function Face3DeviceList() {
         sx={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr)',
-          gap: 2,
-          p: 2,
+          gap: isAppHome ? '12px' : 2,
+          p: isAppHome ? '8px 16px 16px' : 2,
         }}
       >
         {face3Devices.map((d) => (

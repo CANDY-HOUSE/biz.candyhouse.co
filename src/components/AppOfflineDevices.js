@@ -86,7 +86,7 @@ export default function AppOfflineDevices({ retry, connecting }) {
   }, [i18n, setDevices]);
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      <Box sx={{ width: '100%' }}>
         <SesameDeviceList devices={visibleDevices} callSearch={setSearch} localOnly />
         {devices?.length === 0 && (
           <Box

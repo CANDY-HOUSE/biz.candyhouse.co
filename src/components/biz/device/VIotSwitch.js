@@ -8,6 +8,34 @@ import { PngBotIcon, SvgLock, SvgLockDisable, SvgOPS, SvgUnLock } from '@/assets
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@/constants/gConfig';
 import { keyframes } from '@mui/system';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import LockOpenRoundedIcon from '@mui/icons-material/LockOpenRounded';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import { ios } from '@/theme/appHomeStyle';
+
+const tintedTones = {
+  locked: { bg: ios.redFill, fg: ios.red },
+  unlocked: { bg: ios.tintFill, fg: ios.tint },
+  unknown: { bg: ios.fill, fg: '#AEAEB2' },
+};
+const TintedIcon = ({ size, tone, Icon }) => (
+  <Box
+    sx={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      bgcolor: tintedTones[tone].bg,
+      color: tintedTones[tone].fg,
+      transition: `background-color 0.25s ease, color 0.25s ease, transform 0.2s ${ios.spring}`,
+    }}
+  >
+    {Icon ? <Icon sx={{ fontSize: Math.round(size * 0.46) }} /> : null}
+  </Box>
+);
+const lockTone = (checked) => (checked === undefined ? 'unknown' : checked ? 'unlocked' : 'locked');
 
 // Bike / Bot 执行指令后按钮左右抖动（3% 宽度，60ms 往返），持续 1.5 秒
 const shake = keyframes`from { transform: translateX(-3%); } to { transform: translateX(3%); }`;
@@ -30,7 +58,8 @@ const VIotSwitch = ({
   onCommand,
   onCommandStart,
   position,
-  large = false,
+  size = 51,
+  tinted = false,
   botIndex,
   disabled = false,
 }) => {
@@ -109,21 +138,53 @@ const VIotSwitch = ({
             );
           }}
         >
-          {checked === undefined ? <PngBotIcon state={-1} /> : <PngBotIcon state={0} />}
+          {tinted ? (
+            <TintedIcon size={size} tone={checked === undefined ? 'unknown' : 'unlocked'} Icon={PlayArrowRoundedIcon} />
+          ) : checked === undefined ? (
+            <PngBotIcon state={-1} />
+          ) : (
+            <PngBotIcon state={0} />
+          )}
         </IconButton>
       );
     }
     if (isLockButtonModel(model)) {
       return (
         <IconButton disabled={disabled} onClick={handleChange}>
-          {checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
+          {tinted ? (
+            <TintedIcon size={size} tone={lockTone(checked)} Icon={checked ? LockOpenRoundedIcon : LockRoundedIcon} />
+          ) : checked === undefined ? (
+            <SvgLockDisable />
+          ) : checked ? (
+            <SvgUnLock />
+          ) : (
+            <SvgLock />
+          )}
         </IconButton>
       );
     }
     if (gUtils.isOPSModel(model)) {
       return (
         <IconButton>
-          <SvgOPS label={defaultState} size={large ? 88 : 51} />
+          {tinted ? (
+            <Box
+              sx={{
+                minWidth: size,
+                height: size,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: ios.secondaryLabel,
+                fontSize: 15,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {defaultState}
+            </Box>
+          ) : (
+            <SvgOPS label={defaultState} size={size} />
+          )}
         </IconButton>
       );
     }
@@ -147,12 +208,24 @@ const VIotSwitch = ({
             );
           }}
         >
-          {disabled || checked === undefined ? <SvgLockDisable /> : checked ? <SvgUnLock /> : <SvgLock />}
+          {tinted ? (
+            <TintedIcon
+              size={size}
+              tone={disabled ? 'unknown' : lockTone(checked)}
+              Icon={checked && !disabled ? LockOpenRoundedIcon : LockRoundedIcon}
+            />
+          ) : disabled || checked === undefined ? (
+            <SvgLockDisable />
+          ) : checked ? (
+            <SvgUnLock />
+          ) : (
+            <SvgLock />
+          )}
         </IconButton>
       );
     }
     return <></>;
-  }, [checked, model, deviceUUID, shareKey, handleChange, relayIndex, relayEnabled, onCommand, botIndex, large]);
+  }, [checked, model, deviceUUID, shareKey, handleChange, relayIndex, relayEnabled, onCommand, botIndex, size, tinted]);
   return (
     <>
       <Hider show={isShow}>
@@ -161,7 +234,8 @@ const VIotSwitch = ({
             position: 'relative',
             display: 'inline-flex',
             ...(shaking ? { animation: `${shake} 60ms linear infinite alternate` } : {}),
-            ...(large ? { '& img': { width: '88px !important', height: '88px !important' } } : {}),
+            ...(tinted ? { '& .MuiIconButton-root:active > div': { transform: 'scale(0.9)' } } : {}),
+            ...(size !== 51 ? { '& img': { width: `${size}px !important`, height: `${size}px !important` } } : {}),
           }}
         >
           {stateView}
@@ -171,8 +245,8 @@ const VIotSwitch = ({
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
-                width: large ? 88 : 51,
-                height: large ? 88 : 51,
+                width: size,
+                height: size,
                 transform: `translate(-50%, -50%) rotate(${-position}deg)`,
                 pointerEvents: 'none',
               }}
@@ -180,10 +254,10 @@ const VIotSwitch = ({
               <Box
                 sx={{
                   position: 'absolute',
-                  right: -3,
+                  right: tinted ? 5 : -3,
                   top: '50%',
-                  width: large ? 8 : 6,
-                  height: large ? 8 : 6,
+                  width: size > 51 ? 8 : 6,
+                  height: size > 51 ? 8 : 6,
                   borderRadius: '50%',
                   bgcolor: checked === undefined ? 'info.light' : checked ? 'primary.main' : '#c74740',
                   transform: 'translateY(-50%)',

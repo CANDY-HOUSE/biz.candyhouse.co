@@ -31,6 +31,7 @@ import AppQrScanner from './components/AppQrScanner';
 import AppInternalTest from './components/AppInternalTest';
 import AppOfflineDevices, { AppOfflineStateContext } from './components/AppOfflineDevices';
 import { currentAppToken } from './services/appSession';
+import { appPageBackground, appTabBarHeight, appTabPaths, appTabTopBarHeight } from './services/appNavigation';
 import AppHomeRuntime from './components/AppHomeRuntime';
 import AppLocationDisclosure from './components/AppLocationDisclosure';
 import { isAppHome } from './services/deviceService';
@@ -157,9 +158,12 @@ const AppFrame = ({ children }) => {
   const location = useLocation();
   const contentRef = useRef(null);
   const homeScrollTop = useRef(0);
+  const tabPage = appTabPaths.includes(location.pathname);
+  const [scrolled, setScrolled] = useState(false);
   useLayoutEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = location.pathname === '/' ? homeScrollTop.current : 0;
+      setScrolled(contentRef.current.scrollTop > 0);
     }
   }, [location.pathname]);
   if (!isAppHome) return children;
@@ -167,11 +171,12 @@ const AppFrame = ({ children }) => {
     // Pages scroll inside the content box, never the document: the WebView moves even fixed elements while the
     // document scrolls, which drags the title bar along.
     <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <AppTopBar />
+      <AppTopBar scrolled={tabPage && scrolled} />
       <Box
         ref={contentRef}
         onScroll={(event) => {
           if (location.pathname === '/') homeScrollTop.current = event.currentTarget.scrollTop;
+          if (tabPage) setScrolled(event.currentTarget.scrollTop > 0);
         }}
         sx={{
           flex: 1,
@@ -181,9 +186,20 @@ const AppFrame = ({ children }) => {
           overflowY: 'auto',
           overflowX: 'hidden',
           overscrollBehaviorX: 'none',
+          ...(tabPage && {
+            display: 'flex',
+            flexDirection: 'column',
+            // The tab header floats over the content like an iOS navigation bar.
+            pt: `${appTabTopBarHeight}px`,
+            scrollPaddingTop: `${appTabTopBarHeight}px`,
+            bgcolor: appPageBackground,
+            // The floating tab bar overlays the content; keep the last rows scrollable above it.
+            pb: `calc(${appTabBarHeight}px + env(safe-area-inset-bottom))`,
+          }),
         }}
       >
-        {children}
+        {/* Same element on every route so the app tree never remounts; only tab pages lay it out. */}
+        <Box sx={tabPage ? { flex: '1 0 0', minHeight: 0 } : { display: 'contents' }}>{children}</Box>
       </Box>
       {isAppHome && <AppNavigation />}
     </Box>

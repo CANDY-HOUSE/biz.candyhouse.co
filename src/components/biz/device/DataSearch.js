@@ -5,7 +5,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import React, { useRef, useEffect } from 'react';
 import { debounce } from 'lodash';
 
-export const DataSearch = ({ callSearch, initialValue = '' }) => {
+export const DataSearch = ({ callSearch, initialValue = '', placeholder, sx }) => {
   const { t } = useTranslation();
   const [search, setSearch] = React.useState(initialValue);
 
@@ -42,12 +42,13 @@ export const DataSearch = ({ callSearch, initialValue = '' }) => {
         background: '#FAFAFA',
         borderRadius: '32px',
         height: '40px',
+        ...sx,
       }}
     >
       <SearchIcon sx={{ color: 'action.active', ml: 2, mr: 1, mt: 0.5 }} />
       <TextField
         variant="standard"
-        placeholder={t('contacts.search')}
+        placeholder={placeholder ?? t('contacts.search')}
         value={search}
         sx={{
           width: '100%',

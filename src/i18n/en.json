@@ -645,7 +645,12 @@
     "addContacts": "Add Contacts",
     "gallery": "Photo library",
     "close": "Close",
-    "qrNotFound": "No QR code found in this image"
+    "qrNotFound": "No QR code found in this image",
+    "searchDevices": "Search devices",
+    "deviceCount": "Devices ({{count}})",
+    "searchContacts": "Search by name or email",
+    "contactCount": "Contacts ({{count}})",
+    "account": "Account"
   },
   "lockSettings": {
     "immediate": "Immediately",

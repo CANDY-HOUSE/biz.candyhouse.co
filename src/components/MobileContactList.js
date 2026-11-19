@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Box, List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { Box, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import { useTranslation } from 'react-i18next';
+import { isAppHome } from '@/services/deviceService';
+import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
 import { DataSearch } from './biz/device/DataSearch';
 import Avatar from '@mui/material/Avatar';
 import { biz3utils } from '@/utils/biz3utils';
@@ -53,6 +57,67 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
     callRowClick(index);
   };
 
+  if (isAppHome) {
+    return (
+      <ListItem
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        onClick={handleItemClick}
+        style={style}
+        sx={{
+          minHeight: 64,
+          pl: '16px',
+          pr: '12px',
+          bgcolor: ios.card,
+          position: 'relative',
+          zIndex: isDragging ? 1 : undefined,
+          borderRadius: isDragging ? '14px' : 0,
+          boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.14)' : 'none',
+          '&:active': { bgcolor: isDragging ? ios.card : '#E5E5EA' },
+          '&:not(:last-of-type)::after': {
+            content: '""',
+            position: 'absolute',
+            left: 72,
+            right: 0,
+            bottom: 0,
+            height: '0.5px',
+            bgcolor: ios.separator,
+          },
+        }}
+      >
+        <Avatar
+          variant="circular"
+          sx={{
+            width: 42,
+            height: 42,
+            mr: '14px',
+            background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 600,
+          }}
+        >
+          {user.employeeName?.charAt(0)?.toUpperCase() ?? ''}
+        </Avatar>
+        <Typography
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: 17,
+            color: ios.label,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {user.employeeName}
+        </Typography>
+        <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
+      </ListItem>
+    );
+  }
+
   return (
     <ListItem
       ref={setNodeRef}
@@ -75,6 +140,7 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
 };
 
 const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDragEnd }) => {
+  const { t } = useTranslation();
   const [sortableData, setSortableData] = useState(contacts);
 
   useEffect(() => {
@@ -129,11 +195,25 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={sortableData.map((user) => user.subUUID)} strategy={verticalListSortingStrategy}>
-        <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          <Box sx={{ p: '16px', pb: '8px' }}>
-            <DataSearch callSearch={callSearch} />
+        <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
+          <Box sx={isAppHome ? { px: '16px', pt: '4px' } : { p: '16px', pb: '8px' }}>
+            <DataSearch
+              callSearch={callSearch}
+              placeholder={isAppHome ? t('appHome.searchContacts') : undefined}
+              sx={isAppHome ? appSearchSx : undefined}
+            />
           </Box>
-          <List>
+          {isAppHome && (
+            <Typography sx={appSectionLabelSx}>{t('appHome.contactCount', { count: sortableData.length })}</Typography>
+          )}
+          <List
+            disablePadding={isAppHome}
+            sx={
+              isAppHome
+                ? { mx: '16px', mb: '16px', bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }
+                : undefined
+            }
+          >
             {sortableData.map((user, index) => (
               <SortableContactItem
                 key={user.subUUID}

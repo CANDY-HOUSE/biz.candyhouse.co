@@ -56,3 +56,47 @@ export const BatteryLevel = ({ opacity = 1, level }) => {
     </Box>
   );
 };
+
+export const BatteryBadge = ({ level }) => {
+  if (typeof level !== 'number') {
+    return <></>;
+  }
+
+  const batteryLevel = Math.max(0, Math.min(100, Math.round(Number(level))));
+  const fillColor = batteryLevel < 15 ? 'error.main' : batteryLevel < 30 ? '#f3dd71' : 'primary.main';
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center' }} aria-label={`${batteryLevel}%`}>
+      <Box
+        sx={{
+          position: 'relative',
+          width: 34,
+          height: 17,
+          borderRadius: '5px',
+          overflow: 'hidden',
+          bgcolor: 'rgba(0,0,0,0.12)',
+        }}
+      >
+        <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `${batteryLevel}%`, bgcolor: fillColor }} />
+        <Typography
+          component="span"
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11.5,
+            fontWeight: 700,
+            lineHeight: 1,
+            letterSpacing: 0,
+            color: '#111',
+          }}
+        >
+          {batteryLevel}
+        </Typography>
+      </Box>
+      <Box sx={{ width: '2px', height: 6, ml: '1px', borderRadius: '0 1px 1px 0', bgcolor: 'rgba(0,0,0,0.2)' }} />
+    </Box>
+  );
+};

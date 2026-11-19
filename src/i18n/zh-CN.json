@@ -645,7 +645,12 @@
     "addContacts": "添加联系人",
     "gallery": "图库",
     "close": "关闭",
-    "qrNotFound": "图片中未发现二维码"
+    "qrNotFound": "图片中未发现二维码",
+    "searchDevices": "搜索设备",
+    "deviceCount": "设备（{{count}}台）",
+    "searchContacts": "搜索姓名或邮箱",
+    "contactCount": "联系人（{{count}}人）",
+    "account": "账户"
   },
   "lockSettings": {
     "immediate": "马上",

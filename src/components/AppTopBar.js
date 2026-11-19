@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 import { Box, ButtonBase, Popover } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import BackButton from '@/components/BackButton';
 import useAppLayer from '@/hooks/useAppLayer';
-import { appRouteInfo, appTopBarHeight } from '@/services/appNavigation';
+import { ios } from '@/theme/appHomeStyle';
+import { appRouteInfo, appTabTopBarHeight, appTopBarHeight } from '@/services/appNavigation';
 import { ContactIcon, CubeIcon, ScanIcon } from './appIcons';
 
-const menuColor = 'rgb(68, 68, 68)';
 const appEvent = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
 
 /** Long press, as on the former native toolbar; a move or early release cancels it. */
@@ -37,8 +38,8 @@ function useLongPress(action, delay = 500) {
   };
 }
 
-/** App header row: ⊕ menu on tab pages, back on child pages without their own header. */
-export default function AppTopBar() {
+/** App header row: + menu on tab pages, back on child pages without their own header. */
+export default function AppTopBar({ scrolled = false }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const anchor = useRef(null);
@@ -59,14 +60,30 @@ export default function AppTopBar() {
   return (
     <Box
       component="header"
-      sx={{
-        position: route.tab ? 'relative' : 'sticky',
-        top: 0,
-        zIndex: 1100,
-        flexShrink: 0,
-        height: appTopBarHeight,
-        bgcolor: '#fff',
-      }}
+      sx={
+        route.tab
+          ? {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1100,
+              height: appTabTopBarHeight,
+              bgcolor: scrolled ? 'rgba(242,242,247,0.82)' : 'rgba(242,242,247,0)',
+              backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+              WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+              boxShadow: scrolled ? `inset 0 -0.5px 0 ${ios.separator}` : 'none',
+              transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
+            }
+          : {
+              position: 'sticky',
+              top: 0,
+              zIndex: 1100,
+              flexShrink: 0,
+              height: appTopBarHeight,
+              bgcolor: '#fff',
+            }
+      }
     >
       {!route.tab && (
         <BackButton
@@ -87,53 +104,67 @@ export default function AppTopBar() {
           disableRipple
           aria-label={t('appHome.addNewDevice')}
           onClick={() => setMenuOpen(true)}
-          sx={{ position: 'absolute', top: 0, right: 8, width: 48, height: '100%', fontSize: 32, color: '#000' }}
+          sx={{
+            position: 'absolute',
+            right: 16,
+            top: 8,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            bgcolor: '#fff',
+            color: ios.label,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            transition: `transform 0.2s ${ios.spring}`,
+            '&:active': { transform: 'scale(0.9)' },
+          }}
         >
-          ⊕
+          <AddIcon sx={{ fontSize: 24 }} />
         </ButtonBase>
       )}
       <Popover
         open={menuOpen && route.tab}
         anchorEl={anchor.current}
         onClose={() => setMenuOpen(false)}
-        // ⊕ sits 8px from the edge; the default 16px margin would shift the arrow off its center.
-        marginThreshold={8}
+        marginThreshold={16}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{ paper: { elevation: 0, sx: { bgcolor: 'transparent', overflow: 'visible', width: 180 } } }}
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              mt: '8px',
+              width: 250,
+              borderRadius: '14px',
+              bgcolor: 'rgba(250,250,250,0.86)',
+              backdropFilter: 'blur(30px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
+            },
+          },
+        }}
       >
-        <Box
-          sx={{
-            width: 0,
-            height: 0,
-            ml: 'auto',
-            mr: '18px',
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
-            borderBottom: `12px solid ${menuColor}`,
-          }}
-        />
-        <Box sx={{ bgcolor: menuColor, borderRadius: '4px' }}>
-          {items.map(([label, Icon, action]) => (
-            <ButtonBase
-              key={label}
-              disableRipple
-              onClick={action}
-              sx={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                gap: '10px',
-                p: '18px 16px 18px 24px',
-                color: '#fff',
-                fontSize: 15,
-                textAlign: 'left',
-              }}
-            >
-              <Icon />
-              {t(label)}
-            </ButtonBase>
-          ))}
-        </Box>
+        {items.map(([label, Icon, action], index) => (
+          <ButtonBase
+            key={label}
+            disableRipple
+            onClick={action}
+            sx={{
+              width: '100%',
+              minHeight: 48,
+              justifyContent: 'space-between',
+              gap: '12px',
+              px: '16px',
+              color: ios.label,
+              fontSize: 17,
+              textAlign: 'left',
+              boxShadow: index < items.length - 1 ? `inset 0 -0.5px 0 ${ios.separator}` : 'none',
+              '&:active': { bgcolor: ios.pressed },
+            }}
+          >
+            {t(label)}
+            <Icon size={20} color={ios.label} />
+          </ButtonBase>
+        ))}
       </Popover>
     </Box>
   );

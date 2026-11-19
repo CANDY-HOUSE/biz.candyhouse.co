@@ -1,6 +1,10 @@
+import { ios } from '@/theme/appHomeStyle';
 export const appTabPaths = ['/', '/vision', '/contacts', '/me/homepage'];
 // Height of the Biz-drawn app header row, part of the page viewport.
 export const appTopBarHeight = 48;
+export const appTabTopBarHeight = 52;
+export const appTabBarHeight = 80;
+export const appPageBackground = ios.background;
 // App routes that draw their own header; AppTopBar hides on them.
 const appPageHeaderPaths = [
   '/device-setting',

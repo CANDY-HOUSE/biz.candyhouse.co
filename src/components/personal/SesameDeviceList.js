@@ -10,9 +10,9 @@ import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import BotScriptList from './BotScriptList';
 import BluetoothIcon from '@mui/icons-material/Bluetooth';
 import React, { useState, useEffect, useSyncExternalStore, useContext } from 'react';
-import { Box, List, ListItem, ListItemText, Stack, Collapse, Typography } from '@mui/material';
+import { Box, ButtonBase, List, ListItem, ListItemText, Stack, Collapse, Typography } from '@mui/material';
 import WifiIcon from '@mui/icons-material/Wifi';
-import { BatteryLevel } from '../biz/device/BatteryLevel';
+import { BatteryBadge, BatteryLevel } from '../biz/device/BatteryLevel';
 import VIotSwitch from '../biz/device/VIotSwitch';
 import {
   DndContext,
@@ -34,6 +34,9 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { DataSearch } from '../biz/device/DataSearch';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
 import { Error } from '@mui/icons-material';
 
@@ -77,6 +80,7 @@ const SortableItemComponent = ({
   enableDrag,
   expandedDevices,
   toggleExpanded,
+  isDragging,
   localOnly,
 }) => {
   const {
@@ -117,7 +121,8 @@ const SortableItemComponent = ({
         stateInfo: { ...device.stateInfo, wm2State: true, CHSesame2Status: native.bleState.toLowerCase() },
       }
     : device;
-  const isExpanded = expandedDevices.includes(device.deviceUUID);
+  const isExpanded = !(isAppHome && isDragging) && expandedDevices.includes(device.deviceUUID);
+  const { t } = useTranslation();
   // Hub3 与 Hub3 Pro 都有遥控器列表，共用展开箭头逻辑
   const isHub3 = device.deviceModel === 'hub_3' || gUtils.isHub3Pro(device.deviceModel);
 
@@ -139,7 +144,7 @@ const SortableItemComponent = ({
   const handleItemClick = (_e) => {
     if (sortableIsDragging) return;
 
-    if (isHub3 && isExpanded) {
+    if (isHub3 && isExpanded && !isAppHome) {
       toggleExpanded(device.deviceUUID);
     }
     callRowClick?.(index);
@@ -149,75 +154,175 @@ const SortableItemComponent = ({
     e.stopPropagation();
   };
 
+  const expandable = !localOnly && (isHub3 || isScriptBot || webScripts);
+  const statusColor = (on) => (on ? 'rgba(60,60,67,0.85)' : ios.tertiaryLabel);
+  const batteryLevel = native?.bleConnected
+    ? (native.batteryPercentage ?? device.stateInfo.batteryPercentage)
+    : device.stateInfo.batteryPercentage;
+  const hasFwUpdate =
+    device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer;
+
   return (
-    <Box>
+    <Box
+      ref={isAppHome ? setNodeRef : undefined}
+      style={isAppHome ? style : undefined}
+      sx={
+        isAppHome
+          ? {
+              mb: '12px',
+              bgcolor: ios.card,
+              borderRadius: ios.cardRadius,
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: sortableIsDragging ? 1 : undefined,
+              boxShadow: sortableIsDragging ? '0 8px 24px rgba(0,0,0,0.12)' : 'none',
+              transition: 'box-shadow 0.2s ease',
+            }
+          : undefined
+      }
+    >
       <ListItem
-        ref={setNodeRef}
+        ref={isAppHome ? undefined : setNodeRef}
         {...(enableDrag ? attributes : {})}
         {...(enableDrag ? listeners : {})}
         onClick={handleItemClick}
-        style={style}
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          height: isAppHome ? '7rem' : '5rem',
-          ...style,
-        }}
-      >
-        <Box sx={{ flexGrow: 1 }}>
-          <Stack direction="row" spacing="5px" alignItems="center">
-            {native?.showBle && (
-              <BluetoothIcon fontSize="small" sx={{ color: native.bleConnected ? 'primary.main' : 'info.light' }} />
-            )}
-            <WifiIcon
-              fontSize="small"
-              sx={{ color: device.stateInfo.wm2State === true ? 'primary.main' : 'info.light' }}
-            />
-            <BatteryLevel
-              level={
-                native?.bleConnected
-                  ? (native.batteryPercentage ?? device.stateInfo.batteryPercentage)
-                  : device.stateInfo.batteryPercentage
+        style={isAppHome ? undefined : style}
+        sx={
+          isAppHome
+            ? {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                minHeight: 104,
+                pl: '20px',
+                pr: '10px',
+                py: '14px',
+                transition: 'background-color 0.2s ease',
+                '&:active:not(:has(button:active))': { bgcolor: ios.pressed },
               }
-            />
-            {device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer && (
-              <Error sx={{ color: 'error.main', fontSize: 16 }} />
-            )}
-          </Stack>
-          <Stack direction="row" spacing="0px" alignItems="center">
-            {!localOnly && (isHub3 || isScriptBot || webScripts) && (
-              <Box
-                onClick={handleArrowClick}
+            : {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                height: '5rem',
+                ...style,
+              }
+        }
+      >
+        {isAppHome ? (
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Stack direction="row" spacing="10px" alignItems="center" sx={{ minHeight: 22 }}>
+              {native?.showBle && <BluetoothIcon sx={{ fontSize: 19, color: statusColor(native.bleConnected) }} />}
+              <WifiIcon sx={{ fontSize: 20, color: statusColor(device.stateInfo.wm2State === true) }} />
+              <BatteryBadge level={batteryLevel} />
+              {hasFwUpdate && <Error sx={{ color: 'error.main', fontSize: 19 }} />}
+            </Stack>
+            <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mt: '8px' }}>
+              <Typography
                 sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: 'auto',
+                  fontSize: 20,
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  color: ios.label,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
-                <ArrowDropUpIcon
-                  fontSize="small"
+                {device.deviceName}
+              </Typography>
+              {expandable && (
+                <ButtonBase
+                  onClick={handleArrowClick}
+                  aria-expanded={isExpanded}
                   sx={{
-                    width: '32px',
-                    height: '32px',
-                    marginRight: '-4px',
-                    marginLeft: '-8px',
-                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(90deg)',
-                    transition: 'transform 0.2s ease-in-out',
+                    flexShrink: 0,
+                    ml: '10px',
+                    height: 30,
+                    pl: '12px',
+                    pr: '8px',
+                    gap: '2px',
+                    borderRadius: '15px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    bgcolor: isExpanded ? ios.tintFill : ios.fill,
+                    color: isExpanded ? ios.tint : 'rgba(60,60,67,0.85)',
+                    transition: `background-color 0.25s ease, color 0.25s ease, transform 0.2s ${ios.spring}`,
+                    '&:active': { transform: 'scale(0.94)' },
                   }}
-                />
-              </Box>
+                >
+                  {t(isHub3 ? 'pages.ir.remote.remoteControl' : 'botSettings.script')}
+                  <KeyboardArrowDownRoundedIcon
+                    sx={{
+                      fontSize: 20,
+                      transform: isExpanded ? 'none' : 'rotate(-90deg)',
+                      transition: `transform 0.3s ${ios.spring}`,
+                    }}
+                  />
+                </ButtonBase>
+              )}
+            </Box>
+            {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
+              <Typography sx={{ display: 'block', mt: '4px', fontSize: 13, color: ios.tertiaryLabel }}>
+                {bleStateLabel(native.bleState)}
+              </Typography>
             )}
-            <ListItemText primary={device.deviceName} />
-          </Stack>
-          {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
-            <Typography variant="caption" color="text.disabled">
-              {bleStateLabel(native.bleState)}
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }} onClick={handleSwitchClick}>
+          </Box>
+        ) : (
+          <Box sx={{ flexGrow: 1 }}>
+            <Stack direction="row" spacing="5px" alignItems="center">
+              {native?.showBle && (
+                <BluetoothIcon fontSize="small" sx={{ color: native.bleConnected ? 'primary.main' : 'info.light' }} />
+              )}
+              <WifiIcon
+                fontSize="small"
+                sx={{ color: device.stateInfo.wm2State === true ? 'primary.main' : 'info.light' }}
+              />
+              <BatteryLevel
+                level={
+                  native?.bleConnected
+                    ? (native.batteryPercentage ?? device.stateInfo.batteryPercentage)
+                    : device.stateInfo.batteryPercentage
+                }
+              />
+              {device.stateInfo?.currentFwVer && device.stateInfo?.currentFwVer !== device.stateInfo?.latestFwVer && (
+                <Error sx={{ color: 'error.main', fontSize: 16 }} />
+              )}
+            </Stack>
+            <Stack direction="row" spacing="0px" alignItems="center">
+              {!localOnly && (isHub3 || isScriptBot || webScripts) && (
+                <Box
+                  onClick={handleArrowClick}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: 'auto',
+                  }}
+                >
+                  <ArrowDropUpIcon
+                    fontSize="small"
+                    sx={{
+                      width: '32px',
+                      height: '32px',
+                      marginRight: '-4px',
+                      marginLeft: '-8px',
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(90deg)',
+                      transition: 'transform 0.2s ease-in-out',
+                    }}
+                  />
+                </Box>
+              )}
+              <ListItemText primary={device.deviceName} />
+            </Stack>
+            {native?.showBle && !native.bleConnected && native.bleState && native.bleState !== 'noBleSignal' && (
+              <Typography variant="caption" color="text.disabled">
+                {bleStateLabel(native.bleState)}
+              </Typography>
+            )}
+          </Box>
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onClick={handleSwitchClick}>
           {gUtils.isHub3Pro(device.deviceModel) ? (
             // Hub3 Pro：分开显示两路继电器 icon
             <>
@@ -229,6 +334,7 @@ const SortableItemComponent = ({
                 relayEnabled={!localOnly && getRelayEnabled(device, 1)}
                 defaultState={getRelayLockState(device, 1)}
                 shareKey={device.secretKey}
+                {...appSwitchProps}
               />
               <VIotSwitch
                 model={device.deviceModel}
@@ -238,6 +344,7 @@ const SortableItemComponent = ({
                 relayEnabled={!localOnly && getRelayEnabled(device, 2)}
                 defaultState={getRelayLockState(device, 2)}
                 shareKey={device.secretKey}
+                {...appSwitchProps}
               />
             </>
           ) : (
@@ -266,16 +373,16 @@ const SortableItemComponent = ({
                     ? Math.trunc((device.stateInfo.position * 360) / 1024)
                     : undefined
               }
-              large={isAppHome}
               botIndex={isScriptBot && !localOnly ? bot.selected : native?.scriptIndex}
               shareKey={device.secretKey}
+              {...appSwitchProps}
             />
           )}
         </Box>
       </ListItem>
 
       {!localOnly && (isScriptBot || webScripts) && !sortableIsDragging && (
-        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={isAppHome ? appExpandedSx : undefined}>
           <BotScriptList
             deviceUUID={device.deviceUUID}
             scripts={bot.scripts}
@@ -297,8 +404,8 @@ const SortableItemComponent = ({
       )}
       {/* Hub3 设备的遥控器列表 - 拖拽时不显示 */}
       {!localOnly && isHub3 && !sortableIsDragging && (
-        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-          <Box sx={{ pl: 2, pr: 2, pb: 1 }}>
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={isAppHome ? appExpandedSx : undefined}>
+          <Box sx={isAppHome ? { px: 3, pb: 1 } : { pl: 2, pr: 2, pb: 1 }}>
             <MobileHub3RemoteList deviceUUID={device.deviceUUID} device={device} editable={false} />
           </Box>
         </Collapse>
@@ -307,9 +414,37 @@ const SortableItemComponent = ({
   );
 };
 
+const appSwitchProps = isAppHome ? { tinted: true, size: 56 } : {};
+const appExpandedSx = {
+  position: 'relative',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 0,
+    height: '0.5px',
+    bgcolor: ios.separator,
+  },
+  // Line the script play buttons up under the card's main button.
+  '& .MuiIconButton-root': { width: 60 },
+};
+
+const expandedStorageKey = 'appHome.expandedDevices';
+
+const loadExpandedDevices = () => {
+  if (!isAppHome) return [];
+  try {
+    return JSON.parse(localStorage.getItem(expandedStorageKey)) || [];
+  } catch (_) {
+    return [];
+  }
+};
+
 const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, localOnly = false }) => {
+  const { t } = useTranslation();
   const [sortableData, setSortableData] = useState(devices);
-  const [expandedDevices, setExpandedDevices] = useState([]); // 存储展开的设备 UUID
+  const [expandedDevices, setExpandedDevices] = useState(loadExpandedDevices); // 存储展开的设备 UUID
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -336,7 +471,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
   const handleDragStart = (_event) => {
     cancelAppPullRefresh();
     setIsDragging(true);
-    setExpandedDevices([]);
+    if (!isAppHome) setExpandedDevices([]);
   };
 
   const handleDragEnd = (event) => {
@@ -353,9 +488,17 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
   };
 
   const toggleExpanded = (deviceUUID) => {
-    setExpandedDevices((prev) =>
-      prev.includes(deviceUUID) ? prev.filter((uuid) => uuid !== deviceUUID) : [...prev, deviceUUID]
-    );
+    setExpandedDevices((prev) => {
+      const next = prev.includes(deviceUUID) ? prev.filter((uuid) => uuid !== deviceUUID) : [...prev, deviceUUID];
+      if (isAppHome) {
+        try {
+          localStorage.setItem(expandedStorageKey, JSON.stringify(next));
+        } catch (_) {
+          // Only the next launch loses the expanded rows.
+        }
+      }
+      return next;
+    });
   };
 
   return (
@@ -368,12 +511,20 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={sortableData.map((device) => device.deviceUUID)} strategy={verticalListSortingStrategy}>
-        <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          <Box sx={{ p: '16px', pb: '8px' }}>
-            <DataSearch callSearch={callSearch} />
+        <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
+          <Box sx={isAppHome ? { px: '16px', pt: '4px' } : { p: '16px', pb: '8px' }}>
+            <DataSearch
+              callSearch={callSearch}
+              placeholder={isAppHome ? t('appHome.searchDevices') : undefined}
+              sx={isAppHome ? appSearchSx : undefined}
+            />
           </Box>
+          {isAppHome && (
+            <Typography sx={appSectionLabelSx}>{t('appHome.deviceCount', { count: sortableData.length })}</Typography>
+          )}
           <List
             disablePadding
+            sx={isAppHome ? { px: '16px', pb: '16px' } : undefined}
             onTouchMoveCapture={() => {
               if (isAppHome && document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
             }}

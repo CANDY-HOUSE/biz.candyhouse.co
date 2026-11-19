@@ -4,13 +4,94 @@ import { isAppHome } from '@/services/deviceService';
 import { appTopBarHeight } from '@/services/appNavigation';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { Box, List, ListItem, ListItemIcon, ListItemText, SvgIcon, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  ButtonBase,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  SvgIcon,
+  Typography,
+} from '@mui/material';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import { ios, appSectionLabelSx } from '@/theme/appHomeStyle';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { QrCode } from '@mui/icons-material';
 import { biz3utils } from '@/utils/biz3utils';
 import { URLs } from '@/constants/URLs';
 import ActionSheet from './ActionSheet';
+
+const appCardSx = { bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' };
+
+const appRowSx = {
+  position: 'relative',
+  width: '100%',
+  minHeight: 56,
+  justifyContent: 'flex-start',
+  gap: '14px',
+  pl: '16px',
+  pr: '12px',
+  py: '10px',
+  transition: 'background-color 0.2s ease',
+  '&:active': { bgcolor: '#E5E5EA' },
+  '&:not(:last-of-type)::after': {
+    content: '""',
+    position: 'absolute',
+    left: 60,
+    right: 0,
+    bottom: 0,
+    height: '0.5px',
+    bgcolor: ios.separator,
+  },
+};
+
+const AppRow = ({ icon, iconBg, title, subtitle, dot, onClick }) => (
+  <ButtonBase onClick={onClick} sx={appRowSx}>
+    <Box
+      sx={{
+        width: 30,
+        height: 30,
+        borderRadius: '8px',
+        bgcolor: iconBg,
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        '& svg': { fontSize: 20 },
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Typography sx={{ fontSize: 17, color: ios.label }}>{title}</Typography>
+        {dot && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f44336', flexShrink: 0 }} />}
+      </Box>
+      {subtitle && <Typography sx={{ mt: '1px', fontSize: 13, color: ios.secondaryLabel }}>{subtitle}</Typography>}
+    </Box>
+    <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
+  </ButtonBase>
+);
+
+const AppActionRow = ({ title, color, onClick }) => (
+  <ButtonBase
+    onClick={onClick}
+    sx={{
+      ...appRowSx,
+      justifyContent: 'center',
+      '&:not(:last-of-type)::after': { ...appRowSx['&:not(:last-of-type)::after'], left: 16 },
+    }}
+  >
+    <Typography sx={{ fontSize: 17, color }}>{title}</Typography>
+  </ButtonBase>
+);
 
 const MobileMyHomepage = () => {
   const { t } = useTranslation();
@@ -321,6 +402,154 @@ const MobileMyHomepage = () => {
     handleOpenPage({ link: targetUrl });
   };
 
+  const openAppDownload = () => {
+    let url = 'https://testflight.apple.com/join/Rok4GOFD';
+    if (appDistributesApk || window.AndroidHandler) {
+      url =
+        'https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp/releases/latest/download/Sesame_android_release.apk';
+    }
+    biz3utils.triggerBridge({
+      action: 'requestOpenExternalURL',
+      url,
+    });
+  };
+
+  const notificationText =
+    notificationEnabled == null
+      ? null
+      : notificationEnabled
+        ? t('setting.notificationEnabled')
+        : t('setting.notificationDisabled');
+
+  const actionSheetView = (
+    <ActionSheet
+      open={!!actionSheet}
+      title={actionSheet?.title}
+      onConfirm={() => {
+        const confirm = actionSheet?.onConfirm;
+        setActionSheet(null);
+        confirm && confirm();
+      }}
+      onClose={() => setActionSheet(null)}
+    />
+  );
+
+  if (isAppHome) {
+    const anonymous = gStripe.customerInfo.isAnonymous;
+    const displayName = currentUserInfo.name || currentUserInfo.email;
+    return (
+      <Box sx={{ px: '16px', pt: '8px', pb: '16px' }}>
+        <ButtonBase
+          onClick={handleHeaderClick}
+          sx={{
+            ...appCardSx,
+            width: '100%',
+            justifyContent: 'flex-start',
+            gap: '16px',
+            px: '16px',
+            py: '16px',
+            transition: 'background-color 0.2s ease',
+            '&:active': { bgcolor: '#E5E5EA' },
+          }}
+        >
+          <Avatar
+            sx={{
+              width: 62,
+              height: 62,
+              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+              color: '#fff',
+              fontSize: 26,
+              fontWeight: 600,
+            }}
+          >
+            {anonymous || !displayName ? (
+              <PersonOutlineIcon sx={{ fontSize: 34 }} />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
+          </Avatar>
+          <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+            <Typography
+              sx={{
+                fontSize: 22,
+                fontWeight: 600,
+                color: ios.label,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {anonymous ? t('setting.loginRegist') : displayName}
+            </Typography>
+            <Typography
+              sx={{
+                mt: '2px',
+                fontSize: 15,
+                color: ios.secondaryLabel,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {anonymous ? t('pages.sesameAccessControlDevice.index.Email') : currentUserInfo.email}
+            </Typography>
+          </Box>
+          {anonymous ? (
+            <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
+          ) : (
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                bgcolor: ios.fill,
+                color: ios.label,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <QrCode sx={{ fontSize: 22 }} />
+            </Box>
+          )}
+        </ButtonBase>
+        <Box sx={{ ...appCardSx, mt: '24px' }}>
+          <AppRow
+            icon={<NotificationsRoundedIcon />}
+            iconBg="#FF3B30"
+            title={t('setting.enableNotification')}
+            subtitle={notificationText}
+            onClick={handlePushPage}
+          />
+          <AppRow
+            icon={<StorefrontRoundedIcon />}
+            iconBg={ios.tint}
+            title={t('setting.shop')}
+            dot={activePromotion?.visible}
+            onClick={handleShopClick}
+          />
+        </Box>
+        {authState?.signedIn && (
+          <>
+            <Typography sx={{ ...appSectionLabelSx, pl: '16px', pt: '24px' }}>{t('appHome.account')}</Typography>
+            <Box sx={appCardSx}>
+              <AppActionRow title={t('setting.logout')} color={ios.tint} onClick={handleLogout} />
+              <AppActionRow title={t('setting.deleteAccount')} color={ios.red} onClick={handleDeleteAccount} />
+            </Box>
+          </>
+        )}
+        <Typography
+          onClick={openAppDownload}
+          sx={{ mt: '28px', textAlign: 'center', fontSize: 13, color: ios.secondaryLabel }}
+        >
+          {appVersion?.display ?? ''}
+        </Typography>
+        {actionSheetView}
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
       <Box
@@ -410,20 +639,7 @@ const MobileMyHomepage = () => {
           </ListItem>
         </List>
         <Box sx={{ flexGrow: 1 }} />
-        <Typography
-          onClick={() => {
-            let url = 'https://testflight.apple.com/join/Rok4GOFD';
-            if (appDistributesApk || window.AndroidHandler) {
-              url =
-                'https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp/releases/latest/download/Sesame_android_release.apk';
-            }
-            biz3utils.triggerBridge({
-              action: 'requestOpenExternalURL',
-              url,
-            });
-          }}
-          sx={{ textAlign: 'center', pb: 2, color: 'rgba(0,0,25,0.22)' }}
-        >
+        <Typography onClick={openAppDownload} sx={{ textAlign: 'center', pb: 2, color: 'rgba(0,0,25,0.22)' }}>
           {appVersion?.display ?? ''}
         </Typography>
       </Box>
@@ -463,16 +679,7 @@ const MobileMyHomepage = () => {
           </Box>
         </>
       )}
-      <ActionSheet
-        open={!!actionSheet}
-        title={actionSheet?.title}
-        onConfirm={() => {
-          const confirm = actionSheet?.onConfirm;
-          setActionSheet(null);
-          confirm && confirm();
-        }}
-        onClose={() => setActionSheet(null)}
-      />
+      {actionSheetView}
     </Box>
   );
 };
