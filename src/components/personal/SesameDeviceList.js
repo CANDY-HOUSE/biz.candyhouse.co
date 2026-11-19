@@ -9,7 +9,7 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import BotScriptList from './BotScriptList';
 import BluetoothIcon from '@mui/icons-material/Bluetooth';
-import React, { useState, useEffect, useSyncExternalStore, useContext } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useSyncExternalStore, useContext } from 'react';
 import { Box, ButtonBase, List, ListItem, ListItemText, Stack, Collapse, Typography } from '@mui/material';
 import WifiIcon from '@mui/icons-material/Wifi';
 import { BatteryBadge, BatteryLevel } from '../biz/device/BatteryLevel';
@@ -70,6 +70,48 @@ const getRelayEnabled = (device, relayIndex) => {
   const info = device.stateInfo?.relayInfo || {};
   const enable = info[`enable${relayIndex}`];
   return enable === undefined ? true : Number(enable) === 1;
+};
+
+const nameSize = 20;
+const nameMinSize = 12;
+
+// Shrinks a long name to stay on one line; it measures against the row, whose width the font never changes.
+const FitName = ({ children }) => {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const fit = () => {
+      el.style.fontSize = `${nameSize}px`;
+      if (el.scrollWidth <= el.clientWidth) return;
+      let size = Math.max(nameMinSize, Math.floor((nameSize * el.clientWidth * 2) / el.scrollWidth) / 2);
+      el.style.fontSize = `${size}px`;
+      while (el.scrollWidth > el.clientWidth && size > nameMinSize) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el.parentElement);
+    return () => observer.disconnect();
+  }, [children]);
+  return (
+    <Typography
+      ref={ref}
+      sx={{
+        minWidth: 0,
+        fontSize: nameSize,
+        fontWeight: 600,
+        lineHeight: '27px',
+        color: ios.label,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      {children}
+    </Typography>
+  );
 };
 
 const SortableItemComponent = ({
@@ -218,19 +260,7 @@ const SortableItemComponent = ({
               {hasFwUpdate && <Error sx={{ color: 'error.main', fontSize: 19 }} />}
             </Stack>
             <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mt: '8px' }}>
-              <Typography
-                sx={{
-                  fontSize: 20,
-                  fontWeight: 600,
-                  lineHeight: 1.35,
-                  color: ios.label,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {device.deviceName}
-              </Typography>
+              <FitName>{device.deviceName}</FitName>
               {expandable && (
                 <ButtonBase
                   onClick={handleArrowClick}

@@ -649,8 +649,7 @@
     "searchDevices": "搜索设备",
     "deviceCount": "设备（{{count}}台）",
     "searchContacts": "搜索姓名或邮箱",
-    "contactCount": "联系人（{{count}}人）",
-    "account": "账户"
+    "contactCount": "联系人（{{count}}人）"
   },
   "lockSettings": {
     "immediate": "马上",

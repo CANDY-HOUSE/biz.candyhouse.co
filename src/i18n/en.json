@@ -649,8 +649,7 @@
     "searchDevices": "Search devices",
     "deviceCount": "Devices ({{count}})",
     "searchContacts": "Search by name or email",
-    "contactCount": "Contacts ({{count}})",
-    "account": "Account"
+    "contactCount": "Contacts ({{count}})"
   },
   "lockSettings": {
     "immediate": "Immediately",

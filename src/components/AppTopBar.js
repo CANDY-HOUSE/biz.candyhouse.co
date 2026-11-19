@@ -72,8 +72,7 @@ export default function AppTopBar({ scrolled = false }) {
               bgcolor: scrolled ? 'rgba(242,242,247,0.82)' : 'rgba(242,242,247,0)',
               backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
               WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-              boxShadow: scrolled ? `inset 0 -0.5px 0 ${ios.separator}` : 'none',
-              transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
+              transition: 'background-color 0.25s ease',
             }
           : {
               position: 'sticky',

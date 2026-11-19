@@ -649,8 +649,7 @@
     "searchDevices": "デバイスを検索",
     "deviceCount": "デバイス（{{count}}台）",
     "searchContacts": "名前・メールアドレスで検索",
-    "contactCount": "連絡先（{{count}}人）",
-    "account": "アカウント"
+    "contactCount": "連絡先（{{count}}人）"
   },
   "lockSettings": {
     "immediate": "すぐに",

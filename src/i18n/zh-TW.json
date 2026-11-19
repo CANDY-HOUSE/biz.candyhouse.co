@@ -649,8 +649,7 @@
     "searchDevices": "搜尋裝置",
     "deviceCount": "裝置（{{count}}台）",
     "searchContacts": "搜尋姓名或電子郵件",
-    "contactCount": "聯絡人（{{count}}人）",
-    "account": "帳戶"
+    "contactCount": "聯絡人（{{count}}人）"
   },
   "lockSettings": {
     "immediate": "馬上",

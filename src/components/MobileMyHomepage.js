@@ -1,7 +1,7 @@
 import { appPromotion } from '@/services/appPromotion';
 import { appDistributesApk, onNativeEvent } from '@/services/appBridge';
 import { isAppHome } from '@/services/deviceService';
-import { appTopBarHeight } from '@/services/appNavigation';
+import { appTabBarHeight, appTabTopBarHeight, appTopBarHeight } from '@/services/appNavigation';
 import React, { useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import {
@@ -19,7 +19,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import { ios, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { ios } from '@/theme/appHomeStyle';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { QrCode } from '@mui/icons-material';
@@ -439,112 +439,126 @@ const MobileMyHomepage = () => {
     const displayName = currentUserInfo.name || currentUserInfo.email;
     return (
       <Box sx={{ px: '16px', pt: '8px', pb: '16px' }}>
-        <ButtonBase
-          onClick={handleHeaderClick}
+        {/* Fills the first screen so, as before, logout and account deletion only show after scrolling. */}
+        <Box
           sx={{
-            ...appCardSx,
-            width: '100%',
-            justifyContent: 'flex-start',
-            gap: '16px',
-            px: '16px',
-            py: '16px',
-            transition: 'background-color 0.2s ease',
-            '&:active': { bgcolor: '#E5E5EA' },
+            minHeight: `calc(100dvh - ${appTabTopBarHeight + 8}px - env(safe-area-inset-bottom))`,
+            pb: `${appTabBarHeight}px`,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          <Avatar
+          <ButtonBase
+            onClick={handleHeaderClick}
             sx={{
-              width: 62,
-              height: 62,
-              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
-              color: '#fff',
-              fontSize: 26,
-              fontWeight: 600,
+              ...appCardSx,
+              width: '100%',
+              justifyContent: 'flex-start',
+              gap: '16px',
+              px: '16px',
+              py: '16px',
+              transition: 'background-color 0.2s ease',
+              '&:active': { bgcolor: '#E5E5EA' },
             }}
           >
-            {anonymous || !displayName ? (
-              <PersonOutlineIcon sx={{ fontSize: 34 }} />
-            ) : (
-              displayName.charAt(0).toUpperCase()
-            )}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-            <Typography
+            <Avatar
               sx={{
-                fontSize: 22,
+                width: 62,
+                height: 62,
+                background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+                color: '#fff',
+                fontSize: 26,
                 fontWeight: 600,
-                color: ios.label,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
               }}
             >
-              {anonymous ? t('setting.loginRegist') : displayName}
-            </Typography>
-            <Typography
-              sx={{
-                mt: '2px',
-                fontSize: 15,
-                color: ios.secondaryLabel,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {anonymous ? t('pages.sesameAccessControlDevice.index.Email') : currentUserInfo.email}
-            </Typography>
-          </Box>
-          {anonymous ? (
-            <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
-          ) : (
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: ios.fill,
-                color: ios.label,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <QrCode sx={{ fontSize: 22 }} />
+              {anonymous || !displayName ? (
+                <PersonOutlineIcon sx={{ fontSize: 34 }} />
+              ) : (
+                displayName.charAt(0).toUpperCase()
+              )}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <Typography
+                sx={{
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: ios.label,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {anonymous ? t('setting.loginRegist') : displayName}
+              </Typography>
+              <Typography
+                sx={{
+                  mt: '2px',
+                  fontSize: 15,
+                  color: ios.secondaryLabel,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {anonymous ? t('pages.sesameAccessControlDevice.index.Email') : currentUserInfo.email}
+              </Typography>
             </Box>
-          )}
-        </ButtonBase>
-        <Box sx={{ ...appCardSx, mt: '24px' }}>
-          <AppRow
-            icon={<NotificationsRoundedIcon />}
-            iconBg="#FF3B30"
-            title={t('setting.enableNotification')}
-            subtitle={notificationText}
-            onClick={handlePushPage}
-          />
-          <AppRow
-            icon={<StorefrontRoundedIcon />}
-            iconBg={ios.tint}
-            title={t('setting.shop')}
-            dot={activePromotion?.visible}
-            onClick={handleShopClick}
-          />
+            {anonymous ? (
+              <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
+            ) : (
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  bgcolor: ios.fill,
+                  color: ios.label,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <QrCode sx={{ fontSize: 22 }} />
+              </Box>
+            )}
+          </ButtonBase>
+          <Box sx={{ ...appCardSx, mt: '24px' }}>
+            <AppRow
+              icon={<NotificationsRoundedIcon />}
+              iconBg="#FF3B30"
+              title={t('setting.enableNotification')}
+              subtitle={notificationText}
+              onClick={handlePushPage}
+            />
+            <AppRow
+              icon={<StorefrontRoundedIcon />}
+              iconBg={ios.tint}
+              title={t('setting.shop')}
+              dot={activePromotion?.visible}
+              onClick={handleShopClick}
+            />
+          </Box>
+          <Box sx={{ flexGrow: 1 }} />
+          <Typography
+            onClick={openAppDownload}
+            sx={{ mt: '28px', textAlign: 'center', fontSize: 13, color: ios.secondaryLabel }}
+          >
+            {appVersion?.display ?? ''}
+          </Typography>
         </Box>
         {authState?.signedIn && (
           <>
-            <Typography sx={{ ...appSectionLabelSx, pl: '16px', pt: '24px' }}>{t('appHome.account')}</Typography>
+            <Box sx={{ height: '300px' }} />
             <Box sx={appCardSx}>
               <AppActionRow title={t('setting.logout')} color={ios.tint} onClick={handleLogout} />
+            </Box>
+            <Box sx={{ height: '800px' }} />
+            <Box sx={appCardSx}>
               <AppActionRow title={t('setting.deleteAccount')} color={ios.red} onClick={handleDeleteAccount} />
             </Box>
           </>
         )}
-        <Typography
-          onClick={openAppDownload}
-          sx={{ mt: '28px', textAlign: 'center', fontSize: 13, color: ios.secondaryLabel }}
-        >
-          {appVersion?.display ?? ''}
-        </Typography>
         {actionSheetView}
       </Box>
     );
