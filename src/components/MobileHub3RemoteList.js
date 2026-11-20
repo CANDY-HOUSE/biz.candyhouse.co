@@ -7,6 +7,7 @@ import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useTranslation } from 'react-i18next';
 import { useRemoteCtrl } from '../api/useRemoteCtrl.js';
 import { buildMatterPowerCommands } from '@/pages/personal/devices/wifi-module/ir/utils/irMatterCommands.js';
+import { AirStatusInline } from '@/pages/personal/devices/wifi-module/ir/components/AirRemoteStatus.js';
 
 export default function MobileHub3RemoteList({ deviceUUID, editable = true, device: listDevice }) {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -179,6 +180,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
                 sx={{ minWidth: 0 }}
                 primary={<Typography sx={singleLineTextSx}>{remote.alias || `Remote ${index + 1}`}</Typography>}
               />
+              {!editable && <AirStatusInline remote={remote} />}
               {editable && (
                 <ListItemIcon
                   sx={{ minWidth: 'auto' }}

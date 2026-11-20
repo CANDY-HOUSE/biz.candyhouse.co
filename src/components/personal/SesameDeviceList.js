@@ -33,6 +33,7 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { DataSearch } from '../biz/device/DataSearch';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
+import { AirStatusSummary } from '@/pages/personal/devices/wifi-module/ir/components/AirRemoteStatus.js';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
@@ -354,35 +355,47 @@ const SortableItemComponent = ({
               />
             </>
           ) : (
-            <VIotSwitch
-              model={device.deviceModel}
-              deviceUUID={device.deviceUUID}
-              gIot={gIot}
-              defaultState={getDeviceLockState(shownDevice)}
-              onCommandStart={
-                isAppHome && !localOnly
-                  ? () => {
-                      reportDeviceLocation(device, gStripe.customerInfo.subUUID);
-                    }
-                  : undefined
-              }
-              disabled={localOnly && !native?.bleConnected}
-              onCommand={
-                native?.bleConnected
-                  ? () => runNative(isScriptBot ? (localOnly ? native.scriptIndex : bot.selected) : undefined)
-                  : undefined
-              }
-              position={
-                native?.bleConnected
-                  ? native.position
-                  : device.stateInfo?.wm2State === true && Number.isFinite(device.stateInfo?.position)
-                    ? Math.trunc((device.stateInfo.position * 360) / 1024)
+            <>
+              {/* Hub3 右侧没有开关：示意空调遥控器的状态，点击展开遥控器列表 */}
+              {!localOnly && device.deviceModel === 'hub_3' && (
+                <AirStatusSummary
+                  remoteList={device.stateInfo?.remoteList}
+                  onExpand={() => {
+                    if (!isExpanded && !sortableIsDragging) toggleExpanded(device.deviceUUID);
+                  }}
+                  sx={isAppHome ? { mt: '36px', mr: '6px' } : { mr: 1 }}
+                />
+              )}
+              <VIotSwitch
+                model={device.deviceModel}
+                deviceUUID={device.deviceUUID}
+                gIot={gIot}
+                defaultState={getDeviceLockState(shownDevice)}
+                onCommandStart={
+                  isAppHome && !localOnly
+                    ? () => {
+                        reportDeviceLocation(device, gStripe.customerInfo.subUUID);
+                      }
                     : undefined
-              }
-              botIndex={isScriptBot && !localOnly ? bot.selected : native?.scriptIndex}
-              shareKey={device.secretKey}
-              {...appSwitchProps}
-            />
+                }
+                disabled={localOnly && !native?.bleConnected}
+                onCommand={
+                  native?.bleConnected
+                    ? () => runNative(isScriptBot ? (localOnly ? native.scriptIndex : bot.selected) : undefined)
+                    : undefined
+                }
+                position={
+                  native?.bleConnected
+                    ? native.position
+                    : device.stateInfo?.wm2State === true && Number.isFinite(device.stateInfo?.position)
+                      ? Math.trunc((device.stateInfo.position * 360) / 1024)
+                      : undefined
+                }
+                botIndex={isScriptBot && !localOnly ? bot.selected : native?.scriptIndex}
+                shareKey={device.secretKey}
+                {...appSwitchProps}
+              />
+            </>
           )}
         </Box>
       </ListItem>

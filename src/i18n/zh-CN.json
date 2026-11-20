@@ -352,7 +352,11 @@
         "editKey": "编辑按键",
         "nameDuplicate": "已有同名按键",
         "cannotRename": "该按键不支持改名",
-        "gotIt": "知道了"
+        "gotIt": "知道了",
+        "airStatusOn": "运行中",
+        "airStatusOff": "已关机",
+        "airLastSent": "显示的是最近一次发出的设定",
+        "moreKeys": "更多按键"
       },
       "list": {
         "airConditioner": "空调",

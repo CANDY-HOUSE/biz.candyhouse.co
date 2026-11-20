@@ -352,7 +352,11 @@
         "editKey": "ボタンを編集",
         "nameDuplicate": "同じ名前のボタンが既にあります",
         "cannotRename": "このボタンは名前を変更できません",
-        "gotIt": "OK"
+        "gotIt": "OK",
+        "airStatusOn": "運転中",
+        "airStatusOff": "停止中",
+        "airLastSent": "最後に送信した設定を表示しています",
+        "moreKeys": "その他のボタン"
       },
       "list": {
         "airConditioner": "エアコン",

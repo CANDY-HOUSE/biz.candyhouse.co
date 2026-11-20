@@ -1,6 +1,7 @@
 // src/components/AirConditionerRemote.js
 import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, CardContent, Box, Typography, IconButton, Paper } from '@mui/material';
+import { Card, CardContent, Box, Typography, IconButton } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useNavigate, useSearchParams, createSearchParams } from 'react-router-dom';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffRoundedIcon from '@mui/icons-material/HighlightOffRounded';
@@ -13,26 +14,8 @@ import EditableText from '@/components/EditableText.js';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils.js';
 
-import {
-  AirModelAuto,
-  AirModelCold,
-  AirModelDry,
-  AirModelHot,
-  AirModelWind,
-  AirTempAdd,
-  AirTempReduce,
-  AirWindHorizontalAuto,
-  AirWindHorizontalStop,
-  AirWindSpeedAuto,
-  AirWindSpeedV1,
-  AirWindSpeedV2,
-  AirWindSpeedV3,
-  AirWindVerticalV1,
-  AirWindVerticalV2,
-  AirWindVerticalV3,
-  PowerOn,
-  PowerOff,
-} from '@assets/svg/ir/svgIR.js';
+import { AirHero, AirFunctionTiles } from './AirPanel.js';
+import { parseAirState } from '../utils/airState.js';
 
 import SortableKeyGrid from '../components/SortableKeyGrid.js';
 import { useKeyOrder } from '../hooks/useKeyOrder.js';
@@ -47,19 +30,34 @@ import { KEY_KIND, mergeRemoteKeys, mapKeyIds } from '../utils/remoteKeys.js';
 
 // 可以改名的空调控件：开机、关机。其余是组合控件（标题随状态变化，如温度、模式、风速），只能删除、不能改名
 const AIR_RENAMABLE_IDS = ['power_on', 'power_off'];
+// 下方可拖拽排序的四个功能块
+const AIR_TILE_IDS = ['mode', 'fan_speed', 'wind_direction', 'auto_swing'];
+
+const initialStateFromParam = (param) => {
+  try {
+    const remote = param ? JSON.parse(param) : null;
+    return remote?.uuid ? parseAirState(remote) : null;
+  } catch {
+    return null;
+  }
+};
 
 const RemoteAir = () => {
   const navigate = useNavigate();
-  const [currentState, setCurrentState] = useState({
-    power: false,
-    temperature: 25,
-    mode: 1, // 0: 自动, 1: 制冷, 2: 除湿, 3: 送风, 4: 制热
-    fanSpeed: 0, // 0: 自动, 1: 最小, 2: 中等, 3: 最大
-    windDirection: 1, // 0: 向上, 1: 居中, 2: 向下
-    autoSwing: true, // false: 停止摆风, true: 自动摆风
-  });
-  const [clickedItem, setClickedItem] = useState(null);
   const [searchParams] = useSearchParams();
+  // 第一帧就用遥控器记录的状态（之后 effect 里还会照原逻辑恢复一次），避免先画默认状态再跳变
+  const [currentState, setCurrentState] = useState(
+    () =>
+      initialStateFromParam(searchParams.get('remote')) || {
+        power: false,
+        temperature: 25,
+        mode: 1, // 0: 自动, 1: 制冷, 2: 除湿, 3: 送风, 4: 制热
+        fanSpeed: 0, // 0: 自动, 1: 最小, 2: 中等, 3: 最大
+        windDirection: 1, // 0: 向上, 1: 居中, 2: 向下
+        autoSwing: true, // false: 停止摆风, true: 自动摆风
+      }
+  );
+  const [clickedItem, setClickedItem] = useState(null);
   const hub3DeviceId = searchParams.get('hub3DeviceId');
   const parametersSwapper = useMemo(() => new HXDParametersSwapper(), []);
   const commandProcessor = useMemo(() => new HXDCommandProcessor(), []);
@@ -171,59 +169,6 @@ const RemoteAir = () => {
     [parametersSwapper, commandProcessor]
   );
 
-  // 获取当前模式图标
-  const getCurrentModeIcon = () => {
-    switch (currentState.mode) {
-      case 0:
-        return AirModelAuto;
-      case 1:
-        return AirModelCold;
-      case 2:
-        return AirModelDry;
-      case 3:
-        return AirModelWind;
-      case 4:
-        return AirModelHot;
-      default:
-        return AirModelCold;
-    }
-  };
-
-  // 获取当前风速图标
-  const getCurrentFanSpeedIcon = () => {
-    switch (currentState.fanSpeed) {
-      case 0:
-        return AirWindSpeedAuto;
-      case 1:
-        return AirWindSpeedV1;
-      case 2:
-        return AirWindSpeedV2;
-      case 3:
-        return AirWindSpeedV3;
-      default:
-        return AirWindSpeedAuto;
-    }
-  };
-
-  // 获取当前风向图标
-  const getCurrentWindDirectionIcon = () => {
-    switch (currentState.windDirection) {
-      case 0:
-        return AirWindVerticalV1;
-      case 1:
-        return AirWindVerticalV2;
-      case 2:
-        return AirWindVerticalV3;
-      default:
-        return AirWindVerticalV2;
-    }
-  };
-
-  // 获取摆风图标
-  const getSwingIcon = () => {
-    return currentState.autoSwing ? AirWindHorizontalAuto : AirWindHorizontalStop;
-  };
-
   // 获取模式名称
   const getModeTitle = (modeIndex) => {
     const modes = [
@@ -269,7 +214,6 @@ const RemoteAir = () => {
         id: 'power_on',
         type: 'POWER_ON',
         title: t('pages.ir.remote.on'),
-        icon: currentState.power ? PowerOn : PowerOff,
         position: { row: 0, col: 0 },
         clickable: true,
       },
@@ -277,7 +221,6 @@ const RemoteAir = () => {
         id: 'temperature_display',
         type: 'TEMPERATURE_DISPLAY',
         title: `${currentState.temperature}°C`,
-        icon: null,
         position: { row: 0, col: 1 },
         clickable: false,
       },
@@ -285,7 +228,6 @@ const RemoteAir = () => {
         id: 'power_off',
         type: 'POWER_OFF',
         title: t('pages.ir.remote.off'),
-        icon: currentState.power ? PowerOff : PowerOn,
         position: { row: 0, col: 2 },
         clickable: true,
       },
@@ -293,7 +235,6 @@ const RemoteAir = () => {
         id: 'temp_add',
         type: 'TEMP_ADD',
         title: t('pages.ir.remote.temperature'),
-        icon: AirTempAdd,
         position: { row: 1, col: 0 },
         clickable: true,
       },
@@ -301,7 +242,6 @@ const RemoteAir = () => {
         id: 'mode',
         type: 'MODE',
         title: getModeTitle(currentState.mode),
-        icon: getCurrentModeIcon(),
         position: { row: 1, col: 1 },
         clickable: true,
       },
@@ -309,7 +249,6 @@ const RemoteAir = () => {
         id: 'temp_reduce',
         type: 'TEMP_REDUCE',
         title: t('pages.ir.remote.temperature'),
-        icon: AirTempReduce,
         position: { row: 1, col: 2 },
         clickable: true,
       },
@@ -317,7 +256,6 @@ const RemoteAir = () => {
         id: 'fan_speed',
         type: 'FAN_SPEED',
         title: getFanSpeedTitle(currentState.fanSpeed),
-        icon: getCurrentFanSpeedIcon(),
         position: { row: 2, col: 0 },
         clickable: true,
       },
@@ -325,7 +263,6 @@ const RemoteAir = () => {
         id: 'wind_direction',
         type: 'WIND_DIRECTION',
         title: getWindDirectionTitle(currentState.windDirection),
-        icon: getCurrentWindDirectionIcon(),
         position: { row: 2, col: 1 },
         clickable: true,
       },
@@ -333,7 +270,6 @@ const RemoteAir = () => {
         id: 'auto_swing',
         type: 'AUTO_SWING',
         title: getSwingTitle(currentState.autoSwing),
-        icon: getSwingIcon(),
         position: { row: 2, col: 2 },
         clickable: true,
       },
@@ -408,6 +344,44 @@ const RemoteAir = () => {
       return;
     }
     handleReorder(ids);
+  };
+
+  // 已全量存储的遥控器在按键取回之前没有预置按键可显示：先按整个面板显示主控卡片和功能块，避免进页面时内容空白再出现
+  const keysLoading = hasRemoteSave && remoteKeys.stored && !remoteKeys.loaded;
+  const fullPanelItems = useMemo(() => mergeRemoteKeys(airControlItems, [], false, ''), [airControlItems]);
+
+  // 每个空调控件（presetId）第一个按键放进主控卡片 / 功能块，其余（学习按键、重复的预置按键）放进下方可拖拽的网格
+  const { controls, tileItems, gridItems } = useMemo(() => {
+    const panel = {};
+    const tiles = [];
+    const rest = [];
+    (keysLoading ? fullPanelItems : orderedItems).forEach((item) => {
+      if (item.kind !== KEY_KIND.PRESET || panel[item.presetId]) {
+        rest.push(item);
+        return;
+      }
+      panel[item.presetId] = item;
+      if (AIR_TILE_IDS.includes(item.presetId)) tiles.push(item);
+    });
+    return { controls: panel, tileItems: tiles, gridItems: keysLoading ? [] : rest };
+  }, [keysLoading, fullPanelItems, orderedItems]);
+
+  // 按键还没取回时 id 还是面板 id，不能改名 / 删除
+  const openKeyMenu = (item) => {
+    if (!keysLoading) openMenu(item);
+  };
+
+  // 功能块拖拽：只在功能块原来的位置之间换顺序，其他按键位置不变
+  const onTileReorder = (ids) => {
+    const tileIds = new Set(ids);
+    let next = 0;
+    onReorder(orderedIds.map((id) => (tileIds.has(id) ? ids[next++] : id)));
+  };
+
+  // 网格里只排下方这些按键：主控卡片和功能块的按键保持原有顺序放在前面
+  const onGridReorder = (ids) => {
+    const gridIds = new Set(ids);
+    onReorder([...orderedIds.filter((id) => !gridIds.has(id)), ...ids]);
   };
 
   // 按键的「…」菜单：编辑名称（组合控件置灰）、删除
@@ -515,7 +489,7 @@ const RemoteAir = () => {
                 console.error('update device state failed:', updateResponse.message);
               }
               setRemote((preRemote) => ({ ...preRemote, state: cmd }));
-              updateLocalRemoteList(hub3DeviceId, remote);
+              updateLocalRemoteList(hub3DeviceId, { ...remote, state: cmd });
             });
           }
         } else {
@@ -805,94 +779,100 @@ const RemoteAir = () => {
           alignItems: 'center',
         }}
       >
-        <Box
-          sx={{
-            px: 1,
-            width: '100%',
-            maxWidth: 1080,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: 0,
-            margin: 0,
-            pb: 2,
-            alignItems: 'center',
-          }}
-        >
-          <SortableKeyGrid
-            items={orderedItems}
-            onReorder={onReorder}
-            onLongPress={openMenu}
-            trailing={canLearn ? <LearnKeyCell learning={isLearnMode} onClick={toggleLearnMode} /> : null}
-            renderItem={(item) => {
-              const isClicked = clickedItem === item.id;
-              const IconComponent = item.icon;
-              return (
-                <Paper
-                  elevation={0}
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: item.clickable ? 'pointer' : 'default',
-                    borderRadius: 0,
-                    opacity: isClicked ? 0.3 : 1,
-                    transition: 'opacity 0.2s',
-                    margin: 0,
-                    py: 1,
-                    backgroundColor: 'transparent',
-                    position: 'relative',
-                  }}
-                  onClick={() => handleItemClick(item)}
-                >
-                  <Box sx={{ flex: 1 }} />
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontSize: { xs: '1rem', sm: '1.2rem' },
-                      textAlign: 'center',
-                      maxWidth: '100%',
-                      boxSizing: 'border-box',
-                      px: 1,
-                      overflowWrap: 'anywhere',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      opacity: isClicked ? 0.3 : 1,
-                      lineHeight: 1.2,
-                      fontWeight: 'normal',
-                      color: 'inherit',
-                    }}
-                  >
-                    {item.customName || item.title}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      flex: 1,
-                      width: '100%',
-                      maxWidth: 140,
-                      boxSizing: 'border-box',
-                      px: 1,
-                      display: 'flex',
-                      alignItems: 'flex-end',
-                      justifyContent: 'center',
-                      mb: '24px',
-                    }}
-                  >
-                    {IconComponent ? (
-                      <IconComponent opacity={isClicked ? 0.3 : 1} width="100%" height="auto" />
-                    ) : (
-                      <Box sx={{ height: 24 }} />
-                    )}
-                  </Box>
-                </Paper>
-              );
-            }}
+        <Box sx={{ width: '100%', maxWidth: 600, boxSizing: 'border-box', px: 2, pt: 1, pb: 2 }}>
+          {(controls.power_on ||
+            controls.power_off ||
+            controls.temperature_display ||
+            controls.temp_add ||
+            controls.temp_reduce) && (
+            <>
+              <AirHero
+                state={currentState}
+                controls={controls}
+                canAdjustTemp={canAdjustTemperature()}
+                tempRange={getAirTempRange(remote)}
+                busyId={clickedItem}
+                onPress={handleItemClick}
+                onLongPress={openKeyMenu}
+              />
+              <Typography sx={{ mt: 1, mb: 2.5, textAlign: 'center', fontSize: 12, color: 'text.disabled' }}>
+                {t('pages.ir.remote.airLastSent')}
+              </Typography>
+            </>
+          )}
+          <AirFunctionTiles
+            state={currentState}
+            items={tileItems}
+            busyId={clickedItem}
+            onPress={handleItemClick}
+            onLongPress={openKeyMenu}
+            onReorder={onTileReorder}
           />
-          <KeyHints show={orderedItems.length > 0} />
+          {(gridItems.length > 0 || canLearn) && (
+            <>
+              <Typography sx={{ mt: 3.5, mb: 1.25, px: 0.5, fontSize: 13, fontWeight: 600, color: 'text.secondary' }}>
+                {t('pages.ir.remote.moreKeys')}
+              </Typography>
+              <SortableKeyGrid
+                items={gridItems}
+                gap={10}
+                cellHeight={88}
+                onReorder={onGridReorder}
+                onLongPress={openMenu}
+                trailing={
+                  canLearn ? (
+                    <Box
+                      sx={(theme) => ({
+                        height: '100%',
+                        boxSizing: 'border-box',
+                        borderRadius: '18px',
+                        border: `1.5px dashed ${alpha(theme.palette.primary.main, 0.4)}`,
+                      })}
+                    >
+                      <LearnKeyCell learning={isLearnMode} onClick={toggleLearnMode} />
+                    </Box>
+                  ) : null
+                }
+                renderItem={(item) => (
+                  <Box
+                    onClick={() => handleItemClick(item)}
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1,
+                      borderRadius: '18px',
+                      bgcolor: 'action.hover',
+                      cursor: 'pointer',
+                      opacity: clickedItem === item.id ? 0.4 : 1,
+                      transition: 'opacity 0.2s, transform 0.15s ease',
+                      '&:active': { transform: 'scale(0.96)' },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        lineHeight: 1.25,
+                        overflowWrap: 'anywhere',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {item.customName || item.title}
+                    </Typography>
+                  </Box>
+                )}
+              />
+            </>
+          )}
+          <Box sx={{ mx: -2 }}>
+            <KeyHints show={orderedItems.length > 0} />
+          </Box>
         </Box>
       </CardContent>
       <Box

@@ -6,16 +6,7 @@ import { HXDParametersSwapper } from './HXDParametersSwapper';
 import { clampAirTemp } from './irRemoteUtils.js';
 import { IR_TYPE } from './irTypes.js';
 import { getNonAirPowerOnKeyId, getNonAirPowerOffKeyId } from '../remote-non-air/keyIds.js';
-
-// 与 remote-air 页面的初始状态一致
-const DEFAULT_AIR_STATE = {
-  power: false,
-  temperature: 25,
-  mode: 1,
-  fanSpeed: 0,
-  windDirection: 1,
-  autoSwing: true,
-};
+import { DEFAULT_AIR_STATE } from './airState.js';
 
 const SELF_LEARNING_TYPE = 0xfe00;
 

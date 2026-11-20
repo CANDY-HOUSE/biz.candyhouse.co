@@ -352,7 +352,11 @@
         "editKey": "Edit button",
         "nameDuplicate": "A button with this name already exists",
         "cannotRename": "This button can't be renamed",
-        "gotIt": "Got it"
+        "gotIt": "Got it",
+        "airStatusOn": "Running",
+        "airStatusOff": "Off",
+        "airLastSent": "Showing the last settings sent",
+        "moreKeys": "More buttons"
       },
       "list": {
         "airConditioner": "Air Conditioner",

@@ -3,7 +3,7 @@ import { Box, Button, Dialog, IconButton, Typography } from '@mui/material';
 import { alpha, keyframes } from '@mui/material/styles';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import { useTranslation } from 'react-i18next';
 import irLearnImage from '@/assets/svg/ir/png_ir_match.png';
 
@@ -132,7 +132,7 @@ const LearnKeyCell = ({ learning, onClick, showGuide = true }) => {
             }}
             sx={{ position: 'absolute', top: 4, right: 4, color: 'primary.main' }}
           >
-            <ErrorOutlineRoundedIcon fontSize="small" />
+            <HelpOutlineRoundedIcon fontSize="small" />
           </IconButton>
         )}
       </Box>

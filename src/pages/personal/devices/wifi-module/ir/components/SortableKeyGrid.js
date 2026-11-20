@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 
-const COLS = 3;
+const DEFAULT_COLS = 3;
 const DEFAULT_CELL_HEIGHT = 125;
 // 长按后手指移动不超过这个距离就松开，算「长按」（弹编辑菜单），否则算拖拽排序
 const LONG_PRESS_MOVE_TOLERANCE = 10;
@@ -11,12 +11,12 @@ const LONG_PRESS_MOVE_TOLERANCE = 10;
 const TOUCH_CONTEXTMENU_IGNORE_MS = 1500;
 
 const cellBorderSx = (index, count) => ({
-  borderRight: index % COLS < COLS - 1 ? '1px solid' : 'none',
-  borderBottom: index + COLS < count ? '1px solid' : 'none',
+  borderRight: index % DEFAULT_COLS < DEFAULT_COLS - 1 ? '1px solid' : 'none',
+  borderBottom: index + DEFAULT_COLS < count ? '1px solid' : 'none',
   borderColor: 'divider',
 });
 
-const SortableCell = ({ id, index, count, cellHeight, suppressClickRef, onContextMenu, children }) => {
+const SortableCell = ({ id, index, count, cellHeight, tiled, suppressClickRef, onContextMenu, children }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   return (
@@ -43,7 +43,7 @@ const SortableCell = ({ id, index, count, cellHeight, suppressClickRef, onContex
         backgroundColor: isDragging ? 'background.paper' : 'transparent',
         boxShadow: isDragging ? 6 : 'none',
         opacity: isDragging ? 0.9 : 1,
-        ...cellBorderSx(index, count),
+        ...(tiled ? { borderRadius: '18px' } : cellBorderSx(index, count)),
         userSelect: 'none',
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
@@ -66,8 +66,20 @@ const SortableCell = ({ id, index, count, cellHeight, suppressClickRef, onContex
  * @param {function} onLongPress (item) => void  可选
  * @param {React.ReactNode} trailing 可选，固定在最后、不参与排序的一格（「学习新按键」）
  * @param {number} cellHeight 每个格子的高度，默认 125
+ * @param {number} gap 可选，格子间距（px）；大于 0 时为卡片式排列，不画分隔线
+ * @param {number} cols 可选，列数，默认 3（只在卡片式排列时改列数）
  */
-const SortableKeyGrid = ({ items, renderItem, onReorder, onLongPress, trailing, cellHeight = DEFAULT_CELL_HEIGHT }) => {
+const SortableKeyGrid = ({
+  items,
+  renderItem,
+  onReorder,
+  onLongPress,
+  trailing,
+  cellHeight = DEFAULT_CELL_HEIGHT,
+  gap = 0,
+  cols = DEFAULT_COLS,
+}) => {
+  const tiled = gap > 0;
   const suppressClickRef = useRef(false);
   const lastTouchRef = useRef(0);
   const sensors = useSensors(
@@ -116,7 +128,12 @@ const SortableKeyGrid = ({ items, renderItem, onReorder, onLongPress, trailing, 
           onTouchStartCapture={() => {
             lastTouchRef.current = Date.now();
           }}
-          sx={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`, width: '100%' }}
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gap: `${gap}px`,
+            width: '100%',
+          }}
         >
           {items.map((item, index) => (
             <SortableCell
@@ -125,6 +142,7 @@ const SortableKeyGrid = ({ items, renderItem, onReorder, onLongPress, trailing, 
               index={index}
               count={count}
               cellHeight={cellHeight}
+              tiled={tiled}
               suppressClickRef={suppressClickRef}
               onContextMenu={handleContextMenu(item)}
             >
@@ -132,7 +150,14 @@ const SortableKeyGrid = ({ items, renderItem, onReorder, onLongPress, trailing, 
             </SortableCell>
           ))}
           {trailing && (
-            <Box sx={{ height: cellHeight, minWidth: 0, position: 'relative', ...cellBorderSx(items.length, count) }}>
+            <Box
+              sx={{
+                height: cellHeight,
+                minWidth: 0,
+                position: 'relative',
+                ...(tiled ? {} : cellBorderSx(items.length, count)),
+              }}
+            >
               {trailing}
             </Box>
           )}
