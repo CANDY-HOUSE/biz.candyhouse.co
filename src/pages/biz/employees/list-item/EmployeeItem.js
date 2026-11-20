@@ -15,6 +15,7 @@ import MobileUserDevices from '@/components/MobileUserDevices';
 import { biz3utils } from '@utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
 import UserBasicInfo from '@/components/biz/device/UserBasicInfo';
+import { DetailPanelContext } from '@/components/detailPanelContext';
 
 const EmployeeItem = () => {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ const EmployeeItem = () => {
   const [rawEmployeeKeys, setRawEmployeeKeys] = useState([]);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const panel = useContext(DetailPanelContext);
   const ref = useRef(null);
   const uid = searchParams.get('uid') || '';
   const employeeEmail = searchParams.get('email') || '';
@@ -170,7 +172,7 @@ const EmployeeItem = () => {
             title={
               gStripe.isFromApp ? null : (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <BackButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}></BackButton>
+                  {!panel && <BackButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}></BackButton>}
                   <EditableText
                     style={{
                       fontSize: '1.2em',
@@ -186,7 +188,8 @@ const EmployeeItem = () => {
                         const user = gManageEmployee.findEmployeeById(uid);
                         gManageEmployee.removeEmployees([user], (res) => {
                           if (res.success) {
-                            navigate(-1);
+                            if (panel) panel.onRemoved(uid);
+                            else navigate(-1);
                           }
                         });
                       }}
@@ -236,7 +239,8 @@ const EmployeeItem = () => {
                         if (isAppHome) window.dispatchEvent(new CustomEvent('app-back'));
                       } else {
                         // 不在 App 端内退回上一页
-                        navigate(-1);
+                        if (panel) panel.onRemoved(uid);
+                        else navigate(-1);
                       }
                     }
                   }

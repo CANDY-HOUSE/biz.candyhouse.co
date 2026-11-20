@@ -6,13 +6,7 @@ Biz3 は PC 管理画面と Web App の業務画面を提供する React プロ�
 
 **Biz は業務ロジック、Web App ホストはネイティブ機能、Bridge は通信を担当します。**
 
-```mermaid
-flowchart LR
-  PC[PC browser] --> Biz[Biz3 React UI]
-  App[Web App host] --> Biz
-  Biz <-->|Bridge| Native[Native capabilities]
-  Biz <-->|WebSocket| Cloud[Cloud services]
-```
+![Architecture](architecture.png)
 
 ## 開発
 

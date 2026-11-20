@@ -1,3 +1,5 @@
+import { isAppHome } from '@/services/deviceService';
+
 // iOS system colors for the APP home tabs (grouped background, labels, fills, separators).
 export const ios = {
   background: '#F2F2F7',
@@ -33,3 +35,20 @@ export const appSectionLabelSx = {
   fontSize: 13,
   color: ios.secondaryLabel,
 };
+
+// The APP home look also serves PC and phone browsers; pages opened by the old native APP (fromType=app) keep theirs.
+export const homeCards = isAppHome || new URLSearchParams(window.location.search).get('fromType') !== 'app';
+
+// Browser routes drawn as cards on the grouped background.
+export const pcCardPaths = [
+  '/',
+  '/vision',
+  '/contacts',
+  '/me',
+  '/biz',
+  '/biz/devices/list',
+  '/biz/access-control/index',
+];
+
+// Pointer-only feedback; touch screens keep the pressed state alone.
+export const hoverSx = (sx) => ({ '@media (hover: hover)': { '&:hover': sx } });

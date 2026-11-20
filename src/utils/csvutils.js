@@ -151,7 +151,8 @@ function downloadExcelTemp() {
   downloadTemplate('excel');
 }
 
-function downloadLists(list, isCsv = true, fileName = 'sesamebiz') {
+// pathname picks the columns; callers outside the list's own page name it.
+function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = window.location.pathname) {
   console.log('hey下载数据', list);
 
   // 定義各header
@@ -215,7 +216,6 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz') {
     // t: "インデックス",
     passwordID: '暗証番号',
   };
-  const pathname = window.location.pathname;
   console.log('pathname', pathname);
   var isPw = false;
   let newList = list.map((item) => {

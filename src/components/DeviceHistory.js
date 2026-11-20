@@ -23,7 +23,12 @@ import BlurOverlay from './BlurOverlay';
 import { isAppHome } from '@/services/deviceService';
 import { useTranslation } from 'react-i18next';
 
-export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar = false, fullHeight = true }) {
+export default function DeviceHistory({
+  deviceUUID: propDeviceUUID,
+  showToolBar = false,
+  fullHeight = true,
+  fill = false,
+}) {
   const { gManageGroup, gStripe } = useContext(GlobalStateContext);
   const navigate = useNavigate();
   const [deviceHistory, setDeviceHistory] = useState([]);
@@ -96,7 +101,7 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     };
     await fetchAllHistory();
     if (allHistory.length > 0) {
-      gUtils.csvUtils.downloadLists(allHistory, isCsv);
+      gUtils.csvUtils.downloadLists(allHistory, isCsv, undefined, '/biz/devices/list-item');
     }
   };
 
@@ -159,20 +164,22 @@ export default function DeviceHistory({ deviceUUID: propDeviceUUID, showToolBar 
     />
   ) : (
     <>
-      <Box>
-        <Tooltip title="CSVダウンロード">
-          <IconButton onClick={() => downloadDeviceHistory(true)}>
-            <CloudDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Excelダウンロード">
-          <IconButton onClick={() => downloadDeviceHistory(false)}>
-            <SimCardDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-          </IconButton>
-        </Tooltip>
+      <Box sx={fill ? { height: '100%', display: 'flex', flexDirection: 'column' } : undefined}>
+        <Box sx={fill ? { flexShrink: 0 } : { display: 'contents' }}>
+          <Tooltip title="CSVダウンロード">
+            <IconButton onClick={() => downloadDeviceHistory(true)}>
+              <CloudDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Excelダウンロード">
+            <IconButton onClick={() => downloadDeviceHistory(false)}>
+              <SimCardDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Box
           sx={{
-            height: '480px',
+            ...(fill ? { flex: 1, minHeight: 0 } : { height: '480px' }),
             overflow: 'auto',
             bgcolor: 'background.paper',
             mr: 0,

@@ -1,7 +1,13 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import AddEmployee from '@/components/biz/device/AddEmployee';
-import { useNavigate } from 'react-router-dom';
+import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Box } from '@mui/material';
+import MasterDetail, { fabInListSx, useMasterDetail } from '@/components/MasterDetail';
+import { DetailPanelContext } from '@/components/detailPanelContext';
+import { ContactsNavIcon } from '@/components/biz/layout/navIcons';
+import EmployeeItem from '@/pages/biz/employees/list-item/EmployeeItem';
+import { ios } from '@/theme/appHomeStyle';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import MobileContactList from '@/components/MobileContactList';
 import { biz3utils } from '@/utils/biz3utils';
@@ -12,6 +18,40 @@ const MobileContacts = () => {
   const floatingAddRef = useRef(null);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const masterDetail = useMasterDetail();
+  const selectedUUID = masterDetail ? searchParams.get('uid') : null;
+
+  // The selection replaces the list's history entry, so back leaves the list as before.
+  const selectContact = useCallback(
+    (user) => {
+      navigate(
+        {
+          pathname: '/contacts',
+          search: user ? createSearchParams({ uid: user.subUUID, email: user.employeeEmail }).toString() : '',
+        },
+        { replace: true }
+      );
+    },
+    [navigate]
+  );
+
+  // Removed contacts can linger in the list until it refreshes; never pick one of them.
+  const removedUUIDs = useRef([]);
+  const firstContact = gManageEmployee.employees.Items.find((user) => !removedUUIDs.current.includes(user.subUUID));
+  useEffect(() => {
+    if (masterDetail && !selectedUUID && firstContact) selectContact(firstContact);
+  }, [masterDetail, selectedUUID, firstContact?.subUUID]);
+
+  const panel = useMemo(
+    () => ({
+      onRemoved: (uid) => {
+        removedUUIDs.current.push(uid);
+        selectContact(null);
+      },
+    }),
+    [selectContact]
+  );
 
   useEffect(() => {
     settbData(gManageEmployee.employees.Items);
@@ -56,6 +96,10 @@ const MobileContacts = () => {
 
   const handleRowClick = useCallback(
     (index) => {
+      if (masterDetail) {
+        selectContact(tbData[index]);
+        return;
+      }
       const newSearchParams = new URLSearchParams(new URLSearchParams(window.location.search));
       newSearchParams.set('uid', tbData[index].subUUID);
       newSearchParams.set('email', tbData[index].employeeEmail);
@@ -68,13 +112,14 @@ const MobileContacts = () => {
         });
       }
     },
-    [tbData]
+    [tbData, masterDetail, selectContact]
   );
 
-  return (
+  const list = (
     <SesameFloatingAdd
       ref={floatingAddRef}
       isMobile={!gStripe.isFromApp}
+      fabSx={masterDetail ? fabInListSx : undefined}
       popupComponent={
         <AddEmployee
           completionCallback={() => {
@@ -88,6 +133,7 @@ const MobileContacts = () => {
         isEmpty={gManageEmployee.employees.Items.length === 0}
         callRowClick={handleRowClick}
         callSearch={handleSearch}
+        selectedUUID={selectedUUID}
         onDragEnd={
           isSearching
             ? null
@@ -104,6 +150,23 @@ const MobileContacts = () => {
         }
       />
     </SesameFloatingAdd>
+  );
+
+  if (!masterDetail) return list;
+  return (
+    <MasterDetail
+      list={list}
+      placeholder={<ContactsNavIcon size={72} />}
+      panel={
+        selectedUUID && (
+          <DetailPanelContext.Provider value={panel}>
+            <Box sx={{ height: '100%', overflow: 'auto', p: '12px', bgcolor: ios.card, borderRadius: ios.cardRadius }}>
+              <EmployeeItem key={selectedUUID} />
+            </Box>
+          </DetailPanelContext.Provider>
+        )
+      }
+    />
   );
 };
 

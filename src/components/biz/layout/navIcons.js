@@ -6,6 +6,9 @@ import FingerprintOutlinedIcon from '@mui/icons-material/FingerprintOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 const SvgIcon = ({ children, size = 24, viewBox = '0 0 24 24', sx = {} }) => {
   return (
@@ -102,4 +105,7 @@ export const navIconMap = {
   cards: CreditCardOutlinedIcon,
   history: HistoryOutlinedIcon,
   schedule: EventNoteOutlinedIcon,
+  developer: CodeRoundedIcon,
+  support: HelpOutlineRoundedIcon,
+  settings: SettingsOutlinedIcon,
 };

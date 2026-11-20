@@ -6,13 +6,7 @@ Biz3 is a React project providing the PC management console and Web App UI. The 
 
 **Biz owns business logic, the Web App host provides native capabilities, and Bridge handles communication.**
 
-```mermaid
-flowchart LR
-  PC[PC browser] --> Biz[Biz3 React UI]
-  App[Web App host] --> Biz
-  Biz <-->|Bridge| Native[Native capabilities]
-  Biz <-->|WebSocket| Cloud[Cloud services]
-```
+![Architecture](architecture.png)
 
 ## Development
 

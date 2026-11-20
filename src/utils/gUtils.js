@@ -237,6 +237,7 @@ const categoriesConf = [
     id: pageNames.developer,
     router: '/biz/developer',
     isRoot: true,
+    icon: 'developer',
   },
 ];
 

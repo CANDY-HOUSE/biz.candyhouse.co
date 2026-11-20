@@ -4,7 +4,6 @@ import disablelock from './disablelock.svg';
 import botLock from './swtich_locked.png';
 import botUnLock from './swtich_unlocked.png';
 import botNoSign from './swtich_no_ble.png';
-import batteryIcon from './icn-battery.png';
 import opensensorBgIcon from './opensensor-bg.png';
 import arrow from './arrow.svg';
 import { Box } from '@mui/material';
@@ -34,10 +33,6 @@ export const SvgLockDisable = ({ opacity = 1 }) => {
 
 export const SvgUnLock = ({ opacity = 1 }) => {
   return <img src={unlock} alt="Unlock icon" style={{ opacity: opacity, width: '51px', height: '51px' }} />;
-};
-
-export const SvgBattery = ({ opacity = 1 }) => {
-  return <img src={batteryIcon} alt="battery icon" style={{ opacity: opacity, width: '25px', height: '18px' }} />;
 };
 
 export const SvgOPS = ({ opacity = 1, label, size = 51 }) => {

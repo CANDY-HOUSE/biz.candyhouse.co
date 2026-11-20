@@ -3,25 +3,24 @@ import { isAppHome } from '@/services/deviceService';
 import { gUtils } from '@/utils/gUtils';
 import { createSearchParams, useNavigate } from 'react-router-dom';
 
+export const deviceDetailPath = (device) => {
+  const isAppGuest = isAppHome && Number(device.keyLevel) === 2;
+  // Bot 1 keeps no device history; open its settings directly.
+  if (isAppHome && device.deviceModel === 'ssmbot_1') return '/device-setting';
+  if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
+    return isAppGuest ? '/device-setting' : '/biz/devices/list-item';
+  }
+  if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) return '/device-setting';
+  if (gUtils.isWifiModel(device.deviceModel)) return '/biz/wifi-module/index';
+  return '/biz/access-control/region';
+};
+
 export const useNavigateUtils = () => {
   const navigate = useNavigate();
 
   const navigateToDeviceDetail = (device) => {
     if (!device) return;
-    let path = '';
-    const isAppGuest = isAppHome && Number(device.keyLevel) === 2;
-    // Bot 1 keeps no device history; open its settings directly.
-    if (isAppHome && device.deviceModel === 'ssmbot_1') {
-      path = '/device-setting';
-    } else if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
-      path = isAppGuest ? '/device-setting' : '/biz/devices/list-item';
-    } else if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) {
-      path = '/device-setting';
-    } else if (gUtils.isWifiModel(device.deviceModel)) {
-      path = '/biz/wifi-module/index';
-    } else {
-      path = '/biz/access-control/region';
-    }
+    const path = deviceDetailPath(device);
     navigate({
       pathname: path,
       search: createSearchParams({

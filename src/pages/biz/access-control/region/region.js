@@ -3,7 +3,7 @@ import React, { useContext, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, IconButton, Typography, Grid2 } from '@mui/material';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
-import CfpContent from '@/components/biz/device/CfpContent';
+import CredentialSummary from '@/components/biz/device/CredentialSummary';
 import { gConfig } from '@constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
 import DeviceUserList from '@/components/DeviceUserList';
@@ -14,7 +14,6 @@ import DeviceHistory from '@/components/DeviceHistory';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
 import { MoreHoriz } from '@mui/icons-material';
 import { isAppHome } from '@/services/deviceService';
-import { useCredentialCounts } from '@/hooks/useBleSnapshot';
 import { Credentials } from '@/components/AppCredentials';
 import Face3DevicePanel from '@/components/vision/Face3DevicePanel';
 
@@ -31,20 +30,7 @@ export default function SesameAccessControlDeviceRegion() {
     return gManageDevice.companyDevices.find((item) => item.deviceUUID === did) || {};
   }, [gManageDevice.companyDevices, did]);
   const hasHistory = gUtils.isOPSModel(device.deviceModel);
-  const webCounts = !isAppHome && gUtils.isSesameAccessControlDevice(device.deviceModel);
-  const counts = useCredentialCounts(webCounts ? did : null, device.deviceModel);
   const [credential, setCredential] = useState(null);
-  const credentialKinds = {
-    [gConfig.sesameTouchProAuthType.finger]: 'fingerprint',
-    [gConfig.sesameTouchProAuthType.face]: 'face',
-    [gConfig.sesameTouchProAuthType.palm]: 'palm',
-  };
-  const count = (kind, fallback) =>
-    !webCounts
-      ? fallback
-      : counts[kind] === undefined
-        ? '—'
-        : (counts[kind] ?? (kind === 'card' || kind === 'passcode' ? fallback : '—'));
 
   /* Face3：新增「录像」卡片（录像、AI 开关）。PC 放在最上面一行；
      手机上本页默认显示录像，设置走页头 ⋯（与开关传感器默认显示履历同样的做法）。 */
@@ -184,34 +170,12 @@ export default function SesameAccessControlDeviceRegion() {
             {gUtils.isSesameAccessControlDevice(device.deviceModel) && (
               <Grid2 size={{ xs: 12, md: 12 }} sx={{ height: '500px' }}>
                 <Box>
-                  <CfpContent
-                    isMobile={gMediaType.isMobile}
-                    model={device.deviceModel}
-                    cc={count('card', device.stateInfo?.cards_num || 0)}
-                    pc={count('passcode', device.stateInfo?.keyboards_num || 0)}
-                    {...(webCounts && {
-                      fc: count('fingerprint'),
-                      faceCount: count('face'),
-                      palmCount: count('palm'),
-                    })}
-                    call={(type) => {
-                      if (credentialKinds[type]) {
-                        if (!webCounts) return;
-                        setCredential({ did, kind: credentialKinds[type] });
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        return;
-                      }
-                      let mstate = {
-                        title: device.deviceName,
-                        uuid: device.deviceUUID,
-                      };
-                      let path = '';
-                      if (type === gConfig.sesameTouchProAuthType.card) {
-                        path = '/biz/access-control/cards';
-                      } else if (type === gConfig.sesameTouchProAuthType.password) {
-                        path = '/biz/access-control/passwords';
-                      }
-                      navigate(path, { state: mstate });
+                  <CredentialSummary
+                    device={device}
+                    did={did}
+                    onCredential={(kind) => {
+                      setCredential({ did, kind });
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   />
                 </Box>

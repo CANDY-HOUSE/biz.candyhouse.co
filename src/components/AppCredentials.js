@@ -45,6 +45,7 @@ import faceImage from '@/assets/peripheral/face_tips.png';
 import faceProImage from '@/assets/peripheral/facepro_tips.png';
 import palmImage from '@/assets/peripheral/palm_tips.png';
 import palmProImage from '@/assets/peripheral/palmpro_tips.png';
+import nfcCardIcon from '@/assets/peripheral/nfc_card.png';
 
 export default function AppCredentials() {
   const [params] = useSearchParams();
@@ -451,7 +452,16 @@ export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedde
               }}
               sx={{ cursor: 'pointer' }}
             >
-              <ItemIcon sx={{ fontSize: 44, color: 'text.secondary', mr: 1 }} />
+              {kind === 'card' ? (
+                <Box
+                  component="img"
+                  src={nfcCardIcon}
+                  alt=""
+                  sx={{ width: 44, height: 44, objectFit: 'contain', mr: 1 }}
+                />
+              ) : (
+                <ItemIcon sx={{ fontSize: 44, color: 'text.secondary', mr: 1 }} />
+              )}
               <ListItemText
                 primary={label(item)}
                 primaryTypographyProps={{ sx: { fontSize: 24, fontWeight: 600, color: 'text.secondary' } }}

@@ -58,7 +58,7 @@ const BuildInfoBar = () => {
     <Box
       sx={{
         flex: 'none',
-        px: 2,
+        px: 3,
         py: 1.5,
         bgcolor: 'transparent',
         border: 'none',

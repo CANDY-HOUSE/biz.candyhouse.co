@@ -1,6 +1,7 @@
 import { gUtils } from '@/utils/gUtils';
 import { URLs } from '@constants/URLs';
 import { Box, List } from '@mui/material';
+import { ios } from '@/theme/appHomeStyle';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '../../../context/GlobalContextProvider';
@@ -37,14 +38,16 @@ export default function Navigator({ location, onClick }) {
     <List
       disablePadding
       sx={{
-        height: '100dvh',
-        color: '#111111',
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        color: ios.label,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        backgroundColor: 'white',
-        py: '10px',
-        pl: '16px',
+        gap: '16px',
+        py: '8px',
+        px: '12px',
       }}
     >
       <Box>
@@ -59,12 +62,19 @@ export default function Navigator({ location, onClick }) {
           <NavigatorItem
             to={URLs.intro}
             name={t('navigator.Support')}
+            icon="support"
             external={true}
             location={location}
             onClick={onClick}
           />
         )}
-        <NavigatorItem to="/biz/settings" name={t('navigator.Settings')} location={location} onClick={onClick} />
+        <NavigatorItem
+          to="/biz/settings"
+          name={t('navigator.Settings')}
+          icon="settings"
+          location={location}
+          onClick={onClick}
+        />
       </Box>
     </List>
   );

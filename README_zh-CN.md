@@ -6,13 +6,7 @@ Biz3 是提供 PC 管理页面和 Web App 业务界面的 React 项目。Web App
 
 **Biz 负责业务逻辑，Web App 宿主负责原生能力，Bridge 负责通信。**
 
-```mermaid
-flowchart LR
-  PC[PC browser] --> Biz[Biz3 React UI]
-  App[Web App host] --> Biz
-  Biz <-->|Bridge| Native[Native capabilities]
-  Biz <-->|WebSocket| Cloud[Cloud services]
-```
+![Architecture](architecture.png)
 
 ## 开发
 

@@ -1,4 +1,4 @@
-import { List, ListItem, ListItemIcon, Typography, Box, SvgIcon, Divider } from '@mui/material';
+import { Avatar, List, ListItem, ListItemIcon, Typography, Box, SvgIcon, Divider } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useContext, useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,10 @@ import { biz3utils } from '@/utils/biz3utils';
 import MobileQRCodeDialog from '@/components/MobileQRCodeDialog';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import { ios, homeCards, hoverSx } from '@/theme/appHomeStyle';
+
+const cardSx = { bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' };
 
 const Me = () => {
   const { gStripe, gManageEmployee, gMediaType } = useContext(GlobalStateContext);
@@ -60,6 +64,28 @@ const Me = () => {
     });
   };
 
+  const saveName = (newValue, callback) => {
+    gManageEmployee.updateCurrentUserName(newValue, (res) => {
+      callback(res.success);
+      res.success &&
+        biz3utils.triggerScheme(
+          `ssm://UI/webview/notify?${new URLSearchParams({
+            notifyName: 'UserProfileChanged',
+          })}`
+        );
+    });
+  };
+
+  const qrDialog = (
+    <MobileQRCodeDialog
+      open={qrDialogOpen}
+      qrCodeUrl={dataURL}
+      isMobile={gMediaType.isMobile}
+      userName={currentUserInfo.name || gStripe.customerInfo.employeeName}
+      onClose={() => setQrDialogOpen(false)}
+    />
+  );
+
   useEffect(() => {
     fetchCurrentUserInfo();
     biz3utils.writeQrcode(qrCodeURL, (ins) => {
@@ -67,6 +93,121 @@ const Me = () => {
       setDataURL(url);
     });
   }, []);
+
+  // Profile on the left like an account page, sign-ins filling the rest.
+  if (homeCards) {
+    const displayName = currentUserInfo.name || currentUserInfo.email || '';
+    return (
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: '340px minmax(0, 1fr)' },
+          alignItems: 'start',
+          gap: '16px',
+          px: '16px',
+          pt: '8px',
+          pb: '24px',
+        }}
+      >
+        <Box
+          sx={{
+            ...cardSx,
+            px: '24px',
+            pt: '32px',
+            pb: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            position: { md: 'sticky' },
+            top: { md: 'calc(var(--page-header-offset, 0px) + 12px)' },
+          }}
+        >
+          <Avatar
+            sx={{
+              width: 84,
+              height: 84,
+              fontSize: 34,
+              fontWeight: 600,
+              color: '#fff',
+              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+            }}
+          >
+            {displayName.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ mt: '14px', maxWidth: '100%' }}>
+            <EditableText
+              style={{ fontSize: '22px', fontWeight: 700, lineHeight: '30px' }}
+              initialValue={displayName}
+              onSave={saveName}
+            />
+          </Box>
+          <Typography sx={{ mt: '2px', fontSize: 15, color: ios.secondaryLabel, wordBreak: 'break-all' }}>
+            {currentUserInfo.email}
+          </Typography>
+          <Box
+            component="img"
+            src={dataURL}
+            alt="QR Code"
+            onClick={() => setQrDialogOpen(true)}
+            sx={{
+              mt: '24px',
+              width: 168,
+              height: 168,
+              p: '10px',
+              borderRadius: '14px',
+              border: `0.5px solid ${ios.separator}`,
+              cursor: 'pointer',
+            }}
+          />
+          <Typography sx={{ mt: '8px', fontSize: 13, color: ios.secondaryLabel }}>{t('deviceMember.qr')}</Typography>
+          <Box sx={{ mt: '20px', pt: '14px', width: '100%', borderTop: `0.5px solid ${ios.separator}` }}>
+            <Typography sx={{ fontSize: 12, color: ios.secondaryLabel }}>sub UUID</Typography>
+            <Typography sx={{ mt: '2px', fontSize: 13, color: ios.label, wordBreak: 'break-all', userSelect: 'all' }}>
+              {currentUserInfo.sub}
+            </Typography>
+          </Box>
+        </Box>
+        {recentLogins.length > 0 && (
+          <List disablePadding sx={cardSx}>
+            {recentLogins.map((login, index) => (
+              <ListItem
+                key={index}
+                onClick={() => openLoginDetail(login)}
+                sx={{
+                  minHeight: 60,
+                  px: '20px',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  '&:active': { bgcolor: ios.pressed },
+                  ...hoverSx({ bgcolor: ios.pressed }),
+                  '&:not(:last-of-type)::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 20,
+                    right: 0,
+                    bottom: 0,
+                    height: '0.5px',
+                    bgcolor: ios.separator,
+                  },
+                }}
+              >
+                <Typography sx={{ flex: 1, minWidth: 0, fontSize: 16, color: ios.label }}>
+                  {getLoginValue(login, 'model')}
+                </Typography>
+                <Typography sx={{ fontSize: 14, color: ios.secondaryLabel, whiteSpace: 'nowrap' }}>
+                  {getLoginValue(login, 'collectedAt')}
+                </Typography>
+                <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, flexShrink: 0 }} />
+              </ListItem>
+            ))}
+          </List>
+        )}
+        {qrDialog}
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
@@ -80,20 +221,7 @@ const Me = () => {
         <ListItem sx={{ ...infoItem }}>
           <Typography sx={{ ...title }}>{t('deviceMember.nickName')}</Typography>
           <Box sx={{ ...content }}>
-            <EditableText
-              initialValue={currentUserInfo.name || currentUserInfo.email}
-              onSave={(newValue, callback) => {
-                gManageEmployee.updateCurrentUserName(newValue, (res) => {
-                  callback(res.success);
-                  res.success &&
-                    biz3utils.triggerScheme(
-                      `ssm://UI/webview/notify?${new URLSearchParams({
-                        notifyName: 'UserProfileChanged',
-                      })}`
-                    );
-                });
-              }}
-            />
+            <EditableText initialValue={currentUserInfo.name || currentUserInfo.email} onSave={saveName} />
           </Box>
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
@@ -157,13 +285,7 @@ const Me = () => {
           </Fragment>
         ))}
       </List>
-      <MobileQRCodeDialog
-        open={qrDialogOpen}
-        qrCodeUrl={dataURL}
-        isMobile={gMediaType.isMobile}
-        userName={currentUserInfo.name || gStripe.customerInfo.employeeName}
-        onClose={() => setQrDialogOpen(false)}
-      />
+      {qrDialog}
     </Box>
   );
 };

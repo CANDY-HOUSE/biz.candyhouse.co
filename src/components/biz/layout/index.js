@@ -1,12 +1,13 @@
 import deferredComponent from '@/components/deferredComponent';
 import { appTabBarHeight, appTabPaths } from '@/services/appNavigation';
 import { isAppHome } from '@/services/deviceService';
+import { ios, pcCardPaths } from '@/theme/appHomeStyle';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { GlobalStateContext } from '@context/GlobalContextProvider.js';
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
@@ -15,9 +16,11 @@ import {
   AppBar,
   Box,
   Button,
+  ButtonBase,
   Dialog,
   DialogContent,
   Drawer,
+  GlobalStyles,
   Grid2,
   IconButton,
   List,
@@ -36,7 +39,6 @@ import LoadingPage from './Auth/LoadingPage.js';
 import PrivateRoute from './Auth/PrivateRoute.js';
 import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
-import SideBarMenu from './SideBarMenu.js';
 import WsStatusIndicator from '@/components/WsStatusIndicator.js';
 const CSUserSearchDialog = deferredComponent(() => import('@/components/cs/CSUserSearchDialog.js'));
 const RepairCsv = deferredComponent(() => import('@/components/cs/RepairCsv.js'));
@@ -61,7 +63,7 @@ const Layout = () => {
     padding: 4,
   };
 
-  const menuWidth = '180px';
+  const menuWidth = '232px';
   const headerHeight = '60px';
   const iconHeight = '60px';
 
@@ -73,6 +75,7 @@ const Layout = () => {
   const handleClose = () => setOpen(false);
   const location = useLocation();
   const appTab = isAppHome && appTabPaths.includes(location.pathname);
+  const pcCards = !isFromApp && pcCardPaths.includes(location.pathname);
 
   const toggleDrawer = (open) => (event) => {
     if (event && event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -94,6 +97,7 @@ const Layout = () => {
           <ListItem
             component={'a'}
             style={{ textDecoration: 'none', color: '#111111', height: iconHeight }}
+            sx={{ pl: '24px', cursor: 'pointer' }}
             onClick={() => {
               window.open(URLs.url, '_blank');
             }}
@@ -110,6 +114,7 @@ const Layout = () => {
 
   return (
     <PrivateRoute>
+      {pcCards && <GlobalStyles styles={{ body: { backgroundColor: ios.background } }} />}
       <Box sx={appTab ? { height: '100%' } : undefined}>
         <Grid2
           key={appTab ? location.pathname : undefined}
@@ -119,7 +124,14 @@ const Layout = () => {
           <AppBar
             position="fixed"
             elevation={0}
-            sx={{ color: '#111111', backgroundColor: '#F1F1F1', display: isFromApp ? 'none' : 'block' }}
+            sx={{
+              color: ios.label,
+              backgroundColor: pcCards ? 'rgba(242,242,247,0.8)' : 'rgba(255,255,255,0.8)',
+              backdropFilter: 'saturate(180%) blur(20px)',
+              WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+              width: isMobile ? '100%' : `calc(100% - ${menuWidth})`,
+              display: isFromApp ? 'none' : 'block',
+            }}
           >
             <Toolbar
               variant="dense"
@@ -132,19 +144,49 @@ const Layout = () => {
               }}
             >
               <Box sx={{ display: 'inline-flex' }}>
-                {isMobile ? (
+                {isMobile && (
                   <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
                     <MenuIcon />
                   </IconButton>
-                ) : (
-                  <SideBarMenu />
                 )}
               </Box>
-              <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                <Typography variant="h4">{gStripe.customerInfo?.name || ''}</Typography>
+              <ButtonBase
+                onClick={(event) => setAnchorEl(event.currentTarget)}
+                aria-haspopup="menu"
+                aria-expanded={Boolean(anchorEl)}
+                sx={{
+                  minWidth: 0,
+                  height: 40,
+                  pl: '14px',
+                  pr: '8px',
+                  borderRadius: '20px',
+                  transition: 'background-color 0.2s ease',
+                  bgcolor: anchorEl ? ios.fill : 'transparent',
+                  '&:hover': { bgcolor: ios.fill },
+                }}
+              >
+                <Typography
+                  sx={{
+                    minWidth: 0,
+                    fontSize: 15,
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {gStripe.customerInfo?.name || ''}
+                </Typography>
                 <WsStatusIndicator />
-                <KeyboardArrowDownIcon onClick={(event) => setAnchorEl(event.currentTarget)} />
-              </Box>
+                <KeyboardArrowDownRoundedIcon
+                  sx={{
+                    fontSize: 22,
+                    color: ios.secondaryLabel,
+                    transform: anchorEl ? 'rotate(180deg)' : 'none',
+                    transition: `transform 0.3s ${ios.spring}`,
+                  }}
+                />
+              </ButtonBase>
               <Menu
                 id="basic-menu"
                 anchorEl={anchorEl}
@@ -153,7 +195,22 @@ const Layout = () => {
                   setAnchorEl(null);
                 }}
                 MenuListProps={{ 'aria-labelledby': 'basic-button' }}
-                sx={{ borderRadius: '0px' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: '6px',
+                      minWidth: 260,
+                      borderRadius: '14px',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(0,0,0,0.06)',
+                      '& .MuiList-root': { py: '6px' },
+                      '& .MuiMenuItem-root': { mx: '6px', minHeight: 40, borderRadius: '8px', fontSize: 15 },
+                      '& .MuiMenuItem-root:hover': { bgcolor: ios.pressed },
+                      '& .MuiDivider-root': { my: '6px', mx: '16px', borderColor: ios.separator },
+                    },
+                  },
+                }}
               >
                 {gStripe.companies.map((row, _index) => (
                   <Box key={row.companyID}>
@@ -181,7 +238,9 @@ const Layout = () => {
                         }}
                       >
                         {row.companyID === gStripe.customerInfo.companyID &&
-                          !gStripe.customerInfo?.tag?.includes('ゲスト') && <CheckIcon />}
+                          !gStripe.customerInfo?.tag?.includes('ゲスト') && (
+                            <CheckIcon sx={{ fontSize: 20, color: ios.tint }} />
+                          )}
                       </Box>
                       {/* 头像区域 - 固定宽度 */}
                       <Box
@@ -193,9 +252,9 @@ const Layout = () => {
                         }}
                       >
                         {row.isSesameApp ? (
-                          <PersonIcon sx={{ color: '#333333' }}></PersonIcon>
+                          <PersonIcon sx={{ color: ios.secondaryLabel, fontSize: '22px' }}></PersonIcon>
                         ) : (
-                          <SpaceDashboardIcon sx={{ color: '#333333', fontSize: '20px' }} />
+                          <SpaceDashboardIcon sx={{ color: ios.secondaryLabel, fontSize: '20px' }} />
                         )}
                       </Box>
                       {/* 文本内容 */}
@@ -248,7 +307,7 @@ const Layout = () => {
                 ]}
                 {/* 退出 */}
                 <MenuItem
-                  sx={{ padding: '10px 50px' }}
+                  sx={{ padding: '10px 50px', color: ios.red }}
                   onClick={() => {
                     gAuth.handleSignout();
                   }}
@@ -360,6 +419,8 @@ const Layout = () => {
                 top: '0px',
                 display: 'flex',
                 flexDirection: 'column',
+                bgcolor: '#FAFAFC',
+                borderRight: `0.5px solid ${ios.separator}`,
               }}
             >
               <SidebarContent />
@@ -381,7 +442,7 @@ const Layout = () => {
                 },
               }}
             >
-              <Box sx={{ width: 250 }} role="presentation">
+              <Box sx={{ width: 250, minHeight: '100%', display: 'flex', flexDirection: 'column' }} role="presentation">
                 <SidebarContent onItemClick={isMobile ? toggleDrawer(false) : undefined} />
                 <BuildInfoBar />
               </Box>
@@ -403,7 +464,13 @@ const Layout = () => {
               pb: appTab ? `calc(${appTabBarHeight}px + env(safe-area-inset-bottom))` : undefined,
             }}
           >
-            <Outlet />
+            {isFromApp ? (
+              <Outlet />
+            ) : (
+              <Box sx={pcCards ? { pt: '8px' } : { display: 'contents' }}>
+                <Outlet />
+              </Box>
+            )}
           </Grid2>
         </Grid2>
         {!isAppHome && gStripe.isPending && (

@@ -12,6 +12,31 @@ import MobileWifiModule from '@/components/MobileWifiModule';
 import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import MobileBatteryChart from '@/components/MobileBatteryChart';
 
+// Locks bound to the Hub3 and its IR remotes.
+export const Hub3Connected = ({ device, did }) => {
+  const { t } = useTranslation();
+  return (
+    <List>
+      <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
+        <Typography color="info.light" sx={{ lineHeight: '30px' }}>
+          {t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: 'Hub3' })}
+        </Typography>
+      </Box>
+      <ListItem sx={{ py: 0 }}>
+        <MobileBindDevice device={device} />
+      </ListItem>
+      <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
+        <Typography color="info.light" sx={{ lineHeight: '30px' }}>
+          {t('pages.sesameAccessControlDevice.index.BindIRToHub3Hint')}
+        </Typography>
+      </Box>
+      <ListItem sx={{ py: 0 }}>
+        <MobileHub3RemoteList deviceUUID={did} />
+      </ListItem>
+    </List>
+  );
+};
+
 const WifiModuleIndex = () => {
   const navigate = useNavigate();
   const { gMediaType, gManageDevice } = useContext(GlobalStateContext);
@@ -74,24 +99,7 @@ const WifiModuleIndex = () => {
             <Grid2 size={4} sx={{ height: '560px' }}>
               <Box>
                 <Typography variant="h4">{t('pages.sesameAccessControlDevice.index.connectedIRDevices')}</Typography>
-                <List>
-                  <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-                    <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-                      {t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: 'Hub3' })}
-                    </Typography>
-                  </Box>
-                  <ListItem sx={{ py: 0 }}>
-                    <MobileBindDevice device={currentDevice} />
-                  </ListItem>
-                  <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-                    <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-                      {t('pages.sesameAccessControlDevice.index.BindIRToHub3Hint')}
-                    </Typography>
-                  </Box>
-                  <ListItem sx={{ py: 0 }}>
-                    <MobileHub3RemoteList deviceUUID={did} />
-                  </ListItem>
-                </List>
+                <Hub3Connected device={currentDevice} did={did} />
               </Box>
             </Grid2>
             <Grid2 size={4} sx={{ height: '560px' }}>

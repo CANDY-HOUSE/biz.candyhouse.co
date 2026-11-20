@@ -3,7 +3,7 @@ import { Box, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
 import { isAppHome } from '@/services/deviceService';
-import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { ios, appSearchSx, appSectionLabelSx, homeCards, hoverSx } from '@/theme/appHomeStyle';
 import { appStickySearchSx } from '@/services/appNavigation';
 import { DataSearch } from './biz/device/DataSearch';
 import Avatar from '@mui/material/Avatar';
@@ -42,7 +42,7 @@ export const ContactsEmpty = () => (
   </Box>
 );
 
-const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
+const SortableContactItem = ({ index, user, callRowClick, enableDrag, selected }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: user.subUUID,
     disabled: !enableDrag,
@@ -58,7 +58,7 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
     callRowClick(index);
   };
 
-  if (isAppHome) {
+  if (homeCards) {
     return (
       <ListItem
         ref={setNodeRef}
@@ -70,12 +70,14 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
           minHeight: 64,
           pl: '16px',
           pr: '12px',
-          bgcolor: ios.card,
+          bgcolor: selected ? ios.tintFill : ios.card,
           position: 'relative',
           zIndex: isDragging ? 1 : undefined,
           borderRadius: isDragging ? '14px' : 0,
           boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.14)' : 'none',
+          cursor: 'pointer',
           '&:active': { bgcolor: isDragging ? ios.card : '#E5E5EA' },
+          ...hoverSx({ bgcolor: isDragging ? ios.card : ios.background }),
           '&:not(:last-of-type)::after': {
             content: '""',
             position: 'absolute',
@@ -140,7 +142,7 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag }) => {
   );
 };
 
-const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDragEnd }) => {
+const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDragEnd, selectedUUID }) => {
   const { t } = useTranslation();
   const [sortableData, setSortableData] = useState(contacts);
 
@@ -196,21 +198,29 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={sortableData.map((user) => user.subUUID)} strategy={verticalListSortingStrategy}>
-        <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
-          <Box sx={isAppHome ? appStickySearchSx : { p: '16px', pb: '8px' }}>
+        <Box sx={{ width: '100%', bgcolor: homeCards ? undefined : 'background.paper' }}>
+          <Box
+            sx={
+              isAppHome
+                ? appStickySearchSx
+                : homeCards
+                  ? { px: '16px', pt: '4px', pb: '8px' }
+                  : { p: '16px', pb: '8px' }
+            }
+          >
             <DataSearch
               callSearch={callSearch}
-              placeholder={isAppHome ? t('appHome.searchContacts') : undefined}
-              sx={isAppHome ? appSearchSx : undefined}
+              placeholder={homeCards ? t('appHome.searchContacts') : undefined}
+              sx={homeCards ? appSearchSx : undefined}
             />
           </Box>
-          {isAppHome && (
+          {homeCards && (
             <Typography sx={appSectionLabelSx}>{t('appHome.contactCount', { count: sortableData.length })}</Typography>
           )}
           <List
-            disablePadding={isAppHome}
+            disablePadding={homeCards}
             sx={
-              isAppHome
+              homeCards
                 ? { mx: '16px', mb: '16px', bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }
                 : undefined
             }
@@ -225,6 +235,7 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
                 user={user}
                 callRowClick={callRowClick}
                 enableDrag={!!onDragEnd}
+                selected={user.subUUID === selectedUUID}
               />
             ))}
           </List>

@@ -36,7 +36,7 @@ import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import { AirStatusSummary } from '@/pages/personal/devices/wifi-module/ir/components/AirRemoteStatus.js';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { ios, appSearchSx, appSectionLabelSx, homeCards, hoverSx } from '@/theme/appHomeStyle';
 import { appStickySearchSx } from '@/services/appNavigation';
 import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
@@ -126,6 +126,7 @@ const SortableItemComponent = ({
   toggleExpanded,
   isDragging,
   localOnly,
+  selected,
 }) => {
   const {
     attributes,
@@ -208,10 +209,10 @@ const SortableItemComponent = ({
 
   return (
     <Box
-      ref={isAppHome ? setNodeRef : undefined}
-      style={isAppHome ? style : undefined}
+      ref={homeCards ? setNodeRef : undefined}
+      style={homeCards ? style : undefined}
       sx={
-        isAppHome
+        homeCards
           ? {
               mb: '12px',
               bgcolor: ios.card,
@@ -219,20 +220,24 @@ const SortableItemComponent = ({
               overflow: 'hidden',
               position: 'relative',
               zIndex: sortableIsDragging ? 1 : undefined,
-              boxShadow: sortableIsDragging ? '0 8px 24px rgba(0,0,0,0.12)' : 'none',
+              boxShadow: sortableIsDragging
+                ? '0 8px 24px rgba(0,0,0,0.12)'
+                : selected
+                  ? `inset 0 0 0 2px ${ios.tint}`
+                  : 'none',
               transition: 'box-shadow 0.2s ease',
             }
           : undefined
       }
     >
       <ListItem
-        ref={isAppHome ? undefined : setNodeRef}
+        ref={homeCards ? undefined : setNodeRef}
         {...(enableDrag ? attributes : {})}
         {...(enableDrag ? listeners : {})}
         onClick={handleItemClick}
-        style={isAppHome ? undefined : style}
+        style={homeCards ? undefined : style}
         sx={
-          isAppHome
+          homeCards
             ? {
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -242,8 +247,10 @@ const SortableItemComponent = ({
                 pr: '10px',
                 pt: '14px',
                 pb: expandable ? 0 : '14px',
+                cursor: callRowClick ? 'pointer' : undefined,
                 transition: 'background-color 0.2s ease',
                 '&:active:not(:has(button:active))': { bgcolor: ios.pressed },
+                ...hoverSx({ bgcolor: ios.pressed }),
               }
             : {
                 display: 'flex',
@@ -254,7 +261,7 @@ const SortableItemComponent = ({
               }
         }
       >
-        {isAppHome ? (
+        {homeCards ? (
           <Box sx={{ flexGrow: 1, minWidth: 0, pt: expandable ? '11px' : 0 }}>
             <Stack direction="row" spacing="10px" alignItems="center" sx={{ minHeight: 22 }}>
               {native?.showBle && <BluetoothIcon sx={{ fontSize: 19, color: statusColor(native.bleConnected) }} />}
@@ -327,7 +334,7 @@ const SortableItemComponent = ({
         )}
         <Box
           // With a footer row the button keeps the plain card's position and may reach into the footer's height.
-          sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, mb: isAppHome && expandable ? '-10px' : 0 }}
+          sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, mb: homeCards && expandable ? '-10px' : 0 }}
           onClick={handleSwitchClick}
         >
           {gUtils.isHub3Pro(device.deviceModel) ? (
@@ -363,7 +370,7 @@ const SortableItemComponent = ({
                   onExpand={() => {
                     if (!isExpanded && !sortableIsDragging) toggleExpanded(device.deviceUUID);
                   }}
-                  sx={isAppHome ? { mt: '36px', mr: '6px' } : { mr: 1 }}
+                  sx={homeCards ? { mt: '36px', mr: '6px' } : { mr: 1 }}
                 />
               )}
               <VIotSwitch
@@ -399,7 +406,7 @@ const SortableItemComponent = ({
           )}
         </Box>
       </ListItem>
-      {isAppHome && expandable && (
+      {homeCards && expandable && (
         <ButtonBase
           {...(enableDrag ? listeners : {})}
           onClick={handleArrowClick}
@@ -417,6 +424,7 @@ const SortableItemComponent = ({
             color: isExpanded ? ios.tint : ios.label,
             transition: 'background-color 0.2s ease, color 0.25s ease',
             '&:active': { bgcolor: ios.pressed },
+            ...hoverSx({ bgcolor: ios.pressed }),
           }}
         >
           {t(isHub3 ? 'pages.ir.remote.remoteControl' : 'botSettings.script')}
@@ -432,7 +440,7 @@ const SortableItemComponent = ({
       )}
 
       {!localOnly && (isScriptBot || webScripts) && !sortableIsDragging && (
-        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={isAppHome ? appExpandedSx : undefined}>
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={homeCards ? appExpandedSx : undefined}>
           <BotScriptList
             deviceUUID={device.deviceUUID}
             scripts={bot.scripts}
@@ -454,8 +462,8 @@ const SortableItemComponent = ({
       )}
       {/* Hub3 设备的遥控器列表 - 拖拽时不显示 */}
       {!localOnly && isHub3 && !sortableIsDragging && (
-        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={isAppHome ? appExpandedSx : undefined}>
-          <Box sx={isAppHome ? { px: 3, pb: 1 } : { pl: 2, pr: 2, pb: 1 }}>
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit sx={homeCards ? appExpandedSx : undefined}>
+          <Box sx={homeCards ? { px: 3, pb: 1 } : { pl: 2, pr: 2, pb: 1 }}>
             <MobileHub3RemoteList deviceUUID={device.deviceUUID} device={device} editable={false} />
           </Box>
         </Collapse>
@@ -464,7 +472,7 @@ const SortableItemComponent = ({
   );
 };
 
-const appSwitchProps = isAppHome ? { tinted: true, size: 62 } : {};
+const appSwitchProps = homeCards ? { tinted: true, size: 62 } : {};
 const appExpandedSx = {
   // Line the script play buttons up under the card's main button.
   '& .MuiIconButton-root': { width: 60 },
@@ -481,7 +489,7 @@ const loadExpandedDevices = () => {
   }
 };
 
-const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, localOnly = false }) => {
+const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, localOnly = false, selectedUUID }) => {
   const { t } = useTranslation();
   const [sortableData, setSortableData] = useState(devices);
   const [expandedDevices, setExpandedDevices] = useState(loadExpandedDevices); // 存储展开的设备 UUID
@@ -551,20 +559,28 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext items={sortableData.map((device) => device.deviceUUID)} strategy={verticalListSortingStrategy}>
-        <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
-          <Box sx={isAppHome ? appStickySearchSx : { p: '16px', pb: '8px' }}>
+        <Box sx={{ width: '100%', bgcolor: homeCards ? undefined : 'background.paper' }}>
+          <Box
+            sx={
+              isAppHome
+                ? appStickySearchSx
+                : homeCards
+                  ? { px: '16px', pt: '4px', pb: '8px' }
+                  : { p: '16px', pb: '8px' }
+            }
+          >
             <DataSearch
               callSearch={callSearch}
-              placeholder={isAppHome ? t('appHome.searchDevices') : undefined}
-              sx={isAppHome ? appSearchSx : undefined}
+              placeholder={homeCards ? t('appHome.searchDevices') : undefined}
+              sx={homeCards ? appSearchSx : undefined}
             />
           </Box>
-          {isAppHome && (
+          {homeCards && (
             <Typography sx={appSectionLabelSx}>{t('appHome.deviceCount', { count: sortableData.length })}</Typography>
           )}
           <List
             disablePadding
-            sx={isAppHome ? { px: '16px', pb: '16px' } : undefined}
+            sx={homeCards ? { px: '16px', pb: '16px' } : undefined}
             onTouchMoveCapture={() => {
               if (isAppHome && document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
             }}
@@ -581,6 +597,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
                 expandedDevices={expandedDevices}
                 toggleExpanded={toggleExpanded}
                 isDragging={isDragging}
+                selected={device.deviceUUID === selectedUUID}
               />
             ))}
           </List>

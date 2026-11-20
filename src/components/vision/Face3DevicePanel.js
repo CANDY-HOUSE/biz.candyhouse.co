@@ -115,7 +115,7 @@ function LiveButton({ online, lastSeenAt, onClick }) {
  * 数据从 useFace3Context() 取（不订阅全局 GlobalStateContext），再用 memo 包住（见文件末尾）：
  * props 都是字符串，父页面因全局状态重渲时这里不跟着重渲，只在 Face3 自己的数据变了才重渲。
  */
-function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel }) {
+function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel, fill = false }) {
   const { t, i18n } = useTranslation();
   const face3 = useFace3Context();
   const { devices, isAiOn, toggleAi, liveUUID, setToolsTarget, notify: setSnackbarValue } = face3;
@@ -300,7 +300,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.paper', height: { xs: '100%', md: 'auto' } }}>
+    <Box sx={{ bgcolor: 'background.paper', height: fill ? '100%' : { xs: '100%', md: 'auto' } }}>
       {/* 宽屏左右平分：左边画面框，下面是工具栏；右边是事件录像列表。
           窄屏上下排：画面框、工具栏、事件录像。
           录像列表有总高度、在自己里面滚动，不会把页面无限往下撑：
@@ -314,12 +314,14 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
           columnGap: 3,
           px: { xs: 0, md: 2 },
           py: { xs: 0, md: 2 },
-          height: { xs: '100%', md: 'auto' },
+          /* 放进设备列表旁的面板时撑满面板：录像列表占满整列高度 */
+          height: fill ? '100%' : { xs: '100%', md: 'auto' },
+          boxSizing: 'border-box',
         }}
       >
         <Box
           sx={{
-            flex: { xs: 'none', md: '1 1 0' },
+            flex: { xs: 'none', md: fill ? '3 1 0' : '1 1 0' },
             minWidth: 0,
           }}
         >
@@ -362,7 +364,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
         {device && (
           <Box
             sx={{
-              flex: { xs: '1 1 auto', md: '1 1 0' },
+              flex: { xs: '1 1 auto', md: fill ? '2 1 0' : '1 1 0' },
               minWidth: 0,
               minHeight: { xs: 240, md: 0 },
               position: 'relative',

@@ -3,7 +3,7 @@ import { Fab, Dialog, IconButton, Box } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
-const SesameFloatingAdd = forwardRef(({ children, popupComponent, isMobile = false, onClose }, ref) => {
+const SesameFloatingAdd = forwardRef(({ children, popupComponent, isMobile = false, onClose, fabSx }, ref) => {
   const [open, setOpen] = useState(false);
   const shouldShowButton = isMobile && popupComponent;
 
@@ -36,12 +36,12 @@ const SesameFloatingAdd = forwardRef(({ children, popupComponent, isMobile = fal
             bottom: 16,
             right: 16,
             zIndex: 1000,
-            bgcolor: 'white',
+            bgcolor: 'rgba(255,255,255,0.3)',
             '&:hover': {
-              bgcolor: 'white',
+              bgcolor: 'rgba(255,255,255,0.5)',
             },
-            boxShadow:
-              '0px 3px 5px -1px rgba(0,0,0,0.2), 0px 6px 10px 0px rgba(0,0,0,0.14), 0px 1px 18px 0px rgba(0,0,0,0.12)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.08)',
+            ...fabSx,
           }}
         >
           <AddIcon color="primary" />

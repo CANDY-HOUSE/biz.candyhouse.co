@@ -6,6 +6,7 @@ import { rememberRemovedDevice } from '@/services/removedDevices';
 import { Box, Drawer, ListItem, List, Typography, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useContext, useState } from 'react';
+import { DetailPanelContext } from './detailPanelContext';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ const MobileRemoveDevice = ({ deviceUUID, subUUID, deviceName, showHint = true, 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [removeLoading, setRemoveLoading] = useState(false);
   const navigate = useNavigate();
+  const panel = useContext(DetailPanelContext);
 
   const requestRefresh = useCallback(() => {
     if (isAppHome) {
@@ -31,10 +33,12 @@ const MobileRemoveDevice = ({ deviceUUID, subUUID, deviceName, showHint = true, 
       biz3utils.triggerBridge({
         action: 'requestDestroySelf',
       });
+    } else if (panel) {
+      panel.onRemoved(deviceUUID);
     } else {
       navigate(-1);
     }
-  }, [navigate]);
+  }, [navigate, panel, deviceUUID]);
 
   return (
     <>

@@ -28,6 +28,8 @@ const GenericDeviceListContainer = forwardRef(
       isMobile = false,
       enableFloatingAdd = true,
       filterFunction,
+      selectedUUID,
+      fabSx,
     },
     ref
   ) => {
@@ -99,6 +101,7 @@ const GenericDeviceListContainer = forwardRef(
         onDragEnd={enableDrag ? handleDragEnd : undefined}
         callSearch={enableSearch ? handleSearch : undefined}
         callRowClick={onItemClick ? handleRowClick : undefined}
+        selectedUUID={selectedUUID}
       />
     );
 
@@ -107,7 +110,7 @@ const GenericDeviceListContainer = forwardRef(
     }
 
     return (
-      <SesameFloatingAdd ref={floatingAddRef} isMobile={isMobile} popupComponent={popupComponent}>
+      <SesameFloatingAdd ref={floatingAddRef} isMobile={isMobile} popupComponent={popupComponent} fabSx={fabSx}>
         {deviceListContent}
       </SesameFloatingAdd>
     );
