@@ -4,6 +4,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
 import { isAppHome } from '@/services/deviceService';
 import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { appStickySearchSx } from '@/services/appNavigation';
 import { DataSearch } from './biz/device/DataSearch';
 import Avatar from '@mui/material/Avatar';
 import { biz3utils } from '@/utils/biz3utils';
@@ -196,7 +197,7 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
     >
       <SortableContext items={sortableData.map((user) => user.subUUID)} strategy={verticalListSortingStrategy}>
         <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
-          <Box sx={isAppHome ? { px: '16px', pt: '4px' } : { p: '16px', pb: '8px' }}>
+          <Box sx={isAppHome ? appStickySearchSx : { p: '16px', pb: '8px' }}>
             <DataSearch
               callSearch={callSearch}
               placeholder={isAppHome ? t('appHome.searchContacts') : undefined}
@@ -213,6 +214,9 @@ const MobileContactList = ({ contacts, isEmpty, callRowClick, callSearch, onDrag
                 ? { mx: '16px', mb: '16px', bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }
                 : undefined
             }
+            onTouchMoveCapture={() => {
+              if (isAppHome && document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
+            }}
           >
             {sortableData.map((user, index) => (
               <SortableContactItem

@@ -36,6 +36,7 @@ import MobileHub3RemoteList from '@/components/MobileHub3RemoteList';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import { ios, appSearchSx, appSectionLabelSx } from '@/theme/appHomeStyle';
+import { appStickySearchSx } from '@/services/appNavigation';
 import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
 import { Error } from '@mui/icons-material';
@@ -234,11 +235,11 @@ const SortableItemComponent = ({
             ? {
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: expandable ? 'flex-end' : 'center',
-                minHeight: expandable ? 80 : 104,
+                alignItems: expandable ? 'flex-start' : 'center',
+                minHeight: expandable ? 0 : 104,
                 pl: '20px',
                 pr: '10px',
-                pt: expandable ? '8px' : '14px',
+                pt: '14px',
                 pb: expandable ? 0 : '14px',
                 transition: 'background-color 0.2s ease',
                 '&:active:not(:has(button:active))': { bgcolor: ios.pressed },
@@ -253,7 +254,7 @@ const SortableItemComponent = ({
         }
       >
         {isAppHome ? (
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0, pt: expandable ? '11px' : 0 }}>
             <Stack direction="row" spacing="10px" alignItems="center" sx={{ minHeight: 22 }}>
               {native?.showBle && <BluetoothIcon sx={{ fontSize: 19, color: statusColor(native.bleConnected) }} />}
               <WifiIcon sx={{ fontSize: 20, color: statusColor(device.stateInfo.wm2State === true) }} />
@@ -323,7 +324,11 @@ const SortableItemComponent = ({
             )}
           </Box>
         )}
-        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }} onClick={handleSwitchClick}>
+        <Box
+          // With a footer row the button keeps the plain card's position and may reach into the footer's height.
+          sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, mb: isAppHome && expandable ? '-10px' : 0 }}
+          onClick={handleSwitchClick}
+        >
           {gUtils.isHub3Pro(device.deviceModel) ? (
             // Hub3 Pro：分开显示两路继电器 icon
             <>
@@ -446,7 +451,7 @@ const SortableItemComponent = ({
   );
 };
 
-const appSwitchProps = isAppHome ? { tinted: true, size: 56 } : {};
+const appSwitchProps = isAppHome ? { tinted: true, size: 62 } : {};
 const appExpandedSx = {
   // Line the script play buttons up under the card's main button.
   '& .MuiIconButton-root': { width: 60 },
@@ -534,7 +539,7 @@ const SesameDeviceList = ({ devices, gIot, callRowClick, onDragEnd, callSearch, 
     >
       <SortableContext items={sortableData.map((device) => device.deviceUUID)} strategy={verticalListSortingStrategy}>
         <Box sx={{ width: '100%', bgcolor: isAppHome ? undefined : 'background.paper' }}>
-          <Box sx={isAppHome ? { px: '16px', pt: '4px' } : { p: '16px', pb: '8px' }}>
+          <Box sx={isAppHome ? appStickySearchSx : { p: '16px', pb: '8px' }}>
             <DataSearch
               callSearch={callSearch}
               placeholder={isAppHome ? t('appHome.searchDevices') : undefined}

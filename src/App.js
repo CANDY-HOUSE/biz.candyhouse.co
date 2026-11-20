@@ -158,25 +158,43 @@ const AppFrame = ({ children }) => {
   const location = useLocation();
   const contentRef = useRef(null);
   const homeScrollTop = useRef(0);
+  const frameRef = useRef(null);
+  const lastScrollTop = useRef(0);
   const tabPage = appTabPaths.includes(location.pathname);
-  const [scrolled, setScrolled] = useState(false);
+  const setHeaderHidden = (hidden) => {
+    frameRef.current.dataset.appHeader = hidden ? 'hidden' : 'shown';
+  };
+  const setHeaderDocked = (top) => {
+    frameRef.current.dataset.appDocked = String(top > 0);
+  };
   useLayoutEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = location.pathname === '/' ? homeScrollTop.current : 0;
-      setScrolled(contentRef.current.scrollTop > 0);
+      lastScrollTop.current = contentRef.current.scrollTop;
+      setHeaderHidden(false);
+      setHeaderDocked(contentRef.current.scrollTop);
     }
   }, [location.pathname]);
   if (!isAppHome) return children;
   return (
     // Pages scroll inside the content box, never the document: the WebView moves even fixed elements while the
     // document scrolls, which drags the title bar along.
-    <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <AppTopBar scrolled={tabPage && scrolled} />
+    <Box
+      ref={frameRef}
+      sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+    >
+      <AppTopBar />
       <Box
         ref={contentRef}
         onScroll={(event) => {
           if (location.pathname === '/') homeScrollTop.current = event.currentTarget.scrollTop;
-          if (tabPage) setScrolled(event.currentTarget.scrollTop > 0);
+          if (!tabPage) return;
+          const top = event.currentTarget.scrollTop;
+          const delta = top - lastScrollTop.current;
+          lastScrollTop.current = top;
+          setHeaderDocked(top);
+          if (top <= appTabTopBarHeight) setHeaderHidden(false);
+          else if (Math.abs(delta) >= 1) setHeaderHidden(delta > 0);
         }}
         sx={{
           flex: 1,
@@ -185,6 +203,8 @@ const AppFrame = ({ children }) => {
           position: 'relative',
           overflowY: 'auto',
           overflowX: 'hidden',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
           overscrollBehaviorX: 'none',
           ...(tabPage && {
             display: 'flex',

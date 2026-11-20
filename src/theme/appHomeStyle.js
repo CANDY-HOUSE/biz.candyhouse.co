@@ -28,7 +28,7 @@ export const appSearchSx = {
 export const appSectionLabelSx = {
   pl: '32px',
   pr: '16px',
-  pt: '18px',
+  pt: '10px',
   pb: '8px',
   fontSize: 13,
   color: ios.secondaryLabel,

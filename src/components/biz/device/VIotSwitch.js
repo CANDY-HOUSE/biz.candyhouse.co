@@ -35,6 +35,7 @@ const TintedIcon = ({ size, tone, Icon }) => (
     {Icon ? <Icon sx={{ fontSize: Math.round(size * 0.46) }} /> : null}
   </Box>
 );
+const os2LockModels = [gConfig.sesameDeviceModel.sesame_2, gConfig.sesameDeviceModel.sesame_4];
 const lockTone = (checked) => (checked === undefined ? 'unknown' : checked ? 'unlocked' : 'locked');
 
 // Bike / Bot 执行指令后按钮左右抖动（3% 宽度，60ms 往返），持续 1.5 秒
@@ -100,7 +101,8 @@ const VIotSwitch = ({
       inFlight.current = false;
     }
   };
-  const [checked, setChecked] = useState(undefined);
+  // Start from the known state so a remount (e.g. switching app tabs) doesn't flash the unknown state.
+  const [checked, setChecked] = useState(() => (defaultState ? defaultState === 'unlocked' : undefined));
   const [isShow, setIsShow] = useState(true);
 
   useEffect(() => {
@@ -248,6 +250,8 @@ const VIotSwitch = ({
                 width: size,
                 height: size,
                 transform: `translate(-50%, -50%) rotate(${-position}deg)`,
+                // OS3 locks report the angle sparsely; ease between reports as the former native app did.
+                transition: os2LockModels.includes(model) ? undefined : 'transform 0.5s ease-in-out',
                 pointerEvents: 'none',
               }}
             >

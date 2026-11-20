@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import BackButton from '@/components/BackButton';
 import useAppLayer from '@/hooks/useAppLayer';
 import { ios } from '@/theme/appHomeStyle';
-import { appRouteInfo, appTabTopBarHeight, appTopBarHeight } from '@/services/appNavigation';
+import { appRouteInfo, appTabHeaderSx, appTabTopBarHeight, appTopBarHeight } from '@/services/appNavigation';
 import { ContactIcon, CubeIcon, ScanIcon } from './appIcons';
 
 const appEvent = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
@@ -39,7 +39,7 @@ function useLongPress(action, delay = 500) {
 }
 
 /** App header row: + menu on tab pages, back on child pages without their own header. */
-export default function AppTopBar({ scrolled = false }) {
+export default function AppTopBar() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const anchor = useRef(null);
@@ -69,10 +69,7 @@ export default function AppTopBar({ scrolled = false }) {
               right: 0,
               zIndex: 1100,
               height: appTabTopBarHeight,
-              bgcolor: scrolled ? 'rgba(242,242,247,0.82)' : 'rgba(242,242,247,0)',
-              backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-              WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-              transition: 'background-color 0.25s ease',
+              ...appTabHeaderSx,
             }
           : {
               position: 'sticky',
@@ -128,6 +125,8 @@ export default function AppTopBar({ scrolled = false }) {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
+          // Like an iOS context menu, any touch outside dismisses it; a drag never makes the click MUI waits for.
+          root: { slotProps: { backdrop: { invisible: true, onPointerDown: () => setMenuOpen(false) } } },
           paper: {
             elevation: 0,
             sx: {

@@ -5,6 +5,32 @@ export const appTopBarHeight = 48;
 export const appTabTopBarHeight = 52;
 export const appTabBarHeight = 80;
 export const appPageBackground = ios.background;
+// AppFrame marks itself with these: the tab header and search slide away while the user scrolls down a tab page,
+// and turn translucent once content scrolls under them.
+export const appHeaderHidden = '[data-app-header="hidden"] &';
+const appHeaderDocked = '[data-app-docked="true"] &';
+const appHeaderSlide = {
+  bgcolor: ios.background,
+  transition: `transform 0.3s ${ios.spring}, background-color 0.2s ease`,
+  [appHeaderDocked]: {
+    bgcolor: 'rgba(242,242,247,0.2)',
+    backdropFilter: 'blur(8px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(8px) saturate(180%)',
+  },
+};
+export const appTabHeaderSx = { ...appHeaderSlide, [appHeaderHidden]: { transform: 'translateY(-100%)' } };
+// Stays under the tab header while scrolling, leaving with it. The offset counts from inside the content box's
+// top padding, which already reserves the header.
+export const appStickySearchSx = {
+  ...appHeaderSlide,
+  position: 'sticky',
+  top: 0,
+  zIndex: 2,
+  px: '16px',
+  pt: '4px',
+  pb: '8px',
+  [appHeaderHidden]: { transform: `translateY(calc(-100% - ${appTabTopBarHeight}px))` },
+};
 // App routes that draw their own header; AppTopBar hides on them.
 const appPageHeaderPaths = [
   '/device-setting',
