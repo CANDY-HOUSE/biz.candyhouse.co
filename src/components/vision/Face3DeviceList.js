@@ -10,10 +10,9 @@ import WifiIcon from '@mui/icons-material/Wifi';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
-import { carryFace3Live, Face3LiveSlot, useFace3LiveSession } from './face3LiveSession';
+import { carryFace3Live, Face3LiveSlot, useFace3Context } from './face3Context';
 import { selectFace3Protocol } from './protocols';
-import { useFace3Ai } from './face3AiPref';
-import { useRelativeTime } from './face3RelativeTime';
+import { relativeTime } from './face3Utils';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
@@ -50,7 +49,6 @@ const face3DetailLocation = (device, companyDevices) => {
  */
 const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
   const { t } = useTranslation();
-  const rel = useRelativeTime();
   const name = device.deviceName || device.deviceUUID;
   const online = device.stateInfo?.wm2State === true;
   const lastSeenAt = device.stateInfo?.lastSeenAt;
@@ -91,7 +89,7 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
           </Typography>
           {!online && (
             <Typography sx={{ fontSize: 14, color: ios.secondaryLabel, whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {lastSeenAt > 0 ? `${t('face3.offline')} · ${rel(lastSeenAt)}` : t('face3.offline')}
+              {lastSeenAt > 0 ? `${t('face3.offline')} · ${relativeTime(t, lastSeenAt)}` : t('face3.offline')}
             </Typography>
           )}
           <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, ml: 'auto', flexShrink: 0 }} />
@@ -196,7 +194,7 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
           </Typography>
           {!online && (
             <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {lastSeenAt > 0 ? `${t('face3.offline')} · ${rel(lastSeenAt)}` : t('face3.offline')}
+              {lastSeenAt > 0 ? `${t('face3.offline')} · ${relativeTime(t, lastSeenAt)}` : t('face3.offline')}
             </Typography>
           )}
           <KeyboardArrowRightIcon sx={{ color: 'text.disabled', ml: 'auto', flexShrink: 0 }} />
@@ -235,7 +233,7 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
         </Box>
       )}
 
-      {/* 就地播放：实时画面直接铺在预览框位置，盖住 ▶。画面由全局会话渲染（见 face3LiveSession），
+      {/* 就地播放：实时画面直接铺在预览框位置，盖住 ▶。画面由 Face3Provider 里的会话渲染（见 face3Context），
           这里只放槽位 —— 点进详情页时连接不断，画面跟着挪过去。
           Face3LiveView 自带 #000 不透明背景，所以下面那几层不必再逐个隐藏。 */}
       {isViewing && (
@@ -252,27 +250,22 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
  *
  * 数据来自 WS 路由 biz3Face3Qr 的 op:"list" —— 云端从连接记录取 subUUID，
  * 只会返回当前登录用户名下的设备（见 doc/face3-identity-model.md 第 5.7 节）。
- * 首页和设备详情页（Face3DevicePanel）都能看实时画面，正在看的那台点进详情页不断开（见 face3LiveSession）；
+ * 首页和设备详情页（Face3DevicePanel）都能看实时画面，正在看的那台点进详情页不断开（见 face3Context）；
  * 录像、AI 开关和拍照 / 录制等工具在详情页。
  */
 export default function Face3DeviceList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { gFace3, gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
+  /* 全局 context 只用于添加设备菜单（扫码绑定）；Face3 的数据、AI 开关、实时会话从 useFace3Context() 取 */
+  const { gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
+  const face3 = useFace3Context();
   const [attempt, setAttempt] = useState(0);
   const floatingAddRef = useRef(null);
-  const { isAiOn } = useFace3Ai();
 
-  /* 只取出要用的那个函数，不要把 gFace3 整个放进依赖。
-   *
-   * useFace3() 每次 render 都返回新的对象字面量，而 list 成功会 setFace3Devices
-   * -> provider 重渲染 -> gFace3 换新引用 -> effect 重跑 -> 再发一次 list，
-   * 自己喂自己，秒级刷屏。listFace3Devices 本身是 useCallback([registerCallback])，
-   * 而 registerCallback 的依赖是空数组，所以它跨渲染稳定，可以安全地作依赖。
-   *
-   * 项目里既有页面（schedule-list）也是这个写法：effect 里直接调，
-   * 依赖放具体的值而不是 hook 对象。 */
-  const { listFace3Devices } = gFace3;
+  /* 只取出要用的那个函数作依赖，不要把整个对象放进依赖：对象换引用会让 effect 重跑、再发一次 list，
+   * 自己喂自己。listFace3Devices 是 useCallback([registerCallback])，而 registerCallback
+   * 的依赖是空数组，所以它跨渲染稳定，可以安全地作依赖。 */
+  const { listFace3Devices } = face3;
   /* 第二道防线：两次请求至少隔 1 秒。
    *
    * 注意不能用"在途标志"来挡 —— React 在依赖变化时会先跑 cleanup 再跑新的
@@ -282,7 +275,7 @@ export default function Face3DeviceList() {
   const lastReqAt = useRef(0);
 
   useEffect(() => {
-    /* 节流：两次请求至少隔 1 秒，挡住 gFace3 引用变化导致的自我喂食循环
+    /* 节流：两次请求至少隔 1 秒，挡住依赖引用变化导致的自我喂食循环
        （见上方 provider 说明）。 */
     const now = Date.now();
     if (now - lastReqAt.current < 1000) return undefined;
@@ -317,15 +310,14 @@ export default function Face3DeviceList() {
     };
   }, []);
 
-  const face3Devices = gFace3.face3Devices || [];
+  const face3Devices = face3.devices;
 
-  /* 实时画面是全局会话（同一时刻一路），换页面不断开；关闭按钮在画面里，关了即结束会话 */
-  const liveSession = useFace3LiveSession();
+  /* 实时画面是 Face3Provider 里的会话（同一时刻一路），换页面不断开；关闭按钮在画面里，关了即结束会话 */
 
   const handleWake = (device) => {
     if (!device?.deviceUUID) return;
     // 通话组件统一负责环境预检、唤醒和连接，关闭即取消本轮异步工作。
-    liveSession.start(device, selectFace3Protocol({ aiEnabled: isAiOn(device.deviceUUID) }));
+    face3.start(device, selectFace3Protocol({ aiEnabled: face3.isAiOn(device.deviceUUID) }));
   };
 
   /* 门铃推送点进来：/vision?deviceUUID=<id>&live=1 直接打开这台的实时画面。
@@ -437,13 +429,13 @@ export default function Face3DeviceList() {
             key={d.deviceUUID}
             device={d}
             onOpen={(device) =>
-              /* 正在看这台就把实时画面带进详情页（见 face3LiveSession） */
+              /* 正在看这台就把实时画面带进详情页（见 face3Context） */
               navigate(face3DetailLocation(device, gManageDevice.companyDevices), {
                 state: carryFace3Live(device.deviceUUID),
               })
             }
             onWake={handleWake}
-            isViewing={liveSession.liveUUID === (d.deviceUUID || '').toUpperCase()}
+            isViewing={face3.liveUUID === (d.deviceUUID || '').toUpperCase()}
           />
         ))}
       </Box>

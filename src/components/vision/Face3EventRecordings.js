@@ -1,51 +1,51 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, ButtonBase, CircularProgress, Typography } from '@mui/material';
 import DirectionsWalkRoundedIcon from '@mui/icons-material/DirectionsWalkRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
 import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded';
 import { useTranslation } from 'react-i18next';
-import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 
 export const recordingTime = (item) => Number(item.startTs) * 1000;
 
 /**
- * 卡片左侧的首帧缩略图（16:9）。云端有图才给地址（thumbnail），没有为 null；
- * 没有、或地址加载失败（过期、还没生成）时显示占位：与画面框空闲时同样的深底 + 淡 Vision logo。
+ * 卡片左侧的首帧缩略图（16:9）。云端有图才给地址（thumbnail），没有为 null。
+ * 底下始终铺着占位（与画面框空闲时同样的深底 + 淡 Vision logo），有图时图盖在上面；
+ * 地址加载失败（过期、还没生成）就把图藏起来露出占位 —— 直接改 DOM，不为它挂 state、不重渲。
+ * 调用方用 key={地址} 挂它：换了地址就是新元素，之前的失败不沿用。
  */
-function RecordingThumb({ src }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <Box
-      sx={{
-        width: 96,
-        aspectRatio: '16 / 9',
-        flexShrink: 0,
-        borderRadius: 2,
-        overflow: 'hidden',
-        bgcolor: '#2A2A2E',
-        color: 'rgba(255,255,255,0.28)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {src && !failed ? (
-        <Box
-          component="img"
-          src={src}
-          alt=""
-          loading="lazy"
-          onError={() => setFailed(true)}
-          sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
-      ) : (
-        <VisionIcon width={26} height={26} aria-hidden="true" />
-      )}
-    </Box>
-  );
-}
+const RecordingThumb = ({ src }) => (
+  <Box
+    sx={{
+      position: 'relative',
+      width: 96,
+      aspectRatio: '16 / 9',
+      flexShrink: 0,
+      borderRadius: 2,
+      overflow: 'hidden',
+      bgcolor: '#2A2A2E',
+      color: 'rgba(255,255,255,0.28)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <VisionIcon width={26} height={26} aria-hidden="true" />
+    {src && (
+      <Box
+        component="img"
+        src={src}
+        alt=""
+        loading="lazy"
+        onError={(event) => {
+          event.currentTarget.style.display = 'none';
+        }}
+        sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    )}
+  </Box>
+);
 
 /** 触发原因 -> 卡片右侧圆形图标。云端 reason：presence / doorbell / credential，其余归为通用录像。 */
 const REASON_ICONS = {
@@ -83,53 +83,60 @@ export const recordingErrorKey = (message, playing = false) => {
  *
  * 播放不在这里：点一张只回调 onSelect，详情页在画面框里播放，并把正在播的 recId 传回 selectedRecId。
  * removedRecIds：详情页刚删掉的录像，直接从列表里隐去，不重新拉列表。
+ * listRecordings：取列表的函数（详情页从 Face3 环境传进来，本组件不订阅任何 context）。
  */
-export default function Face3EventRecordings({ device, selectedRecId, onSelect, headerAction, removedRecIds }) {
+export default function Face3EventRecordings({
+  device,
+  listRecordings,
+  selectedRecId,
+  onSelect,
+  headerAction,
+  removedRecIds,
+}) {
   const { t, i18n } = useTranslation();
-  const { gFace3 } = useContext(GlobalStateContext);
-  const { listFace3Recordings } = gFace3;
-  const [items, setItems] = useState([]);
-  const [next, setNext] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [listError, setListError] = useState('');
-  const listGeneration = useRef(0);
-  const listBusy = useRef(false);
-  const listAbort = useRef(null);
-  const failedBefore = useRef(null);
+  /* 列表显示用的状态一起变，放一个 state：items 录像；next 下一页的游标；loading 正在取；error 失败的文案键 */
+  const [list, setList] = useState({ items: [], next: null, loading: false, error: '' });
+  const { items, next, loading, error: listError } = list;
+  /* 请求过程（不参与渲染）：generation 作废旧请求；busy 正在取；abort；failedBefore 失败那页的游标（重试用） */
+  const requestRef = useRef({ generation: 0, busy: false, abort: null, failedBefore: null });
   const deviceId = device.deviceUUID;
 
   const load = useCallback(
     async (before = null) => {
-      if (listBusy.current) return;
-      listBusy.current = true;
-      const generation = ++listGeneration.current;
-      failedBefore.current = before;
-      setLoading(true);
-      setListError('');
-      listAbort.current = new AbortController();
-      const response = await listFace3Recordings(deviceId, { before, limit: 30, signal: listAbort.current.signal });
-      if (generation !== listGeneration.current) return;
-      listBusy.current = false;
-      setLoading(false);
+      const request = requestRef.current;
+      if (request.busy) return;
+      request.busy = true;
+      const generation = ++request.generation;
+      request.failedBefore = before;
+      setList((current) => ({ ...current, loading: true, error: '' }));
+      request.abort = new AbortController();
+      const response = await listRecordings(deviceId, { before, limit: 30, signal: request.abort.signal });
+      if (generation !== request.generation) return;
+      request.busy = false;
       if (!response.success) {
-        setListError(recordingErrorKey(response.message));
+        setList((current) => ({ ...current, loading: false, error: recordingErrorKey(response.message) }));
         return;
       }
-      setItems((old) => {
-        const rows = before ? [...old, ...(response.data?.items || [])] : response.data?.items || [];
-        return [...new Map(rows.map((row) => [row.recId, row])).values()];
+      setList((current) => {
+        const rows = before ? [...current.items, ...(response.data?.items || [])] : response.data?.items || [];
+        return {
+          items: [...new Map(rows.map((row) => [row.recId, row])).values()],
+          next: response.data?.next || null,
+          loading: false,
+          error: '',
+        };
       });
-      setNext(response.data?.next || null);
     },
-    [deviceId, listFace3Recordings]
+    [deviceId, listRecordings]
   );
 
   useEffect(() => {
     load();
+    const request = requestRef.current;
     return () => {
-      listGeneration.current++;
-      listBusy.current = false;
-      listAbort.current?.abort();
+      request.generation++;
+      request.busy = false;
+      request.abort?.abort();
     };
   }, [load]);
 
@@ -179,7 +186,7 @@ export default function Face3EventRecordings({ device, selectedRecId, onSelect, 
           <Alert
             severity="error"
             sx={{ mb: 1 }}
-            action={<Button onClick={() => load(failedBefore.current)}>{t('face3.retry')}</Button>}
+            action={<Button onClick={() => load(requestRef.current.failedBefore)}>{t('face3.retry')}</Button>}
           >
             {t(listError)}
           </Alert>

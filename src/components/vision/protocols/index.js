@@ -1,5 +1,4 @@
-import { kvsProtocol } from './kvs';
-import { liveKitProtocol } from './liveKit';
+import { startFace3Viewer } from './kvsViewer';
 
 /**
  * Face3 实时画面的取流协议（策略）。
@@ -15,7 +14,34 @@ import { liveKitProtocol } from './liveKit';
  *                 两个观看端的 handlers 与句柄接口一致（见 kvsViewer.js）
  *   fallback      本机加载 SDK 失败时改要的协议，没有则直接报错
  */
-export { kvsProtocol, liveKitProtocol };
+
+/**
+ * KVS 直连：手机直接进设备的 KVS 信令通道，一对一。
+ *
+ * 凭证（op:"viewer" 返回 data.mode "kvs"）：
+ *   { mode, channelArn, region, clientId, credentials, iceServers }
+ *   credentials 是只能连这一个频道的临时凭证。
+ */
+export const kvsProtocol = {
+  mode: 'kvs',
+  loadViewer: () => Promise.resolve(startFace3Viewer),
+  fallback: null,
+};
+
+/**
+ * LiveKit：手机进 LiveKit 房间 face3-<UUID>，由 face3_media_bridge 连设备。
+ * 多人观看 / 多方通话，AI 分析也在这个房间里。
+ *
+ * 凭证（op:"viewer" 返回 data.mode "livekit"）：{ mode, url, room, identity, token, expiresAt }
+ * livekit-client 约 130KB gzip，只在云端签了 LiveKit 时按需加载（单独分包）。
+ */
+export const liveKitProtocol = {
+  mode: 'livekit',
+  loadViewer: () => import('./liveKitViewer').then((module) => module.startFace3LiveKitViewer),
+  /* 本机加载 SDK 失败：改要 KVS 凭证 */
+  fallback: kvsProtocol,
+};
+
 export { getFace3ViewerEnvironmentError } from './kvsViewer';
 
 const PROTOCOLS = { [kvsProtocol.mode]: kvsProtocol, [liveKitProtocol.mode]: liveKitProtocol };

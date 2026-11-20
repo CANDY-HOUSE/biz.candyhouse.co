@@ -2,11 +2,31 @@ import { isAppShell, requestNative } from '@/services/appBridge';
 import { appHostSupports } from '@/services/appSession';
 
 /**
- * 实时画面拍照 / 录制后的取帧、编码与保存。
- *
- * 实时画面来自 WebRTC 的 MediaStream（KVS / LiveKit 都是），画到 canvas 上不会"污染"，可以导出，
- * 也可以直接交给 MediaRecorder 录。录像是 S3 跨域地址，没开 CORS 截不了，所以只在看实时时提供。
+ * Vision（Face3）几个页面共用的小工具（纯函数，不含 React 钩子）：
+ *   - "多久以前"（relativeTime）
+ *   - 实时画面拍照 / 录制后的取帧、编码与保存
+ * AI 开关在 face3Context（首页和详情页共用一份状态）。
  */
+
+/* ── 多久以前 ───────────────────────────────────────────────────────────── */
+
+/**
+ * 把 lastSeenAt 说成人话。Vision 首页卡片和详情页的「观看实时画面」按钮只要"多久以前"，
+ * 不需要精确时刻。普通函数（t 由调用方传入），不必每张卡片多挂一个钩子。
+ */
+export const relativeTime = (t, ms) => {
+  if (!ms) return '';
+  const diff = Date.now() - ms;
+  if (diff < 60_000) return t('face3.justNow');
+  if (diff < 3600_000) return t('face3.minutesAgo', { n: Math.floor(diff / 60_000) });
+  if (diff < 86400_000) return t('face3.hoursAgo', { n: Math.floor(diff / 3600_000) });
+  return t('face3.daysAgo', { n: Math.floor(diff / 86400_000) });
+};
+
+/* ── 拍照 / 录制：取帧、编码与保存 ──────────────────────────────────────────
+ * 实时画面来自 WebRTC 的 MediaStream（KVS / LiveKit 都是），画到 canvas 上不会"污染"，可以导出，
+ * 也可以直接交给 MediaRecorder 录。 */
+
 export const captureVideoFrame = (video) =>
   new Promise((resolve, reject) => {
     const width = video?.videoWidth;

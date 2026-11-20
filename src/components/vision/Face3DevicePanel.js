@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -13,68 +13,56 @@ import {
 import SensorsRoundedIcon from '@mui/icons-material/SensorsRounded';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
-import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ReactComponent as VisionIcon } from '@assets/svg/vision.svg';
 import { logOperationFailure } from '@/services/operationFailure';
 import Face3RecordingPlayer from './Face3RecordingPlayer';
 import { Face3AiTool, Face3LiveToolbar, Face3RecordingToolbar } from './Face3Toolbar';
-import { canSaveMedia, mediaFileName, saveMedia } from './face3Snapshot';
-import { Face3LiveSlot, useFace3LiveSession } from './face3LiveSession';
+import { Face3LiveSlot, useFace3Context } from './face3Context';
 import { selectFace3Protocol } from './protocols';
 import Face3EventRecordings, { recordingErrorKey, recordingTime } from './Face3EventRecordings';
-import { useFace3Ai } from './face3AiPref';
-import { useRelativeTime } from './face3RelativeTime';
+import { canSaveMedia, mediaFileName, relativeTime, saveMedia } from './face3Utils';
+
+const NO_PLAYBACK = { selected: null, media: null, playError: '' };
 
 /**
- * 选中录像后的播放请求（原先在录像弹窗里，逻辑不变）：取播放地址、记录错误、
- * 换一条时作废上一条的请求。
+ * 选中录像后的播放请求：取播放地址、记录错误、换一条时作废上一条的请求。
+ * selected 选中的录像；media 取回的播放地址；playError 取地址失败的文案键
+ * （选中了、media 和 playError 都还没有 = 正在取）。三者一起变，放一个 state。
  */
-function useRecordingPlayback(deviceId) {
-  const { gFace3 } = useContext(GlobalStateContext);
-  const { playFace3Recording } = gFace3;
-  const [selected, setSelected] = useState(null);
-  const [media, setMedia] = useState(null);
-  const [playLoading, setPlayLoading] = useState(false);
-  const [playError, setPlayError] = useState('');
-  const playGeneration = useRef(0);
-  const playAbort = useRef(null);
+function useRecordingPlayback(deviceId, playFace3Recording) {
+  const [playback, setPlayback] = useState(NO_PLAYBACK);
+  const requestRef = useRef({ generation: 0, abort: null });
 
-  useEffect(
-    () => () => {
-      playGeneration.current++;
-      playAbort.current?.abort();
-    },
-    []
-  );
+  useEffect(() => {
+    const request = requestRef.current;
+    return () => {
+      request.generation++;
+      request.abort?.abort();
+    };
+  }, []);
 
   const play = async (item) => {
-    const generation = ++playGeneration.current;
-    setSelected(item);
-    setMedia(null);
-    setPlayError('');
-    setPlayLoading(true);
-    playAbort.current?.abort();
-    playAbort.current = new AbortController();
-    const response = await playFace3Recording(deviceId, item.recId, playAbort.current.signal);
-    if (generation !== playGeneration.current) return;
-    setPlayLoading(false);
+    const request = requestRef.current;
+    const generation = ++request.generation;
+    setPlayback({ ...NO_PLAYBACK, selected: item });
+    request.abort?.abort();
+    request.abort = new AbortController();
+    const response = await playFace3Recording(deviceId, item.recId, request.abort.signal);
+    if (generation !== request.generation) return;
     if (!response.success || !response.data?.mp4 || response.data.recId !== item.recId) {
-      setPlayError(recordingErrorKey(response.message, true));
+      setPlayback((current) => ({ ...current, playError: recordingErrorKey(response.message, true) }));
       return;
     }
-    setMedia(response.data);
+    setPlayback((current) => ({ ...current, media: response.data }));
   };
 
   const stop = () => {
-    playGeneration.current++;
-    playAbort.current?.abort();
-    setSelected(null);
-    setMedia(null);
-    setPlayError('');
-    setPlayLoading(false);
+    requestRef.current.generation++;
+    requestRef.current.abort?.abort();
+    setPlayback(NO_PLAYBACK);
   };
 
-  return { selected, media, playLoading, playError, play, stop };
+  return { ...playback, play, stop };
 }
 
 /**
@@ -83,7 +71,6 @@ function useRecordingPlayback(deviceId) {
  */
 function LiveButton({ online, lastSeenAt, onClick }) {
   const { t } = useTranslation();
-  const rel = useRelativeTime();
   return (
     <Button
       variant="contained"
@@ -106,7 +93,7 @@ function LiveButton({ online, lastSeenAt, onClick }) {
       {online
         ? t('face3.watchLive')
         : lastSeenAt > 0
-          ? `${t('face3.offline')} · ${rel(lastSeenAt)}`
+          ? `${t('face3.offline')} · ${relativeTime(t, lastSeenAt)}`
           : t('face3.offline')}
     </Button>
   );
@@ -124,46 +111,40 @@ function LiveButton({ online, lastSeenAt, onClick }) {
  *   - 画面下方工具栏：第一格 AI 开关；后三格实时是拍照 / 录制 / 视频对讲，选中录像是下载 / 删除 / 分享
  * 实时与录像互斥；实时的协议按本机 AI 开关选（与 Vision 首页一致）。
  * 不自动开实时：开实时要唤醒设备（耗电、计费），等用户点。
+ *
+ * 数据从 useFace3Context() 取（不订阅全局 GlobalStateContext），再用 memo 包住（见文件末尾）：
+ * props 都是字符串，父页面因全局状态重渲时这里不跟着重渲，只在 Face3 自己的数据变了才重渲。
  */
-export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel }) {
+function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel }) {
   const { t, i18n } = useTranslation();
-  const { gFace3, setSnackbarValue } = useContext(GlobalStateContext);
-  const { listFace3Devices, deleteFace3Recording } = gFace3;
-  const { isAiOn, toggleAi } = useFace3Ai();
+  const face3 = useFace3Context();
+  const { devices, isAiOn, toggleAi, liveUUID, setToolsTarget, notify: setSnackbarValue } = face3;
   const deviceUUID = (rawDeviceUUID || '').toUpperCase();
-  const face3Devices = gFace3.face3Devices || [];
   /* 录像按 Face3 的绑定关系鉴权，列表里还没有这台时先用详情页传来的编号和名称 */
   const device = deviceUUID
-    ? face3Devices.find((d) => (d.deviceUUID || '').toUpperCase() === deviceUUID) || { deviceUUID, deviceName }
+    ? devices.find((d) => (d.deviceUUID || '').toUpperCase() === deviceUUID) || { deviceUUID, deviceName }
     : null;
 
-  const playback = useRecordingPlayback(device?.deviceUUID);
-  /* 实时画面是全局会话（见 face3LiveSession）：在 Vision 首页看着点进来，连接不断、直接接着看 */
-  const liveSession = useFace3LiveSession();
-  const live = Boolean(deviceUUID) && liveSession.liveUUID === deviceUUID;
-  /* 画面以外的工具（拍照、录制、视频对讲）由 Face3LiveView 渲染进这个节点，放在画面正下方；
+  const playback = useRecordingPlayback(device?.deviceUUID, face3.playFace3Recording);
+  /* 实时画面是 Face3Provider 里的会话：在 Vision 首页看着点进来，连接不断、直接接着看。
+     画面以外的工具（拍照、录制、视频对讲）由 Face3LiveView 渲染进工具栏里的一个节点：
+     把 setToolsTarget 直接当 ref 用，挂上时登记、卸下时清空（同一时刻只有一个详情页）。
      话筒、扬声器叠在画面底部正中 */
-  const [toolsEl, setToolsEl] = useState(null);
-  const { setToolsTarget } = liveSession;
-  useEffect(() => {
-    if (!toolsEl) return undefined;
-    setToolsTarget(toolsEl);
-    return () => setToolsTarget((current) => (current === toolsEl ? null : current));
-  }, [toolsEl, setToolsTarget]);
+  const live = Boolean(deviceUUID) && liveUUID === deviceUUID;
   /* 在线状态来自 Face3 列表；列表里还没有这台时当作离线，不给开实时 */
   const online = device?.stateInfo?.wm2State === true;
   const lastSeenAt = Number(device?.stateInfo?.lastSeenAt) || 0;
   const startLive = () => {
     playback.stop();
-    liveSession.start(device, selectFace3Protocol({ aiEnabled: isAiOn(device.deviceUUID) }));
+    face3.start(device, selectFace3Protocol({ aiEnabled: isAiOn(device.deviceUUID) }));
   };
   const stopLive = () => {
-    if (live) liveSession.stop();
+    if (live) face3.stop();
   };
   /* AI 开关（工具栏第一格）：看着实时切换时按新协议重连（KVS ↔ LiveKit）；未登录开启会被拦下，不重连 */
   const toggleAiTool = () => {
     const next = !isAiOn(device.deviceUUID);
-    if (toggleAi(device, next) && live) liveSession.setProtocol(selectFace3Protocol({ aiEnabled: next }));
+    if (toggleAi(device, next) && live) face3.setProtocol(selectFace3Protocol({ aiEnabled: next }));
   };
 
   /* 点一条录像：在画面框里播放；再点一次正在看的那条就取消选中，回到默认（Vision logo + 灰色实时工具栏） */
@@ -186,12 +167,14 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
   /* 访客（keyLevel 2）只能看不能删；拿不到级别时交给云端判断 */
   const canDelete = keyLevel === undefined || keyLevel === null || keyLevel === '' || Number(keyLevel) <= 1;
   const [downloading, setDownloading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  /* 删除的步骤：null 没在删；'confirm' 确认框开着；'deleting' 已确认、等云端 */
+  const [deleteStep, setDeleteStep] = useState(null);
+  const deleting = deleteStep === 'deleting';
   const [removedRecIds, setRemovedRecIds] = useState(() => new Set());
 
   /* 下载：用播放地址把视频取回来，再按环境保存（PC 下载 / 手机分享面板 / APP 需壳支持，同实时录制）。
-     S3 桶允许跨域 GET，所以前端能直接取。声音是旁路 .wav（见 Face3RecordingPlayer），下载的 MP4 不带声音。 */
+     S3 桶允许跨域 GET，所以前端能直接取。声音是旁路 .wav（见 Face3RecordingPlayer），下载的 MP4 不带声音。
+     不走缓存：画面框里的 <video> 播过同一地址时，缓存里那份是不带跨域头的，fetch 读到它会被 CORS 拦下 */
   const downloadRecording = async () => {
     const item = playback.selected;
     const url = playback.media?.mp4;
@@ -202,7 +185,7 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
     }
     setDownloading(true);
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`http_${response.status}`);
       const blob = new Blob([await response.blob()], { type: 'video/mp4' });
       const name = mediaFileName(device?.deviceName || deviceUUID, 'mp4', new Date(recordingTime(item)));
@@ -221,10 +204,9 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
   const deleteRecording = async () => {
     const item = playback.selected;
     if (!item || deleting) return;
-    setDeleting(true);
-    const response = await deleteFace3Recording(deviceUUID, item.recId);
-    setDeleting(false);
-    setConfirmDelete(false);
+    setDeleteStep('deleting');
+    const response = await face3.deleteFace3Recording(deviceUUID, item.recId);
+    setDeleteStep(null);
     if (!response.success) {
       if (response.message === 'no_permission') notify('warning', 'face3.recordings.deleteNoPermission');
       else notifyFailure('delete', response.message, 'face3.recordings.deleteFailed');
@@ -237,6 +219,7 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
 
   /* 进来时刷新一次 Face3 列表：直接打开详情页（刷新、推送冷启动）时列表可能还没有这台。
      listFace3Devices 跨渲染稳定，见 Face3DeviceList 的说明。 */
+  const { listFace3Devices } = face3;
   useEffect(() => {
     listFace3Devices(() => {});
   }, [listFace3Devices]);
@@ -352,12 +335,12 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
           </Box>
           {/* 工具栏一行四格：第一格是 AI 开关（任何时候都能点），
               后三格随画面框换（实时：拍照、录制、视频对讲；选中录像：下载、删除、分享）。
-              后三格：看实时时由 Face3LiveView 用 portal 渲染进 toolsEl，出画后可用；
+              后三格：看实时时由 Face3LiveView 用 portal 渲染进这个节点，出画后可用；
               没在看实时时这里放一份（选中录像是录像工具，否则是灰色不可点的实时工具） */}
           <Box sx={{ display: 'flex', bgcolor: 'background.paper' }}>
             {device && <Face3AiTool on={isAiOn(device.deviceUUID)} onToggle={toggleAiTool} />}
             <Box sx={{ flex: 3, minWidth: 0 }}>
-              <Box ref={setToolsEl} />
+              <Box ref={setToolsTarget} />
               {device &&
                 !live &&
                 (playback.selected ? (
@@ -366,8 +349,8 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
                     downloading={downloading}
                     onDownload={downloadRecording}
                     canDelete={canDelete}
-                    deleting={deleting || confirmDelete}
-                    onDelete={() => setConfirmDelete(true)}
+                    deleting={deleteStep !== null}
+                    onDelete={() => setDeleteStep('confirm')}
                   />
                 ) : (
                   <Face3LiveToolbar disabled />
@@ -400,6 +383,7 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
               <Face3EventRecordings
                 key={device.deviceUUID}
                 device={device}
+                listRecordings={face3.listFace3Recordings}
                 selectedRecId={playback.selected?.recId}
                 onSelect={playRecording}
                 removedRecIds={removedRecIds}
@@ -411,7 +395,7 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
       </Box>
 
       {/* 删除录像前确认：删了云端就没有了 */}
-      <Dialog open={confirmDelete} onClose={() => !deleting && setConfirmDelete(false)} maxWidth="xs" fullWidth>
+      <Dialog open={deleteStep !== null} onClose={() => !deleting && setDeleteStep(null)} maxWidth="xs" fullWidth>
         <DialogTitle>{t('face3.recordings.deleteConfirmTitle')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -421,7 +405,7 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button disabled={deleting} onClick={() => setConfirmDelete(false)}>
+          <Button disabled={deleting} onClick={() => setDeleteStep(null)}>
             {t('face3.cancel')}
           </Button>
           <Button color="error" variant="contained" disableElevation disabled={deleting} onClick={deleteRecording}>
@@ -432,3 +416,5 @@ export default function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName
     </Box>
   );
 }
+
+export default React.memo(Face3DevicePanel);

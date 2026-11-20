@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Box, IconButton, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -8,7 +8,6 @@ import MicOffIcon from '@mui/icons-material/MicOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useTranslation } from 'react-i18next';
-import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { getFace3ViewerEnvironmentError, kvsProtocol, protocolForMode } from './protocols';
 import {
   canRecord,
@@ -18,8 +17,8 @@ import {
   mediaFileName,
   recordingMimeTypes,
   saveMedia,
-} from './face3Snapshot';
-import { Face3LiveToolbar, formatElapsed } from './Face3Toolbar';
+} from './face3Utils';
+import { Face3LiveToolbar, RecordingClock } from './Face3Toolbar';
 import { logOperationFailure } from '@/services/operationFailure';
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
@@ -115,9 +114,6 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * 按 <video> 的 videoWidth / videoHeight 判断。与线路无关：TURN 中继只原样转发、不重新编码，
  * 中继下照样是设备发出的分辨率；经服务器转发后变小的，显示变小后的档位。
  *
- * onPlayingChange（可选）：真正出画（phase 进入 / 离开 playing）时回调 true / false，
- * 父组件据此只在对方画面显示出来后才提示"直播中"，唤醒、连接中不算。
- *
  * 话筒、扬声器：叠在画面底部正中（参考 Wyze），首页和详情页都有；只有开 / 关，不提供音量调节。
  * toolsTarget（可选）：其余工具（拍照、录制、视频对讲，见 Face3Toolbar）渲染到父组件给的这个 DOM 节点里
  * （详情页放在画面下方，图标 + 文字一排）；还没出画时灰色不可点。不传则不显示 —— Vision 首页只有话筒、扬声器。
@@ -184,17 +180,26 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
   }
 };
 
-export default function Face3LiveView({
+/*
+ * 不订阅全局 GlobalStateContext：它的值每次渲染都是新对象，任何全局状态一变（提示条、设备列表、
+ * 其他设备的推送……）订阅者全都重渲，而本组件很重。需要的几样由唯一的使用方 Face3Provider
+ * 作为 props 传进来：这台设备的推流状态（streamState / streamReason，只在它变时才变）、
+ * 唤醒 / 取凭证函数和提示条函数（引用稳定）。再用 memo 包住（见文件末尾），
+ * 只有这些 props 变了才重渲。
+ */
+function Face3LiveView({
   device,
   protocol = kvsProtocol,
   onClose,
   label,
-  onPlayingChange,
   toolsTarget,
+  streamState,
+  streamReason,
+  wakeFace3Device,
+  viewFace3Device,
+  setSnackbarValue,
 }) {
   const { t } = useTranslation();
-  const { gFace3, setSnackbarValue } = useContext(GlobalStateContext);
-  const { wakeFace3Device, viewFace3Device, face3StreamStates, face3StreamReasons } = gFace3;
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -206,16 +211,9 @@ export default function Face3LiveView({
   const viewerRef = useRef(null);
   const cancelAttemptRef = useRef(null);
   const [phase, setPhase] = useState('connecting'); // connecting | playing | error | ended
-  /* 出画与否告诉父组件。回调放 ref 里，父组件每次渲染传新函数也不会重复触发。 */
-  const onPlayingChangeRef = useRef(onPlayingChange);
-  onPlayingChangeRef.current = onPlayingChange;
   const isPlaying = phase === 'playing';
-  useEffect(() => {
-    onPlayingChangeRef.current?.(isPlaying);
-  }, [isPlaying]);
-  /* 拍照：截门口画面当前这一帧（原始分辨率），白光闪一下，再按环境保存（见 face3Snapshot） */
+  /* 拍照：截门口画面当前这一帧（原始分辨率），白光闪一下，再按环境保存（见 face3Utils） */
   const [snapshotBusy, setSnapshotBusy] = useState(false);
-  const [flashKey, setFlashKey] = useState(0);
   const notify = (severity, key) => setSnackbarValue({ open: true, severity, msg: t(key) });
   /* 全局提示条不显示 error 级（只记日志，见 services/operationFailure）。拍照、录制是用户刚按的，
      失败要让人看到：用 warning 提示，另记一条带原因的诊断日志 */
@@ -233,7 +231,9 @@ export default function Face3LiveView({
     setSnapshotBusy(true);
     try {
       const blob = await captureVideoFrame(videoRef.current);
-      setFlashKey((key) => key + 1);
+      containerRef.current
+        ?.querySelector('[data-snapshot-flash]')
+        ?.animate?.([{ opacity: 0.8 }, { opacity: 0 }], { duration: 300, easing: 'ease-out' });
       const result = await saveMedia(blob, mediaFileName(mediaName, 'jpg'), 'image');
       /* PC 是直接下载（浏览器可能不弹提示），明确说"已下载到本机"；分享面板里用户自己看得到结果 */
       if (result !== 'shared')
@@ -251,11 +251,11 @@ export default function Face3LiveView({
    * 画面正上方的 LIVE 换成 REC 计时。点停止、到时长上限、断线 / 重连、关掉实时画面都会停止，
    * 已录的部分照常保存。 */
   const recorderRef = useRef(null);
-  const [recordStartedAt, setRecordStartedAt] = useState(0); // 0 = 未在录
-  const [recordNow, setRecordNow] = useState(0);
-  const [recordSaving, setRecordSaving] = useState(false);
+  /* startedAt：开始录制的时刻，0 = 未在录（计时显示由 RecordingClock 自己刷新，这里不跟着每秒重渲）；
+     saving：停止后正在保存 */
+  const [record, setRecord] = useState({ startedAt: 0, saving: false });
+  const recordStartedAt = record.startedAt;
   const isRecording = recordStartedAt > 0;
-  const recordElapsed = isRecording ? Math.max(0, recordNow - recordStartedAt) : 0;
 
   const stopRecording = useCallback(() => {
     const recorder = recorderRef.current;
@@ -263,7 +263,7 @@ export default function Face3LiveView({
   }, []);
 
   const startRecording = () => {
-    if (recorderRef.current || recordSaving) return;
+    if (recorderRef.current || record.saving) return;
     if (!canSaveMedia('video')) {
       notify('info', 'face3.recordSaveUnsupported');
       return;
@@ -305,7 +305,7 @@ export default function Face3LiveView({
             abandoned = true;
             recorderRef.current = launch(next);
             if (!recorderRef.current) {
-              setRecordStartedAt(0);
+              setRecord((r) => ({ ...r, startedAt: 0 }));
               notify('warning', 'face3.recordFailed');
             }
           }
@@ -315,7 +315,7 @@ export default function Face3LiveView({
         recorder.onstop = async () => {
           if (abandoned) return;
           if (recorderRef.current === recorder) recorderRef.current = null;
-          setRecordStartedAt(0);
+          setRecord((r) => ({ ...r, startedAt: 0 }));
           /* 分享 / 存相册认基本类型，去掉 codecs 参数 */
           const type = (recorder.mimeType || mimeTypes[i]).split(';')[0];
           const blob = new Blob(chunks, { type });
@@ -323,7 +323,7 @@ export default function Face3LiveView({
             notifyFailure('record', 'empty', 'face3.recordFailed');
             return;
           }
-          setRecordSaving(true);
+          setRecord((r) => ({ ...r, saving: true }));
           try {
             const result = await saveMedia(blob, mediaFileName(mediaName, extensionForMime(type), startedAt), 'video');
             if (result !== 'shared')
@@ -331,7 +331,7 @@ export default function Face3LiveView({
           } catch (err) {
             if (err?.name !== 'AbortError') notifyFailure('record', err?.name || err?.message, 'face3.recordFailed');
           } finally {
-            setRecordSaving(false);
+            setRecord((r) => ({ ...r, saving: false }));
           }
         };
         return recorder;
@@ -345,19 +345,14 @@ export default function Face3LiveView({
       return;
     }
     recorderRef.current = recorder;
-    setRecordNow(Date.now());
-    setRecordStartedAt(Date.now());
+    setRecord((r) => ({ ...r, startedAt: Date.now() }));
   };
 
-  /* 录制中每半秒刷新计时，到上限自动停 */
+  /* 录到上限自动停 */
   useEffect(() => {
     if (!isRecording) return undefined;
-    const tick = setInterval(() => setRecordNow(Date.now()), 500);
     const limit = setTimeout(stopRecording, MAX_RECORD_MS);
-    return () => {
-      clearInterval(tick);
-      clearTimeout(limit);
-    };
+    return () => clearTimeout(limit);
   }, [isRecording, stopRecording]);
 
   /* 不再出画（断线、自动重连换了新连接、结束）就停止并保存；卸载（关掉实时画面）同样 */
@@ -388,6 +383,9 @@ export default function Face3LiveView({
   const [mediaStates, setMediaStates] = useState({ camera: 'disabled', microphone: 'disabled' });
   /* 视频对讲按钮亮不亮：跟用户的操作走，不跟摄像头实际状态走（见 toggleVideoCall） */
   const [videoCallOn, setVideoCallOn] = useState(false);
+  /* 用户刚按开视频对讲、摄像头还没开成功。开成功时若话筒没开就顺手打开（视频通话要能说话）；
+     只认用户这一次按下 —— 自动重连恢复摄像头时不动话筒，话筒按断开前的状态恢复。 */
+  const micWithVideoCallRef = useRef(false);
   // 回调里要读到最新值(断开那一刻麦克风/摄像头开没开)，state 的闭包拿不到。
   const mediaStatesRef = useRef(mediaStates);
   mediaStatesRef.current = mediaStates;
@@ -415,21 +413,19 @@ export default function Face3LiveView({
   const autoModeRef = useRef(false);
   // 断开那一刻的本地媒体状态，自动重连接通后恢复；应用一次即清空。
   const restoreMediaRef = useRef(null);
-  const [initialSpeaker] = useState(() => loadSpeakerPref(device?.deviceUUID));
-  const [speakerEnabled, setSpeakerEnabled] = useState(initialSpeaker.enabled);
-  const [, setVolume] = useState(initialSpeaker.volume);
-  const speakerEnabledRef = useRef(initialSpeaker.enabled);
-  const volumeRef = useRef(initialSpeaker.volume);
+  /* 扬声器偏好（开关 + 音量）：首次渲染读一次本机存储（拷一份，读不到时返回的是共用的默认值）。
+     回调里要读到最新值，所以放 ref；只有开关进 state 驱动图标，音量不在界面上显示 */
+  const speakerRef = useRef(null);
+  if (!speakerRef.current) speakerRef.current = { ...loadSpeakerPref(device?.deviceUUID) };
+  const [speakerEnabled, setSpeakerEnabled] = useState(speakerRef.current.enabled);
   const [localIsMain, setLocalIsMain] = useState(false);
+  /* 小窗停在哪个角。拖动过程中的位置不进 state（见 beginPipDrag），松手才定角落 */
   const [pipCorner, setPipCorner] = useState('bottom-right');
-  const [pipPosition, setPipPosition] = useState(null);
   /* 自动起播被拦时置上，用来提示用户点一下。WebView 里
      mediaPlaybackRequiresUserGesture 默认拦截连静音媒体也不放过。 */
   const [needsTap, setNeedsTap] = useState(false);
 
   const deviceUUID = device?.deviceUUID;
-  const streamState = face3StreamStates?.[deviceUUID];
-  const streamReason = face3StreamReasons?.[deviceUUID];
   const previousStreamStateRef = useRef(streamState);
 
   const clearPlayback = useCallback(() => {
@@ -501,13 +497,13 @@ export default function Face3LiveView({
        否则通话中途切一次网，扬声器被静默关掉，用户以为恢复了其实听不到。 */
     const keepSpeaker = autoModeRef.current && Boolean(restoreMediaRef.current?.speaker);
     setSpeakerEnabled(keepSpeaker);
-    speakerEnabledRef.current = keepSpeaker;
+    speakerRef.current.enabled = keepSpeaker;
     /* 视频对讲同理：自动重连会把断开前开着的摄像头重新打开，按钮保持亮着 */
     setVideoCallOn(autoModeRef.current && Boolean(restoreMediaRef.current?.camera));
+    micWithVideoCallRef.current = false;
     setHasLocalVideo(false);
     setLocalIsMain(false);
     setPipCorner('bottom-right');
-    setPipPosition(null);
     setNeedsTap(false);
     setErrorKey('');
     setLocalMediaIssues({});
@@ -523,7 +519,7 @@ export default function Face3LiveView({
       const n = autoReconnectsRef.current;
       if (!restoreMediaRef.current) {
         restoreMediaRef.current = {
-          speaker: speakerEnabledRef.current,
+          speaker: speakerRef.current.enabled,
           microphone: mediaStatesRef.current.microphone === 'enabled',
           camera: mediaStatesRef.current.camera === 'enabled',
         };
@@ -584,6 +580,13 @@ export default function Face3LiveView({
           onLocalMediaState: ({ kind, state }) => {
             if (cancelled) return;
             setMediaStates((states) => ({ ...states, [kind]: state }));
+            /* 视频对讲开成功：话筒没开就自动打开（开不了时照常提示话筒的错误）；没开成就不管 */
+            if (kind === 'camera' && micWithVideoCallRef.current && state !== 'starting') {
+              micWithVideoCallRef.current = false;
+              if (state === 'enabled' && mediaStatesRef.current.microphone === 'disabled') {
+                viewerRef.current?.setMicrophoneEnabled?.(true);
+              }
+            }
             if (state === 'starting' || state === 'enabled') {
               setLocalMediaIssues((issues) => {
                 const next = { ...issues };
@@ -625,11 +628,11 @@ export default function Face3LiveView({
             el.onloadeddata = markPictureReady;
             if (el.srcObject !== stream) el.srcObject = stream;
             startFrameProbe(el);
-            el.muted = !speakerEnabledRef.current;
-            el.volume = volumeRef.current / 100;
+            el.muted = !speakerRef.current.enabled;
+            el.volume = speakerRef.current.volume / 100;
             viewerRef.current?.setRemoteAudio?.({
-              muted: !speakerEnabledRef.current,
-              volume: volumeRef.current / 100,
+              muted: !speakerRef.current.enabled,
+              volume: speakerRef.current.volume / 100,
             });
             el.play()
               .then(markPictureReady)
@@ -840,11 +843,10 @@ export default function Face3LiveView({
     frameProbeRef.current = el.requestVideoFrameCallback(onFrame);
   };
 
-  const updateSpeaker = (enabled, nextVolume = volumeRef.current) => {
+  const updateSpeaker = (enabled, nextVolume = speakerRef.current.volume) => {
     setSpeakerEnabled(enabled);
-    speakerEnabledRef.current = enabled;
-    setVolume(nextVolume);
-    volumeRef.current = nextVolume;
+    speakerRef.current.enabled = enabled;
+    speakerRef.current.volume = nextVolume;
     saveSpeakerPref(deviceUUID, enabled, nextVolume);
     // 多方通话时其他手机的声音也跟随扬声器开关（KVS 直连没有这一路，方法不存在）。
     viewerRef.current?.setRemoteAudio?.({ muted: !enabled, volume: nextVolume / 100 });
@@ -865,11 +867,14 @@ export default function Face3LiveView({
      否则这里先恢复出声，扬声器按钮的 onClick 紧接着又把它关掉。 */
   const resumeOnTap = (event) => {
     if (!needsTap || event.target.closest?.('button, .MuiSlider-root')) return;
-    viewerRef.current?.setRemoteAudio?.({ muted: !speakerEnabledRef.current, volume: volumeRef.current / 100 });
+    viewerRef.current?.setRemoteAudio?.({
+      muted: !speakerRef.current.enabled,
+      volume: speakerRef.current.volume / 100,
+    });
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !speakerEnabledRef.current;
-    video.volume = volumeRef.current / 100;
+    video.muted = !speakerRef.current.enabled;
+    video.volume = speakerRef.current.volume / 100;
     video
       .play()
       .then(() => setNeedsTap(false))
@@ -887,9 +892,11 @@ export default function Face3LiveView({
   const toggleVideoCall = () => {
     if (!videoCallOn) {
       setVideoCallOn(true);
+      micWithVideoCallRef.current = true;
       viewerRef.current?.setCameraEnabled?.(true);
       return;
     }
+    micWithVideoCallRef.current = false;
     setVideoCallOn(false);
     viewerRef.current?.setCameraEnabled?.(false);
     setLocalIsMain(false);
@@ -914,17 +921,24 @@ export default function Face3LiveView({
     'bottom-right': { bottom: PIP_MARGIN, right: PIP_MARGIN },
   }[pipCorner];
 
+  /* 拖小窗：拖动中直接改元素的 transform 跟手，不走 state —— 每个 pointermove 都重渲
+     整个组件太重。松手才按离得最近的角落定 pipCorner（一次渲染），并把 transform、cursor
+     还原成 React 设的值（镜像用的 scaleX(-1) 也在 transform 里，所以平移放在它前面）。 */
   const beginPipDrag = (event) => {
     if (event.button !== undefined && event.button !== 0) return;
     const container = containerRef.current;
     if (!container) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const el = event.currentTarget;
+    el.setPointerCapture?.(event.pointerId);
     const containerRect = container.getBoundingClientRect();
-    const pipRect = event.currentTarget.getBoundingClientRect();
+    const pipRect = el.getBoundingClientRect();
     const left = pipRect.left - containerRect.left;
     const top = pipRect.top - containerRect.top;
     pipDragRef.current = {
+      el,
+      baseTransform: el.style.transform,
+      baseCursor: el.style.cursor,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
@@ -936,7 +950,7 @@ export default function Face3LiveView({
       height: pipRect.height,
       moved: false,
     };
-    setPipPosition({ left, top });
+    el.style.cursor = 'grabbing';
   };
 
   const movePip = (event) => {
@@ -954,7 +968,8 @@ export default function Face3LiveView({
     const top = Math.min(Math.max(PIP_MARGIN, drag.top + dy), maxTop);
     drag.currentLeft = left;
     drag.currentTop = top;
-    setPipPosition({ left, top });
+    const base = drag.baseTransform && drag.baseTransform !== 'none' ? ` ${drag.baseTransform}` : '';
+    drag.el.style.transform = `translate(${left - drag.left}px, ${top - drag.top}px)${base}`;
   };
 
   const finishPipDrag = (event, cancelled = false) => {
@@ -978,8 +993,9 @@ export default function Face3LiveView({
       },
       { name: pipCorner, distance: Number.POSITIVE_INFINITY }
     );
+    drag.el.style.transform = drag.baseTransform;
+    drag.el.style.cursor = drag.baseCursor;
     setPipCorner(nearest.name);
-    setPipPosition(null);
     pipDragRef.current = null;
     if (!cancelled && !drag.moved) setLocalIsMain((value) => !value);
   };
@@ -999,7 +1015,7 @@ export default function Face3LiveView({
     }
     return {
       position: 'absolute',
-      ...(pipPosition ? { left: pipPosition.left, top: pipPosition.top } : pipCornerStyle),
+      ...pipCornerStyle,
       width: 'clamp(84px, 25%, 132px)',
       aspectRatio: '4 / 3',
       objectFit: 'cover',
@@ -1009,7 +1025,7 @@ export default function Face3LiveView({
       background: '#111',
       transform: isLocal ? 'scaleX(-1)' : 'none',
       touchAction: 'none',
-      cursor: pipPosition ? 'grabbing' : 'grab',
+      cursor: 'grab',
       zIndex: 2,
     };
   };
@@ -1185,7 +1201,7 @@ export default function Face3LiveView({
           />
           {isRecording ? (
             <Box component="span" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-              REC {formatElapsed(recordElapsed)}
+              REC <RecordingClock startedAt={recordStartedAt} />
             </Box>
           ) : (
             label
@@ -1259,21 +1275,18 @@ export default function Face3LiveView({
         </Box>
       )}
 
-      {/* 拍照时画面白光闪一下（每拍一次换 key 重放动画） */}
-      {flashKey > 0 && (
-        <Box
-          key={flashKey}
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 5,
-            bgcolor: 'common.white',
-            pointerEvents: 'none',
-            animation: 'face3SnapshotFlash 300ms ease-out forwards',
-            '@keyframes face3SnapshotFlash': { from: { opacity: 0.8 }, to: { opacity: 0 } },
-          }}
-        />
-      )}
+      {/* 拍照时画面白光闪一下：平时透明，拍照时由 takeSnapshot 直接播动画（不为它重渲） */}
+      <Box
+        data-snapshot-flash
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 5,
+          bgcolor: 'common.white',
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+      />
 
       {/* 话筒 + 扬声器：画面底部正中，两个小号无底色的开关 */}
       {phase === 'playing' && (
@@ -1316,23 +1329,26 @@ export default function Face3LiveView({
       )}
 
       {/* 其余工具（拍照、录制、视频对讲）：不叠在画面上，渲染到父组件给的位置（详情页画面下方）。
-          连接中 / 出错时也在，只是灰色不可点；出画后可用 */}
-      {toolsTarget &&
-        createPortal(
-          <Face3LiveToolbar
-            disabled={phase !== 'playing'}
-            snapshotBusy={snapshotBusy}
-            onSnapshot={takeSnapshot}
-            recording={isRecording}
-            recordElapsedMs={recordElapsed}
-            recordSaving={recordSaving}
-            onRecord={isRecording ? stopRecording : startRecording}
-            videoCallOn={videoCallOn}
-            videoCallReady={mediaControlsReady}
-            onVideoCall={toggleVideoCall}
-          />,
-          toolsTarget
-        )}
+          连接中 / 出错时也在，只是灰色不可点；出画后可用。
+          portal 包在 Fragment 里：直接做 MUI Box 的子节点会被它的 propTypes 判成"不是 ReactNode"报警告 */}
+      {toolsTarget && (
+        <>
+          {createPortal(
+            <Face3LiveToolbar
+              disabled={phase !== 'playing'}
+              snapshotBusy={snapshotBusy}
+              onSnapshot={takeSnapshot}
+              recordStartedAt={recordStartedAt}
+              recordSaving={record.saving}
+              onRecord={isRecording ? stopRecording : startRecording}
+              videoCallOn={videoCallOn}
+              videoCallReady={mediaControlsReady}
+              onVideoCall={toggleVideoCall}
+            />,
+            toolsTarget
+          )}
+        </>
+      )}
 
       <IconButton
         onClick={onClose}
@@ -1358,3 +1374,5 @@ export default function Face3LiveView({
     </Box>
   );
 }
+
+export default React.memo(Face3LiveView);

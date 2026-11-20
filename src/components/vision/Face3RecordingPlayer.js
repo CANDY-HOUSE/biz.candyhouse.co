@@ -3,7 +3,138 @@ import { Alert, Box, Button, Slider, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
-import { alawWavToPcm, syncRecordingAudio } from './eventRecordingAudio';
+
+/* ── 录像的声音：设备另存的 G.711A WAV（与 mp4 同名），跟着视频播 ─────────────── */
+
+/** Convert the device's G.711 A-law WAV to PCM WAV for native audio fallback. */
+function alawWavToPcm(buffer) {
+  const view = new DataView(buffer);
+  const tag = (offset) => String.fromCharCode(...new Uint8Array(buffer, offset, 4));
+  if (buffer.byteLength < 12 || tag(0) !== 'RIFF' || tag(8) !== 'WAVE') throw new Error('invalid_wav');
+  let format;
+  let data;
+  for (let offset = 12; offset + 8 <= buffer.byteLength; ) {
+    const size = view.getUint32(offset + 4, true);
+    const start = offset + 8;
+    if (start + size > buffer.byteLength) throw new Error('truncated_wav');
+    if (tag(offset) === 'fmt ' && size >= 16) {
+      format = {
+        codec: view.getUint16(start, true),
+        channels: view.getUint16(start + 2, true),
+        rate: view.getUint32(start + 4, true),
+        bits: view.getUint16(start + 14, true),
+      };
+    }
+    if (tag(offset) === 'data') data = new Uint8Array(buffer, start, size);
+    offset = start + size + (size & 1);
+  }
+  if (!format || !data || format.codec !== 6 || format.bits !== 8 || format.channels !== 1 || !format.rate) {
+    throw new Error('unsupported_wav');
+  }
+  const result = new ArrayBuffer(44 + data.length * 2);
+  const out = new DataView(result);
+  const writeTag = (offset, text) => [...text].forEach((c, i) => out.setUint8(offset + i, c.charCodeAt(0)));
+  writeTag(0, 'RIFF');
+  out.setUint32(4, result.byteLength - 8, true);
+  writeTag(8, 'WAVE');
+  writeTag(12, 'fmt ');
+  out.setUint32(16, 16, true);
+  out.setUint16(20, 1, true);
+  out.setUint16(22, 1, true);
+  out.setUint32(24, format.rate, true);
+  out.setUint32(28, format.rate * 2, true);
+  out.setUint16(32, 2, true);
+  out.setUint16(34, 16, true);
+  writeTag(36, 'data');
+  out.setUint32(40, data.length * 2, true);
+  data.forEach((byte, i) => {
+    const a = byte ^ 0x55;
+    const segment = (a & 0x70) >> 4;
+    let sample = (a & 0x0f) << 4;
+    if (segment === 0) sample += 8;
+    else {
+      sample += 0x108;
+      if (segment > 1) sample <<= segment - 1;
+    }
+    out.setInt16(44 + i * 2, a & 0x80 ? sample : -sample, true);
+  });
+  return result;
+}
+
+/** Video owns the clock, playback controls, rate and volume. */
+function syncRecordingAudio(video, audio, onBlocked = () => {}) {
+  let disposed = false;
+  let waiting = false;
+  let playPending = false;
+  const align = (force = false) => {
+    if (!audio.readyState) return;
+    const time = Number.isFinite(audio.duration) ? Math.min(video.currentTime, audio.duration) : video.currentTime;
+    if (Math.abs(audio.currentTime - time) > (force ? 0.01 : 0.15)) audio.currentTime = time;
+    audio.playbackRate = video.playbackRate;
+    audio.muted = video.muted;
+    audio.volume = video.volume;
+  };
+  const play = () => {
+    align(true);
+    if (disposed || waiting || video.paused || video.ended || video.seeking || playPending) return;
+    if (Number.isFinite(audio.duration) && video.currentTime >= audio.duration) return;
+    playPending = true;
+    Promise.resolve(audio.play())
+      .then(() => {
+        if (disposed || waiting || video.paused || video.ended || video.seeking) audio.pause();
+        else onBlocked(false);
+      })
+      .catch((err) => {
+        if (!disposed && err?.name === 'NotAllowedError') onBlocked(true);
+      })
+      .finally(() => {
+        playPending = false;
+      });
+  };
+  const pause = () => audio.pause();
+  const handlers = {
+    play: () => {
+      waiting = false;
+      play();
+    },
+    playing: () => {
+      waiting = false;
+      play();
+    },
+    pause,
+    ended: pause,
+    waiting: () => {
+      waiting = true;
+      pause();
+    },
+    seeking: () => {
+      pause();
+      align(true);
+    },
+    seeked: () => {
+      align(true);
+      play();
+    },
+    ratechange: () => align(),
+    volumechange: () => align(),
+    timeupdate: () => align(),
+  };
+  Object.entries(handlers).forEach(([event, fn]) => video.addEventListener(event, fn));
+  audio.addEventListener('canplay', play);
+  const timer = setInterval(() => {
+    if (!video.paused && !waiting && !video.seeking) align();
+  }, 200);
+  return {
+    play,
+    dispose() {
+      disposed = true;
+      clearInterval(timer);
+      Object.entries(handlers).forEach(([event, fn]) => video.removeEventListener(event, fn));
+      audio.removeEventListener('canplay', play);
+      audio.pause();
+    },
+  };
+}
 
 const formatClock = (seconds) => {
   const total = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -22,37 +153,45 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const syncRef = useRef(null);
-  const [audioBlocked, setAudioBlocked] = useState(false);
-  const [audioError, setAudioError] = useState(false);
+  /* 声音的问题：null 正常；'blocked' 自动播放被拦（显示「开启声音」）；'error' 放不了（显示提示，不可恢复） */
+  const [audioIssue, setAudioIssue] = useState(null);
   const [videoError, setVideoError] = useState(false);
   const [paused, setPaused] = useState(true);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  /* 进度和总时长一起显示，放一个 state */
+  const [progress, setProgress] = useState({ time: 0, duration: 0 });
+  const { time, duration } = progress;
 
+  /* 视频、声音的地址都在这里设、在清理里撤，两边对称。
+     视频地址不能写在 JSX 的 src 上：开发模式的 StrictMode 会"挂上 → 清理 → 再挂上"，
+     清理把 src 撤掉后 React 不会补回（prop 没变），画面就一直停在 0:00。 */
   useEffect(() => {
     const video = videoRef.current;
     const audio = audioRef.current;
-    if (!media.wav || !video || !audio) {
-      return () => {
-        video.pause();
-        video.removeAttribute('src');
-        video.load();
-      };
-    }
+    if (!video) return undefined;
+    video.src = media.mp4;
+    const releaseVideo = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+    if (!media.wav || !audio) return releaseVideo;
     let cancelled = false;
     let fallbackStarted = false;
     let blobUrl;
     const controller = new AbortController();
-    const sync = syncRecordingAudio(video, audio, setAudioBlocked);
+    /* 被拦 / 恢复只在没出错时切换；出错是终态 */
+    const onBlocked = (blocked) => setAudioIssue((issue) => (issue === 'error' ? issue : blocked ? 'blocked' : null));
+    const sync = syncRecordingAudio(video, audio, onBlocked);
     syncRef.current = sync;
     const fallback = async () => {
       if (fallbackStarted) {
-        setAudioError(true);
+        setAudioIssue('error');
         return;
       }
       fallbackStarted = true;
       try {
-        const response = await fetch(media.wav, { signal: controller.signal });
+        /* 不走缓存：<audio> 刚取过同一地址，缓存里那份不带跨域头，fetch 读到会被 CORS 拦下 */
+        const response = await fetch(media.wav, { signal: controller.signal, cache: 'no-store' });
         if (!response.ok) throw new Error('audio_download_failed');
         const pcm = alawWavToPcm(await response.arrayBuffer());
         if (cancelled) return;
@@ -60,7 +199,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
         audio.src = blobUrl;
         audio.load();
       } catch (err) {
-        if (!cancelled) setAudioError(true);
+        if (!cancelled) setAudioIssue('error');
       }
     };
     audio.addEventListener('error', fallback);
@@ -73,9 +212,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
       sync.dispose();
       syncRef.current = null;
       audio.removeEventListener('error', fallback);
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
+      releaseVideo();
       audio.removeAttribute('src');
       audio.load();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
@@ -98,7 +235,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = value;
-    setTime(value);
+    setProgress((current) => ({ ...current, time: value }));
   };
 
   return (
@@ -106,16 +243,18 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
       <Box
         component="video"
         ref={videoRef}
-        src={media.mp4}
         playsInline
         preload="auto"
         onClick={toggle}
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
-        onTimeUpdate={(event) => setTime(event.currentTarget.currentTime)}
+        onTimeUpdate={(event) => {
+          const { currentTime } = event.currentTarget;
+          setProgress((current) => ({ ...current, time: currentTime }));
+        }}
         onDurationChange={(event) => {
           const value = event.currentTarget.duration;
-          setDuration(Number.isFinite(value) ? value : 0);
+          setProgress((current) => ({ ...current, duration: Number.isFinite(value) ? value : 0 }));
         }}
         onEnded={() => onEnded?.()}
         onError={() => setVideoError(true)}
@@ -180,7 +319,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
         </Box>
       )}
 
-      {audioBlocked && !audioError && (
+      {audioIssue === 'blocked' && (
         <Button
           size="small"
           variant="contained"
@@ -190,7 +329,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
           {t('face3.recordings.enableAudio')}
         </Button>
       )}
-      {audioError && (
+      {audioIssue === 'error' && (
         <Alert
           severity="warning"
           sx={{ position: 'absolute', top: 36, left: 8, right: 8, py: 0, fontSize: '0.75rem', pointerEvents: 'none' }}
