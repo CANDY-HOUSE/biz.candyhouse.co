@@ -38,6 +38,7 @@ const SesameAccessControlDeviceRegion = deferredComponent(() => import('@biz/acc
 const Cards = deferredComponent(() => import('@biz/cards'));
 const CardDetails = deferredComponent(() => import('@biz/cards/details/carddetails'));
 const Developer = deferredComponent(() => import('@biz/developer'));
+const ExtensionStudio = deferredComponent(() => import('@biz/extension-studio'));
 const EnvSnapshotDetail = deferredComponent(() => import('@biz/history/env-snapshot'));
 const DeviceShare = deferredComponent(() => import('@biz/devices/device-share/DeviceShare'));
 const DeviceGroupItem = deferredComponent(() => import('@biz/devices/group-item/DeviceGroupItem'));
@@ -143,6 +144,10 @@ const routerComponentMap = [
   {
     router: '/biz/developer',
     component: Developer,
+  },
+  {
+    router: '/biz/extension-studio',
+    component: ExtensionStudio,
   },
   {
     router: '/device-history',
