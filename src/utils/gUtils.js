@@ -239,6 +239,13 @@ const categoriesConf = [
     isRoot: true,
     icon: 'developer',
   },
+  {
+    id: pageNames.developer,
+    name: 'Extension Studio',
+    router: '/biz/extension-studio',
+    isRoot: true,
+    icon: 'developer',
+  },
 ];
 
 const isContainPage = (access, id, isSesameApp = false) => {
