@@ -138,6 +138,7 @@ const pageNames = {
   historys: '全体履歴',
   scheduleList: '予約一覧',
   developer: '開発者向け',
+  extensionStudio: 'Extension Studio',
   cards: 'カード管理',
   devices: 'デバイス（ドア・認証機器）',
   touchDevices: '認証機器',
@@ -240,7 +241,7 @@ const categoriesConf = [
     icon: 'developer',
   },
   {
-    id: pageNames.developer,
+    id: pageNames.extensionStudio,
     name: 'Extension Studio',
     router: '/biz/extension-studio',
     isRoot: true,
@@ -253,6 +254,9 @@ const isContainPage = (access, id, isSesameApp = false) => {
     return false;
   }
   if (access.some((it) => it === id)) {
+    return true;
+  }
+  if (id === pageNames.extensionStudio && access.includes(pageNames.developer)) {
     return true;
   }
   if (access.some((it) => it === pageNames.devices)) {
