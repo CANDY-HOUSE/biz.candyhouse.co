@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
  *
  * 同一位置按画面框里放的内容换：
  *   实时（及什么都没放）—— Face3LiveToolbar：拍照、录制、视频对讲
- *   选中了一条录像        —— Face3RecordingToolbar：下载、删除、分享
+ *   选中了一条录像        —— Face3RecordingToolbar：下载、删除（连同 AI 一行三格，见 Face3DevicePanel）
  * 第一格固定是 Face3AiTool（AI 开关）。
  */
 
@@ -70,14 +70,6 @@ const DeleteLineIcon = () => (
   <LineIcon>
     <path d="M4 7h16M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2" />
     <path d="M6 7l1 12a1.5 1.5 0 0 0 1.5 1.4h7A1.5 1.5 0 0 0 17 19l1-12M10 11v6M14 11v6" />
-  </LineIcon>
-);
-
-/** 分享：方框 + 向上箭头 */
-const ShareLineIcon = () => (
-  <LineIcon>
-    <path d="M12 3.5v11M8 7.5l4-4 4 4" />
-    <path d="M8.5 10.5h-2A1.5 1.5 0 0 0 5 12v7a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-7a1.5 1.5 0 0 0-1.5-1.5h-2" />
   </LineIcon>
 );
 
@@ -257,7 +249,7 @@ export function Face3AiTool({ on = false, onToggle }) {
  * 录像工具栏：选中一条录像时替换实时工具栏。
  *   下载 —— 播放地址取到后可用，下载中亮起
  *   删除 —— 访客（只能看）置灰；按下先确认，删除中亮起
- *   分享 —— 暂未实现，始终置灰
+ * 分享还没定怎么做，先不放按钮。
  */
 export function Face3RecordingToolbar({
   canDownload = false,
@@ -284,7 +276,6 @@ export function Face3RecordingToolbar({
         onClick={onDelete}
         icon={<DeleteLineIcon />}
       />
-      <LiveTool label={t('face3.recordings.share')} disabled icon={<ShareLineIcon />} />
     </Box>
   );
 }

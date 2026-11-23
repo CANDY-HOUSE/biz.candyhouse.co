@@ -15,7 +15,8 @@ import {
   captureVideoFrame,
   extensionForMime,
   mediaFileName,
-  recordingMimeTypes,
+  recordingMimeTypesFor,
+  recordingSources,
   saveMedia,
 } from './face3Utils';
 import { Face3LiveToolbar, RecordingClock } from './Face3Toolbar';
@@ -262,15 +263,30 @@ function Face3LiveView({
     if (recorder && recorder.state !== 'inactive') recorder.stop();
   }, []);
 
-  const startRecording = () => {
-    if (recorderRef.current || record.saving) return;
+  /* 选格式要先异步问一下编码能力，期间再点不重复开录 */
+  const recordStartingRef = useRef(false);
+  const startRecording = async () => {
+    if (recorderRef.current || recordStartingRef.current || record.saving) return;
     if (!canSaveMedia('video')) {
       notify('info', 'face3.recordSaveUnsupported');
       return;
     }
-    const stream = videoRef.current?.srcObject;
-    const mimeTypes = recordingMimeTypes();
-    if (!canRecord() || !stream || !mimeTypes.length) {
+    const video = videoRef.current;
+    const stream = video?.srcObject;
+    if (!canRecord() || !stream) {
+      notify('info', 'face3.recordUnsupported');
+      return;
+    }
+    recordStartingRef.current = true;
+    let mimeTypes;
+    try {
+      mimeTypes = await recordingMimeTypesFor(video.videoWidth, video.videoHeight);
+    } finally {
+      recordStartingRef.current = false;
+    }
+    /* 问的这一会儿画面关了 / 换了流，就不开了 */
+    if (recorderRef.current || video.srcObject !== stream) return;
+    if (!mimeTypes.length) {
       notify('info', 'face3.recordUnsupported');
       return;
     }
@@ -281,12 +297,18 @@ function Face3LiveView({
      * 起不来分两种：构造 / start() 当场抛（isTypeSupported 只看浏览器，不看这路流），
      * 以及 start() 之后才异步报 onerror、一帧没录到就停 —— 实测 4K 的 H.264 偶发
      * "EncodingError: Encoder initialization failed"（同一路流过一会儿又正常）。
-     * 后一种也当作"这个格式不行"，丢掉这次、接着试下一个（VP9 / VP8），用户无感。 */
+     * 后一种也当作"这个格式不行"，丢掉这次、接着试下一个（VP9 / VP8），用户无感。
+     * 每种录制流（见 recordingSources：先重采样声音，再原样，最后只录画面）都按上面的格式各试一轮。 */
+    const { sources, close: closeSources } = recordingSources(stream);
+    const attempts = sources.flatMap((source) => mimeTypes.map((mimeType) => ({ source, mimeType })));
     const launch = (from) => {
-      for (let i = from; i < mimeTypes.length; i += 1) {
+      for (let i = from; i < attempts.length; i += 1) {
+        const { mimeType } = attempts[i];
+        const source = attempts[i].source();
+        if (!source) continue;
         let recorder;
         try {
-          recorder = new MediaRecorder(stream, { mimeType: mimeTypes[i], videoBitsPerSecond: RECORD_VIDEO_BPS });
+          recorder = new MediaRecorder(source, { mimeType, videoBitsPerSecond: RECORD_VIDEO_BPS });
           recorder.start(1000);
         } catch (err) {
           logOperationFailure(RECORD_LOG_SCOPE, err?.name);
@@ -305,6 +327,7 @@ function Face3LiveView({
             abandoned = true;
             recorderRef.current = launch(next);
             if (!recorderRef.current) {
+              closeSources();
               setRecord((r) => ({ ...r, startedAt: 0 }));
               notify('warning', 'face3.recordFailed');
             }
@@ -314,10 +337,11 @@ function Face3LiveView({
         /* 流的轨道全部结束时浏览器也会自动停，统一在这里收尾 */
         recorder.onstop = async () => {
           if (abandoned) return;
+          closeSources();
           if (recorderRef.current === recorder) recorderRef.current = null;
           setRecord((r) => ({ ...r, startedAt: 0 }));
           /* 分享 / 存相册认基本类型，去掉 codecs 参数 */
-          const type = (recorder.mimeType || mimeTypes[i]).split(';')[0];
+          const type = (recorder.mimeType || mimeType).split(';')[0];
           const blob = new Blob(chunks, { type });
           if (!blob.size) {
             notifyFailure('record', 'empty', 'face3.recordFailed');
@@ -341,6 +365,7 @@ function Face3LiveView({
 
     const recorder = launch(0);
     if (!recorder) {
+      closeSources();
       notify('warning', 'face3.recordFailed');
       return;
     }

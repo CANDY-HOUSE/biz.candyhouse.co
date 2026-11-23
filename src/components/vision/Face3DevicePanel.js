@@ -108,7 +108,7 @@ function LiveButton({ online, lastSeenAt, onClick }) {
  *   - 事件录像标题行右侧是「观看实时画面」胶囊按钮，点了画面框切到实时；看实时时按钮隐藏
  *   - 画面框标明正在看的内容：实时是正上方小号无底色的"● LIVE"，录像是左上角"录像 · 时间"
  *   - 什么都没播时画面框只显示 Vision logo
- *   - 画面下方工具栏：第一格 AI 开关；后三格实时是拍照 / 录制 / 视频对讲，选中录像是下载 / 删除 / 分享
+ *   - 画面下方工具栏：第一格 AI 开关；实时后跟拍照 / 录制 / 视频对讲，选中录像后跟下载 / 删除（三格居中）
  * 实时与录像互斥；实时的协议按本机 AI 开关选（与 Vision 首页一致）。
  * 不自动开实时：开实时要唤醒设备（耗电、计费），等用户点。
  *
@@ -157,7 +157,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
     playback.play(item);
   };
 
-  /* 选中录像时的工具栏：下载、删除（分享暂未实现）。
+  /* 选中录像时的工具栏：下载、删除。
      拍照、录制的失败提示同理：全局提示条不显示 error 级，用 warning 并另记诊断日志。 */
   const notify = (severity, key) => setSnackbarValue({ open: true, severity, msg: t(key) });
   const notifyFailure = (action, reason, key) => {
@@ -335,13 +335,13 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
           >
             {renderFrame()}
           </Box>
-          {/* 工具栏一行四格：第一格是 AI 开关（任何时候都能点），
-              后三格随画面框换（实时：拍照、录制、视频对讲；选中录像：下载、删除、分享）。
-              后三格：看实时时由 Face3LiveView 用 portal 渲染进这个节点，出画后可用；
+          {/* 工具栏一行等宽：第一格是 AI 开关（任何时候都能点），后面随画面框换——
+              实时是拍照、录制、视频对讲（共四格）；选中录像是下载、删除（共三格，整行居中）。
+              后几格：看实时时由 Face3LiveView 用 portal 渲染进这个节点，出画后可用；
               没在看实时时这里放一份（选中录像是录像工具，否则是灰色不可点的实时工具） */}
           <Box sx={{ display: 'flex', bgcolor: 'background.paper' }}>
             {device && <Face3AiTool on={isAiOn(device.deviceUUID)} onToggle={toggleAiTool} />}
-            <Box sx={{ flex: 3, minWidth: 0 }}>
+            <Box sx={{ flex: device && !live && playback.selected ? 2 : 3, minWidth: 0 }}>
               <Box ref={setToolsTarget} />
               {device &&
                 !live &&
