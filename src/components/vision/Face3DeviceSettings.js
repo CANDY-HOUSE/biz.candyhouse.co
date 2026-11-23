@@ -9,11 +9,9 @@ import { deviceService, isAppHome } from '@/services/deviceService';
  * PIR 灵敏度（低 / 中 / 高）、喇叭音量（0–100）。
  *
  * PIR 和喇叭音量目前只有界面，选了不下发：门铃固件还没有对应的设置接口（PIR 阈值写死在 6629 的
- * app_pir.h，喇叭音量写死在 T32 的 audio_out.c）。所以整个分组只在开发环境显示，线上仍按原样排；
- * 接口定了之后，把显示条件改成按壳 / 固件能力判断，并接上下发。
+ * app_pir.h，喇叭音量写死在 T32 的 audio_out.c）。接口定了之后接上下发。
  * 默认值对应固件现状：PIR 阈值 32 →「中」，喇叭音量 80。
  */
-export const showFace3DeviceSettings = process.env.NODE_ENV === 'development';
 
 const PIR_LEVELS = ['low', 'medium', 'high'];
 

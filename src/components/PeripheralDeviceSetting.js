@@ -48,7 +48,7 @@ import LockSettingsSlider from './LockSettingsSlider';
 import LockSettingWheel from './LockSettingWheel';
 import AppHubWifi from './AppHubWifi';
 import AppVoiceShortcut from './AppVoiceShortcut';
-import Face3DeviceSettings, { showFace3DeviceSettings } from './vision/Face3DeviceSettings';
+import Face3DeviceSettings from './vision/Face3DeviceSettings';
 import { sesameDeviceModel } from '@/constants/sesameDeviceModel';
 import { appHostSupports } from '@/services/appSession';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
@@ -270,7 +270,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     </Box>
   );
   /* Face3 的雷达侦查距离放进「感应与声音」分组（分组目前只在开发环境显示） */
-  const face3Group = model === sesameDeviceModel.sesame_face_3 && showFace3DeviceSettings;
+  const face3Group = model === sesameDeviceModel.sesame_face_3;
   if (id && panel?.id === id)
     return (
       <Box>
