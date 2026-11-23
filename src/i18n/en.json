@@ -485,10 +485,19 @@
     "noData": "No Data"
   },
   "face3": {
+    "settings": {
+      "group": "Motion & Sound",
+      "pirSensitivity": "PIR sensitivity",
+      "level": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "pirHint": "Higher sensitivity wakes the doorbell more easily when someone is at the door, and uses more battery.",
+      "speakerVolume": "Speaker volume"
+    },
     "recordings": {
       "title": "Event Recordings",
-      "enableAudio": "Enable sound",
-      "audioError": "Audio is unavailable. You can continue watching the video.",
       "playError": "Unable to play this recording or the link has expired. Please retry.",
       "listError": "Unable to load recordings. Please retry.",
       "loginRequired": "Sign in to view recordings.",

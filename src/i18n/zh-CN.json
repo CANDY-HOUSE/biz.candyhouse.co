@@ -485,10 +485,19 @@
     "noData": "暂无数据"
   },
   "face3": {
+    "settings": {
+      "group": "感应与声音",
+      "pirSensitivity": "PIR 灵敏度",
+      "level": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      },
+      "pirHint": "灵敏度越高，门口有人时越容易唤醒门铃，也越耗电。",
+      "speakerVolume": "喇叭音量"
+    },
     "recordings": {
       "title": "事件录像",
-      "enableAudio": "开启声音",
-      "audioError": "声音无法播放，视频可继续观看",
       "playError": "录像播放失败或链接已过期，请重试",
       "listError": "无法获取录像列表，请重试",
       "loginRequired": "请先登录后查看录像",

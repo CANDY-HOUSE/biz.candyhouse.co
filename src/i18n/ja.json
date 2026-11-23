@@ -485,10 +485,19 @@
     "noData": "データなし"
   },
   "face3": {
+    "settings": {
+      "group": "人感センサーとサウンド",
+      "pirSensitivity": "PIR 感度",
+      "level": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      },
+      "pirHint": "感度を上げるほど、玄関に人が来たときにドアベルが起動しやすくなり、電池の消費も増えます。",
+      "speakerVolume": "スピーカー音量"
+    },
     "recordings": {
       "title": "イベント録画",
-      "enableAudio": "音声を有効にする",
-      "audioError": "音声を再生できません。映像は引き続き視聴できます。",
       "playError": "録画を再生できないか、リンクの有効期限が切れています。再試行してください。",
       "listError": "録画を取得できません。再試行してください。",
       "loginRequired": "ログインして録画をご覧ください。",

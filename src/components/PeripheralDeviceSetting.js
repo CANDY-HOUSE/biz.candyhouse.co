@@ -48,6 +48,8 @@ import LockSettingsSlider from './LockSettingsSlider';
 import LockSettingWheel from './LockSettingWheel';
 import AppHubWifi from './AppHubWifi';
 import AppVoiceShortcut from './AppVoiceShortcut';
+import Face3DeviceSettings, { showFace3DeviceSettings } from './vision/Face3DeviceSettings';
+import { sesameDeviceModel } from '@/constants/sesameDeviceModel';
 import { appHostSupports } from '@/services/appSession';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 
@@ -238,6 +240,37 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     return lockTarget(target) || target.deviceModel === 'hub_3';
   });
   const title = device.deviceName || params.get('deviceName') || model;
+  const radarSetting = caps.includes('face') && (!isAppHome || native?.peripheral?.radar !== undefined) && (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2 }}>
+        <Typography sx={{ flexShrink: 0 }}>{t('accessCtl.auth.radarDetectionDistance')}</Typography>
+        <LockSettingsSlider
+          min={0}
+          max={100}
+          value={distance}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(value) => `${t('peripheral.distance')} ${value}cm`}
+          aria-label={t('accessCtl.auth.radarDetectionDistance')}
+          disabled={isAppHome && !native?.bleConnected}
+          onChange={(_, value) => {
+            if (!isAppHome) return;
+            trackingRadar.current = true;
+            if (value !== distance && isAppHome) deviceService.notify('haptic');
+            setDistance(value);
+          }}
+          onChangeCommitted={(_, value) => {
+            trackingRadar.current = false;
+            run('radar', { value: radarValue(model, value), command: radarCommand(model) });
+          }}
+        />
+      </Box>
+      <Typography sx={{ px: 2, pb: 2, fontSize: 13, color: 'text.secondary', whiteSpace: 'pre-line' }}>
+        {t('peripheral.radarDescription')}
+      </Typography>
+    </Box>
+  );
+  /* Face3 的雷达侦查距离放进「感应与声音」分组（分组目前只在开发环境显示） */
+  const face3Group = model === sesameDeviceModel.sesame_face_3 && showFace3DeviceSettings;
   if (id && panel?.id === id)
     return (
       <Box>
@@ -342,35 +375,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {!wifi && <BatteryPercent device={device} />}
         {row('UUID', id, () => navigate({ pathname: '/device-setting/factory-info', search: location.search }))}
-        {caps.includes('face') && (!isAppHome || native?.peripheral?.radar !== undefined) && (
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2, py: 2 }}>
-              <Typography sx={{ flexShrink: 0 }}>{t('accessCtl.auth.radarDetectionDistance')}</Typography>
-              <LockSettingsSlider
-                min={0}
-                max={100}
-                value={distance}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${t('peripheral.distance')} ${value}cm`}
-                aria-label={t('accessCtl.auth.radarDetectionDistance')}
-                disabled={isAppHome && !native?.bleConnected}
-                onChange={(_, value) => {
-                  if (!isAppHome) return;
-                  trackingRadar.current = true;
-                  if (value !== distance && isAppHome) deviceService.notify('haptic');
-                  setDistance(value);
-                }}
-                onChangeCommitted={(_, value) => {
-                  trackingRadar.current = false;
-                  run('radar', { value: radarValue(model, value), command: radarCommand(model) });
-                }}
-              />
-            </Box>
-            <Typography sx={{ px: 2, pb: 2, fontSize: 13, color: 'text.secondary', whiteSpace: 'pre-line' }}>
-              {t('peripheral.radarDescription')}
-            </Typography>
-          </Box>
-        )}
+        {face3Group ? <Face3DeviceSettings radar={radarSetting} /> : radarSetting}
         {sleeping && (
           <Typography sx={{ p: 2, color: 'text.secondary', fontSize: 13, whiteSpace: 'pre-line' }}>
             {t('peripheral.sleeping', {

@@ -230,7 +230,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
   const [removedRecIds, setRemovedRecIds] = useState(() => new Set());
 
   /* 下载：用播放地址把视频取回来，再按环境保存（PC 下载 / 手机分享面板 / APP 需壳支持，同实时录制）。
-     S3 桶允许跨域 GET，所以前端能直接取。声音是旁路 .wav（见 Face3RecordingPlayer），下载的 MP4 不带声音。
+     S3 桶允许跨域 GET，所以前端能直接取。声音在 MP4 自带的音轨里（固件直接录进 MP4），下载的就是带声音的文件。
      不走缓存：画面框里的 <video> 播过同一地址时，缓存里那份是不带跨域头的，fetch 读到它会被 CORS 拦下 */
   const downloadRecording = async () => {
     const item = playback.selected;
