@@ -116,6 +116,7 @@ const LOCAL_MEDIA_ERROR_TEXT = {
  * 中继下照样是设备发出的分辨率；经服务器转发后变小的，显示变小后的档位。
  *
  * 话筒、扬声器：叠在画面底部正中（参考 Wyze），首页和详情页都有；只有开 / 关，不提供音量调节。
+ * onPhaseChange（可选）：画面阶段变化时回调 phase（connecting | playing | error | ended）
  * toolsTarget（可选）：其余工具（拍照、录制、视频对讲，见 Face3Toolbar）渲染到父组件给的这个 DOM 节点里
  * （详情页放在画面下方，图标 + 文字一排）；还没出画时灰色不可点。不传则不显示 —— Vision 首页只有话筒、扬声器。
  */
@@ -192,6 +193,7 @@ function Face3LiveView({
   device,
   protocol = kvsProtocol,
   onClose,
+  onPhaseChange,
   label,
   toolsTarget,
   streamState,
@@ -213,6 +215,10 @@ function Face3LiveView({
   const cancelAttemptRef = useRef(null);
   const [phase, setPhase] = useState('connecting'); // connecting | playing | error | ended
   const isPlaying = phase === 'playing';
+  /* 回报给外层（详情页的等待计时：出画即停） */
+  useEffect(() => {
+    onPhaseChange?.(phase);
+  }, [phase, onPhaseChange]);
   /* 拍照：截门口画面当前这一帧（原始分辨率），白光闪一下，再按环境保存（见 face3Utils） */
   const [snapshotBusy, setSnapshotBusy] = useState(false);
   const notify = (severity, key) => setSnackbarValue({ open: true, severity, msg: t(key) });

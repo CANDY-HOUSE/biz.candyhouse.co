@@ -115,7 +115,12 @@ export function Face3Provider({ children }) {
   );
 
   /* ── 实时画面会话 ── */
-  const [session, setSession] = useState(null); // { id, device, protocol, path }
+  const [session, setSession] = useState(null); // { id, device, protocol, path, startedAt }
+  /* 当前会话的画面阶段（connecting | playing | error | ended），由 Face3LiveView 回报；
+     按会话编号存，换了会话旧的回报不算数 */
+  const [livePhase, setLivePhase] = useState({ id: 0, phase: 'connecting' });
+  /* 本次会话点击到「首次」出画（或首次出错）的耗时，毫秒。之后断线重连再出画不覆盖（失败后重试出画除外） */
+  const [liveWait, setLiveWait] = useState({ id: 0, ms: 0, ok: false });
   const [toolsTarget, setToolsTarget] = useState(null);
   const sessionRef = useRef(null); // seq：会话编号；hostEl：常驻的画面容器
   if (!sessionRef.current) {
@@ -150,7 +155,8 @@ export function Face3Provider({ children }) {
     setSession((current) =>
       current && current.device.deviceUUID.toUpperCase() === device.deviceUUID.toUpperCase()
         ? { ...current, device, protocol, path }
-        : { id: ++sessionRef.current.seq, device, protocol, path }
+        : /* startedAt：点「观看实时画面」的时刻，详情页据此显示等待计时（毫秒） */
+          { id: ++sessionRef.current.seq, device, protocol, path, startedAt: performance.now() }
     );
   }, []);
 
@@ -177,6 +183,26 @@ export function Face3Provider({ children }) {
   );
 
   const liveUUID = session?.device?.deviceUUID?.toUpperCase() || '';
+  const sessionId = session?.id || 0;
+  const sessionStartedAt = session?.startedAt || 0;
+  const onLivePhase = useCallback(
+    (phase) => {
+      setLivePhase({ id: sessionId, phase });
+      if ((phase === 'playing' || phase === 'error') && sessionStartedAt) {
+        const ms = Math.round(performance.now() - sessionStartedAt);
+        /* 首次定格后不覆盖，唯一例外：先失败、用户点画面里的重试（同一会话重连）后出画了 ——
+           改成成功、耗时从点击算起，否则画面明明出来了标签还显示「未能出画」 */
+        setLiveWait((cur) =>
+          cur.id === sessionId && (cur.ok || phase === 'error') ? cur : { id: sessionId, ms, ok: phase === 'playing' }
+        );
+        /* 点击到出画的耗时，排查唤醒/建连慢时看这一行 */
+        console.info(`[face3] click-to-${phase === 'playing' ? 'picture' : 'error'} ${ms} ms`);
+      }
+    },
+    [sessionId, sessionStartedAt]
+  );
+  const currentLivePhase = livePhase.id === sessionId ? livePhase.phase : 'connecting';
+  const currentLiveWait = liveWait.id === sessionId ? liveWait : null;
   const value = useMemo(
     () => ({
       devices: face3Devices || [],
@@ -188,6 +214,9 @@ export function Face3Provider({ children }) {
       isAiOn,
       toggleAi,
       liveUUID,
+      liveStartedAt: sessionStartedAt,
+      livePhase: currentLivePhase,
+      liveWait: currentLiveWait,
       start,
       stop,
       setProtocol,
@@ -204,6 +233,9 @@ export function Face3Provider({ children }) {
       isAiOn,
       toggleAi,
       liveUUID,
+      sessionStartedAt,
+      currentLivePhase,
+      currentLiveWait,
       start,
       stop,
       setProtocol,
@@ -222,6 +254,7 @@ export function Face3Provider({ children }) {
             device={session.device}
             protocol={session.protocol}
             onClose={stop}
+            onPhaseChange={onLivePhase}
             label="LIVE"
             toolsTarget={toolsTarget}
             streamState={face3StreamStates?.[liveDeviceUUID]}
@@ -240,7 +273,7 @@ export function Face3Provider({ children }) {
  * {
  *   devices, listFace3Devices, listFace3Recordings, playFace3Recording, deleteFace3Recording,
  *   notify(snackbarValue), isAiOn(deviceUUID), toggleAi(device, enabled),
- *   liveUUID, start(device, protocol), stop(), setProtocol(protocol), setToolsTarget(el), attach(el)
+ *   liveUUID, liveStartedAt, livePhase, liveWait（{ms, ok}：首次出画/出错耗时）, start(device, protocol), stop(), setProtocol(protocol), setToolsTarget(el), attach(el)
  * }
  */
 export const useFace3Context = () => useContext(Face3Context);

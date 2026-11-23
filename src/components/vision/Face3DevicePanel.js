@@ -69,6 +69,54 @@ function useRecordingPlayback(deviceId, playFace3Recording) {
  * 「观看实时画面」胶囊按钮，放在事件录像标题行的右侧（参考 Wyze 的「ライブを見る」）。
  * 正在看实时时隐藏 —— 画面左上角已有 LIVE；离线时置灰，写"离线 · 多久以前"。
  */
+/**
+ * 点「观看实时画面」后的等待计时，精确到毫秒，外形与 LiveButton 一致、占同一位置。
+ * result 为空：出画前，每帧刷新；result = { ms, ok }：首次出画（ok）或出错后定格显示。
+ */
+function LiveWaitBadge({ startedAt, result }) {
+  const { t } = useTranslation();
+  const [now, setNow] = useState(() => performance.now());
+  const frozen = Boolean(result);
+  useEffect(() => {
+    if (frozen) return undefined;
+    let raf = 0;
+    const tick = () => {
+      setNow(performance.now());
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [frozen]);
+  const ms = frozen ? result.ms : Math.max(0, now - startedAt);
+  const seconds = (ms / 1000).toFixed(3);
+  let text = `${t('face3.waitingLive')} ${seconds} s`;
+  if (frozen) text = result.ok ? `${t('face3.wakeTook')} ${seconds} s` : `${t('face3.wakeFailedAfter')} · ${seconds} s`;
+  return (
+    <Box
+      role={frozen ? 'status' : 'timer'}
+      aria-label={text}
+      sx={{
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.75,
+        borderRadius: 999,
+        px: 2,
+        py: 0.75,
+        fontSize: 14,
+        fontWeight: 700,
+        lineHeight: 1.75,
+        bgcolor: 'grey.200',
+        color: frozen && !result.ok ? 'warning.dark' : 'text.secondary',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      {!frozen && <CircularProgress size={14} thickness={6} color="inherit" />}
+      {text}
+    </Box>
+  );
+}
+
 function LiveButton({ online, lastSeenAt, onClick }) {
   const { t } = useTranslation();
   return (
@@ -118,7 +166,16 @@ function LiveButton({ online, lastSeenAt, onClick }) {
 function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel, fill = false }) {
   const { t, i18n } = useTranslation();
   const face3 = useFace3Context();
-  const { devices, isAiOn, toggleAi, liveUUID, setToolsTarget, notify: setSnackbarValue } = face3;
+  const {
+    devices,
+    isAiOn,
+    toggleAi,
+    liveUUID,
+    liveStartedAt,
+    liveWait,
+    setToolsTarget,
+    notify: setSnackbarValue,
+  } = face3;
   const deviceUUID = (rawDeviceUUID || '').toUpperCase();
   /* 录像按 Face3 的绑定关系鉴权，列表里还没有这台时先用详情页传来的编号和名称 */
   const device = deviceUUID
@@ -389,7 +446,15 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
                 selectedRecId={playback.selected?.recId}
                 onSelect={playRecording}
                 removedRecIds={removedRecIds}
-                headerAction={!live && <LiveButton online={online} lastSeenAt={lastSeenAt} onClick={startLive} />}
+                headerAction={
+                  /* 没在看：「观看实时画面」按钮。点了之后原位置：出画前毫秒计时；首次出画（或出错）后定格为
+                     「本次唤醒耗时 / 未能出画 x.xxx s」一直显示，点画面右上角关闭结束观看后才换回按钮 */
+                  !live ? (
+                    <LiveButton online={online} lastSeenAt={lastSeenAt} onClick={startLive} />
+                  ) : liveStartedAt ? (
+                    <LiveWaitBadge startedAt={liveStartedAt} result={liveWait} />
+                  ) : null
+                }
               />
             </Box>
           </Box>
