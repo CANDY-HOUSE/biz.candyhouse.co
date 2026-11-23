@@ -194,7 +194,10 @@ const SortableItemComponent = ({
     [setNodeRef]
   );
   useEffect(() => {
-    if (selected) cardRef.current?.scrollIntoView({ block: 'center' });
+    if (!selected) return undefined;
+    // App 切页时会滚回顶部，它的 effect 在这之后才执行，所以等下一帧再定位
+    const frame = requestAnimationFrame(() => cardRef.current?.scrollIntoView({ block: 'center' }));
+    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
