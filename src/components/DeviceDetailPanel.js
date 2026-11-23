@@ -1,8 +1,7 @@
 import { useContext, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Box, ButtonBase, IconButton, Typography } from '@mui/material';
-import OpenInFullRoundedIcon from '@mui/icons-material/OpenInFullRounded';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
 import { ios } from '@/theme/appHomeStyle';
@@ -44,7 +43,7 @@ const sectionsFor = (model, keyLevel) => {
 };
 
 // The device page's sections side by side with the list; like the page, they read the device from the query.
-export default function DeviceDetailPanel({ onOpenPage }) {
+export default function DeviceDetailPanel() {
   const { t } = useTranslation();
   const { gManageDevice } = useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
@@ -69,33 +68,22 @@ export default function DeviceDetailPanel({ onOpenPage }) {
       }}
     >
       <Box sx={{ flexShrink: 0, px: '28px', pt: '22px', pb: '16px' }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              sx={{
-                fontSize: 28,
-                fontWeight: 700,
-                lineHeight: '36px',
-                color: ios.label,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {device.deviceName || searchParams.get('deviceName')}
-            </Typography>
-            <Typography sx={{ mt: '2px', fontSize: 15, color: ios.secondaryLabel }}>
-              {deviceModelDisplayName(model)}
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={onOpenPage}
-            aria-label="open"
-            sx={{ mt: '2px', bgcolor: ios.fill, color: ios.secondaryLabel, '&:hover': { bgcolor: ios.separator } }}
-          >
-            <OpenInFullRoundedIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Box>
+        <Typography
+          sx={{
+            fontSize: 28,
+            fontWeight: 700,
+            lineHeight: '36px',
+            color: ios.label,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {device.deviceName || searchParams.get('deviceName')}
+        </Typography>
+        <Typography sx={{ mt: '2px', fontSize: 15, color: ios.secondaryLabel }}>
+          {deviceModelDisplayName(model)}
+        </Typography>
         <Box
           role="tablist"
           sx={{

@@ -388,6 +388,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
               aspectRatio: '16 / 9',
               bgcolor: '#2A2A2E',
               overflow: 'hidden',
+              ...(fill && { borderRadius: '16px' }),
             }}
           >
             {renderFrame()}

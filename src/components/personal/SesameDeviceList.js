@@ -9,7 +9,15 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import BotScriptList from './BotScriptList';
 import BluetoothIcon from '@mui/icons-material/Bluetooth';
-import React, { useState, useEffect, useLayoutEffect, useRef, useSyncExternalStore, useContext } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useSyncExternalStore,
+  useContext,
+} from 'react';
 import { Box, ButtonBase, List, ListItem, ListItemText, Stack, Collapse, Typography } from '@mui/material';
 import WifiIcon from '@mui/icons-material/Wifi';
 import { BatteryBadge, BatteryLevel } from '../biz/device/BatteryLevel';
@@ -176,6 +184,20 @@ const SortableItemComponent = ({
     transition,
   };
 
+  // 带着选中进来（如从视觉页点卡片）时把这台滚到可见处；在列表里点选不滚
+  const cardRef = useRef(null);
+  const setCardRef = useCallback(
+    (node) => {
+      setNodeRef(node);
+      cardRef.current = node;
+    },
+    [setNodeRef]
+  );
+  useEffect(() => {
+    if (selected) cardRef.current?.scrollIntoView({ block: 'center' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 处理箭头图标点击事件
   const handleArrowClick = (e) => {
     e.stopPropagation();
@@ -209,7 +231,7 @@ const SortableItemComponent = ({
 
   return (
     <Box
-      ref={homeCards ? setNodeRef : undefined}
+      ref={homeCards ? setCardRef : undefined}
       style={homeCards ? style : undefined}
       sx={
         homeCards

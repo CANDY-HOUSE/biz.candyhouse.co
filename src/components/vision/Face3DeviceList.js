@@ -4,6 +4,9 @@ import { Box, Typography, Card, CardActionArea, IconButton, Button, ButtonBase }
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
+import SquareRoundedIcon from '@mui/icons-material/SquareRounded';
+import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
+import AppsRoundedIcon from '@mui/icons-material/AppsRounded';
 import { ios, homeCards, hoverSx } from '@/theme/appHomeStyle';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import WifiIcon from '@mui/icons-material/Wifi';
@@ -14,6 +17,7 @@ import { carryFace3Live, Face3LiveSlot, useFace3Context } from './face3Context';
 import { selectFace3Protocol } from './protocols';
 import { relativeTime } from './face3Utils';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
+import { useMasterDetail } from '@/components/MasterDetail';
 import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
 import { gConfig } from '@constants/gConfig';
@@ -25,11 +29,12 @@ import { gConfig } from '@constants/gConfig';
  * 30 秒是个折中：用户手动下拉之外还能自己变，又不会把 WS 刷满。 */
 const REFRESH_INTERVAL_MS = 30000;
 
-/** 设备详情页地址（Face3 的录像卡片在里面，手机上默认显示录像）。参数与 useNavigateUtils 一致。 */
-const face3DetailLocation = (device, companyDevices) => {
+/** 设备详情页地址（Face3 的录像卡片在里面，手机上默认显示录像）。参数与 useNavigateUtils 一致。
+ *  宽屏 PC 改去设备页，由列表旁的详情面板显示这台。 */
+const face3DetailLocation = (device, companyDevices, pathname = '/biz/access-control/region') => {
   const listed = companyDevices.find((d) => d.deviceUUID?.toUpperCase() === device.deviceUUID?.toUpperCase());
   return {
-    pathname: '/biz/access-control/region',
+    pathname,
     search: createSearchParams({
       ...(isAppHome ? { appHome: '1', fromType: 'app' } : {}),
       deviceUUID: device.deviceUUID,
@@ -40,6 +45,46 @@ const face3DetailLocation = (device, companyDevices) => {
   };
 };
 
+const gridColumnsKey = 'face3GridColumns';
+
+/* 宽屏宫格的列数由用户选，存在本机；localStorage 在无痕/禁用存储时会抛，读不到就用默认的两列 */
+const savedGridColumns = () => {
+  try {
+    return Number(localStorage.getItem(gridColumnsKey)) || null;
+  } catch {
+    return null;
+  }
+};
+
+const GridColumnsToggle = ({ value, onChange }) => (
+  <Box role="radiogroup" sx={{ display: 'flex', p: '2px', bgcolor: ios.fill, borderRadius: '9px' }}>
+    {[
+      [1, SquareRoundedIcon],
+      [2, GridViewRoundedIcon],
+      [3, AppsRoundedIcon],
+    ].map(([columns, Icon]) => (
+      <ButtonBase
+        key={columns}
+        role="radio"
+        aria-checked={value === columns}
+        aria-label={`${columns}`}
+        onClick={() => onChange(columns)}
+        sx={{
+          width: 40,
+          height: 28,
+          borderRadius: '7px',
+          color: value === columns ? ios.label : ios.secondaryLabel,
+          bgcolor: value === columns ? ios.card : 'transparent',
+          boxShadow: value === columns ? '0 3px 8px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.04)' : 'none',
+          transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+        }}
+      >
+        <Icon sx={{ fontSize: 18 }} />
+      </ButtonBase>
+    ))}
+  </Box>
+);
+
 /**
  * 一台设备一张卡：上面是预览区，下面一行名称。
  *
@@ -47,7 +92,7 @@ const face3DetailLocation = (device, companyDevices) => {
  * 预览区现在是空的 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接在预览区放 <img> 即可，版式不用动。
  */
-const DeviceCard = ({ device, onOpen, onWake, isViewing, alone = false }) => {
+const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
   const { t } = useTranslation();
   const name = device.deviceName || device.deviceUUID;
   const online = device.stateInfo?.wm2State === true;
@@ -60,7 +105,6 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing, alone = false }) => {
           bgcolor: ios.card,
           borderRadius: ios.cardRadius,
           overflow: 'hidden',
-          ...(alone && { containerType: 'inline-size' }),
         }}
       >
         <ButtonBase
@@ -108,8 +152,6 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing, alone = false }) => {
             mx: '12px',
             mb: '12px',
             aspectRatio: '16 / 9',
-            // 宽屏只有一台时占满整行；画面最高到窗口底部（扣掉顶栏、名称行和边距），一屏放得下
-            ...(alone && { aspectRatio: 'auto', height: 'min(calc((100cqw - 24px) * 9 / 16), calc(100dvh - 164px))' }),
             borderRadius: '16px',
             overflow: 'hidden',
             background: 'linear-gradient(160deg, #3A3A3C 0%, #1C1C1E 100%)',
@@ -269,7 +311,9 @@ export default function Face3DeviceList() {
   /* 全局 context 只用于添加设备菜单（扫码绑定）；Face3 的数据、AI 开关、实时会话从 useFace3Context() 取 */
   const { gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const face3 = useFace3Context();
+  const masterDetail = useMasterDetail();
   const [attempt, setAttempt] = useState(0);
+  const [pickedColumns, setPickedColumns] = useState(savedGridColumns);
   const floatingAddRef = useRef(null);
 
   /* 只取出要用的那个函数作依赖，不要把整个对象放进依赖：对象换引用会让 effect 重跑、再发一次 list，
@@ -321,6 +365,16 @@ export default function Face3DeviceList() {
   }, []);
 
   const face3Devices = face3.devices;
+  const wideGrid = !isAppHome && homeCards;
+  const gridColumns = pickedColumns || 2;
+  const pickColumns = (columns) => {
+    setPickedColumns(columns);
+    try {
+      localStorage.setItem(gridColumnsKey, String(columns));
+    } catch {
+      /* 存不下就只在本次页面内生效 */
+    }
+  };
 
   /* 实时画面是 Face3Provider 里的会话（同一时刻一路），换页面不断开；关闭按钮在画面里，关了即结束会话 */
 
@@ -425,17 +479,18 @@ export default function Face3DeviceList() {
 
   return (
     <SesameFloatingAdd ref={floatingAddRef} isMobile={!gStripe.isFromApp} popupComponent={addDeviceMenu}>
-      {/* APP 一行一个；浏览器够宽时宫格：1 台占满，4 台以内两列，再多三列 */}
+      {wideGrid && (
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'flex-end', px: '16px', pt: '8px' }}>
+          <GridColumnsToggle value={gridColumns} onChange={pickColumns} />
+        </Box>
+      )}
+      {/* APP 一行一个；浏览器够宽时宫格：按用户选的一列 / 两列 / 三列，没选过是两列 */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns:
-            isAppHome || !homeCards
-              ? 'minmax(0, 1fr)'
-              : {
-                  xs: 'minmax(0, 1fr)',
-                  md: `repeat(${face3Devices.length === 1 ? 1 : face3Devices.length <= 4 ? 2 : 3}, minmax(0, 1fr))`,
-                },
+          gridTemplateColumns: wideGrid
+            ? { xs: 'minmax(0, 1fr)', md: `repeat(${gridColumns}, minmax(0, 1fr))` }
+            : 'minmax(0, 1fr)',
           gap: homeCards ? '12px' : 2,
           p: homeCards ? '8px 16px 16px' : 2,
         }}
@@ -446,13 +501,12 @@ export default function Face3DeviceList() {
             device={d}
             onOpen={(device) =>
               /* 正在看这台就把实时画面带进详情页（见 face3Context） */
-              navigate(face3DetailLocation(device, gManageDevice.companyDevices), {
+              navigate(face3DetailLocation(device, gManageDevice.companyDevices, masterDetail ? '/' : undefined), {
                 state: carryFace3Live(device.deviceUUID),
               })
             }
             onWake={handleWake}
             isViewing={face3.liveUUID === (d.deviceUUID || '').toUpperCase()}
-            alone={!isAppHome && homeCards && face3Devices.length === 1}
           />
         ))}
       </Box>

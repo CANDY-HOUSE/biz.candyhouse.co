@@ -340,16 +340,7 @@ const Devices = () => {
           panel={
             selectedUUID && (
               <DetailPanelContext.Provider value={panel}>
-                <DeviceDetailPanel
-                  onOpenPage={() =>
-                    navigateToDeviceDetail({
-                      deviceUUID: selectedUUID,
-                      keyLevel: searchParams.get('keyLevel'),
-                      deviceModel: searchParams.get('deviceModel'),
-                      deviceName: searchParams.get('deviceName'),
-                    })
-                  }
-                />
+                <DeviceDetailPanel />
               </DetailPanelContext.Provider>
             )
           }

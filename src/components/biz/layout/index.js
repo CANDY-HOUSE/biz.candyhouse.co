@@ -8,6 +8,7 @@ import { GlobalStateContext } from '@context/GlobalContextProvider.js';
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import KeyboardDoubleArrowLeftRoundedIcon from '@mui/icons-material/KeyboardDoubleArrowLeftRounded';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
@@ -44,6 +45,17 @@ const CSUserSearchDialog = deferredComponent(() => import('@/components/cs/CSUse
 const RepairCsv = deferredComponent(() => import('@/components/cs/RepairCsv.js'));
 const YamatoShippingCsv = deferredComponent(() => import('@/components/cs/YamatoShippingCsv.js'));
 
+const navCollapsedKey = 'pcNavCollapsed';
+
+/* 浏览器侧栏收缩与否记在本机；localStorage 在无痕/禁用存储时会抛，读不到就展开 */
+const savedNavCollapsed = () => {
+  try {
+    return localStorage.getItem(navCollapsedKey) === '1';
+  } catch {
+    return false;
+  }
+};
+
 const Layout = () => {
   const navigate = useNavigate();
   const { gAuth, gStripe, gMediaType, gManageEmployee, setSnackbarValue } = useContext(GlobalStateContext);
@@ -63,7 +75,16 @@ const Layout = () => {
     padding: 4,
   };
 
-  const menuWidth = '232px';
+  const [navCollapsed, setNavCollapsed] = useState(savedNavCollapsed);
+  const collapseNav = (collapsed) => {
+    setNavCollapsed(collapsed);
+    try {
+      localStorage.setItem(navCollapsedKey, collapsed ? '1' : '0');
+    } catch {
+      /* 存不下就只在本次页面内生效 */
+    }
+  };
+  const menuWidth = navCollapsed ? '0px' : '232px';
   const headerHeight = '60px';
   const iconHeight = '60px';
 
@@ -91,9 +112,9 @@ const Layout = () => {
   }, [gStripe.customerInfo.name, open]);
 
   const SidebarContent = useMemo(() => {
-    return ({ onItemClick }) => (
+    return ({ onItemClick, onCollapse }) => (
       <>
-        <List disablePadding>
+        <List disablePadding sx={{ position: 'relative' }}>
           <ListItem
             component={'a'}
             style={{ textDecoration: 'none', color: '#111111', height: iconHeight }}
@@ -106,6 +127,22 @@ const Layout = () => {
               <img src={siteIcon} width={30} height={30} alt="icon" />
             </Box>
           </ListItem>
+          {onCollapse && (
+            <IconButton
+              onClick={onCollapse}
+              aria-label="collapse"
+              sx={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: ios.secondaryLabel,
+                '&:hover': { bgcolor: ios.fill },
+              }}
+            >
+              <KeyboardDoubleArrowLeftRoundedIcon sx={{ fontSize: 22 }} />
+            </IconButton>
+          )}
         </List>
         <Navigator location={location} onClick={onItemClick} />
       </>
@@ -130,6 +167,7 @@ const Layout = () => {
               backdropFilter: 'saturate(180%) blur(20px)',
               WebkitBackdropFilter: 'saturate(180%) blur(20px)',
               width: isMobile ? '100%' : `calc(100% - ${menuWidth})`,
+              transition: 'width 0.2s ease',
               display: isFromApp ? 'none' : 'block',
             }}
           >
@@ -146,6 +184,11 @@ const Layout = () => {
               <Box sx={{ display: 'inline-flex' }}>
                 {isMobile && (
                   <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
+                    <MenuIcon />
+                  </IconButton>
+                )}
+                {!isMobile && navCollapsed && (
+                  <IconButton edge="start" color="inherit" aria-label="expand" onClick={() => collapseNav(false)}>
                     <MenuIcon />
                   </IconButton>
                 )}
@@ -413,7 +456,10 @@ const Layout = () => {
               className="Navi"
               sx={{
                 height: '100%',
-                width: menuWidth,
+                width: '232px',
+                transform: navCollapsed ? 'translateX(-100%)' : 'none',
+                visibility: navCollapsed ? 'hidden' : 'visible',
+                transition: 'transform 0.2s ease, visibility 0.2s',
                 position: 'fixed',
                 left: '0px',
                 top: '0px',
@@ -423,7 +469,7 @@ const Layout = () => {
                 borderRight: `0.5px solid ${ios.separator}`,
               }}
             >
-              <SidebarContent />
+              <SidebarContent onCollapse={() => collapseNav(true)} />
               <BuildInfoBar />
             </Grid2>
           ) : (
@@ -457,6 +503,7 @@ const Layout = () => {
               marginTop: isFromApp ? 0 : headerHeight,
               marginLeft: isMobile || isFromApp ? '0' : menuWidth,
               width: isMobile || isFromApp ? '100%' : `calc(100% - ${menuWidth})`,
+              transition: 'margin-left 0.2s ease, width 0.2s ease',
               height: isAppHome ? 'auto' : isFromApp ? '100vh' : `calc(100vh - ${headerHeight})`,
               minHeight: appTab ? '100%' : isAppHome ? '100dvh' : undefined,
               minWidth: 0,
