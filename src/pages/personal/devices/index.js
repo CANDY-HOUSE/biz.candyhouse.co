@@ -245,11 +245,14 @@ const Devices = () => {
 
   const handleDragEnd = useCallback(
     (newData, _, newIndex) => {
-      if (!ssmDevices?.[0]?.orderKey) return;
+      if (!ssmDevices.some((device) => device.orderKey)) return;
       const moved = newData[newIndex];
       if (!moved) return;
-      const prevKey = newData[newIndex - 1]?.orderKey;
-      const nextKey = newData[newIndex + 1]?.orderKey;
+      const prevKey = newData
+        .slice(0, newIndex)
+        .reverse()
+        .find((device) => device.orderKey)?.orderKey;
+      const nextKey = newData.slice(newIndex + 1).find((device) => device.orderKey)?.orderKey;
       gManageDevice.updateDeviceOrderKey(
         { subUUID: moved.subUUID, deviceUUID: moved.deviceUUID, prevKey, nextKey },
         undefined,
@@ -306,10 +309,10 @@ const Devices = () => {
   );
 
   const handleSearch = useCallback((searchText, allData) => {
-    return allData.filter((item) => item.deviceName.includes(searchText));
+    return allData.filter((item) => item.deviceName?.includes(searchText));
   }, []);
 
-  const canDrag = !isBizRoute && Boolean(ssmDevices?.[0]?.orderKey);
+  const canDrag = !isBizRoute && ssmDevices.some((device) => device.orderKey);
   const dragEndHandler = canDrag ? handleDragEnd : undefined;
 
   const list = (
