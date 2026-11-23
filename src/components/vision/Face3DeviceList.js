@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { createSearchParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Box, Typography, Card, CardActionArea, IconButton, Button, ButtonBase } from '@mui/material';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -16,9 +16,6 @@ import { relativeTime } from './face3Utils';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
-import MasterDetail, { fabInListSx, useMasterDetail } from '@/components/MasterDetail';
-import DeviceDetailPanel from '@/components/DeviceDetailPanel';
-import { DetailPanelContext } from '@/components/detailPanelContext';
 import { gConfig } from '@constants/gConfig';
 
 /** 在线状态的刷新间隔。
@@ -50,56 +47,7 @@ const face3DetailLocation = (device, companyDevices) => {
  * 预览区现在是空的 —— 云端还没有截图字段（face3_devices 里没有），
  * 等有了直接在预览区放 <img> 即可，版式不用动。
  */
-/** 名称行：Wi-Fi、名称、离线时长，点了打开详情 */
-const NameRow = ({ device, onOpen }) => {
-  const { t } = useTranslation();
-  const name = device.deviceName || device.deviceUUID;
-  const online = device.stateInfo?.wm2State === true;
-  const lastSeenAt = device.stateInfo?.lastSeenAt;
-  return (
-    <ButtonBase
-      onClick={() => onOpen(device)}
-      sx={{
-        width: '100%',
-        minHeight: 60,
-        justifyContent: 'flex-start',
-        gap: '10px',
-        pl: '20px',
-        pr: '12px',
-        py: '14px',
-        transition: 'background-color 0.2s ease',
-        '&:active': { bgcolor: ios.pressed },
-        ...hoverSx({ bgcolor: ios.pressed }),
-      }}
-    >
-      <WifiIcon
-        aria-label={online ? t('face3.live') : t('face3.offline')}
-        sx={{ fontSize: 20, color: online ? 'rgba(60,60,67,0.85)' : ios.tertiaryLabel, flexShrink: 0 }}
-      />
-      <Typography
-        sx={{
-          minWidth: 0,
-          fontSize: 20,
-          fontWeight: 600,
-          color: ios.label,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {name}
-      </Typography>
-      {!online && (
-        <Typography sx={{ fontSize: 14, color: ios.secondaryLabel, whiteSpace: 'nowrap', flexShrink: 0 }}>
-          {lastSeenAt > 0 ? `${t('face3.offline')} · ${relativeTime(t, lastSeenAt)}` : t('face3.offline')}
-        </Typography>
-      )}
-      <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, ml: 'auto', flexShrink: 0 }} />
-    </ButtonBase>
-  );
-};
-
-const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
+const DeviceCard = ({ device, onOpen, onWake, isViewing, alone = false }) => {
   const { t } = useTranslation();
   const name = device.deviceName || device.deviceUUID;
   const online = device.stateInfo?.wm2State === true;
@@ -107,14 +55,61 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
 
   if (homeCards) {
     return (
-      <Box sx={{ bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }}>
-        <NameRow device={device} onOpen={onOpen} />
+      <Box
+        sx={{
+          bgcolor: ios.card,
+          borderRadius: ios.cardRadius,
+          overflow: 'hidden',
+          ...(alone && { containerType: 'inline-size' }),
+        }}
+      >
+        <ButtonBase
+          onClick={() => onOpen(device)}
+          sx={{
+            width: '100%',
+            minHeight: 60,
+            justifyContent: 'flex-start',
+            gap: '10px',
+            pl: '20px',
+            pr: '12px',
+            py: '14px',
+            transition: 'background-color 0.2s ease',
+            '&:active': { bgcolor: ios.pressed },
+            ...hoverSx({ bgcolor: ios.pressed }),
+          }}
+        >
+          <WifiIcon
+            aria-label={online ? t('face3.live') : t('face3.offline')}
+            sx={{ fontSize: 20, color: online ? 'rgba(60,60,67,0.85)' : ios.tertiaryLabel, flexShrink: 0 }}
+          />
+          <Typography
+            sx={{
+              minWidth: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: ios.label,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {name}
+          </Typography>
+          {!online && (
+            <Typography sx={{ fontSize: 14, color: ios.secondaryLabel, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {lastSeenAt > 0 ? `${t('face3.offline')} · ${relativeTime(t, lastSeenAt)}` : t('face3.offline')}
+            </Typography>
+          )}
+          <KeyboardArrowRightIcon sx={{ fontSize: 22, color: ios.tertiaryLabel, ml: 'auto', flexShrink: 0 }} />
+        </ButtonBase>
         <Box
           sx={{
             position: 'relative',
             mx: '12px',
             mb: '12px',
             aspectRatio: '16 / 9',
+            // 宽屏只有一台时占满整行；画面最高到窗口底部（扣掉顶栏、名称行和边距），一屏放得下
+            ...(alone && { aspectRatio: 'auto', height: 'min(calc((100cqw - 24px) * 9 / 16), calc(100dvh - 164px))' }),
             borderRadius: '16px',
             overflow: 'hidden',
             background: 'linear-gradient(160deg, #3A3A3C 0%, #1C1C1E 100%)',
@@ -339,49 +334,12 @@ export default function Face3DeviceList() {
      等列表里有这台再开（App 冷启动时列表要先拉回来）；开过就把参数去掉，
      免得刷新或返回时再开一次。列表里没有这台（已解绑/无权限）就静默忽略。 */
   const [searchParams, setSearchParams] = useSearchParams();
-
-  /* 浏览器够宽时左边列表、右边详情（与设备页同一套面板）。实时画面只在详情面板里看：
-     换到别的设备时停掉正在看的那路，不然它在后台继续占着连接。 */
-  const masterDetail = useMasterDetail();
-  const selectedUUID = masterDetail ? (searchParams.get('deviceUUID') || '').toUpperCase() : '';
-  const isSelected = (d) => (d.deviceUUID || '').toUpperCase() === selectedUUID;
-  const selectFace3 = useCallback(
-    (device) => {
-      const uuid = (device?.deviceUUID || '').toUpperCase();
-      if (face3.liveUUID && face3.liveUUID !== uuid) face3.stop();
-      navigate(
-        { pathname: '/vision', search: device ? face3DetailLocation(device, gManageDevice.companyDevices).search : '' },
-        { replace: true }
-      );
-    },
-    [face3, navigate, gManageDevice.companyDevices]
-  );
-  const removedUUIDs = useRef([]);
-  const firstFace3 = face3Devices.find((d) => !removedUUIDs.current.includes((d.deviceUUID || '').toUpperCase()));
-  useEffect(() => {
-    if (masterDetail && !selectedUUID && firstFace3) selectFace3(firstFace3);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [masterDetail, selectedUUID, firstFace3?.deviceUUID]);
-  const panel = useMemo(
-    () => ({
-      onRemoved: (uuid) => {
-        removedUUIDs.current.push(String(uuid || '').toUpperCase());
-        selectFace3(null);
-      },
-    }),
-    [selectFace3]
-  );
-
   const liveUUID = searchParams.get('live') === '1' ? (searchParams.get('deviceUUID') || '').toUpperCase() : '';
   useEffect(() => {
     if (!liveUUID) return;
     const device = face3Devices.find((d) => (d.deviceUUID || '').toUpperCase() === liveUUID);
     if (!device) return;
     handleWake(device);
-    if (masterDetail) {
-      selectFace3(device);
-      return;
-    }
     setSearchParams(
       (params) => {
         const next = new URLSearchParams(params);
@@ -465,61 +423,19 @@ export default function Face3DeviceList() {
     );
   }
 
-  if (masterDetail) {
-    return (
-      <MasterDetail
-        listWidth={360}
-        list={
-          <SesameFloatingAdd
-            ref={floatingAddRef}
-            isMobile={!gStripe.isFromApp}
-            popupComponent={addDeviceMenu}
-            fabSx={fabInListSx}
-          >
-            <Box sx={{ display: 'grid', gap: '12px', p: '8px 16px 16px' }}>
-              {face3Devices.map((d) => (
-                <Box
-                  key={d.deviceUUID}
-                  sx={{
-                    bgcolor: ios.card,
-                    borderRadius: ios.cardRadius,
-                    overflow: 'hidden',
-                    boxShadow: isSelected(d) ? `inset 0 0 0 2px ${ios.tint}` : 'none',
-                  }}
-                >
-                  <NameRow device={d} onOpen={selectFace3} />
-                </Box>
-              ))}
-            </Box>
-          </SesameFloatingAdd>
-        }
-        placeholder={<VisionIcon width={72} height={72} />}
-        panel={
-          selectedUUID && (
-            <DetailPanelContext.Provider value={panel}>
-              <DeviceDetailPanel
-                onOpenPage={() => {
-                  const device = face3Devices.find(isSelected) || { deviceUUID: selectedUUID };
-                  navigate(face3DetailLocation(device, gManageDevice.companyDevices), {
-                    state: carryFace3Live(device.deviceUUID),
-                  });
-                }}
-              />
-            </DetailPanelContext.Provider>
-          )
-        }
-      />
-    );
-  }
-
   return (
     <SesameFloatingAdd ref={floatingAddRef} isMobile={!gStripe.isFromApp} popupComponent={addDeviceMenu}>
-      {/* 手机一行一个；浏览器够宽时并排 */}
+      {/* APP 一行一个；浏览器够宽时宫格：1 台占满，4 台以内两列，再多三列 */}
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns:
-            isAppHome || !homeCards ? 'minmax(0, 1fr)' : 'repeat(auto-fill, minmax(min(100%, 380px), 1fr))',
+            isAppHome || !homeCards
+              ? 'minmax(0, 1fr)'
+              : {
+                  xs: 'minmax(0, 1fr)',
+                  md: `repeat(${face3Devices.length === 1 ? 1 : face3Devices.length <= 4 ? 2 : 3}, minmax(0, 1fr))`,
+                },
           gap: homeCards ? '12px' : 2,
           p: homeCards ? '8px 16px 16px' : 2,
         }}
@@ -536,6 +452,7 @@ export default function Face3DeviceList() {
             }
             onWake={handleWake}
             isViewing={face3.liveUUID === (d.deviceUUID || '').toUpperCase()}
+            alone={!isAppHome && homeCards && face3Devices.length === 1}
           />
         ))}
       </Box>
