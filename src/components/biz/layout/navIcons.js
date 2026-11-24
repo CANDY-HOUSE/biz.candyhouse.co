@@ -107,5 +107,5 @@ export const navIconMap = {
   schedule: EventNoteOutlinedIcon,
   developer: CodeRoundedIcon,
   support: HelpOutlineRoundedIcon,
-  plan: SettingsOutlinedIcon,
+  settings: SettingsOutlinedIcon,
 };

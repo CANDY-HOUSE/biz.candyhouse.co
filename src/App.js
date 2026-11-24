@@ -37,7 +37,7 @@ import AppLocationDisclosure from './components/AppLocationDisclosure';
 import { isAppHome } from './services/deviceService';
 
 const BizHomePage = deferredComponent(() => import('@biz/home'));
-const Plan = deferredComponent(() => import('@biz/plan'));
+const Settings = deferredComponent(() => import('@biz/settings'));
 
 Amplify.configure(awsconfig);
 
@@ -145,7 +145,7 @@ const AppContent = () => {
           {isAppHome && <Route path="/app/register" element={<AppRegistration />} />}
           <Route path="/biz" element={<BizHomePage />} />
           {generateRoutes(allowedRoutes)}
-          <Route path="/biz/plan" element={<Plan />} />
+          <Route path="/biz/settings" element={<Settings />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
