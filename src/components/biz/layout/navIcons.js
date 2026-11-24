@@ -8,7 +8,7 @@ import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import CodeRoundedIcon from '@mui/icons-material/CodeRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
-import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 
 const SvgIcon = ({ children, size = 24, viewBox = '0 0 24 24', sx = {} }) => {
   return (
@@ -107,5 +107,5 @@ export const navIconMap = {
   schedule: EventNoteOutlinedIcon,
   developer: CodeRoundedIcon,
   support: HelpOutlineRoundedIcon,
-  plan: ReceiptLongOutlinedIcon,
+  plan: SettingsOutlinedIcon,
 };
