@@ -81,6 +81,7 @@ export function Face3Provider({ children }) {
     deleteFace3Recording,
     wakeFace3Device,
     viewFace3Device,
+    synthesizeFace3Speech,
   } = gFace3;
 
   /* ── AI 开关 ── */
@@ -261,6 +262,7 @@ export function Face3Provider({ children }) {
             streamReason={face3StreamReasons?.[liveDeviceUUID]}
             wakeFace3Device={wakeFace3Device}
             viewFace3Device={viewFace3Device}
+            synthesizeFace3Speech={synthesizeFace3Speech}
             setSnackbarValue={setSnackbarValue}
           />,
           hostEl

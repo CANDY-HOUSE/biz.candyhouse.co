@@ -637,6 +637,20 @@
     "camera": "摄像头",
     "speaker": "播放声音",
     "volume": "音量",
+    "speech": {
+      "open": "文字转语音",
+      "title": "让门铃说话",
+      "placeholder": "输入文字，门铃会用合成语音说出来",
+      "send": "发送",
+      "stop": "停止",
+      "synthesizing": "合成中",
+      "close": "关闭",
+      "failed": "语音发送失败，请重试",
+      "tooLong": "内容太长，请缩短后再发送",
+      "voice": "声音",
+      "female": "女声",
+      "male": "男声"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "开启 AI 需要先登录"

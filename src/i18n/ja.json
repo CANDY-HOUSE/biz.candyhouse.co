@@ -637,6 +637,20 @@
     "camera": "カメラ",
     "speaker": "音声再生",
     "volume": "音量",
+    "speech": {
+      "open": "テキスト読み上げ",
+      "title": "ドアホンから話す",
+      "placeholder": "入力した文字をドアホンが音声で読み上げます",
+      "send": "送信",
+      "stop": "停止",
+      "synthesizing": "音声を作成中",
+      "close": "閉じる",
+      "failed": "音声を送信できませんでした。もう一度お試しください",
+      "tooLong": "文字が長すぎます。短くしてから送信してください",
+      "voice": "声",
+      "female": "女性の声",
+      "male": "男性の声"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "AIをオンにするにはログインしてください。"

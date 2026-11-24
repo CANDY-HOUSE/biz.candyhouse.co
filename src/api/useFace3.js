@@ -56,6 +56,16 @@ const useFace3 = () => {
       recordingRequests.current.request('eventRecPlay', { deviceId: deviceUUID.toUpperCase(), recId }, signal),
     []
   );
+  /**
+   * 文字合成语音（云端 Polly），用来在实时画面里"打字说话"。
+   * 只有绑过这台设备的人能用；回 { success, data: { audio: MP3 的 base64, gender: 实际用的性别 } }。
+   * lang 传界面语言，gender 传 'female' | 'male'（不传为女声），云端按白名单选音色；没有男声的语言（普通话）用女声。
+   */
+  const synthesizeFace3Speech = useCallback(
+    (deviceUUID, text, lang, gender, signal) =>
+      recordingRequests.current.request('tts', { deviceId: deviceUUID.toUpperCase(), text, lang, gender }, signal),
+    []
+  );
   /** 删一段录像（云端记录和 S3 文件）。只有拥有者 / 管理员能删，访客回 no_permission。 */
   const deleteFace3Recording = useCallback(
     (deviceUUID, recId, signal) =>
@@ -220,6 +230,7 @@ const useFace3 = () => {
     listFace3Recordings,
     playFace3Recording,
     deleteFace3Recording,
+    synthesizeFace3Speech,
     listFace3Devices,
     sendFace3Command,
     wakeFace3Device,

@@ -637,6 +637,20 @@
     "camera": "攝影機",
     "speaker": "播放聲音",
     "volume": "音量",
+    "speech": {
+      "open": "文字轉語音",
+      "title": "讓門鈴說話",
+      "placeholder": "輸入文字，門鈴會用合成語音說出來",
+      "send": "傳送",
+      "stop": "停止",
+      "synthesizing": "合成中",
+      "close": "關閉",
+      "failed": "語音傳送失敗，請重試",
+      "tooLong": "內容太長，請縮短後再傳送",
+      "voice": "聲音",
+      "female": "女聲",
+      "male": "男聲"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "開啟 AI 需要先登入"

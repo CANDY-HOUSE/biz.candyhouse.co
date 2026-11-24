@@ -637,6 +637,20 @@
     "camera": "Camera",
     "speaker": "Play sound",
     "volume": "Volume",
+    "speech": {
+      "open": "Text to speech",
+      "title": "Speak through the doorbell",
+      "placeholder": "Type a message and the doorbell will read it aloud",
+      "send": "Send",
+      "stop": "Stop",
+      "synthesizing": "Generating",
+      "close": "Close",
+      "failed": "Couldn't send the voice message. Please try again.",
+      "tooLong": "Too long. Please shorten it and try again.",
+      "voice": "Voice",
+      "female": "Female",
+      "male": "Male"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "Sign in to turn on AI."

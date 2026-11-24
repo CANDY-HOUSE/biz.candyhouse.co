@@ -7,6 +7,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import KeyboardOutlinedIcon from '@mui/icons-material/KeyboardOutlined';
 import { useTranslation } from 'react-i18next';
 import { getFace3ViewerEnvironmentError, kvsProtocol, protocolForMode } from './protocols';
 import {
@@ -21,6 +22,7 @@ import {
 } from './face3Utils';
 import { Face3LiveToolbar, RecordingClock } from './Face3Toolbar';
 import { logOperationFailure } from '@/services/operationFailure';
+import Face3SpeechDialog from './Face3SpeechDialog';
 
 /** 取凭证的等待上限。sendMessage 断网时是静默丢弃的，没有回包。 */
 const CRED_TIMEOUT_MS = 15000;
@@ -200,6 +202,7 @@ function Face3LiveView({
   streamReason,
   wakeFace3Device,
   viewFace3Device,
+  synthesizeFace3Speech,
   setSnackbarValue,
 }) {
   const { t } = useTranslation();
@@ -421,6 +424,10 @@ function Face3LiveView({
   const mediaStatesRef = useRef(mediaStates);
   mediaStatesRef.current = mediaStates;
   const [mediaControlsReady, setMediaControlsReady] = useState(false);
+  /* 打字说话：观看端支持（目前只有 KVS）才显示键盘；合成 / 播放期间合成语音占着音频轨，话筒开关禁用 */
+  const [speechAvailable, setSpeechAvailable] = useState(false);
+  const [speechOpen, setSpeechOpen] = useState(false);
+  const [speechStatus, setSpeechStatus] = useState('idle');
   const [observationUnsupported, setObservationUnsupported] = useState(false);
   // 通话中连接短暂断开、正在等 ICE 恢复（见 protocols/kvsViewer.js 的 DISCONNECT_GRACE_MS）。
   const [reconnecting, setReconnecting] = useState(false);
@@ -522,6 +529,8 @@ function Face3LiveView({
     setPhase('connecting');
     setMediaStates({ camera: 'disabled', microphone: 'disabled' });
     setMediaControlsReady(false);
+    setSpeechAvailable(false);
+    setSpeechStatus('idle');
     setObservationUnsupported(false);
     setReconnectingNow(false);
     /* 自动重连沿用断开前的扬声器状态；手动重试/首次进入照旧从静音起。
@@ -691,7 +700,10 @@ function Face3LiveView({
         });
         // 防御同步失败回调，不能把已取消的Viewer留在ref里。
         if (cancelled) viewer?.close();
-        else viewerRef.current = viewer;
+        else {
+          viewerRef.current = viewer;
+          setSpeechAvailable(Boolean(viewer?.playSpeech));
+        }
       } catch {
         fail('face3.errLiveUnknown');
       }
@@ -1336,7 +1348,7 @@ function Face3LiveView({
           <IconButton
             aria-label={t('face3.microphone')}
             aria-pressed={mediaStates.microphone === 'enabled'}
-            disabled={!mediaControlsReady}
+            disabled={!mediaControlsReady || speechStatus !== 'idle'}
             onClick={() => toggleLocalMedia('microphone')}
             sx={overlayToggleSx}
           >
@@ -1356,7 +1368,33 @@ function Face3LiveView({
           >
             {speakerEnabled ? <VolumeUpIcon /> : <VolumeOffIcon />}
           </IconButton>
+          {speechAvailable && synthesizeFace3Speech && (
+            <IconButton
+              aria-label={t('face3.speech.open')}
+              disabled={!mediaControlsReady}
+              onClick={() => setSpeechOpen(true)}
+              sx={overlayToggleSx}
+            >
+              {speechStatus === 'idle' ? (
+                <KeyboardOutlinedIcon />
+              ) : (
+                <CircularProgress size={20} sx={{ color: 'common.white' }} />
+              )}
+            </IconButton>
+          )}
         </Box>
+      )}
+
+      {speechAvailable && synthesizeFace3Speech && (
+        <Face3SpeechDialog
+          open={speechOpen && phase === 'playing'}
+          onClose={() => setSpeechOpen(false)}
+          deviceUUID={deviceUUID}
+          viewerRef={viewerRef}
+          synthesize={synthesizeFace3Speech}
+          onStatusChange={setSpeechStatus}
+          onFailure={(key) => notify('warning', key)}
+        />
       )}
 
       {/* 其余工具（拍照、录制、视频对讲）：不叠在画面上，渲染到父组件给的位置（详情页画面下方）。

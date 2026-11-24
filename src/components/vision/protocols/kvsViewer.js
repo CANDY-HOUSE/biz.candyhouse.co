@@ -26,6 +26,9 @@ const DISCONNECT_GRACE_MS = 15000;
 const CAMERA_STREAM_FPS = 15;
 // WebRTC maxBitrate uses bits per second (256 kbps).
 const CAMERA_MAX_BITRATE_BPS = 256000;
+/* 合成语音：开播前等设备开喇叭（收到"话筒开着"后才开），播完再留一点尾巴，免得首尾被吞 */
+const SPEECH_LEAD_MS = 300;
+const SPEECH_TAIL_MS = 300;
 
 /**
  * 重发 offer 的间隔。
@@ -113,7 +116,8 @@ export function getFace3ViewerEnvironmentError() {
  * @param {({kind: string, reason: string}) => void} [handlers.onLocalMediaError] 本地媒体不可用，不中断仍可用的通话
  * @param {() => void} [handlers.onEnded] 已建立的通话中断，关闭本地媒体后通知UI
  * @param {({kind: string, state: string}) => void} [handlers.onLocalMediaState] 本地媒体开关状态
- * @returns {{ close: () => void, setCameraEnabled?: (enabled: boolean) => void, setMicrophoneEnabled?: (enabled: boolean) => void }} 调用方必须在卸载时 close()
+ * @returns {{ close: () => void, setCameraEnabled?: (enabled: boolean) => void, setMicrophoneEnabled?: (enabled: boolean) => void,
+ *   unlockSpeech?: () => void, playSpeech?: (audio: ArrayBuffer) => Promise<'done'|'cancelled'>, stopSpeech?: () => void }} 调用方必须在卸载时 close()
  */
 export function startFace3Viewer(
   cfg,
@@ -145,6 +149,9 @@ export function startFace3Viewer(
       },
     ])
   );
+  /* 文字转语音：合成好的一段音频经 WebAudio 变成音频轨，播放期间顶替话筒轨发给设备（见 playSpeech） */
+  let speechContext = null;
+  let speech = null;
   let closed = false;
   let timer = null;
   let offerTimer = null;
@@ -201,6 +208,9 @@ export function startFace3Viewer(
     clearInterval(statsTimer);
     clearTimeout(controlTimer);
     mediaSetupTimers.forEach(clearTimeout);
+    stopSpeech();
+    speechContext?.close().catch(() => {});
+    speechContext = null;
     Object.values(mediaControllers).forEach((controller) => {
       controller.generation += 1;
       controller.cancel?.();
@@ -378,7 +388,8 @@ export function startFace3Viewer(
     controlSequence = (controlSequence % 1000000000) + 1;
     try {
       const camera = Number(mediaControllers.camera.enabled);
-      const microphone = Number(mediaControllers.microphone.enabled);
+      /* 设备只在观看端报"话筒开着"时打开喇叭：播放合成语音期间也要报开着 */
+      const microphone = Number(mediaControllers.microphone.enabled || Boolean(speech));
       controlChannel.send(`F3M1:${controlSequence}:${camera}:${microphone}`);
       if (!controlReady && !controlTimer) controlTimer = setTimeout(observationUnsupported, 8000);
     } catch {
@@ -551,6 +562,97 @@ export function startFace3Viewer(
     };
     open().catch(mediaFailed);
   };
+
+  /* ── 文字转语音：把一段合成好的音频当作话筒声音发给设备 ──────────────────
+   * 合成语音经 WebAudio（BufferSource → MediaStreamDestination）变成一条音频轨，播放期间用
+   * replaceTrack 顶替话筒轨，播完换回（话筒开着就换回话筒，关着就换回空）。与话筒的附轨 / 摘轨
+   * 共用 microphone 的队列，按顺序执行。
+   * 设备只在观看端报"话筒开着"时开喇叭（固件 Common.c），所以播放期间 sendMediaState 报开着，
+   * 并在开播前留一点时间给设备开喇叭、播完留一点尾巴，免得开头 / 结尾被吞。
+   * 用 function 声明：close() 在前面就会调用 stopSpeech。 */
+  function microphoneTrack() {
+    return mediaControllers.microphone.enabled ? microphoneStream?.getAudioTracks()[0] || null : null;
+  }
+
+  /** 在点击回调里同步调用：iOS / WebView 只允许在用户手势里启动 AudioContext */
+  function unlockSpeech() {
+    if (closed) return;
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) return;
+    if (!speechContext) speechContext = new Context();
+    if (speechContext.state === 'suspended') speechContext.resume().catch(() => {});
+  }
+
+  /** 停掉正在播的合成语音（没有就什么都不做），音频轨换回话筒 / 空 */
+  function stopSpeech() {
+    const current = speech;
+    if (!current) return;
+    speech = null;
+    clearTimeout(current.timer);
+    try {
+      current.source.onended = null;
+      if (current.started) current.source.stop();
+    } catch {
+      /* 已停 */
+    }
+    current.output.stream.getTracks().forEach((track) => track.stop());
+    if (!closed && audioTr) {
+      const controller = mediaControllers.microphone;
+      controller.queue = controller.queue.catch(() => {}).then(() => audioTr.sender.replaceTrack(microphoneTrack()));
+      controller.queue.catch(() => {});
+      sendMediaState();
+    }
+    current.resolve(current.result);
+  }
+
+  /**
+   * 把一段音频（MP3 等浏览器能解码的格式）发给设备播放。
+   * @param {ArrayBuffer} audioData
+   * @returns {Promise<'done'|'cancelled'>} 播完为 done；被 stopSpeech / 新的一段 / 关闭打断为 cancelled
+   */
+  async function playSpeech(audioData) {
+    if (closed || !answerApplied || !audioTr) throw new Error('not_ready');
+    unlockSpeech();
+    if (!speechContext) throw new DOMException('Web Audio unavailable', 'NotSupportedError');
+    stopSpeech();
+    const buffer = await speechContext.decodeAudioData(audioData.slice(0));
+    if (closed) return 'cancelled';
+    const output = speechContext.createMediaStreamDestination();
+    const source = speechContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(output);
+    const track = output.stream.getAudioTracks()[0];
+    return new Promise((resolve) => {
+      const current = { source, output, resolve, result: 'cancelled', started: false, timer: null };
+      speech = current;
+      sendMediaState();
+      const controller = mediaControllers.microphone;
+      controller.queue = controller.queue
+        .catch(() => {})
+        .then(() => (speech === current ? audioTr.sender.replaceTrack(track) : undefined));
+      controller.queue
+        .then(() => {
+          if (speech !== current) return;
+          current.timer = setTimeout(() => {
+            if (speech !== current) return;
+            source.onended = () => {
+              current.timer = setTimeout(() => {
+                if (speech !== current) return;
+                current.result = 'done';
+                stopSpeech();
+              }, SPEECH_TAIL_MS);
+            };
+            current.started = true;
+            source.start();
+            logi('speech playing', { seconds: Math.round(buffer.duration * 10) / 10 });
+          }, SPEECH_LEAD_MS);
+        })
+        .catch((error) => {
+          logi('speech failed', error?.name);
+          if (speech === current) stopSpeech();
+        });
+    });
+  }
 
   /* ontrack **每条轨道各触发一次**：这里声明了 video + audio 两个 sendrecv
      transceiver，所以会来两次，而且 e.streams[0] 是同一个 MediaStream。
@@ -870,5 +972,8 @@ export function startFace3Viewer(
     close,
     setCameraEnabled: (enabled) => setLocalMediaEnabled('camera', enabled),
     setMicrophoneEnabled: (enabled) => setLocalMediaEnabled('microphone', enabled),
+    unlockSpeech,
+    playSpeech,
+    stopSpeech,
   };
 }
