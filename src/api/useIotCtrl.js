@@ -224,6 +224,21 @@ export const useIotCtrl = (gAuth, gStripe, gManageDevice) => {
           case gConfig.cmdCode.HUB3_ITEM_CODE_CLEAR_WIFI_SSID:
             break;
 
+          case gConfig.cmdCode.HUB3_ITEM_CODE_ACCESS_MODE:
+            {
+              // Hub3 Pro 接入方式：payload = [mode(1B)]，0=自动 1=有线LAN 2=WiFi 3=SIM
+              const mode = iotPayload.mode;
+              if (!Number.isInteger(mode) || mode < 0 || mode > 3) {
+                console.error('Invalid access mode:', mode);
+                return;
+              }
+              const newPayloadArray = new Uint8Array(payloadArray.length + 1);
+              newPayloadArray.set(payloadArray, 0);
+              newPayloadArray[payloadArray.length] = mode;
+              payloadArray = newPayloadArray;
+            }
+            break;
+
           default:
             console.warn('Unsupported cmd for iotPayload:', cmd);
             break;

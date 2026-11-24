@@ -23,4 +23,11 @@ export const gConfig = {
     off: 0,
     on: 1,
   },
+  // Hub3 Pro 接入方式（与固件 net_type_t 一致）
+  hub3AccessMode: {
+    auto: 0,
+    ethernet: 1,
+    wifi: 2,
+    lte: 3,
+  },
 };

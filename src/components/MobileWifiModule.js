@@ -1,5 +1,6 @@
 import PageHeader from '@/components/PageHeader';
 import WifiNetworkStatus from './WifiNetworkStatus';
+import Hub3ProNetworkSwitch, { resolveNetSwitchInfo } from './Hub3ProNetworkSwitch';
 import PeripheralDeviceSetting from './PeripheralDeviceSetting';
 import AppHubWifi from './AppHubWifi';
 import { deviceDetailFor } from '@/services/deviceDetail';
@@ -149,6 +150,8 @@ const ExistingWifiModule = () => {
     return !!currentDevice.deviceModel;
   }, [isFromApp, currentDevice.deviceModel]);
 
+  const hub3ProActiveNet = resolveNetSwitchInfo(currentDevice.stateInfo?.netSwitchInfo)?.active;
+
   useEffect(() => {
     if (!currentDevice.secretKey) {
       return;
@@ -271,6 +274,19 @@ const ExistingWifiModule = () => {
       saveHub3LedPercent(did, newValue);
     },
     [currentDevice]
+  );
+
+  // Hub3 Pro 接入方式：下发后设备经 shadow 上报 net_switch_info.mode，页面据此确认
+  const handleSetAccessMode = useCallback(
+    (mode) => {
+      gIot.sendCommandToHub3WithConnectionId({
+        device_id: did,
+        cmd: gConfig.cmdCode.HUB3_ITEM_CODE_ACCESS_MODE,
+        secretKey: currentDevice.secretKey,
+        iotPayload: { mode: gConfig.hub3AccessMode[mode] },
+      });
+    },
+    [currentDevice, did, gIot]
   );
 
   const handleClearWiFiSSID = useCallback(() => {
@@ -504,9 +520,21 @@ const ExistingWifiModule = () => {
             resolved={isDeviceInfoResolved}
             hub3Pro={isHub3Pro}
             connectivity={networkConnectivity}
+            activeNet={hub3ProActiveNet}
           />
         </ListItem>
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
+        {/* 仅 Hub3 Pro：当前网络 / 网络切换次数 / 接入方式（内联展开） */}
+        {isHub3Pro && (
+          <>
+            <Hub3ProNetworkSwitch
+              info={currentDevice.stateInfo?.netSwitchInfo}
+              connectivity={networkConnectivity}
+              onSetAccessMode={handleSetAccessMode}
+            />
+            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          </>
+        )}
         <UpgradeFirmware device={currentDevice} bleAvailable={bleAvailable} />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         <SliderItem
