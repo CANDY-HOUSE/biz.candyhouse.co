@@ -86,7 +86,7 @@ const DeleteConfirm = ({ t, onCancel, onConfirm }) => {
   );
 };
 
-export default function Settings() {
+export default function Plan() {
   const { gStripe, setCustomModalOpen, setModalContent, setCustomModalKeep, setSnackbarValue, gMediaType } =
     useContext(GlobalStateContext);
   const { t } = useTranslation();
@@ -155,7 +155,7 @@ export default function Settings() {
             done();
             if (!res.success) {
               setSnackbarValue({
-                logScope: 'pages/biz/settings/index.confirmDelete',
+                logScope: 'pages/biz/plan/index.confirmDelete',
                 open: true,
                 msg: res.message,
                 severity: 'error',
@@ -199,7 +199,7 @@ export default function Settings() {
                   callback && callback();
                   if (!_res.success) {
                     setSnackbarValue({
-                      logScope: 'pages/biz/settings/index.callUpdate',
+                      logScope: 'pages/biz/plan/index.callUpdate',
                       severity: 'error',
                       open: true,
                       msg: _res.message,
@@ -247,7 +247,7 @@ export default function Settings() {
         <CardHeader
           title={
             <Typography variant="h2" sx={{ ml: '9px' }}>
-              設定
+              {t('navigator.Plan')}
             </Typography>
           }
         />

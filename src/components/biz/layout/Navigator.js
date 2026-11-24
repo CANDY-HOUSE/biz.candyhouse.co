@@ -68,13 +68,7 @@ export default function Navigator({ location, onClick }) {
             onClick={onClick}
           />
         )}
-        <NavigatorItem
-          to="/biz/settings"
-          name={t('navigator.Settings')}
-          icon="settings"
-          location={location}
-          onClick={onClick}
-        />
+        <NavigatorItem to="/biz/plan" name={t('navigator.Plan')} icon="plan" location={location} onClick={onClick} />
       </Box>
     </List>
   );
