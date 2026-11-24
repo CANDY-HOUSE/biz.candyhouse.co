@@ -561,7 +561,10 @@
       "deleteConfirmText": "削除すると元に戻せません。",
       "deleted": "録画を削除しました",
       "deleteFailed": "削除できませんでした。もう一度お試しください",
-      "deleteNoPermission": "録画を削除できるのはオーナーまたは管理者のみです"
+      "deleteNoPermission": "録画を削除できるのはオーナーまたは管理者のみです",
+      "seeking": "移動中",
+      "cancelSeek": "移動をキャンセル",
+      "seekStalled": "指定位置の読み込みが進んでいません。再試行するかキャンセルしてください。"
     },
     "retry": "再試行",
     "errInvalidQr": "QRコードを読み取れませんでした。Face3本体に表示されたコードをスキャンしてくださいませ",

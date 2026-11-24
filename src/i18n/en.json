@@ -561,7 +561,10 @@
       "deleteConfirmText": "This can't be undone.",
       "deleted": "Recording deleted",
       "deleteFailed": "Couldn't delete. Please try again.",
-      "deleteNoPermission": "Only the owner or a manager can delete recordings."
+      "deleteNoPermission": "Only the owner or a manager can delete recordings.",
+      "seeking": "Seeking",
+      "cancelSeek": "Cancel seek",
+      "seekStalled": "The selected section is not loading. Retry or cancel the seek."
     },
     "retry": "Retry",
     "errInvalidQr": "This QR code could not be read. Make sure you scanned the code shown on the Face3 device",

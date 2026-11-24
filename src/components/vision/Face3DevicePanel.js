@@ -298,6 +298,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
           <Face3RecordingPlayer
             key={playback.selected.recId}
             media={playback.media}
+            durationMs={playback.selected.durationMs}
             label={`${t('face3.recordings.tag')} · ${recordingLabel(playback.selected)}`}
             onRetry={() => playback.play(playback.selected)}
             onEnded={playback.stop}

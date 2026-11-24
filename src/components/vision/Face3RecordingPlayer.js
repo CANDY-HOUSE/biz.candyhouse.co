@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Slider, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Slider, Typography } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
+import { createRecordingTimeline } from './recordingTimeline';
 
 const formatClock = (seconds) => {
   const total = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -16,14 +17,26 @@ const formatClock = (seconds) => {
  * 不提供全屏（部分 APP 壳里系统控件的全屏按钮藏不掉，所以自己画）。放完调用 onEnded。
  * 声音就是 MP4 自带的音轨（固件把声音直接录进 MP4），不再另外取旁路 WAV。
  */
-export default function Face3RecordingPlayer({ media, label, onRetry, onEnded }) {
+export default function Face3RecordingPlayer({ media, durationMs, label, onRetry, onEnded }) {
   const { t } = useTranslation();
   const videoRef = useRef(null);
+  const timelineRef = useRef(null);
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
+  const [draftTime, setDraftTime] = useState(null);
   const [videoError, setVideoError] = useState(false);
   const [paused, setPaused] = useState(true);
   /* 进度和总时长一起显示，放一个 state */
-  const [progress, setProgress] = useState({ time: 0, duration: 0 });
-  const { time, duration } = progress;
+  const [progress, setProgress] = useState({
+    time: 0,
+    duration: 0,
+    target: null,
+    seeking: false,
+    stalled: false,
+    incomplete: false,
+  });
+  const { time, duration, target, seeking, stalled, incomplete } = progress;
+  const shownTime = draftTime ?? target ?? time;
 
   /* 视频地址在这里设、在清理里撤。
      视频地址不能写在 JSX 的 src 上：开发模式的 StrictMode 会"挂上 → 清理 → 再挂上"，
@@ -31,31 +44,36 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
+    setVideoError(false);
+    setDraftTime(null);
+    const timeline = createRecordingTimeline(video, {
+      durationMs: media.durationMs,
+      fallbackDurationMs: durationMs,
+      onUpdate: setProgress,
+      onEnded: () => onEndedRef.current?.(),
+    });
+    timelineRef.current = timeline;
     video.src = media.mp4;
     return () => {
+      timeline.dispose();
+      timelineRef.current = null;
       video.pause();
       video.removeAttribute('src');
       video.load();
     };
-  }, [media]);
+  }, [media, durationMs]);
 
   /* 选中录像后直接起播；被浏览器拦下（WebView 要求手势）就停在暂停态，点一下画面再播。 */
   useEffect(() => {
     videoRef.current?.play().catch(() => {});
-  }, [media]);
+  }, [media, durationMs]);
 
   const toggle = () => {
-    const video = videoRef.current;
-    if (!video || videoError) return;
-    if (video.paused || video.ended) video.play().catch(() => {});
-    else video.pause();
+    if (!videoError) timelineRef.current?.toggle();
   };
-
   const seek = (_, value) => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.currentTime = value;
-    setProgress((current) => ({ ...current, time: value }));
+    setDraftTime(null);
+    timelineRef.current?.seek(value);
   };
 
   return (
@@ -68,15 +86,6 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
         onClick={toggle}
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
-        onTimeUpdate={(event) => {
-          const { currentTime } = event.currentTarget;
-          setProgress((current) => ({ ...current, time: currentTime }));
-        }}
-        onDurationChange={(event) => {
-          const value = event.currentTarget.duration;
-          setProgress((current) => ({ ...current, duration: Number.isFinite(value) ? value : 0 }));
-        }}
-        onEnded={() => onEnded?.()}
         onError={() => setVideoError(true)}
         sx={{
           position: 'absolute',
@@ -110,7 +119,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
       )}
 
       {/* 暂停时正中显示 ▶。点击穿透到视频，由视频统一处理暂停 / 继续。 */}
-      {paused && !videoError && (
+      {paused && !seeking && !videoError && (
         <Box
           sx={{
             position: 'absolute',
@@ -138,6 +147,30 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
         </Box>
       )}
 
+      {seeking && !videoError && (
+        <Box sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>
+          <CircularProgress size={32} aria-label={t('face3.recordings.seeking')} sx={{ color: 'white' }} />
+        </Box>
+      )}
+      {(stalled || incomplete) && !videoError && (
+        <Alert
+          severity="warning"
+          sx={{ position: 'absolute', top: 40, left: 8, right: 8 }}
+          action={<Button onClick={onRetry}>{t('face3.retry')}</Button>}
+        >
+          {t('face3.recordings.seekStalled')}
+        </Alert>
+      )}
+      {seeking && (
+        <Button
+          size="small"
+          onClick={() => timelineRef.current?.cancel()}
+          sx={{ position: 'absolute', right: 8, top: 8, color: 'white', bgcolor: 'rgba(0,0,0,0.55)' }}
+        >
+          {t('face3.recordings.cancelSeek')}
+        </Button>
+      )}
+
       {/* 底部：时间 + 进度条，可拖动定位 */}
       {!videoError && (
         <Box
@@ -155,7 +188,7 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
           }}
         >
           <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-            {formatClock(time)} / {formatClock(duration)}
+            {formatClock(shownTime)} / {formatClock(duration)}
           </Typography>
           <Slider
             size="small"
@@ -163,9 +196,10 @@ export default function Face3RecordingPlayer({ media, label, onRetry, onEnded })
             min={0}
             max={duration || 0}
             step={0.1}
-            value={Math.min(time, duration || 0)}
+            value={Math.min(shownTime, duration || 0)}
             disabled={!duration}
-            onChange={seek}
+            onChange={(_, value) => setDraftTime(value)}
+            onChangeCommitted={seek}
             sx={{ flex: 1, color: 'white', '&.Mui-disabled': { color: 'rgba(255,255,255,0.4)' } }}
           />
         </Box>

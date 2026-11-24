@@ -561,7 +561,10 @@
       "deleteConfirmText": "删除后无法恢复。",
       "deleted": "录像已删除",
       "deleteFailed": "删除失败，请重试",
-      "deleteNoPermission": "只有拥有者或管理员可以删除录像"
+      "deleteNoPermission": "只有拥有者或管理员可以删除录像",
+      "seeking": "正在定位",
+      "cancelSeek": "取消定位",
+      "seekStalled": "目标片段加载暂无进展，请重试或取消定位。"
     },
     "retry": "重试",
     "errInvalidQr": "二维码无法识别，请确认扫的是 Face3 设备上显示的码",

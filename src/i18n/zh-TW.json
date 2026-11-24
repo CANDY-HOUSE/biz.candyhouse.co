@@ -561,7 +561,10 @@
       "deleteConfirmText": "刪除後無法復原。",
       "deleted": "錄影已刪除",
       "deleteFailed": "刪除失敗，請重試",
-      "deleteNoPermission": "只有擁有者或管理員可以刪除錄影"
+      "deleteNoPermission": "只有擁有者或管理員可以刪除錄影",
+      "seeking": "正在定位",
+      "cancelSeek": "取消定位",
+      "seekStalled": "目標片段載入暫無進度，請重試或取消定位。"
     },
     "retry": "重試",
     "errInvalidQr": "QR Code 無法識別，請確認掃的是 Face3 裝置上顯示的碼",
