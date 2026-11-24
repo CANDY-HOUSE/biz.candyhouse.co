@@ -99,6 +99,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   const [bindOpen, setBindOpen] = useState(false);
   const [panel, setPanel] = useState(null);
   const [bindingTarget, setBindingTarget] = useState(null);
+  const [unbindingTarget, setUnbindingTarget] = useState(null);
   const [delayOpen, setDelayOpen] = useState(false);
   const trackingRadar = useRef(false);
   const fixingRadar = useRef(null);
@@ -414,9 +415,17 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
                   }
                 />
                 <IconButton
-                  disabled={busy}
+                  disabled={unbindingTarget === target}
                   aria-label={t('peripheral.removeBinding')}
-                  onClick={() => run('unbind', { target })}
+                  onClick={async () => {
+                    if (busy) return;
+                    setUnbindingTarget(target);
+                    try {
+                      await run('unbind', { target });
+                    } finally {
+                      setUnbindingTarget(null);
+                    }
+                  }}
                 >
                   <DeleteOutline />
                 </IconButton>
