@@ -12,7 +12,7 @@ export function createEventRecordingRequests(send, action, timeoutMs = 15000) {
     entry.resolve(message);
   };
   return {
-    request(op, fields, signal) {
+    request(op, fields, signal, correlationField = 'requestId') {
       const requestId = ++sequence;
       return new Promise((resolve) => {
         const timer = setTimeout(() => settle(requestId, { success: false, message: 'timeout' }), timeoutMs);
@@ -24,7 +24,7 @@ export function createEventRecordingRequests(send, action, timeoutMs = 15000) {
         }
         signal?.addEventListener('abort', cancel, { once: true });
         try {
-          Promise.resolve(send({ action, op, ...fields, requestId })).catch(() =>
+          Promise.resolve(send({ action, op, ...fields, [correlationField]: requestId })).catch(() =>
             settle(requestId, { success: false, message: 'network_error' })
           );
         } catch (err) {

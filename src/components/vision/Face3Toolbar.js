@@ -229,15 +229,16 @@ export function Face3LiveToolbar({
 }
 
 /**
- * AI 开关：固定在工具栏第一格，不随实时 / 录像切换，任何时候都能点。
+ * AI 开关：固定在工具栏第一格，不随实时 / 录像切换。
  * 开着是主题色，关着是普通色（与其他工具的"按下 / 开着"一致）。
  */
-export function Face3AiTool({ on = false, onToggle }) {
+export function Face3AiTool({ on = false, pending = false, stopping = false, onToggle }) {
   const { t } = useTranslation();
   return (
     <LiveTool
-      label={t('face3.ai.label')}
+      label={t(stopping ? 'face3.ai.stopping' : pending ? 'face3.ai.updating' : 'face3.ai.label')}
       active={on}
+      disabled={pending || stopping}
       onClick={onToggle}
       icon={<AiBotLineIcon />}
       labelEnd={<MiniSwitch on={on} />}

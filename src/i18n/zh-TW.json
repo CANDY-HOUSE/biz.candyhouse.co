@@ -653,7 +653,11 @@
     },
     "ai": {
       "label": "AI",
-      "loginRequired": "開啟 AI 需要先登入"
+      "loginRequired": "開啟 AI 需要先登入",
+      "updating": "正在更新 AI…",
+      "stopping": "正在停止 AI…",
+      "busy": "已有 AI 工作階段正在執行，請在結束後重試。",
+      "requestFailed": "無法更新 AI 工作階段，請重試。"
     }
   },
   "appHome": {

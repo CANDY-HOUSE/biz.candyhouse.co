@@ -13,6 +13,7 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  *     op: 'issue'    设备侧调用，签发一张券        —— 手机不会用到
  *     op: 'wake'     本 hook 调用，唤醒设备开始推流（云端下发给设备的 action 为 face3Wake）
  *     op: 'viewer'   本 hook 调用，按 mode 取观看端凭证（KVS 临时凭证 / LiveKit token）
+ *     op: 'aiSession' 启动、查询或停止设备的共享 AI 会话
  *
  * 刻意不在消息体里带 subUUID：云端从 face3_ws_connections[connectionId]
  * 取当前登录用户，请求体里报什么都不作数。这样"我是谁"由已鉴权的连接决定，
@@ -70,6 +71,17 @@ const useFace3 = () => {
       recordingRequests.current.request('eventRecDelete', { deviceId: deviceUUID.toUpperCase(), recId }, signal),
     []
   );
+
+  const requestAiSession = useCallback(
+    (deviceId, operation, fields, signal) =>
+      recordingRequests.current.request('aiSession', { deviceId, operation, ...fields }, signal, 'clientRequestId'),
+    []
+  );
+
+  const wakeFace3ForAi = useCallback((deviceId, signal) => {
+    setFace3StreamStates((states) => ({ ...states, [deviceId]: null }));
+    return recordingRequests.current.request('wake', { deviceId }, signal);
+  }, []);
 
   /**
    * 唤醒、取观看凭证这类请求只在连接可用时发送，不进断线队列：
@@ -143,11 +155,15 @@ const useFace3 = () => {
     (message) => {
       recordingRequests.current.handle(message);
       const callbackDeviceId = message.data?.deviceId;
-      invokeCallbacks(
-        callbackDeviceId && ['wake', 'viewer'].includes(message.op)
-          ? { ...message, op: `${message.op}:${callbackDeviceId}` }
-          : message
-      );
+      /* AI 开关的唤醒带 requestId，由 recordingRequests 按请求对回包；不再分发给按 wake:<deviceId>
+         等回包的实时画面回调，免得把别人的唤醒结果当成自己的。 */
+      if (message.op !== 'wake' || !Number.isSafeInteger(message.requestId)) {
+        invokeCallbacks(
+          callbackDeviceId && ['wake', 'viewer'].includes(message.op)
+            ? { ...message, op: `${message.op}:${callbackDeviceId}` }
+            : message
+        );
+      }
       switch (message.action) {
         case ACTION_TYPES.BIZ3_FACE3_QR:
           switch (message.op) {
@@ -185,6 +201,8 @@ const useFace3 = () => {
     deleteFace3Recording,
     synthesizeFace3Speech,
     wakeFace3Device,
+    wakeFace3ForAi,
+    requestAiSession,
     viewFace3Device,
   };
 };

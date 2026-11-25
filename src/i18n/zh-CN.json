@@ -653,7 +653,11 @@
     },
     "ai": {
       "label": "AI",
-      "loginRequired": "开启 AI 需要先登录"
+      "loginRequired": "开启 AI 需要先登录",
+      "updating": "正在更新 AI…",
+      "stopping": "正在停止 AI…",
+      "busy": "已有 AI 会话在运行，请在会话结束后重试。",
+      "requestFailed": "更新 AI 会话失败，请重试。"
     }
   },
   "appHome": {

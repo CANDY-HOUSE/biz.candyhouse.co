@@ -653,7 +653,11 @@
     },
     "ai": {
       "label": "AI",
-      "loginRequired": "AIをオンにするにはログインしてください。"
+      "loginRequired": "AIをオンにするにはログインしてください。",
+      "updating": "AIを更新中…",
+      "stopping": "AIを停止中…",
+      "busy": "別のAIセッションが実行中です。終了後にもう一度お試しください。",
+      "requestFailed": "AIセッションを更新できませんでした。もう一度お試しください。"
     }
   },
   "appHome": {

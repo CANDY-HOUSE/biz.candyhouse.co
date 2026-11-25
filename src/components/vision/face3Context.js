@@ -15,7 +15,10 @@ import { Box } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { isGuestAppSession } from '@/services/appSession';
 import { gConfig } from '@constants/gConfig';
+import { envConfig } from '@/env_config';
 import Face3LiveView from './Face3LiveView';
+import { liveKitProtocol, selectFace3Protocol } from './protocols';
+import { isFace3AiActive, useFace3AiSession } from './useFace3AiSession';
 
 /**
  * Vision（Face3）的共享环境：挂在路由之外（App 里包住页面），Vision 各组件从 useFace3Context() 取。
@@ -39,11 +42,17 @@ import Face3LiveView from './Face3LiveView';
  * 刚开的画面会被立刻关掉。
  *
  * ── AI 开关 ──
- * 按设备只记在本机（与扬声器偏好同样的做法），首页和详情页共用这里的一份。
- * 暂时也用它选实时画面的协议：开 → LiveKit，关 → KVS 直连（见 ./protocols）。
+ * dev 连接共享 AI 会话，开关跟随后端状态；常规构建仍按本机偏好选择观看协议。
  * 登录态 = 已拿到登录用户信息且不是 APP 访客会话；未登录时一律显示关，开启时提示登录。
  */
 const CARRY_STATE_KEY = 'carryFace3Live';
+const AI_ERROR_KEYS = {
+  DEVICE_BUSY: 'face3.ai.busy',
+  DEVICE_OR_WORKER_BUSY: 'face3.ai.busy',
+  device_offline: 'face3.wakeOffline',
+  not_bound: 'face3.wakeNotBound',
+  not_authenticated: 'face3.ai.loginRequired',
+};
 
 /** 首页跳到详情页时作为 navigate 的 state：这台正在看就带入详情页，不断开 */
 export const carryFace3Live = (deviceUUID) => ({ [CARRY_STATE_KEY]: String(deviceUUID || '').toUpperCase() });
@@ -85,6 +94,8 @@ export function Face3Provider({ children }) {
     playFace3Recording,
     deleteFace3Recording,
     wakeFace3Device,
+    wakeFace3ForAi,
+    requestAiSession,
     viewFace3Device,
     synthesizeFace3Speech,
   } = gFace3;
@@ -97,28 +108,7 @@ export function Face3Provider({ children }) {
     gStripe.customerInfo.isAnonymous !== true;
   /* 本次页面内切换过的设备 -> 开关值；没切换过的读本机存储 */
   const [aiPrefs, setAiPrefs] = useState({});
-  const isAiOn = useCallback(
-    (deviceUUID) => {
-      if (!signedIn || !deviceUUID) return false;
-      const id = deviceUUID.toUpperCase();
-      return id in aiPrefs ? aiPrefs[id] : loadAiPref(id);
-    },
-    [signedIn, aiPrefs]
-  );
-  /** 返回是否真的切换了（未登录时开启会被拦下、只提示登录） */
-  const toggleAi = useCallback(
-    (device, enabled) => {
-      if (enabled && !signedIn) {
-        setSnackbarValue({ open: true, severity: 'info', msg: t('face3.ai.loginRequired') });
-        return false;
-      }
-      const id = device.deviceUUID.toUpperCase();
-      saveAiPref(id, enabled);
-      setAiPrefs((prefs) => ({ ...prefs, [id]: enabled }));
-      return true;
-    },
-    [signedIn, setSnackbarValue, t]
-  );
+  const [aiPanelDeviceId, watchAiDevice] = useState('');
 
   /* ── 实时画面会话 ── */
   const [session, setSession] = useState(null); // { id, device, protocol, path, startedAt }
@@ -128,6 +118,8 @@ export function Face3Provider({ children }) {
   /* 本次会话点击到「首次」出画（或首次出错）的耗时，毫秒。之后断线重连再出画不覆盖（失败后重试出画除外） */
   const [liveWait, setLiveWait] = useState({ id: 0, ms: 0, ok: false });
   const [toolsTarget, setToolsTarget] = useState(null);
+  const livePlayback = useRef(null);
+  const openingAi = useRef(new Set());
   const sessionRef = useRef(null); // seq：会话编号；hostEl：常驻的画面容器
   if (!sessionRef.current) {
     const hostEl = document.createElement('div');
@@ -158,20 +150,15 @@ export function Face3Provider({ children }) {
   /** 开始看这台（记下在哪个页面开的）。已经在看同一台就沿用当前连接（只更新设备信息和协议）。 */
   const start = useCallback((device, protocol) => {
     const path = sessionRef.current.pathname;
+    const id = device.deviceUUID.toUpperCase();
+    const pausedForAi = openingAi.current.has(id);
     setSession((current) =>
-      current && current.device.deviceUUID.toUpperCase() === device.deviceUUID.toUpperCase()
-        ? { ...current, device, protocol, path }
+      current?.device.deviceUUID.toUpperCase() === id
+        ? { ...current, device, path, protocol: envConfig.isDev ? current.protocol : protocol }
         : /* startedAt：点「观看实时画面」的时刻，详情页据此显示等待计时（毫秒） */
-          { id: ++sessionRef.current.seq, device, protocol, path, startedAt: performance.now() }
+          { id: ++sessionRef.current.seq, device, protocol, path, pausedForAi, startedAt: performance.now() }
     );
   }, []);
-
-  /** 看的过程中换协议（切了 AI 开关）：Face3LiveView 会按新协议重连 */
-  const setProtocol = useCallback(
-    (protocol) =>
-      setSession((current) => (current && current.protocol !== protocol ? { ...current, protocol } : current)),
-    []
-  );
 
   /** 槽位挂上 hostEl；返回摘下的函数。停不停由上面的换页规则决定，这里只管挂 / 摘 */
   const attach = useCallback(
@@ -191,6 +178,80 @@ export function Face3Provider({ children }) {
   const liveUUID = session?.device?.deviceUUID?.toUpperCase() || '';
   const sessionId = session?.id || 0;
   const sessionStartedAt = session?.startedAt || 0;
+  const showAiError = useCallback(
+    (reason) =>
+      setSnackbarValue({ open: true, severity: 'warning', msg: t(AI_ERROR_KEYS[reason] || 'face3.ai.requestFailed') }),
+    [setSnackbarValue, t]
+  );
+  const {
+    sessions: aiSessions,
+    pending: aiPending,
+    toggle: toggleAiSession,
+  } = useFace3AiSession({
+    accountId: envConfig.isDev && signedIn ? gStripe.customerInfo.subUUID : '',
+    panelDeviceId: aiPanelDeviceId,
+    liveDeviceId: liveUUID,
+    request: requestAiSession,
+    wake: wakeFace3ForAi,
+    onError: showAiError,
+  });
+  const sharedAiActive = envConfig.isDev && isFace3AiActive(aiSessions[liveUUID]);
+  useEffect(() => {
+    if (sharedAiActive) {
+      setSession((current) =>
+        current?.id === sessionId && current.protocol !== liveKitProtocol
+          ? { ...current, protocol: liveKitProtocol }
+          : current
+      );
+    }
+  }, [sessionId, sharedAiActive]);
+
+  const isAiOn = useCallback(
+    (deviceId) => {
+      if (!signedIn || !deviceId) return false;
+      const id = deviceId.toUpperCase();
+      if (envConfig.isDev) return isFace3AiActive(aiSessions[id]);
+      return id in aiPrefs ? aiPrefs[id] : loadAiPref(id);
+    },
+    [aiPrefs, aiSessions, signedIn]
+  );
+  const toggleAi = useCallback(
+    (device) => {
+      if (!signedIn) {
+        setSnackbarValue({ open: true, severity: 'info', msg: t('face3.ai.loginRequired') });
+        return;
+      }
+      const id = device.deviceUUID.toUpperCase();
+      if (envConfig.isDev) {
+        toggleAiSession(id, () => {
+          openingAi.current.add(id);
+          if (livePlayback.current?.closeDirectViewer(id)) {
+            setSession((current) =>
+              current?.device.deviceUUID.toUpperCase() === id ? { ...current, pausedForAi: true } : current
+            );
+          }
+          return () => {
+            openingAi.current.delete(id);
+            setSession((current) =>
+              current?.pausedForAi && current.device.deviceUUID.toUpperCase() === id
+                ? { ...current, pausedForAi: false }
+                : current
+            );
+          };
+        });
+        return;
+      }
+      const enabled = !isAiOn(id);
+      saveAiPref(id, enabled);
+      setAiPrefs((prefs) => ({ ...prefs, [id]: enabled }));
+      if (liveUUID === id) {
+        setSession((current) =>
+          current?.id === sessionId ? { ...current, protocol: selectFace3Protocol({ aiEnabled: enabled }) } : current
+        );
+      }
+    },
+    [isAiOn, liveUUID, sessionId, setSnackbarValue, signedIn, t, toggleAiSession]
+  );
   const onLivePhase = useCallback(
     (phase) => {
       setLivePhase({ id: sessionId, phase });
@@ -218,13 +279,15 @@ export function Face3Provider({ children }) {
       notify: setSnackbarValue,
       isAiOn,
       toggleAi,
+      watchAiDevice,
+      aiSessions,
+      aiPending,
       liveUUID,
       liveStartedAt: sessionStartedAt,
       livePhase: currentLivePhase,
       liveWait: currentLiveWait,
       start,
       stop,
-      setProtocol,
       setToolsTarget,
       attach,
     }),
@@ -236,13 +299,15 @@ export function Face3Provider({ children }) {
       setSnackbarValue,
       isAiOn,
       toggleAi,
+      watchAiDevice,
+      aiSessions,
+      aiPending,
       liveUUID,
       sessionStartedAt,
       currentLivePhase,
       currentLiveWait,
       start,
       stop,
-      setProtocol,
       attach,
     ]
   );
@@ -256,7 +321,10 @@ export function Face3Provider({ children }) {
           <Face3LiveView
             key={session.id}
             device={session.device}
-            protocol={session.protocol}
+            protocol={sharedAiActive ? liveKitProtocol : session.protocol}
+            sharedRoom={envConfig.isDev}
+            paused={session.pausedForAi}
+            playbackHandle={livePlayback}
             onClose={stop}
             onPhaseChange={onLivePhase}
             label="LIVE"
@@ -278,7 +346,7 @@ export function Face3Provider({ children }) {
  * {
  *   devices, listFace3Recordings, playFace3Recording, deleteFace3Recording,
  *   notify(snackbarValue), isAiOn(deviceUUID), toggleAi(device, enabled),
- *   liveUUID, liveStartedAt, livePhase, liveWait（{ms, ok}：首次出画/出错耗时）, start(device, protocol), stop(), setProtocol(protocol), setToolsTarget(el), attach(el)
+ *   liveUUID, liveStartedAt, livePhase, liveWait（{ms, ok}：首次出画/出错耗时）, start(device, protocol), stop(), setToolsTarget(el), attach(el)
  * }
  */
 export const useFace3Context = () => useContext(Face3Context);

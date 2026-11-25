@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Box, IconButton, Typography, CircularProgress, Button, Alert } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -194,6 +194,9 @@ const saveSpeakerPref = (deviceUUID, enabled, volume) => {
 function Face3LiveView({
   device,
   protocol = kvsProtocol,
+  sharedRoom = false,
+  paused = false,
+  playbackHandle,
   onClose,
   onPhaseChange,
   label,
@@ -215,6 +218,7 @@ function Face3LiveView({
   /* 观看端句柄。放 ref 不放 state：它不参与渲染，而且清理时必须拿到最新的那个，
      state 的闭包会拿到旧值。 */
   const viewerRef = useRef(null);
+  const viewerMode = useRef(null);
   const cancelAttemptRef = useRef(null);
   const [phase, setPhase] = useState('connecting'); // connecting | playing | error | ended
   const isPlaying = phase === 'playing';
@@ -464,11 +468,13 @@ function Face3LiveView({
   const [needsTap, setNeedsTap] = useState(false);
 
   const deviceUUID = device?.deviceUUID;
+  const requireLiveKit = sharedRoom && protocol.mode === 'livekit';
   const previousStreamStateRef = useRef(streamState);
 
   const clearPlayback = useCallback(() => {
     viewerRef.current?.close();
     viewerRef.current = null;
+    viewerMode.current = null;
     const video = videoRef.current;
     if (frameProbeRef.current !== null) video?.cancelVideoFrameCallback?.(frameProbeRef.current);
     frameProbeRef.current = null;
@@ -481,6 +487,18 @@ function Face3LiveView({
       }
     }
   }, []);
+
+  useImperativeHandle(
+    playbackHandle,
+    () => ({
+      closeDirectViewer(deviceId) {
+        if (deviceUUID?.toUpperCase() !== deviceId || viewerMode.current === 'livekit') return false;
+        cancelAttemptRef.current?.();
+        return true;
+      },
+    }),
+    [deviceUUID]
+  );
 
   /* 自动重连的状态统一在这里清。出画、手动重试、结束、换设备都走它。 */
   const resetAutoReconnect = useCallback(() => {
@@ -511,6 +529,11 @@ function Face3LiveView({
 
   useEffect(() => {
     if (!deviceUUID) return undefined;
+    if (paused) {
+      setPhase('connecting');
+      setMediaControlsReady(false);
+      return undefined;
+    }
 
     let cancelled = false;
     let wakeSettled = false;
@@ -703,6 +726,7 @@ function Face3LiveView({
         else {
           viewerRef.current = viewer;
           setSpeechAvailable(Boolean(viewer?.playSpeech));
+          viewerMode.current = data.mode || 'kvs';
         }
       } catch {
         fail('face3.errLiveUnknown');
@@ -733,6 +757,10 @@ function Face3LiveView({
             return;
           }
           const granted = protocolForMode(message.data?.mode);
+          if (requireLiveKit && granted.mode !== 'livekit') {
+            fail('face3.errLiveUnknown');
+            return;
+          }
           // eslint-disable-next-line no-console
           console.info(`[face3Live] protocol wanted ${wanted.mode}, granted ${granted.mode}`);
           granted
@@ -741,7 +769,8 @@ function Face3LiveView({
               if (!cancelled) startViewer(message.data, start);
             })
             .catch(() => {
-              if (!granted.fallback) {
+              if (cancelled) return;
+              if (!granted.fallback || sharedRoom || granted.fallback === wanted) {
                 fail('face3.errLiveUnknown');
                 return;
               }
@@ -761,6 +790,10 @@ function Face3LiveView({
     } else {
       // 状态推送可能被另一个浏览器接收，不能作为握手的必需条件。
       deadlineTimer = setTimeout(() => fail('face3.errLiveTimeout'), CALL_TIMEOUT_MS);
+      if (requireLiveKit) {
+        requestSession(protocol);
+        return cancel;
+      }
       wakeTimer = setTimeout(() => fail('face3.errTimeout'), CRED_TIMEOUT_MS);
       try {
         wakeFace3Device(deviceUUID, (message) => {
@@ -785,6 +818,9 @@ function Face3LiveView({
   }, [
     deviceUUID,
     protocol,
+    sharedRoom,
+    paused,
+    requireLiveKit,
     wakeFace3Device,
     viewFace3Device,
     attempt,
@@ -799,7 +835,7 @@ function Face3LiveView({
     // 忽略挂载时上一次通话残留的stopped，只响应本次看到的状态变化。
     const previous = previousStreamStateRef.current;
     previousStreamStateRef.current = streamState;
-    if (streamState === 'stopped' && previous !== 'stopped') {
+    if (!paused && streamState === 'stopped' && previous !== 'stopped') {
       /* 正在等 ICE 恢复或自动重连时收到的 stopped（原因不是门铃挂断），是设备因为
        * 我们这条连接断了、没人在看而进了待机，不是设备主动结束通话：继续重连，
        * 重连时的唤醒会把它重新拉起来。2026-11-09 Face3 1# 实测：手机切网后
@@ -812,7 +848,7 @@ function Face3LiveView({
       }
       endPlayback('face3.liveEndedByDevice');
     }
-  }, [streamState, streamReason, endPlayback]);
+  }, [streamState, streamReason, endPlayback, paused]);
 
   /* 每多少帧打一行。15fps 下约两秒一行，和设备侧 KVS_LAT_LOG_EVERY 对齐。 */
   const FRAME_LOG_EVERY = 30;

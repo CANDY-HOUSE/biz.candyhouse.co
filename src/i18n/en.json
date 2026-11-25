@@ -653,7 +653,11 @@
     },
     "ai": {
       "label": "AI",
-      "loginRequired": "Sign in to turn on AI."
+      "loginRequired": "Sign in to turn on AI.",
+      "updating": "Updating AI…",
+      "stopping": "Stopping AI…",
+      "busy": "Another AI session is running. Try again after it ends.",
+      "requestFailed": "Could not update the AI session. Try again."
     }
   },
   "appHome": {

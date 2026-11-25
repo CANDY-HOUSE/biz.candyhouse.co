@@ -157,7 +157,7 @@ function LiveButton({ online, lastSeenAt, onClick }) {
  *   - 画面框标明正在看的内容：实时是正上方小号无底色的"● LIVE"，录像是左上角"录像 · 时间"
  *   - 什么都没播时画面框只显示 Vision logo
  *   - 画面下方工具栏：第一格 AI 开关；实时后跟拍照 / 录制 / 视频对讲，选中录像后跟下载 / 删除（三格居中）
- * 实时与录像互斥；实时的协议按本机 AI 开关选（与 Vision 首页一致）。
+ * 实时与录像互斥；共享 AI 会话使用 LiveKit。
  * 不自动开实时：开实时要唤醒设备（耗电、计费），等用户点。
  *
  * 数据从 useFace3Context() 取（不订阅全局 GlobalStateContext），再用 memo 包住（见文件末尾）：
@@ -170,6 +170,9 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
     devices,
     isAiOn,
     toggleAi,
+    watchAiDevice,
+    aiSessions,
+    aiPending,
     liveUUID,
     liveStartedAt,
     liveWait,
@@ -177,6 +180,10 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
     notify: setSnackbarValue,
   } = face3;
   const deviceUUID = (rawDeviceUUID || '').toUpperCase();
+  useEffect(() => {
+    watchAiDevice(deviceUUID);
+    return () => watchAiDevice('');
+  }, [deviceUUID, watchAiDevice]);
   /* 录像按 Face3 的绑定关系鉴权，列表里还没有这台时先用详情页传来的编号和名称 */
   const device = deviceUUID
     ? devices.find((d) => (d.deviceUUID || '').toUpperCase() === deviceUUID) || { deviceUUID, deviceName }
@@ -198,11 +205,7 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
   const stopLive = () => {
     if (live) face3.stop();
   };
-  /* AI 开关（工具栏第一格）：看着实时切换时按新协议重连（KVS ↔ LiveKit）；未登录开启会被拦下，不重连 */
-  const toggleAiTool = () => {
-    const next = !isAiOn(device.deviceUUID);
-    if (toggleAi(device, next) && live) face3.setProtocol(selectFace3Protocol({ aiEnabled: next }));
-  };
+  const aiStopping = aiSessions[deviceUUID]?.state === 'STOPPING';
 
   /* 点一条录像：在画面框里播放；再点一次正在看的那条就取消选中，回到默认（Vision logo + 灰色实时工具栏） */
   const playRecording = (item) => {
@@ -395,7 +398,14 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
               后几格：看实时时由 Face3LiveView 用 portal 渲染进这个节点，出画后可用；
               没在看实时时这里放一份（选中录像是录像工具，否则是灰色不可点的实时工具） */}
           <Box sx={{ display: 'flex', bgcolor: 'background.paper' }}>
-            {device && <Face3AiTool on={isAiOn(device.deviceUUID)} onToggle={toggleAiTool} />}
+            {device && (
+              <Face3AiTool
+                on={isAiOn(deviceUUID) && !aiStopping}
+                pending={aiPending[deviceUUID]}
+                stopping={aiStopping}
+                onToggle={() => toggleAi(device)}
+              />
+            )}
             <Box sx={{ flex: device && !live && playback.selected ? 2 : 3, minWidth: 0 }}>
               <Box ref={setToolsTarget} />
               {device &&
