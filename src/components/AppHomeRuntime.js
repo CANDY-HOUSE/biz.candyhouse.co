@@ -195,7 +195,6 @@ export default function AppHomeRuntime() {
         }
         ctx.gManageDevice.getCompanyDevices(true);
         if (model === gConfig.sesameDeviceModel.sesame_face_3) {
-          ctx.gFace3.listFace3Devices();
           go('/vision');
         } else go('/');
       });

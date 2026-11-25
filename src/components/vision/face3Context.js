@@ -70,12 +70,17 @@ const Face3Context = createContext(null);
 
 export function Face3Provider({ children }) {
   const { t } = useTranslation();
-  const { gFace3, gAuth, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
+  const { gFace3, gAuth, gStripe, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
+  /* Face3 列表 = 公司设备列表（getCompanyDevice，含在线 / WiFi / 电量）里的 sesame_face_3；
+     原先单独发 Face3_qr op:'list'，已去掉。 */
+  const companyDevices = gManageDevice.companyDevices;
+  const face3Devices = useMemo(
+    () => (companyDevices || []).filter((d) => d.deviceModel === gConfig.sesameDeviceModel.sesame_face_3),
+    [companyDevices]
+  );
   const {
-    face3Devices,
     face3StreamStates,
     face3StreamReasons,
-    listFace3Devices,
     listFace3Recordings,
     playFace3Recording,
     deleteFace3Recording,
@@ -206,8 +211,7 @@ export function Face3Provider({ children }) {
   const currentLiveWait = liveWait.id === sessionId ? liveWait : null;
   const value = useMemo(
     () => ({
-      devices: face3Devices || [],
-      listFace3Devices,
+      devices: face3Devices,
       listFace3Recordings,
       playFace3Recording,
       deleteFace3Recording,
@@ -226,7 +230,6 @@ export function Face3Provider({ children }) {
     }),
     [
       face3Devices,
-      listFace3Devices,
       listFace3Recordings,
       playFace3Recording,
       deleteFace3Recording,
@@ -273,7 +276,7 @@ export function Face3Provider({ children }) {
 
 /**
  * {
- *   devices, listFace3Devices, listFace3Recordings, playFace3Recording, deleteFace3Recording,
+ *   devices, listFace3Recordings, playFace3Recording, deleteFace3Recording,
  *   notify(snackbarValue), isAiOn(deviceUUID), toggleAi(device, enabled),
  *   liveUUID, liveStartedAt, livePhase, liveWait（{ms, ok}：首次出画/出错耗时）, start(device, protocol), stop(), setProtocol(protocol), setToolsTarget(el), attach(el)
  * }

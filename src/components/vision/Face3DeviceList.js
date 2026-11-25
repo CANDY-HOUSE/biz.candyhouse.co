@@ -22,13 +22,6 @@ import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
 import { gConfig } from '@constants/gConfig';
 
-/** 在线状态的刷新间隔。
- *
- * 云端判在线靠的是连接记录还在不在，设备掉线后要等 API Gateway 的空闲超时
- * （十分钟量级）才会触发 $disconnect，所以刷得再快也快不过那个粒度。
- * 30 秒是个折中：用户手动下拉之外还能自己变，又不会把 WS 刷满。 */
-const REFRESH_INTERVAL_MS = 30000;
-
 /** 设备详情页地址（Face3 的录像卡片在里面，手机上默认显示录像）。参数与 useNavigateUtils 一致。
  *  宽屏 PC 改去设备页，由列表旁的详情面板显示这台。 */
 const face3DetailLocation = (device, companyDevices, pathname = '/biz/access-control/region') => {
@@ -300,8 +293,8 @@ const DeviceCard = ({ device, onOpen, onWake, isViewing }) => {
 /**
  * Vision 首页：扫码绑定过的 Face3 列表。
  *
- * 数据来自 WS 路由 biz3Face3Qr 的 op:"list" —— 云端从连接记录取 subUUID，
- * 只会返回当前登录用户名下的设备（见 doc/face3-identity-model.md 第 5.7 节）。
+ * 数据来自公司设备列表（biz3ManageDevice getCompanyDevice）里机型为 sesame_face_3 的设备，
+ * 由 face3Context 筛出；在线 / WiFi / 电量都在 stateInfo 里（原 Face3_qr op:"list" 已去掉）。
  * 首页和设备详情页（Face3DevicePanel）都能看实时画面，正在看的那台点进详情页不断开（见 face3Context）；
  * 录像、AI 开关和拍照 / 录制等工具在详情页。
  */
@@ -312,58 +305,12 @@ export default function Face3DeviceList() {
   const { gStripe, gManageGroup, gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
   const face3 = useFace3Context();
   const masterDetail = useMasterDetail();
-  const [attempt, setAttempt] = useState(0);
   const [pickedColumns, setPickedColumns] = useState(savedGridColumns);
   const floatingAddRef = useRef(null);
 
-  /* 只取出要用的那个函数作依赖，不要把整个对象放进依赖：对象换引用会让 effect 重跑、再发一次 list，
-   * 自己喂自己。listFace3Devices 是 useCallback([registerCallback])，而 registerCallback
-   * 的依赖是空数组，所以它跨渲染稳定，可以安全地作依赖。 */
-  const { listFace3Devices } = face3;
-  /* 第二道防线：两次请求至少隔 1 秒。
-   *
-   * 注意不能用"在途标志"来挡 —— React 在依赖变化时会先跑 cleanup 再跑新的
-   * effect body，标志会被 cleanup 清掉，循环照样成立。按时间节流才拦得住。
-   *
-   * 代价是 1 秒内连点两次重试只会发一次，这个可以接受。 */
-  const lastReqAt = useRef(0);
-
-  useEffect(() => {
-    /* 节流：两次请求至少隔 1 秒，挡住依赖引用变化导致的自我喂食循环
-       （见上方 provider 说明）。 */
-    const now = Date.now();
-    if (now - lastReqAt.current < 1000) return undefined;
-    lastReqAt.current = now;
-
-    /* 只负责触发一次 list，把 face3Devices 灌进 provider。渲染只看 face3Devices
-       的数量：0 → 猫头鹰，>0 → 列表，不再用 loading/error 状态机（Face3 未发布，
-       没设备的用户只见猫头鹰、不打扰）。断网/失败时 face3Devices 保持原样不变。 */
-    listFace3Devices(() => {});
-    return undefined;
-    // attempt 变化 = 定时刷新 / 用户重试
-  }, [listFace3Devices, attempt]);
-
-  /* 定时刷新，让在线/离线自己变。
-   *
-   * 只在页面可见时刷：切到后台还轮询纯属浪费，而且回到前台时那批积压的
-   * 定时器会一起触发。回到前台立刻补一次，用户看到的就是当下的状态。 */
-  useEffect(() => {
-    const tick = () => {
-      if (document.visibilityState !== 'visible') return;
-      setAttempt((n) => n + 1);
-    };
-    const timer = setInterval(tick, REFRESH_INTERVAL_MS);
-    /* 回到前台立刻对齐一次，不用等下一个周期 */
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') tick();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, []);
-
+  /* Face3 列表 = 公司设备列表（companyDevices）按机型过滤（见 face3Context），本页不单独请求、不轮询：
+   * 公司设备列表由 useManageDevice 加载，设备状态变化由服务端推送（pubDeviceStateChange）更新。
+   * 渲染只看数量：0 → 猫头鹰，>0 → 列表。 */
   const face3Devices = face3.devices;
   const wideGrid = !isAppHome && homeCards;
   const gridColumns = pickedColumns || 2;
@@ -446,7 +393,8 @@ export default function Face3DeviceList() {
                     fileInput.value = '';
                     return;
                   }
-                  gManageDevice.addSesameDevicesToBiz3([device], () => setAttempt((n) => n + 1));
+                  /* 添加成功后 useManageDevice 收到 op:'add' 回包会重取公司设备列表，Face3 列表随之更新 */
+                  gManageDevice.addSesameDevicesToBiz3([device], () => {});
                   fileInput.value = '';
                 });
               });

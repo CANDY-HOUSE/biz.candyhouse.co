@@ -274,12 +274,8 @@ function Face3DevicePanel({ deviceUUID: rawDeviceUUID, deviceName = '', keyLevel
     notify('success', 'face3.recordings.deleted');
   };
 
-  /* 进来时刷新一次 Face3 列表：直接打开详情页（刷新、推送冷启动）时列表可能还没有这台。
-     listFace3Devices 跨渲染稳定，见 Face3DeviceList 的说明。 */
-  const { listFace3Devices } = face3;
-  useEffect(() => {
-    listFace3Devices(() => {});
-  }, [listFace3Devices]);
+  /* Face3 列表随公司设备列表加载（App 启动 / 公司切换时 useManageDevice 自动拉取），
+     直接打开详情页（刷新、推送冷启动）不需要再单独请求。 */
 
   const recordingLabel = (item) =>
     new Date(recordingTime(item)).toLocaleString(i18n.language, {

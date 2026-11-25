@@ -11,19 +11,17 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
  * 靠 op 区分两端：
  *
  *     op: 'issue'    设备侧调用，签发一张券        —— 手机不会用到
- *     op: 'list'     本 hook 调用，列出我绑过的设备
- *     op: 'command'  本 hook 调用，给设备下发一条命令（cmd 决定做什么，通用入口）
+ *     op: 'wake'     本 hook 调用，唤醒设备开始推流（云端下发给设备的 action 为 face3Wake）
  *     op: 'viewer'   本 hook 调用，按 mode 取观看端凭证（KVS 临时凭证 / LiveKit token）
- *
- * 唤醒（wake）只是 op:'command' 的一个特例（cmd='face3Wake'）：今后所有发给
- * face3 的命令都走 sendFace3Command，由 H5 通过 cmd 决定是哪个 action。
  *
  * 刻意不在消息体里带 subUUID：云端从 face3_ws_connections[connectionId]
  * 取当前登录用户，请求体里报什么都不作数。这样"我是谁"由已鉴权的连接决定，
  * 前端改不动，也就没法替别人绑设备。
+ *
+ * Face3 设备列表不在这里：随公司设备列表（biz3ManageDevice getCompanyDevice）返回，
+ * 由 face3Context 按机型 sesame_face_3 筛出（原 op:'list' 已去掉）。
  */
 const useFace3 = () => {
-  const [face3Devices, setFace3Devices] = useState([]);
   const [face3StreamStates, setFace3StreamStates] = useState({});
   /* 设备上报 streamState 时附带的原因（如 stopped 的 "doorbell" = 门铃挂断）。
      与 face3StreamStates 分开存，不改变后者的取值形态。 */
@@ -88,47 +86,6 @@ const useFace3 = () => {
   );
 
   /**
-   * 给一台设备下发一条命令（通用入口）。
-   *
-   * 今后所有发给 face3 设备的命令都走这里，由 H5 通过 cmd 决定是哪个 action，
-   * 云端据此签名并推给设备。鉴权在云端做：只有绑过这台设备的人才能下发，
-   * 请求体里报什么主体都不作数。
-   *
-   * @param {string} deviceUUID 设备编号
-   * @param {string} cmd        下行命令名（设备侧 action，如 'face3Wake'）
-   * @param {Function} cb       回调，收到 {success, code, message, data}
-   */
-  const sendFace3Command = useCallback(
-    (deviceUUID, cmd, cb) => {
-      if (!deviceUUID || !cmd) return;
-      const messageData = {
-        action: ACTION_TYPES.BIZ3_FACE3_QR,
-        op: 'command',
-        deviceId: deviceUUID,
-        cmd,
-      };
-      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
-    },
-    [sendWithoutQueue]
-  );
-
-  /**
-   * 拉取当前登录用户绑定的 Face3 列表。
-   * 同样不带 subUUID —— 云端从连接记录取，只会返回"我"的设备。
-   */
-  const listFace3Devices = useCallback(
-    (cb) => {
-      const messageData = {
-        action: ACTION_TYPES.BIZ3_FACE3_QR,
-        op: 'list',
-      };
-      sendMessage(messageData);
-      registerCallback(ACTION_TYPES.BIZ3_FACE3_QR, messageData.op, cb);
-    },
-    [registerCallback]
-  );
-
-  /**
    * 唤醒一台设备去起 WebRTC 推流。
    *
    * 设备平时是断电休眠的（省电，靠 6629 的雷达唤醒），WiFi 模块的 WebSocket
@@ -144,10 +101,14 @@ const useFace3 = () => {
     (deviceUUID, cb) => {
       if (!deviceUUID) return;
       setFace3StreamStates((states) => ({ ...states, [deviceUUID]: null }));
-      /* 唤醒 = 下发 face3Wake 命令，复用通用入口 */
-      sendFace3Command(deviceUUID, 'face3Wake', cb);
+      const messageData = {
+        action: ACTION_TYPES.BIZ3_FACE3_QR,
+        op: 'wake',
+        deviceId: deviceUUID,
+      };
+      sendWithoutQueue(messageData, `${messageData.op}:${deviceUUID}`, cb);
     },
-    [sendFace3Command]
+    [sendWithoutQueue]
   );
 
   /**
@@ -183,7 +144,7 @@ const useFace3 = () => {
       recordingRequests.current.handle(message);
       const callbackDeviceId = message.data?.deviceId;
       invokeCallbacks(
-        callbackDeviceId && ['command', 'viewer'].includes(message.op)
+        callbackDeviceId && ['wake', 'viewer'].includes(message.op)
           ? { ...message, op: `${message.op}:${callbackDeviceId}` }
           : message
       );
@@ -203,13 +164,6 @@ const useFace3 = () => {
                 }));
               }
               break;
-            case 'list':
-              /* 失败时不要把已有列表清空 —— 断网重连的瞬间会拿到一次失败，
-                 清空会让页面闪一下空状态。保留旧数据，交给调用方处理错误。 */
-              if (message.success) {
-                setFace3Devices(message.data?.devices || []);
-              }
-              break;
             default:
               break;
           }
@@ -224,15 +178,12 @@ const useFace3 = () => {
   useWebSocket(ACTION_TYPES.BIZ3_FACE3_QR, handleFace3Response);
 
   return {
-    face3Devices,
     face3StreamStates,
     face3StreamReasons,
     listFace3Recordings,
     playFace3Recording,
     deleteFace3Recording,
     synthesizeFace3Speech,
-    listFace3Devices,
-    sendFace3Command,
     wakeFace3Device,
     viewFace3Device,
   };
