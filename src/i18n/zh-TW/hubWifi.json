@@ -1,0 +1,8 @@
+{
+  "hubWifi": {
+    "title": "選擇您的WiFi網路",
+    "refresh": "↓您可以下拉刷新",
+    "password": "請輸入 WiFi 密碼",
+    "close": "關閉"
+  }
+}

@@ -46,6 +46,9 @@ import MobileRemoveDevice from '@/components/MobileRemoveDevice';
 import BatteryPercent from '@/components/biz/device/BatteryPercent';
 import SliderItem from '@/components/SliderItem';
 import { loadHub3LedPercent, saveHub3LedPercent } from '@/services/hub3LedCache';
+import { PATHS } from '@/routes/manifest';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
+import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
 
 const MobileWifiModule = () => {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -62,6 +65,7 @@ const ExistingWifiModule = () => {
   const [searchParams] = useSearchParams();
   const did = searchParams.get('deviceUUID') || '';
   const isFromApp = searchParams.get('fromType') === 'app';
+  const appOnly = useAppOnlyNotice();
   const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const nativeDevice = nativeDevices[did.toUpperCase()];
   const hubReady = !!nativeDevice;
@@ -123,14 +127,15 @@ const ExistingWifiModule = () => {
   const [isHub3Pro, setIsHub3Pro] = useState(searchParams.get('deviceModel') === gConfig.sesameDeviceModel.hub3_pro);
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const settingsNavigate = useSettingsNavigate();
 
   const openFactoryInfo = () => {
     const url = new URL(window.location.href);
     const newSearchParams = new URLSearchParams(url.searchParams);
     newSearchParams.set('deviceUUID', did);
     newSearchParams.set('deviceName', currentDevice.deviceName || '');
-    navigate({
-      pathname: '/device-setting/factory-info',
+    settingsNavigate({
+      pathname: PATHS.deviceSetting.factoryInfo,
       search: newSearchParams.toString(),
     });
   };
@@ -251,12 +256,12 @@ const ExistingWifiModule = () => {
             open: true,
             severity: 'error',
             logScope: 'MobileWifiModule.matterPairingWindow',
-            msg: 'Hub3がすでに多数のMatterネットワークに接続されている可能性があります。Hub3をリセットしてから再試行してください。',
+            msg: t('manage.devices.matterPairingFailed'),
           });
         }
       });
     });
-  }, [currentDevice]);
+  }, [currentDevice, t]);
 
   const handleChangeLEDBrightness = useCallback(
     (newValue) => {
@@ -475,7 +480,8 @@ const ExistingWifiModule = () => {
                   severity: 'error',
                 })
               );
-            } else requestConfigureInternetFromApp({ deviceUUID: did });
+            } else if (isFromApp) requestConfigureInternetFromApp({ deviceUUID: did });
+            else appOnly();
           }}
         >
           <ListItemText

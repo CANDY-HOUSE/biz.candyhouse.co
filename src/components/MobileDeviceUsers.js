@@ -20,8 +20,9 @@ import { DataSearch } from '@components/biz/device/DataSearch';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { SvgArrow } from '@/assets/svg/svgLock';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gUtils } from '@/utils/gUtils';
+import { PATHS } from '@/routes/manifest';
+import { useSettingsBack, useSettingsNavigate, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const MobileDeviceUsers = ({
   users,
@@ -43,8 +44,9 @@ const MobileDeviceUsers = ({
   const { t } = useTranslation();
   const prevUsersCountRef = useRef();
   const DeviceMemberChangedName = 'DeviceMemberChanged';
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const settingsNavigate = useSettingsNavigate();
+  const back = useSettingsBack();
+  const [searchParams] = useSettingsSearchParams();
   const isSettingPush = Boolean(searchParams.get('setting')) === true;
   const isManage = searchParams.get('type') === 'manage';
 
@@ -150,8 +152,8 @@ const MobileDeviceUsers = ({
       const did = newSearchParams.get('did');
       did && newSearchParams.set('deviceUUID', did);
       newSearchParams.delete('did');
-      navigate({
-        pathname: '/device-setting/user',
+      settingsNavigate({
+        pathname: PATHS.deviceSetting.user,
         search: newSearchParams.toString(),
       });
     }
@@ -194,11 +196,7 @@ const MobileDeviceUsers = ({
       <Box sx={{ width: '100%', bgcolor: 'background.paper', pl: 0 }}>
         {!isAppHome && !gStrip.isFromApp && isSettingPush && (
           <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-            <BackButton onClick={() => navigate(-1)} disableRipple>
-              <Typography variant="h3" sx={{ color: 'title.main' }}>
-                {t('pages.login.ReturnToMailInput')}
-              </Typography>
-            </BackButton>
+            <BackButton onClick={back} disableRipple />
           </Box>
         )}
         <Box sx={{ p: 2, pb: 1, display: 'flex' }}>

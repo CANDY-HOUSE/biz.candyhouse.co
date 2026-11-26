@@ -4,7 +4,6 @@ import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, Card, CardHeader, Typography } from '@mui/material';
 import { CfpDgBindMember } from '@/components/biz/device/CfpDialogBindMember';
 import CheckTable from '@/components/biz/CheckTable';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gConfig } from '@constants/gConfig';
 import { wordConfig } from '@constants/wordConfig';
 import { useTranslation } from 'react-i18next';
@@ -13,9 +12,10 @@ import useOperateIoT from '@hooks/useOperateIoT';
 import { Buffer } from 'buffer';
 import CardInfoDisplay from '@/components/biz/device/CardDeviceInfo';
 import { registerIotCallback, unregisterIotCallback } from '@hooks/useIotCallbackRegistry';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 export default function CardDetails() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const did = searchParams.get('did') || '';
   const { t } = useTranslation(); // i18n
   const {
@@ -27,7 +27,7 @@ export default function CardDetails() {
     setSnackbarValue,
     gMediaType,
   } = useContext(GlobalStateContext);
-  const navigate = useNavigate();
+  const back = useSettingsBack();
   const [isBindMember, setIsBindMember] = useState(false);
   const pendingDevicesRef = useRef({ deviceIDs: [], cb: null });
   const { sendCmd } = useOperateIoT();
@@ -155,7 +155,7 @@ export default function CardDetails() {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <BackButton onClick={() => navigate(-1)}></BackButton>
+              <BackButton onClick={back}></BackButton>
               <Typography variant="h3">{biz3utils.formatCardID(cards[0]?.cardID)}</Typography>
             </Box>
           }

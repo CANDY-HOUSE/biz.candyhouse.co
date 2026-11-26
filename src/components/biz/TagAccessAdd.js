@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { AccessLabel } from '@/utils/accessLabels';
 
 export default function TagAccessAdd({ tag, changeSingleAccess, appAccessTags }) {
   const { gStripe } = useContext(GlobalStateContext);
@@ -52,7 +53,7 @@ export default function TagAccessAdd({ tag, changeSingleAccess, appAccessTags })
                 );
               }}
             >
-              {option}
+              <AccessLabel id={option} />
             </MenuItem>
           ))}
       </Menu>

@@ -4,8 +4,10 @@ import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
 import React, { useContext, useEffect, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
+import { useTranslation } from 'react-i18next';
 
 export const CfpBindMM = ({ defaultVal, callBindMm }) => {
+  const { t } = useTranslation();
   const { gManageEmployee } = useContext(GlobalStateContext);
   const [isFocused, setFocused] = useState(false);
 
@@ -59,7 +61,7 @@ export const CfpBindMM = ({ defaultVal, callBindMm }) => {
         renderInput={(params) => (
           <TextField
             size="small"
-            label="ユーザー"
+            label={t('bizui.common.user')}
             {...params}
             InputProps={{
               ...params.InputProps,

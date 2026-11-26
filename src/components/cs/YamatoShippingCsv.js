@@ -3,9 +3,11 @@ import GetAppIcon from '@mui/icons-material/GetApp';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Box, Button, Card, Divider, Typography } from '@mui/material';
 import { parse } from 'papaparse';
+import { useTranslation } from 'react-i18next';
 import { checkRange, downloadCsv, shopifyCSV2ShippingCSV, yamatoHeaders } from './CsUtils';
 
 const YamatoShippingCsv = () => {
+  const { t } = useTranslation();
   const fileInputRef = useRef(null);
   const [csvYamatoData, setYamatoCSV] = useState([]);
   const [shippingAmount, setShippingAmount] = useState({ start: '', end: '' });
@@ -47,9 +49,9 @@ const YamatoShippingCsv = () => {
           }}
         >
           <UploadFileIcon color="primary" />
-          <Typography>DROP HERE(order_export.csv)</Typography>
+          <Typography>{t('cs.shipping.dropHere')}</Typography>
           <Typography variant="body2" sx={{ color: 'info.light' }}>
-            or click to choose a CSV file
+            {t('cs.shipping.chooseFile')}
           </Typography>
           <input
             ref={fileInputRef}
@@ -69,28 +71,32 @@ const YamatoShippingCsv = () => {
             startIcon={<GetAppIcon />}
             onClick={() => downloadCsv(csvYamatoData, 'yamato_b2.csv', yamatoHeaders)}
           >
-            Yamato CSV
+            {t('cs.shipping.download')}
           </Button>
         )}
 
         <Divider sx={{ my: 2 }} />
-        <Typography sx={{ color: 'primary.main' }}>出貨統計</Typography>
+        <Typography sx={{ color: 'primary.main' }}>{t('cs.shipping.stats')}</Typography>
         {inStockData.map((row) => (
           <Typography key={row.product}>
             {row.product}:{row.productAmount}
           </Typography>
         ))}
-        <Typography>結束單號：{shippingAmount.start}</Typography>
-        <Typography>開始單號：{shippingAmount.end}</Typography>
+        <Typography>{t('cs.shipping.endOrder', { name: shippingAmount.start })}</Typography>
+        <Typography>{t('cs.shipping.startOrder', { name: shippingAmount.end })}</Typography>
 
-        {exception.length !== 0 && <Typography sx={{ mt: 2, color: 'primary.main' }}>例外狀況</Typography>}
+        {exception.length !== 0 && (
+          <Typography sx={{ mt: 2, color: 'primary.main' }}>{t('cs.shipping.exceptions')}</Typography>
+        )}
         {exception.map((row, index) => (
           <Typography key={`${row.Name}-${index}`}>
             {row.Name}:{row['Lineitem sku']}
           </Typography>
         ))}
 
-        {orderChangeList.length !== 0 && <Typography sx={{ mt: 2, color: 'primary.main' }}>更動訂單情況</Typography>}
+        {orderChangeList.length !== 0 && (
+          <Typography sx={{ mt: 2, color: 'primary.main' }}>{t('cs.shipping.changedOrders')}</Typography>
+        )}
         {orderChangeList.map((row, index) => (
           <Typography key={`${row.Name}-${index}`}>{row.Name}</Typography>
         ))}

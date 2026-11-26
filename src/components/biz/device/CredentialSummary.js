@@ -1,11 +1,11 @@
 import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { gConfig } from '@constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
 import { isAppHome } from '@/services/deviceService';
 import { useCredentialCounts } from '@/hooks/useBleSnapshot';
 import CfpContent from './CfpContent';
+import { useOpenCredential } from '@/hooks/useOpenCredential';
 
 const credentialKinds = {
   [gConfig.sesameTouchProAuthType.finger]: 'fingerprint',
@@ -13,9 +13,9 @@ const credentialKinds = {
   [gConfig.sesameTouchProAuthType.palm]: 'palm',
 };
 
-// Registered cards, passcodes and biometrics of an access control device; biometrics open through onCredential.
-export default function CredentialSummary({ device, did, onCredential }) {
-  const navigate = useNavigate();
+// Registered cards, passcodes and biometrics of an access control device.
+export default function CredentialSummary({ device, did }) {
+  const openCredential = useOpenCredential();
   const { gMediaType } = useContext(GlobalStateContext);
   const webCounts = !isAppHome && gUtils.isSesameAccessControlDevice(device.deviceModel);
   const counts = useCredentialCounts(webCounts ? did : null, device.deviceModel);
@@ -38,22 +38,13 @@ export default function CredentialSummary({ device, did, onCredential }) {
         palmCount: count('palm'),
       })}
       call={(type) => {
-        if (credentialKinds[type]) {
-          if (!webCounts) return;
-          onCredential(credentialKinds[type]);
-          return;
-        }
-        let mstate = {
-          title: device.deviceName,
-          uuid: device.deviceUUID,
-        };
-        let path = '';
-        if (type === gConfig.sesameTouchProAuthType.card) {
-          path = '/biz/access-control/cards';
-        } else if (type === gConfig.sesameTouchProAuthType.password) {
-          path = '/biz/access-control/passwords';
-        }
-        navigate(path, { state: mstate });
+        if (credentialKinds[type] && !webCounts) return;
+        openCredential({
+          kind: credentialKinds[type] || (type === gConfig.sesameTouchProAuthType.card ? 'card' : 'passcode'),
+          deviceUUID: device.deviceUUID,
+          deviceName: device.deviceName,
+          deviceModel: device.deviceModel,
+        });
       }}
     />
   );

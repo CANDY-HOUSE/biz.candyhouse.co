@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { gUtils } from '@/utils/gUtils';
 import CheckTable from '@/components/biz/CheckTable';
 import EditableText from '@/components/EditableText';
+import { useTranslation } from 'react-i18next';
 
 const EmployeeGroupItem = () => {
   const [title, setTitle] = useState('');
@@ -18,6 +19,7 @@ const EmployeeGroupItem = () => {
     useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
   const gid = searchParams.get('gid') || '';
+  const { t } = useTranslation();
 
   useEffect(() => {
     // 默认标题
@@ -38,7 +40,7 @@ const EmployeeGroupItem = () => {
       const deviceGroups = res.data || [];
       const members = deviceGroups.map((uitem) => {
         const findItem = gManageGroup.deviceGroups.Items.find((item) => item.gid === uitem.did);
-        let time = '常時利用';
+        let time = t('contacts.alwaysAvailable');
         if (uitem.startTime && uitem.endTime) {
           time = gUtils.getStartTimeEndTime(uitem);
         }
@@ -88,8 +90,8 @@ const EmployeeGroupItem = () => {
           setCustomModalOpen(true);
           setModalContent(
             <CheckTable
-              title={'ユーザーを選択'}
-              customColumns={DataTableColumns.groupMember}
+              title={t('manage.group.selectUsers')}
+              customColumns={DataTableColumns.groupMember()}
               data={listMember}
               selectableRows={'multiple'}
               enableFilter={true}
@@ -109,8 +111,8 @@ const EmployeeGroupItem = () => {
         data={items}
         isBind={false}
         isBack={false}
-        text={`ユーザー(${items.length})`}
-        columns={DataTableColumns.groupMember}
+        text={t('manage.group.usersCount', { num: items.length })}
+        columns={DataTableColumns.groupMember()}
         callDelData={(items) => {
           const userItem = gManageEmployee.employeeGroups?.find((item) => item.gid === gid);
           gManageEmployee.removeEmployeeInGroup(gid, userItem.uuids, items, (res) => {
@@ -127,7 +129,7 @@ const EmployeeGroupItem = () => {
         data={members}
         isBind={false}
         isBack={false}
-        text={`グループ鍵`}
+        text={t('manage.group.groupKey')}
         selectableRows={'none'}
         columns={DataTableColumns.groupMemberKey({
           click: (did) => {

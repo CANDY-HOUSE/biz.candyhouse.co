@@ -1,0 +1,6 @@
+{
+  "bleStatus": {
+    "off": "Bluetooth is off",
+    "noSignal": "Bluetooth signal not found, please get closer"
+  }
+}

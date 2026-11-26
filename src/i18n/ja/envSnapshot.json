@@ -1,0 +1,30 @@
+{
+  "envSnapshot": {
+    "title": "環境スナップショット",
+    "bundleId": "バンドルID",
+    "language": "言語",
+    "region": "地域",
+    "build": "ビルド",
+    "version": "バージョン",
+    "displayName": "名前",
+    "collectedAt": "取得日時",
+    "deviceType": "デバイスタイプ",
+    "cardType": "カードタイプ",
+    "screenWidth": "画面幅",
+    "screenScale": "画面スケール",
+    "systemName": "システム名",
+    "screenHeight": "画面高さ",
+    "timeZone": "タイムゾーン",
+    "model": "モデル",
+    "systemVersion": "システムバージョン",
+    "batteryLevel": "バッテリー残量",
+    "lightLoadVoltage_mV": "高電圧",
+    "heavyLoadVoltage_mV": "低電圧",
+    "isRechargeBattery": "3.7V 充電式電池",
+    "notification": "通知",
+    "location": "位置情報",
+    "bluetooth": "Bluetooth",
+    "network": "ネットワーク",
+    "noData": "データなし"
+  }
+}

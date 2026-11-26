@@ -1,15 +1,15 @@
 import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
-import { Box, FormControl, Select, MenuItem, Typography } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Box, FormControl, Select, MenuItem } from '@mui/material';
 import MobileQRCodeDialog from './MobileQRCodeDialog';
 import { biz3utils } from '@/utils/biz3utils';
 import { useTranslation } from 'react-i18next';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const MobileDeviceShareQRCode = () => {
   const { gMediaType, gManageGroup, gStripe, gManageDevice } = useContext(GlobalStateContext);
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const deviceUUID = searchParams.get('deviceUUID');
   const deviceName = searchParams.get('deviceName');
   const [selectedRole, setSelectedRole] = useState();
@@ -19,7 +19,7 @@ const MobileDeviceShareQRCode = () => {
   const qrCodeURLs = useRef({});
   const [roleOptions, setRoleOptions] = useState([]);
   const [currentDeviceKey, setCurrentDeviceKey] = useState({});
-  const navigate = useNavigate();
+  const back = useSettingsBack();
 
   useEffect(() => {
     if (!deviceUUID) return;
@@ -131,11 +131,7 @@ const MobileDeviceShareQRCode = () => {
     >
       {!gStripe.isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <BackButton onClick={() => navigate(-1)} disableRipple>
-            <Typography variant="h3" sx={{ color: 'title.main' }}>
-              {t('pages.login.ReturnToMailInput')}
-            </Typography>
-          </BackButton>
+          <BackButton onClick={() => back()} disableRipple />
         </Box>
       )}
       <MobileQRCodeDialog

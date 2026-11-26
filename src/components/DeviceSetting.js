@@ -9,10 +9,8 @@ import { deviceService, isAppHome } from '@/services/deviceService';
 import { appHostSupports } from '@/services/appSession';
 import LockSettingsExtras from './LockSettingsExtras';
 import AppLockSettings from './AppLockSettings';
-import { LockAngle } from './AppLockAngle';
-import { BotScript } from './AppBotScript';
 import AppVoiceShortcut from './AppVoiceShortcut';
-import React, { useContext, useMemo, useState, useSyncExternalStore } from 'react';
+import React, { useContext, useMemo, useSyncExternalStore } from 'react';
 import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from './MobileDeviceSetting';
 import { Box, Divider, List, ListItem, ListItemText, Typography, SvgIcon } from '@mui/material';
@@ -27,6 +25,9 @@ import { gConfig } from '@/constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
 import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
 import SliderItem from './SliderItem';
+import { PATHS } from '@/routes/manifest';
+import { useOpenCredential } from '@/hooks/useOpenCredential';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 export default function DeviceSetting(props) {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -43,6 +44,7 @@ function ExistingDeviceSetting({ showBack = true }) {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const settingsNavigate = useSettingsNavigate();
   const did = searchParams.get('deviceUUID') || '';
   const deviceModel =
     gManageDevice.companyDevices.find((item) => item.deviceUUID?.toUpperCase() === did.toUpperCase())?.deviceModel ||
@@ -56,10 +58,6 @@ function ExistingDeviceSetting({ showBack = true }) {
   }, [gManageDevice.companyDevices, did]);
   const nativeDevices = useSyncExternalStore(deviceService.subscribe, deviceService.getSnapshot);
   const nativeBattery = isAppHome ? nativeDevices[did.toUpperCase()]?.batteryPercentage : null;
-  const [panel, setPanel] = useState(null);
-  const inColumn = !showBack && !isAppHome;
-  const openAngle = inColumn ? () => setPanel({ did, kind: 'angle' }) : undefined;
-  const openScript = inColumn ? (index) => setPanel({ did, kind: 'script', index }) : undefined;
 
   const onClickSetAngle = () => {
     setSnackbarValue({
@@ -74,31 +72,26 @@ function ExistingDeviceSetting({ showBack = true }) {
     const newSearchParams = new URLSearchParams(url.searchParams);
     newSearchParams.set('deviceUUID', did);
     newSearchParams.set('deviceName', currentDevice.deviceName || deviceName);
-    navigate({
-      pathname: '/device-setting/factory-info',
+    settingsNavigate({
+      pathname: PATHS.deviceSetting.factoryInfo,
       search: newSearchParams.toString(),
     });
   };
 
-  const handleClickAuth = (type) => {
-    let mstate = {
-      title: deviceName,
-      uuid: did,
-    };
-    let path = '';
-    if (type === gConfig.sesameTouchProAuthType.card) {
-      path = '/biz/access-control/cards';
-    } else if (type === gConfig.sesameTouchProAuthType.password) {
-      path = '/biz/access-control/passwords';
-    }
-    navigate(path, { state: mstate });
-  };
+  const openCredential = useOpenCredential();
+  const handleClickAuth = (type) =>
+    openCredential({
+      kind: type === gConfig.sesameTouchProAuthType.card ? 'card' : 'passcode',
+      deviceUUID: did,
+      deviceName,
+      deviceModel,
+    });
 
   const subFunctionsComp = useMemo(() => {
     return gUtils.isLockModel(deviceModel) || isAppLockModel(deviceModel) ? (
       isAppLockModel(deviceModel) && (isAppHome || !gStripe.isFromApp) ? (
         isGuest ? null : (
-          <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} onOpenAngle={openAngle} />
+          <AppLockSettings key={`settings:${did}`} deviceUUID={did} device={currentDevice} />
         )
       ) : null
     ) : (
@@ -152,17 +145,6 @@ function ExistingDeviceSetting({ showBack = true }) {
     );
   }, [deviceModel, onClickSetAngle, isGuest]);
 
-  if (did && panel?.did === did)
-    return (
-      <Box>
-        {panel.kind === 'angle' ? (
-          <LockAngle deviceUUID={did} embedded onBack={() => setPanel(null)} />
-        ) : (
-          <BotScript deviceUUID={did} index={panel.index} embedded onBack={() => setPanel(null)} />
-        )}
-      </Box>
-    );
-
   return (
     <Box
       sx={{
@@ -201,7 +183,7 @@ function ExistingDeviceSetting({ showBack = true }) {
           ))}
         {isScriptBotModel(deviceModel) ? (
           isAppHome || !gStripe.isFromApp ? (
-            <AppBotSettings deviceUUID={did} onOpenScript={openScript} />
+            <AppBotSettings deviceUUID={did} />
           ) : (
             <>
               <ListItem onClick={onClickSetAngle}>

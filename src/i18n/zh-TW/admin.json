@@ -1,0 +1,104 @@
+{
+  "admin": {
+    "home": {
+      "userCount": "使用者數",
+      "doorCount": "門數",
+      "authDeviceCount": "認證裝置數",
+      "unlimited": "/無限制",
+      "memberQuota": "/{{value}}人",
+      "lockQuota": "/{{value}}台",
+      "deviceUnit": "台"
+    },
+    "settings": {
+      "company": "公司",
+      "currentPlan": "目前方案",
+      "nextPaymentDate": "下次付款日期",
+      "nextPaymentAmount": "下次付款金額",
+      "priceWithTax": "{{price}}日圓（含稅）",
+      "paymentInfo": "付款資訊",
+      "plan": "方案",
+      "priceNote": "※所有方案的顯示價格均為年繳方案換算為每月的金額（未稅）。",
+      "unlimitedPlan": "無限制方案",
+      "date": "{{year}}年{{month}}月{{day}}日",
+      "downgradeNotice": "※將於{{date}}降級為 {{level}}（{{method}}）。"
+    },
+    "plan": {
+      "monthly": "月繳方案",
+      "yearly": "年繳方案",
+      "perMonth": "日圓 /月",
+      "users": "{{value}} 位使用者",
+      "doors": "{{value}} 扇門",
+      "apiLimit": "API 請求上限\n {{value}} 次",
+      "authDevicePages": "可使用認證裝置・卡片管理頁面",
+      "upgrade": "升級",
+      "current": "目前方案",
+      "cancelDowngrade": "取消降級",
+      "downgrade": "降級",
+      "upgradeTo": "升級至 {{name}}",
+      "downgradeTo": "降級至 {{name}}",
+      "upgradeNote": "※目前方案將終止，新方案立即生效。",
+      "downgradeNote": "※目前方案將持續至已付款期間結束，新方案自下一期開始生效。",
+      "taxNote": "※所有顯示價格均未稅。",
+      "detailsPrefix": "方案詳情請見",
+      "detailsLink": "此處",
+      "price": "{{price}}日圓",
+      "yearlyPrice": "{{price}}日圓（換算每月{{monthly}}日圓）",
+      "yearlySaving": "每年省下{{amount}}日圓！",
+      "confirm": "確定"
+    },
+    "payment": {
+      "addMethod": "新增付款方式",
+      "addCard": "新增信用卡",
+      "default": "預設"
+    },
+    "developer": {
+      "qrReadFailed": "讀取失敗，請確認 QR 碼是否正確。",
+      "ownerRequired": "註冊失敗，需要裝置的「{{role}}」權限",
+      "deviceLimit": "已達到裝置數量上限，需要升級方案。",
+      "selectDevice": "選擇裝置",
+      "apiKey": "API 金鑰",
+      "copy": "複製",
+      "changeApiKey": "更換 API 金鑰",
+      "monthlyApiUsage": "本月 API 呼叫次數",
+      "usageCount": "{{value}} 次",
+      "demo": "示範",
+      "step1": "1.選擇裝置",
+      "importQrHint": "【QR 碼】透過 QR 碼匯入裝置",
+      "importPersonalHint": "【個人已註冊的裝置】匯入個人在 Sesame 應用中已註冊的裝置",
+      "addByQr": "透過 QR 碼新增",
+      "addFromPersonal": "從個人已註冊的裝置新增",
+      "deviceUuid": "裝置 UUID",
+      "deviceSecretKey": "裝置密鑰",
+      "step2": "2.執行示範",
+      "getStatus": "取得狀態",
+      "getHistory": "取得歷史紀錄",
+      "operateDevice": "操作裝置"
+    },
+    "webhook": {
+      "saveFailed": "儲存失敗：{{message}}",
+      "unknownError": "發生錯誤",
+      "saved": "已儲存",
+      "notifyUrl": "通知 URL",
+      "hintStateChange": "裝置狀態（上鎖、解鎖、上線、電量等）變化時，會以 POST 方式通知指定的 URL。",
+      "hintSignature": "簽章使用上方的 API 金鑰（X-Candyhouse-Signature）。",
+      "save": "儲存",
+      "edit": "編輯"
+    },
+    "notFound": {
+      "noPermission": "您沒有權限檢視此頁面",
+      "backHome": "返回首頁"
+    },
+    "login": {
+      "codeReissued": "輸入的驗證碼不正確。驗證碼已重新發送，請輸入新收到的驗證碼。"
+    },
+    "snackbar": {
+      "unknown": "未知訊息"
+    },
+    "authData": {
+      "checkHubConnection": "請檢查認證裝置與 Hub3 的連線。"
+    },
+    "remote": {
+      "listFetchFailed": "取得遙控器列表失敗。"
+    }
+  }
+}

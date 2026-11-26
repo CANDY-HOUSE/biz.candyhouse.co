@@ -10,13 +10,14 @@ const MobileQRCodeDialog = ({
   userName,
   qrCodeUrl,
   isMobile = false,
-  title = '私を連絡先に追加してください',
+  title,
   subtitle = '',
   fullScreen = false,
   onEncryptChange,
 }) => {
   const { t } = useTranslation();
   const [isEncryptEnabled, setIsEncryptEnabled] = useState(true);
+  title = title || t('manage.qrDialog.addMeToContacts');
   subtitle = subtitle || t('pages.sesameAccessControlDevice.index.AddDeviceKeyByScanHint');
 
   const handleEncryptChange = useCallback(

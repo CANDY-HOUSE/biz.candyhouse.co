@@ -20,6 +20,7 @@ import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import { IR_TYPE } from '../utils/irTypes.js';
 import { deleteSearchCache } from '../utils/remoteListCache.js';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
+import { PATHS } from '@/routes/manifest';
 
 export default function IrTypeList() {
   const navigate = useNavigate();
@@ -124,9 +125,9 @@ export default function IrTypeList() {
   const handleTypeSelect = (selectedType) => {
     localStorage.removeItem('formRemoteControlKey');
     deleteSearchCache(selectedType.type);
-    let pathname = '/biz/access-control/remotes';
+    let pathname = PATHS.ir.remotes;
     if (selectedType.id === 'learn') {
-      pathname = '/biz/access-control/learn';
+      pathname = PATHS.ir.learn;
     }
     navigate({
       pathname: pathname,

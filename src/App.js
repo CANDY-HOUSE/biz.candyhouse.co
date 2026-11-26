@@ -1,27 +1,26 @@
 import { gUtils } from '@/utils/gUtils';
 import { Amplify } from '@aws-amplify/core';
-import deferredComponent, { DeferredLoading } from './components/deferredComponent';
+import { DeferredLoading } from './components/deferredComponent';
 import Layout from '@components/biz/layout';
 import LoadingPage from '@components/biz/layout/Auth/LoadingPage';
 import { Box } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import NotFoundPage from '@pages/404';
-import HomePage from '@pages/index';
 import LoginIndex from '@pages/login';
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import awsconfig from './aws-exports';
 import GlobalContextProvider, { GlobalStateContext } from './context/GlobalContextProvider';
 import { Face3Provider } from './components/vision/face3Context';
 import './i18n';
-import { routerComponentMap } from './router_config';
+import { pageRoutes } from './routes/routes';
+import { PATHS, REDIRECTS, pageNames } from './routes/manifest';
 import './styles/global.css';
 import NativePageTheme from './theme/NativePageTheme';
 import AppPullRefresh from './components/AppPullRefresh';
 import AppGuestGate from './components/AppGuestGate';
 import { ContactsEmpty } from './components/MobileContactList';
-import AppRegistration from './components/AppRegistration';
 import AppBootstrap from './components/AppBootstrap';
 import AppUpdateRuntime from './components/AppUpdateRuntime';
 import AppStartupReady from './components/AppStartupReady';
@@ -36,8 +35,16 @@ import AppHomeRuntime from './components/AppHomeRuntime';
 import AppLocationDisclosure from './components/AppLocationDisclosure';
 import { isAppHome } from './services/deviceService';
 
-const BizHomePage = deferredComponent(() => import('@biz/home'));
-const Settings = deferredComponent(() => import('@biz/settings'));
+const routeAllowed = (route, customerInfo) => {
+  if (route.access === 'always') return true;
+  if (route.appForced && isAppHome) return true;
+  return gUtils.isContainPage(customerInfo.access, pageNames[route.access], customerInfo.isSesameApp);
+};
+
+const RedirectWithQuery = ({ to }) => {
+  const { search } = useLocation();
+  return <Navigate to={`${to}${search}`} replace />;
+};
 
 Amplify.configure(awsconfig);
 
@@ -57,60 +64,30 @@ const AppContent = () => {
   useEffect(() => {
     const loginInfo = gStripe.customerInfo;
     if (loginInfo && loginInfo.access?.length > 0) {
-      const allowed = gUtils.categoriesConf.map(({ router, id, _items }) => {
-        if (gUtils.isContainPage(gStripe.customerInfo.access, id, gStripe.customerInfo.isSesameApp)) {
-          return router.startsWith('/biz/access-control') ? '/biz/access-control' : router;
-        }
-        return null;
-      });
-      if (isAppHome) allowed.push('/contacts', '/me');
-      allowed.push(...routerComponentMap.filter((it) => !!it.load));
-      setAllowedRoutes([...new Set(allowed.filter(Boolean))]);
+      setAllowedRoutes(
+        pageRoutes.filter((route) => !['fixed', 'app'].includes(route.access) && routeAllowed(route, loginInfo))
+      );
     }
   }, [gStripe.customerInfo]);
 
-  const getRoute = (router) => {
-    if (Array.isArray(router)) {
-      return router.map((routeItem) => {
-        return getRoute(routeItem);
-      });
-    } else {
-      const route = routerComponentMap.find((item) => item.router === router) ?? router;
-      if (route && route.components) {
-        return (
-          <Route key={route.router} path={route.router}>
-            {getRoute(route.components)}
-          </Route>
-        );
-      }
-      return (
-        <Route
-          key={route.router}
-          path={route.router}
-          element={
-            isAppHome && ['/contacts', '/contact-add'].includes(route.router) ? (
-              <AppGuestGate fallback={route.router === '/contacts' ? <ContactsEmpty /> : null}>
-                <route.component />
-              </AppGuestGate>
-            ) : (
-              <route.component />
-            )
-          }
-        ></Route>
-      );
-    }
+  const renderRoute = (route) => {
+    const page = <route.component />;
+    return (
+      <Route
+        key={route.path}
+        path={route.path}
+        element={
+          isAppHome && route.guestGate ? (
+            <AppGuestGate fallback={route.path === PATHS.contacts ? <ContactsEmpty /> : null}>{page}</AppGuestGate>
+          ) : (
+            page
+          )
+        }
+      />
+    );
   };
 
-  const generateRoutes = (routes) => {
-    if (!Array.isArray(routes) || routes.length === 0) {
-      return;
-    }
-    return routes.map((route) => {
-      return getRoute(route);
-    });
-  };
-
-  if (isAppHome && !gManageDevice.devicesLoaded && location.pathname === '/') {
+  if (isAppHome && !gManageDevice.devicesLoaded && location.pathname === PATHS.root) {
     return (
       <AppOfflineDevices
         retry={async () => {
@@ -129,7 +106,7 @@ const AppContent = () => {
 
   if (isAppHome && gAuth.isSigningOut) return <DeferredLoading />;
 
-  if (isAppHome && !allowedRoutes.length && location.pathname !== '/login') return <DeferredLoading />;
+  if (isAppHome && !allowedRoutes.length && location.pathname !== PATHS.login) return <DeferredLoading />;
 
   if (!isAppHome && gStripe.isPending) {
     return <LoadingPage />;
@@ -139,13 +116,14 @@ const AppContent = () => {
     <>
       {isAppHome && <AppPullRefresh />}
       <Routes>
-        <Route path="/login" element={<LoginIndex />} />
+        <Route path={PATHS.login} element={<LoginIndex />} />
         <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          {isAppHome && <Route path="/app/register" element={<AppRegistration />} />}
-          <Route path="/biz" element={<BizHomePage />} />
-          {generateRoutes(allowedRoutes)}
-          <Route path="/biz/settings" element={<Settings />} />
+          {pageRoutes
+            .filter((route) => route.access === 'fixed' || (route.access === 'app' && isAppHome))
+            .map(renderRoute)}
+          {allowedRoutes.map(renderRoute)}
+          {allowedRoutes.length > 0 &&
+            REDIRECTS.map(({ from, to }) => <Route key={from} path={from} element={<RedirectWithQuery to={to} />} />)}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

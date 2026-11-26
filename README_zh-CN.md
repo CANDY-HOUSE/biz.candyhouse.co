@@ -20,6 +20,8 @@ yarn dev
 
 普通浏览器默认使用 PC 模式；App 页面预览：`http://localhost:3000/?appHome=1&fromType=app`。BLE、扫码及 NFC 需在 Web App 宿主中验证。
 
+PC 界面语言的优先级：手动选择（`localStorage.bizLanguage`）> 浏览器语言 > `ja`；APP 跟随系统语言，不支持的语言回退到 `en`。
+
 ## 环境
 
 APP 通过页面地址配置指定入口。页面入口与 Biz 云端服务配置相互独立。
@@ -52,19 +54,20 @@ flowchart LR
 
 ## 代码入口
 
-| Path                                                            | Responsibility                                                    |
-| --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| src/components/AppBootstrap.js                                  | Session startup + offline fallback                                |
-| src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                         |
-| src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                             |
-| src/services/appBridge.js                                       | Trusted native bridge requests                                    |
-| src/services/appSession.js                                      | Web/legacy/guest session selection                                |
-| src/services/appOperations.js                                   | Existing socket app-operation adapter                             |
-| src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation |
-| src/services/appPageCache.js + public/app-worker.js             | Automatic public page cache                                       |
-| src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
-| src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
-| src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
+| Path                                                            | Responsibility                                                                                  |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| src/components/AppBootstrap.js                                  | Session startup + offline fallback                                                              |
+| src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                                                       |
+| src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                                                           |
+| src/services/appBridge.js                                       | Trusted native bridge requests                                                                  |
+| src/services/appSession.js                                      | Web/legacy/guest session selection                                                              |
+| src/services/appOperations.js                                   | Existing socket app-operation adapter                                                           |
+| src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation                               |
+| src/services/appPageCache.js + public/app-worker.js             | Automatic public page cache                                                                     |
+| src/components/BackButton.js                                    | Shared PC and Web App back button                                                               |
+| src/routes/manifest.js + src/routes/routes.js                   | Route paths, flags and menu (data) + component mapping                                          |
+| src/api + src/websocket                                         | Existing business requests and socket lifecycle                                                 |
+| src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings: `<lang>/<namespace>.json`, one top-level namespace per file |
 
 ## Toast
 

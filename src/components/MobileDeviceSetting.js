@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Box, List, ListItem, ListItemText, ListItemIcon, Typography, SvgIcon, Divider } from '@mui/material';
 import DeviceUserList from './DeviceUserList';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { QrCode } from '@mui/icons-material';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 const MobileDeviceSetting = () => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
@@ -17,7 +18,7 @@ const MobileDeviceSetting = () => {
   const isWidget = searchParams.get('displayType') === 'widget';
   const [deviceName, setDeviceName] = useState('');
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSettingsNavigate();
   const containerRef = useRef(null);
   const lastHeightRef = useRef(null);
 

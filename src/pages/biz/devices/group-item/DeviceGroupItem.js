@@ -8,6 +8,7 @@ import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import { useSearchParams } from 'react-router-dom';
 import { gUtils } from '@/utils/gUtils';
 import EditableText from '@/components/EditableText';
+import { useTranslation } from 'react-i18next';
 
 const DeviceGroupItem = () => {
   const { gManageGroup, gManageEmployee, setCustomModalOpen, setModalContent, gIot, gManageDevice, gMediaType } =
@@ -18,13 +19,14 @@ const DeviceGroupItem = () => {
   const [members, setMembers] = useState([]);
   const [searchParams] = useSearchParams();
   const gid = searchParams.get('gid') || '';
+  const { t } = useTranslation();
 
   const fetchEmployeeGroups = () => {
     gManageGroup.getEmployeeGroup(gid, (res) => {
       const userGroups = res.data || [];
       const members = userGroups.map((uitem) => {
         const findItem = gManageEmployee.employeeGroups.find((item) => item.gid === uitem.mid);
-        let time = '常時利用';
+        let time = t('contacts.alwaysAvailable');
         if (uitem.startTime && uitem.endTime) {
           time = gUtils.getStartTimeEndTime(uitem);
         }
@@ -65,7 +67,7 @@ const DeviceGroupItem = () => {
     setCustomModalOpen(true);
     setModalContent(
       <CheckTable
-        title={'デバイスを選択'}
+        title={t('contacts.selectDevices')}
         data={ssmItems}
         selectableRows={'multiple'}
         enableFilter={true}
@@ -115,7 +117,7 @@ const DeviceGroupItem = () => {
         data={items}
         isBind={false}
         isBack={false}
-        text={`デバイス(${items.length})`}
+        text={t('manage.group.devicesCount', { num: items.length })}
         columns={DataTableColumns.ssmDevices({ gIot: gIot })}
         callDelData={(items) => {
           const deviceItem = gManageGroup.deviceGroups.Items.find((item) => item.gid === gid);
@@ -134,7 +136,7 @@ const DeviceGroupItem = () => {
         data={members}
         isBind={false}
         isBack={false}
-        text={`グループ鍵`}
+        text={t('manage.group.groupKey')}
         selectableRows={'none'}
         columns={DataTableColumns.groupDeviceKey({
           click: (mid) => {

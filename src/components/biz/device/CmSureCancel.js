@@ -1,8 +1,10 @@
 import React from 'react';
 import { IconButton, Button, Box, Typography } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
+import { useTranslation } from 'react-i18next';
 
 const CmSureCancel = ({ title, message, cancelClick, sureClick }) => {
+  const { t } = useTranslation();
   return (
     <Box
       sx={{
@@ -63,7 +65,7 @@ const CmSureCancel = ({ title, message, cancelClick, sureClick }) => {
             },
           }}
         >
-          キャンセル
+          {t('bizui.common.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -80,7 +82,7 @@ const CmSureCancel = ({ title, message, cancelClick, sureClick }) => {
           }}
           disableElevation
         >
-          このまま削除を実行
+          {t('bizui.sureCancel.deleteAnyway')}
         </Button>
       </Box>
     </Box>

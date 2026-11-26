@@ -1,0 +1,90 @@
+{
+  "bizui": {
+    "common": {
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "notSet": "Not set",
+      "user": "User",
+      "userName": "User name",
+      "email": "Email address",
+      "role": "Role",
+      "department": "Department",
+      "deviceName": "Device name",
+      "authDevices": "Access readers",
+      "authDeviceCount": "Access readers: {{count}}"
+    },
+    "table": {
+      "rowsPerPage": "Rows per page",
+      "nextPage": "Next page",
+      "previousPage": "Previous page",
+      "linkOtherDevices": "Link with other access readers",
+      "issueKey": "Share keys",
+      "csvDownload": "Download CSV",
+      "excelDownload": "Download Excel",
+      "refresh": "Refresh",
+      "noMatch": "No matching results"
+    },
+    "columns": {
+      "cardName": "Card name",
+      "groupName": "Group name",
+      "groupKeys": "Group keys held",
+      "doorGroupName": "Door group name",
+      "groupKeyHolders": "Group key holders",
+      "bulkActions": "Bulk actions",
+      "bulkUnlock": "Unlock all",
+      "bulkLock": "Lock all",
+      "deviceGroupName": "Device group name",
+      "keyLevel": "Key permission",
+      "validPeriod": "Validity period",
+      "phone": "Phone number",
+      "linkedSesame": "Linked Sesame",
+      "battery": "Battery",
+      "lockButton": "Lock / Unlock",
+      "userPermission": "User permissions",
+      "viewablePages": "Accessible pages",
+      "noAccess": "No access",
+      "passcodeName": "Passcode name",
+      "passcode": "Passcode"
+    },
+    "checkMember": {
+      "hint": "All users in the CSV file will be assigned the same role. (The owner's role will not be changed.)",
+      "addUsers": "Add new users"
+    },
+    "addIcCard": {
+      "title": "Add new card",
+      "readCard": "Read card",
+      "hint": "Press the + button, then hold the card over the Touch / Touch Pro."
+    },
+    "bindMember": {
+      "title": "Link user"
+    },
+    "credential": {
+      "comingSoon": "Coming soon"
+    },
+    "datePicker": {
+      "start": "Start date and time",
+      "end": "End date and time",
+      "time": "Time"
+    },
+    "history": {
+      "all": "All history"
+    },
+    "sureCancel": {
+      "deleteAnyway": "Delete anyway"
+    },
+    "deviceUser": {
+      "selectUsers": "Select users",
+      "alwaysAvailable": "Always available"
+    },
+    "schedule": {
+      "empty": "No schedules",
+      "cancel": "Cancel schedule",
+      "action": {
+        "lock": "Lock",
+        "unlock": "Unlock",
+        "upgrade_firmware": "Update firmware"
+      }
+    }
+  }
+}

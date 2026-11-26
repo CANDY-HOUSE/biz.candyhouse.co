@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { Box, Divider, IconButton, ListItem, ListItemText, SvgIcon, Typography } from '@mui/material';
 import { ArrowRight, ArrowDropDown } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useBotScripts } from '@/hooks/useBotScripts';
 import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
 import LockSettingWheel from './LockSettingWheel';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
+import { PATHS } from '@/routes/manifest';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
-export default function AppBotSettings({ deviceUUID, onOpenScript }) {
+export default function AppBotSettings({ deviceUUID }) {
   const bot = useBotScripts(deviceUUID, undefined, false, true);
   const appOnly = useAppOnlyNotice();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSettingsNavigate();
   const location = useLocation();
   const scriptName = (id) => bot.scripts.find((row) => row.id === id)?.name.replace(/^🎬\s*/, '');
   // The selected name sizes every row, so the centered heading and wheel share one icon/text origin.
@@ -101,9 +103,10 @@ export default function AppBotSettings({ deviceUUID, onOpenScript }) {
           sx={{ justifySelf: 'end', mr: -1 }}
           disableRipple
           onClick={() =>
-            onOpenScript
-              ? onOpenScript(bot.selected)
-              : navigate({ pathname: '/device-setting/bot-script', search: `${location.search}&index=${bot.selected}` })
+            navigate({
+              pathname: PATHS.deviceSetting.botScript,
+              search: `${location.search}&index=${bot.selected}`,
+            })
           }
         >
           <SvgIcon component={SvgArrow} />

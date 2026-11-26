@@ -7,6 +7,7 @@ import { CmDataPicker } from '@/components/biz/device/CmDataPicker';
 import DataTable from '@/components/biz/device/DataTable';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LoadingButton } from '@mui/lab';
+import { useTranslation } from 'react-i18next';
 
 const GroupShare = () => {
   const { gManageGroup, gManageEmployee, gMediaType } = useContext(GlobalStateContext);
@@ -17,14 +18,15 @@ const GroupShare = () => {
   const [itemsGroupDevice, setItemsGroupDevice] = useState([]);
   const [itemsGroupMember, setItemsGroupMember] = useState([]);
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const itemsKeyPermissions = [
-    { name: 'オーナー', id: '0' },
-    { name: 'マネージャー', id: '1' },
-    { name: 'ゲスト', id: '2' },
+    { name: t('deviceMember.role.owner'), id: '0' },
+    { name: t('deviceMember.role.manager'), id: '1' },
+    { name: t('deviceMember.role.guest'), id: '2' },
   ];
   const itemsGuestTime = [
-    { name: '常時利用', id: '0' },
-    { name: '一時利用', id: '1' },
+    { name: t('contacts.alwaysAvailable'), id: '0' },
+    { name: t('manage.share.temporary'), id: '1' },
   ];
   const [valueGroupMember, setValueGroupMember] = useState('');
   const [valueKeyPermissions, setValueKeyPermissions] = useState('');
@@ -108,7 +110,7 @@ const GroupShare = () => {
           >
             <BackButton size="small" onClick={() => window.history.back()}>
               <Typography variant="h2" sx={{ ml: '5px', color: 'black' }}>
-                選択済デバイス
+                {t('manage.share.selectedDevices')}
               </Typography>
             </BackButton>
           </Box>
@@ -126,7 +128,7 @@ const GroupShare = () => {
             columns={[
               {
                 name: 'name',
-                label: 'ドアグループ名',
+                label: t('manage.group.doorGroupName'),
               },
             ]}
           />
@@ -136,7 +138,7 @@ const GroupShare = () => {
             items={itemsGroupMember || []}
             keyProp={'gid'}
             labelProp={labelProp}
-            legend={'ユーザーグループを選択'}
+            legend={t('manage.group.selectUserGroup')}
             radioCallValue={(value) => setValueGroupMember(value)}
           />
           <CmChooseRadio
@@ -144,7 +146,7 @@ const GroupShare = () => {
             keyProp={keyProp}
             labelProp={labelProp}
             mr={'5px'}
-            legend={'グループ鍵の権限を選択'}
+            legend={t('manage.group.selectKeyPermission')}
             orientation={'horizontal'}
             radioCallValue={(value) => setValueKeyPermissions(value)}
           />
@@ -162,7 +164,7 @@ const GroupShare = () => {
                 keyProp={keyProp}
                 labelProp={labelProp}
                 mr={'8px'}
-                legend={'ゲストの有効時間を設定'}
+                legend={t('manage.group.setGuestValidTime')}
                 orientation={'horizontal'}
                 radioCallValue={(value) => setValueGuestTime(value)}
               />
@@ -199,7 +201,7 @@ const GroupShare = () => {
             onClick={submitShare}
             disableElevation
           >
-            グループ鍵発行
+            {t('manage.group.issueKey')}
           </LoadingButton>
         </Box>
       </Box>

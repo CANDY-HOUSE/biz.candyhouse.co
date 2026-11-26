@@ -104,7 +104,7 @@ const RemoteLearn = () => {
       setSnackbarValue({
         logScope: 'pages/personal/devices/wifi-module/ir/learn/index.RemoteLearn',
         open: true,
-        msg: 'hub3DeviceId 参数缺失',
+        msg: t('manage.devices.missingHub3DeviceId'),
         severity: 'error',
       });
       navigate(-1);

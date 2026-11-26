@@ -1,0 +1,79 @@
+{
+  "csv": {
+    "header": {
+      "userName": "User name",
+      "email": "Email address",
+      "optionalDepartment": "Department (optional)",
+      "optionalPhone": "Phone number (optional)",
+      "subUUID": "Sub UUID",
+      "role": "Role",
+      "groupName": "Group name",
+      "uuid": "UUID",
+      "linkedUsers": "Linked users",
+      "linkedDevices": "Linked devices",
+      "state": "Status",
+      "time": "Time",
+      "via": "Method",
+      "deviceName": "Device name",
+      "model": "Model",
+      "deviceUUID": "Device UUID",
+      "battery": "Battery level",
+      "cardName": "Card name",
+      "id": "ID",
+      "user": "User",
+      "authDevices": "Access readers",
+      "fingerName": "Fingerprint name",
+      "passcodeName": "Passcode name",
+      "passcode": "Passcode"
+    },
+    "historyType": {
+      "lock": "Locked",
+      "unlock": "Unlocked",
+      "botLockUnlock": "Bot lock/unlock",
+      "open": "Opened",
+      "close": "Closed"
+    },
+    "via": {
+      "manual": "Manual",
+      "bluetooth": "Bluetooth",
+      "autoLock": "Auto-lock",
+      "wifiModule": "Wi-Fi module",
+      "webApi": "Web API"
+    },
+    "defaultName": {
+      "nfcCard": "NFC card {{index}}",
+      "passcode": "Passcode",
+      "passcodeIndexed": "Passcode {{index}}"
+    },
+    "upload": {
+      "template": "Template",
+      "forWindows": "For Windows",
+      "forMac": "For Mac",
+      "notice": "Note",
+      "cancel": "Cancel",
+      "bulkRegister": "Bulk add/update",
+      "modify": "Edit"
+    },
+    "export": {
+      "tooltip": "Export data",
+      "currentData": "Current data",
+      "allUsedCards": "All cards ever used",
+      "downloadingCards": "Downloading card data...",
+      "noUsedCards": "No cards have been used with this access reader.",
+      "fetchCardsFailed": "Unable to get card data. Please try again later."
+    },
+    "history": {
+      "csvDownload": "Download CSV",
+      "excelDownload": "Download Excel",
+      "downloading": "Downloading history..."
+    },
+    "cards": {
+      "invalid": "Enter a valid card name and ID. Neither can be blank."
+    },
+    "passcodes": {
+      "invalid": "Enter a valid passcode name and code. Neither can be blank.",
+      "manualTitle": "Enter passcode manually",
+      "register": "Add"
+    }
+  }
+}

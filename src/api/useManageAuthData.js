@@ -8,6 +8,7 @@ import useOperateIoT from '@hooks/useOperateIoT.js';
 import { gConfig } from '@constants/gConfig.js';
 import { Buffer } from 'buffer';
 import { debounce } from 'lodash';
+import i18n from '@/i18n';
 
 const PubedCardLinkedDeviceIDs = 'pubCardLinkedIDs';
 const PubedPasscodeLinkedDeviceIDs = 'pubPasscodeLinkedIDs';
@@ -455,7 +456,7 @@ export const useManageAuthData = (gManageDevice, gStripe) => {
         let payload = Buffer.from(payloadU8A).toString('base64');
         const timeoutId = setTimeout(() => {
           unregisterIotCallback(cmdCode);
-          cb({ errMsg: '認証機器とHub3の接続を確認してください。' });
+          cb({ errMsg: i18n.t('admin.authData.checkHubConnection') });
         }, 15000);
         registerIotCallback(cmdCode, async (deviceUUID, _data) => {
           if (deviceUUID !== stpDeviceUUID) return;

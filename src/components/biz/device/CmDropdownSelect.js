@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Select, MenuItem, FormControl } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import { useTranslation } from 'react-i18next';
+import { ios } from '@/theme/appHomeStyle';
 
 function CmDropdownSelect({ itemsSelect, callSelect }) {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false); // 新增状态来控制下拉菜单的打开
@@ -12,7 +15,7 @@ function CmDropdownSelect({ itemsSelect, callSelect }) {
 
   useEffect(() => {
     let item = {
-      deviceName: '全体履歴',
+      deviceName: t('bizui.history.all'),
       deviceUUID: '0',
     };
 
@@ -36,7 +39,7 @@ function CmDropdownSelect({ itemsSelect, callSelect }) {
   };
 
   return (
-    <FormControl size="small" sx={{ p: '16px', pb: 0 }}>
+    <FormControl size="small">
       <Select
         labelId="demo-simple-select-label"
         id="demo-simple-select"
@@ -48,28 +51,23 @@ function CmDropdownSelect({ itemsSelect, callSelect }) {
         input={
           <OutlinedInput
             sx={{
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#28aeb1',
-              },
-              borderRadius: '6px',
-              color: '#28aeb1',
-              '& .MuiSvgIcon-root': {
-                color: '#28aeb1',
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#28aeb1',
-              },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#28aeb1', // hover時的框
-              },
+              minWidth: 160,
+              height: 36,
+              borderRadius: '10px',
+              bgcolor: ios.fill,
+              fontSize: 15,
+              color: ios.label,
+              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '& .MuiSvgIcon-root': { color: ios.secondaryLabel, cursor: 'pointer' },
             }}
           />
         }
+        MenuProps={{ slotProps: { paper: { sx: { mt: '4px', borderRadius: '12px' } } } }}
         IconComponent={() => (
           <KeyboardArrowDownIcon
             sx={{
-              fontSize: '26px',
-              marginRight: '6px',
+              fontSize: '22px',
+              marginRight: '8px',
             }}
             onClick={handleIconClick} // 绑定点击事件处理器
           />

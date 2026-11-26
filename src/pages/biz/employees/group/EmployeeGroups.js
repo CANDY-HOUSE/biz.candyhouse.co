@@ -12,10 +12,13 @@ import { Card } from '@mui/material';
 import { CardHeader } from '@mui/material';
 import { CardContent } from '@mui/material';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
+import { PATHS } from '@/routes/manifest';
+import { useTranslation } from 'react-i18next';
 
 const EmployeeGroups = () => {
   const { gStripe, gManageEmployee, setModalContent, setCustomModalOpen, gManageGroup, gMediaType } =
     useContext(GlobalStateContext);
+  const { t } = useTranslation();
   const [tbData, settbData] = useState([]);
   const [name, setName] = useState('');
   const [choosedItems, setChoosedItems] = useState([]);
@@ -69,7 +72,7 @@ const EmployeeGroups = () => {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: '10px' }}>
-              <Typography variant="h2">新規グループを追加</Typography>
+              <Typography variant="h2">{t('manage.group.addNew')}</Typography>
             </Box>
           }
         />
@@ -82,7 +85,7 @@ const EmployeeGroups = () => {
             required
             size="small"
             id="outlined-basic"
-            label="グループ名"
+            label={t('manage.group.name')}
             variant="filled"
             value={name}
             sx={{
@@ -113,7 +116,7 @@ const EmployeeGroups = () => {
                 textAlign: 'left',
               }}
             >
-              {`ユーザー(${choosedItems.length})`}
+              {t('manage.group.usersCount', { num: choosedItems.length })}
             </Typography>
             <IconButton
               disabled={memberItems.length === 0}
@@ -122,8 +125,8 @@ const EmployeeGroups = () => {
                 setCustomModalOpen(true);
                 setModalContent(
                   <CheckTable
-                    title={'ユーザーを選択'}
-                    customColumns={DataTableColumns.groupMember}
+                    title={t('manage.group.selectUsers')}
+                    customColumns={DataTableColumns.groupMember()}
                     data={memberItems}
                     selectableRows={'multiple'}
                     enableFilter={true}
@@ -166,12 +169,12 @@ const EmployeeGroups = () => {
               });
             }}
           >
-            登録
+            {t('contacts.register')}
           </LoadingButton>
         </CardContent>
       </Card>
     );
-  }, [name, choosedItems, memberItems, submitState, setCustomModalOpen, setModalContent, gManageEmployee]);
+  }, [name, choosedItems, memberItems, submitState, setCustomModalOpen, setModalContent, gManageEmployee, t]);
 
   return (
     <SesameFloatingAdd ref={floatingAddRef} isMobile={gMediaType.isMobile} popupComponent={addGroupComp}>
@@ -183,10 +186,10 @@ const EmployeeGroups = () => {
         isBind={false}
         isBack={false}
         rowHeight={'large'}
-        columns={DataTableColumns.membersGroup}
+        columns={DataTableColumns.membersGroup()}
         callRowClick={(index) => {
           navigate({
-            pathname: '/biz/employees/group-item',
+            pathname: PATHS.members.groupItem,
             search: createSearchParams({ gid: tbData[index].gid }).toString(),
           });
         }}

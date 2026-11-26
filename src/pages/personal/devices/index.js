@@ -19,11 +19,25 @@ import CheckTable from '@/components/biz/CheckTable';
 import { useNavigateUtils } from '@/hooks/useNavigateUtils';
 import { useTranslation } from 'react-i18next';
 
-const Devices = () => {
+// all: the personal space's list of every device; doors / authenticators: the company space's two menus.
+const categories = {
+  all: { devices: (m) => m.companyDevices, sortable: true, share: true },
+  doors: {
+    devices: (m) => m.filteredSsmDevices,
+    importable: (m) => m.canChoosedSsmDevices,
+    share: true,
+    download: true,
+  },
+  authenticators: {
+    devices: (m) => m.filteredAccessControlDevices,
+    importable: (m) => m.canChoosedAccessControlDevices,
+    download: true,
+  },
+};
+
+const Devices = ({ category = 'all' }) => {
   const location = useLocation();
-  const isBizDevicesRoute = location.pathname.includes('/biz/devices/list');
-  const isBizAccessControlRoute = location.pathname.includes('/biz/access-control/index');
-  const isBizRoute = isBizDevicesRoute || isBizAccessControlRoute;
+  const config = categories[category];
 
   const { gManageDevice, gManageGroup, setSnackbarValue, gIot, gStripe, setModalContent, setCustomModalOpen } =
     useContext(GlobalStateContext);
@@ -34,36 +48,24 @@ const Devices = () => {
   const [searchParams] = useSearchParams();
   const masterDetail = useMasterDetail();
   const selectedUUID = masterDetail ? searchParams.get('deviceUUID') : null;
-  const ssmDevices = isBizDevicesRoute
-    ? gManageDevice.filteredSsmDevices
-    : isBizAccessControlRoute
-      ? gManageDevice.filteredAccessControlDevices
-      : gManageDevice.companyDevices;
+  const ssmDevices = config.devices(gManageDevice);
 
-  // Biz 路由下的个人设备导入功能
   const handleOpenModal = useCallback(() => {
-    if (!isBizRoute) return;
+    if (!config.importable) return;
     setModalContent(
       <CheckTable
         loadingAble
-        title={'入退室システムへ登録するデバイスを選択'}
+        title={t('manage.devices.selectToImport')}
         setOpenModal={setCustomModalOpen}
         enableFilter={true}
         selectableRows={'multiple'}
         handleClose={setCustomModalOpen(false)}
-        data={isBizDevicesRoute ? gManageDevice.canChoosedSsmDevices : gManageDevice.canChoosedAccessControlDevices}
+        data={config.importable(gManageDevice)}
         handleCheck={handleCheck}
       />
     );
     setCustomModalOpen(true);
-  }, [
-    isBizRoute,
-    isBizDevicesRoute,
-    setModalContent,
-    setCustomModalOpen,
-    gManageDevice.canChoosedSsmDevices,
-    gManageDevice.canChoosedAccessControlDevices,
-  ]);
+  }, [config, gManageDevice, setModalContent, setCustomModalOpen, t]);
 
   const handleCheck = useCallback(
     (is, cb) => {
@@ -82,7 +84,7 @@ const Devices = () => {
   const onChooseSesameClickHandler = (cb) => {
     setModalContent(
       <CheckTable
-        title={'デバイスを選択'}
+        title={t('contacts.selectDevices')}
         setOpenModal={setCustomModalOpen}
         enableFilter={!gStripe.isFromApp}
         selectableRows={'multiple'}
@@ -104,11 +106,11 @@ const Devices = () => {
       <Box>
         <Box>
           <Typography variant="h2" sx={{ px: 1 }}>
-            新規デバイスを追加
+            {t('manage.devices.addNew')}
           </Typography>
           <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <Button variant="text" component="label" startIcon={<QrCodeIcon />} sx={{ justifyContent: 'flex-start' }}>
-              QRコードで追加
+              {t('contacts.addByQr')}
               <input
                 type="file"
                 hidden
@@ -118,7 +120,7 @@ const Devices = () => {
                     floatingAddRef.current.handleClose();
                     setSnackbarValue({
                       open: true,
-                      msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
+                      msg: t('contacts.qrReadFailed'),
                     });
                     fileInput.value = '';
                   };
@@ -147,7 +149,7 @@ const Devices = () => {
                       if (!qrKeyInfo) {
                         setSnackbarValue({
                           open: true,
-                          msg: '読み取りに失敗しました。QRコードが正しいか確認してください。',
+                          msg: t('contacts.qrReadFailed'),
                         });
                         fileInput.value = '';
                         return;
@@ -159,7 +161,7 @@ const Devices = () => {
                 }}
               />
             </Button>
-            {isBizRoute && (
+            {config.importable && (
               <Button
                 variant="text"
                 startIcon={<SmartphoneIcon />}
@@ -174,10 +176,10 @@ const Devices = () => {
             )}
           </Box>
         </Box>
-        {!isBizAccessControlRoute && (
+        {config.share && (
           <Box>
             <Typography variant="h2" sx={{ px: 1, mt: 1 }}>
-              合鍵発行
+              {t('manage.share.issueKey')}
             </Typography>
             <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <Button
@@ -192,15 +194,15 @@ const Devices = () => {
                   });
                 }}
               >
-                デバイスを選択
+                {t('contacts.selectDevices')}
               </Button>
             </Box>
           </Box>
         )}
-        {isBizRoute && (
+        {config.download && (
           <Box>
             <Typography variant="h2" sx={{ px: 1, mt: 1 }}>
-              ファイルダウンロード
+              {t('manage.devices.fileDownload')}
             </Typography>
             <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <Button
@@ -212,7 +214,7 @@ const Devices = () => {
                   gUtils.csvUtils.downloadLists(ssmDevices);
                 }}
               >
-                CSVダウンロード
+                {t('manage.devices.csvDownload')}
               </Button>
               <Button
                 variant="text"
@@ -223,7 +225,7 @@ const Devices = () => {
                   gUtils.csvUtils.downloadLists(ssmDevices, false);
                 }}
               >
-                Excelダウンロード
+                {t('manage.devices.excelDownload')}
               </Button>
             </Box>
           </Box>
@@ -231,8 +233,7 @@ const Devices = () => {
       </Box>
     ),
     [
-      isBizRoute,
-      isBizAccessControlRoute,
+      config,
       setSnackbarValue,
       gManageDevice,
       t,
@@ -312,7 +313,7 @@ const Devices = () => {
     return allData.filter((item) => item.deviceName?.includes(searchText));
   }, []);
 
-  const canDrag = !isBizRoute && ssmDevices.some((device) => device.orderKey);
+  const canDrag = config.sortable && ssmDevices.some((device) => device.orderKey);
   const dragEndHandler = canDrag ? handleDragEnd : undefined;
 
   const list = (
@@ -348,7 +349,7 @@ const Devices = () => {
       ) : (
         list
       )}
-      {isAppHome && !isBizRoute && gManageDevice.devicesLoaded && !gManageDevice.companyDevices.length && (
+      {isAppHome && category === 'all' && gManageDevice.devicesLoaded && !gManageDevice.companyDevices.length && (
         <Box
           sx={{
             position: 'absolute',

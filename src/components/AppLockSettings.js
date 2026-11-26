@@ -14,16 +14,18 @@ import {
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAppLockSettings } from '@/hooks/useAppLockSettings';
 import LockSettingWheel from './LockSettingWheel';
+import { PATHS } from '@/routes/manifest';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 const seconds = [0, 3, 5, 7, 10, 15, 30, 60, 120, 180, 240, 300, 600, 900, 1800, 3600];
 const sensorSeconds = [65535, 0, 1, 2, 3, 4, ...seconds.slice(2)];
 
-export default function AppLockSettings({ deviceUUID, onOpenAngle }) {
+export default function AppLockSettings({ deviceUUID }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSettingsNavigate();
   const location = useLocation();
   const { settings, connected, busy, error, readFailed, readOnly, retryRead, command } = useAppLockSettings(deviceUUID);
   const [sensorOpen, setSensorOpen] = useState(false);
@@ -59,11 +61,7 @@ export default function AppLockSettings({ deviceUUID, onOpenAngle }) {
   return (
     <Box sx={lockSettingsInteraction}>
       {error && <Alert severity="error">{t('lockSettings.failed')}</Alert>}
-      <ListItemButton
-        onClick={() =>
-          onOpenAngle ? onOpenAngle() : navigate({ pathname: '/device-setting/angle', search: location.search })
-        }
-      >
+      <ListItemButton onClick={() => navigate({ pathname: PATHS.deviceSetting.angle, search: location.search })}>
         <ListItemText primary={t('pages.sesameAccessControlDevice.index.SetAngle')} />
         <SvgIcon component={SvgArrow} />
       </ListItemButton>

@@ -1,5 +1,6 @@
 import { ios } from '@/theme/appHomeStyle';
-export const appTabPaths = ['/', '/vision', '/contacts', '/me/homepage'];
+import { PATHS, routeOf } from '@/routes/manifest';
+export const appTabPaths = [PATHS.root, PATHS.vision, PATHS.contacts, PATHS.meHomepage];
 // Height of the Biz-drawn app header row, part of the page viewport.
 export const appTopBarHeight = 48;
 export const appTabTopBarHeight = 52;
@@ -31,26 +32,6 @@ export const appStickySearchSx = {
   pb: '8px',
   [appHeaderHidden]: { transform: `translateY(calc(-100% - ${appTabTopBarHeight}px))` },
 };
-// App routes that draw their own header; AppTopBar hides on them.
-const appPageHeaderPaths = [
-  '/device-setting',
-  '/device-setting/rename',
-  '/device-setting/angle',
-  '/device-setting/auto-unlock',
-  '/device-setting/bot-script',
-  '/device-setting/credentials',
-  '/biz/devices/list-item',
-  '/device-history',
-  '/biz/access-control/region',
-  '/biz/wifi-module',
-  '/biz/wifi-module/index',
-  '/biz/access-control/ir-type',
-  '/biz/access-control/remotes',
-  '/biz/access-control/remote-match',
-  '/biz/access-control/remote-air',
-  '/biz/access-control/remote-non-air',
-  '/biz/access-control/learn',
-];
 // Open page layers (menu, QR scanner, sheets) close before system back leaves a page or the app.
 const layers = [];
 const layerListeners = new Set();
@@ -79,14 +60,14 @@ export function appRouteInfo(path) {
   return {
     path,
     tab: appTabPaths.includes(path),
-    pageHeader: appPageHeaderPaths.includes(path),
+    pageHeader: !!routeOf(path)?.appHeader,
     modal: layers.length > 0,
   };
 }
 const tabKey = 'sesame.activeTab';
 export function currentAppTab() {
   const path = sessionStorage.getItem(tabKey);
-  return appTabPaths.includes(path) ? path : '/';
+  return appTabPaths.includes(path) ? path : PATHS.root;
 }
 export function rememberAppTab(path) {
   if (appTabPaths.includes(path)) sessionStorage.setItem(tabKey, path);

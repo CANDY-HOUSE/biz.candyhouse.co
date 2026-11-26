@@ -1,0 +1,36 @@
+{
+  "cs": {
+    "search": "検索",
+    "userSearch": {
+      "placeholder": "メールアドレス subUUID deviceUUID デバイス名",
+      "noResults": "該当する情報がありません",
+      "filterPlaceholder": "結果内を検索",
+      "resultCount": "表示 {{shown}} 件 / 全 {{total}} 件",
+      "autoLogin": "自動ログイン"
+    },
+    "repair": {
+      "columns": {
+        "ticketNo": "チケット番号",
+        "phone": "お客様電話番号",
+        "zip": "お客様郵便番号",
+        "address": "お客様住所",
+        "building": "お客様建物名",
+        "recipient": "お届け先名",
+        "items": "チケット番号：修理品"
+      },
+      "ticketLabel": "チケット番号",
+      "download": "修理CSVをダウンロード",
+      "freshdeskFailed": "Freshdeskへのリクエストに失敗しました：{{status}}"
+    },
+    "shipping": {
+      "dropHere": "ここにドロップ（order_export.csv）",
+      "chooseFile": "またはクリックしてCSVファイルを選択",
+      "download": "ヤマトCSV",
+      "stats": "出荷統計",
+      "endOrder": "終了注文番号：{{name}}",
+      "startOrder": "開始注文番号：{{name}}",
+      "exceptions": "例外",
+      "changedOrders": "変更された注文"
+    }
+  }
+}

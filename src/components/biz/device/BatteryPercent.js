@@ -2,11 +2,12 @@ import React from 'react';
 import { SvgIcon, Typography, ListItem, ListItemText, Divider, ListItemIcon } from '@mui/material';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { PATHS } from '@/routes/manifest';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 const BatteryPercent = ({ device }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSettingsNavigate();
 
   return (
     <>
@@ -20,7 +21,7 @@ const BatteryPercent = ({ device }) => {
           newSearchParams.set('setting', true);
           newSearchParams.delete('did');
           navigate({
-            pathname: `/device-setting/battery-trend`,
+            pathname: PATHS.deviceSetting.batteryTrend,
             search: newSearchParams.toString(),
           });
         }}

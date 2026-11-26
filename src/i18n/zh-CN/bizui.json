@@ -1,0 +1,90 @@
+{
+  "bizui": {
+    "common": {
+      "delete": "删除",
+      "cancel": "取消",
+      "confirm": "确认",
+      "notSet": "未设置",
+      "user": "用户",
+      "userName": "用户名",
+      "email": "邮箱地址",
+      "role": "角色",
+      "department": "所属部门",
+      "deviceName": "设备名称",
+      "authDevices": "认证设备",
+      "authDeviceCount": "{{count}}台认证设备"
+    },
+    "table": {
+      "rowsPerPage": "每页显示",
+      "nextPage": "下一页",
+      "previousPage": "上一页",
+      "linkOtherDevices": "与其他认证设备关联",
+      "issueKey": "发放钥匙",
+      "csvDownload": "下载 CSV",
+      "excelDownload": "下载 Excel",
+      "refresh": "刷新",
+      "noMatch": "没有匹配的结果"
+    },
+    "columns": {
+      "cardName": "卡片名称",
+      "groupName": "组名称",
+      "groupKeys": "持有的群组钥匙",
+      "doorGroupName": "门组名称",
+      "groupKeyHolders": "群组钥匙持有者",
+      "bulkActions": "批量操作",
+      "bulkUnlock": "全部开锁",
+      "bulkLock": "全部上锁",
+      "deviceGroupName": "设备组名称",
+      "keyLevel": "钥匙权限",
+      "validPeriod": "有效期",
+      "phone": "电话号码",
+      "linkedSesame": "已关联的芝麻",
+      "battery": "电池电量",
+      "lockButton": "开关锁",
+      "userPermission": "用户权限",
+      "viewablePages": "可访问页面",
+      "noAccess": "无权限",
+      "passcodeName": "密码名称",
+      "passcode": "密码"
+    },
+    "checkMember": {
+      "hint": "CSV 文件中的所有用户都将被分配相同的角色。（群主的角色不会更改）",
+      "addUsers": "添加新用户"
+    },
+    "addIcCard": {
+      "title": "添加新卡片",
+      "readCard": "读取卡片",
+      "hint": "请按 + 按钮，然后将卡片靠近 Touch / Touch Pro。"
+    },
+    "bindMember": {
+      "title": "绑定用户"
+    },
+    "credential": {
+      "comingSoon": "即将推出"
+    },
+    "datePicker": {
+      "start": "开始使用时间",
+      "end": "结束使用时间",
+      "time": "时间"
+    },
+    "history": {
+      "all": "全部历史"
+    },
+    "sureCancel": {
+      "deleteAnyway": "仍然删除"
+    },
+    "deviceUser": {
+      "selectUsers": "选择用户",
+      "alwaysAvailable": "长期有效"
+    },
+    "schedule": {
+      "empty": "暂无预约",
+      "cancel": "取消预约",
+      "action": {
+        "lock": "上锁",
+        "unlock": "开锁",
+        "upgrade_firmware": "升级固件"
+      }
+    }
+  }
+}

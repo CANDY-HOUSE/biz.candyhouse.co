@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import AppRefreshIndicator from './AppRefreshIndicator';
+import { routeOf } from '@/routes/manifest';
 import { cancelPullRefreshEvent } from '@/services/appPullRefresh';
 
 export default function AppPullRefresh() {
@@ -11,8 +12,7 @@ export default function AppPullRefresh() {
   useEffect(() => {
     setDistance(0);
     setRefreshing(false);
-    const hubPage = ['/biz/wifi-module', '/biz/wifi-module/index'].includes(pathname);
-    if (!hubPage) return;
+    if (!routeOf(pathname)?.pullRefresh) return;
     let start = null;
     let pull = 0;
     let frame = null;

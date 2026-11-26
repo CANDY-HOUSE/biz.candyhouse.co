@@ -5,19 +5,19 @@ import React, { useContext } from 'react';
 import EditableText from './EditableText';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const MobileDeviceModifyName = () => {
   const DeviceMemberChangedName = 'DeviceMemberChanged';
   const { gManageDevice, gStripe } = useContext(GlobalStateContext);
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const deviceUUID = searchParams.get('deviceUUID');
   const deviceName = searchParams.get('deviceName') || '';
   const isBridgingType = searchParams.get('notifyType') === 'bridge';
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const back = useSettingsBack();
 
   const notifyRefreshApp = () => {
     if (!!isBridgingType) {
@@ -35,15 +35,11 @@ const MobileDeviceModifyName = () => {
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
       {isAppHome ? (
-        <PageHeader onBack={() => navigate(-1)} />
+        <PageHeader onBack={() => back()} />
       ) : (
         !gStripe.isFromApp && (
           <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-            <BackButton onClick={() => navigate(-1)} disableRipple>
-              <Typography variant="h3" sx={{ color: 'title.main' }}>
-                {t('pages.login.ReturnToMailInput')}
-              </Typography>
-            </BackButton>
+            <BackButton onClick={() => back()} disableRipple />
           </Box>
         )
       )}

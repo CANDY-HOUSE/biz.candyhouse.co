@@ -10,6 +10,7 @@ import { gUtils } from '@/utils/gUtils';
 import * as XLSX from 'xlsx';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { LoadingButton } from '@mui/lab';
+import { useTranslation } from 'react-i18next';
 
 // 卡片管理頁的CSV登錄功能
 
@@ -78,6 +79,7 @@ const uploadCsv = async (e, set, close) => {
 export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
   const { setCustomModalOpen, setModalContent } = useContext(GlobalStateContext);
   const fileRef = useRef(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isShowFileClick) {
@@ -94,7 +96,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
 
   const modalContent = () => (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="small">テンプレート</Typography>
+      <Typography variant="small">{t('csv.upload.template')}</Typography>
       <Box
         sx={{
           display: 'flex',
@@ -109,7 +111,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
             startIcon={<DescriptionIcon />}
             onClick={() => gUtils.csvUtils.downloadExcelTemp()}
           >
-            Windows向け
+            {t('csv.upload.forWindows')}
           </Button>
           <Button
             size="small"
@@ -117,7 +119,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
             startIcon={<DescriptionIcon />}
             onClick={() => gUtils.csvUtils.downloadCsv()}
           >
-            Mac向け
+            {t('csv.upload.forMac')}
           </Button>
         </Box>
       </Box>
@@ -134,7 +136,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
           <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
             <WarningAmberIcon sx={{ color: '#F5A623', mr: 1, fontSize: '20px' }} />
             <Box>
-              <Typography sx={{ fontWeight: 'bold', color: '#999' }}>注意</Typography>
+              <Typography sx={{ fontWeight: 'bold', color: '#999' }}>{t('csv.upload.notice')}</Typography>
               <Typography sx={{ fontSize: '14px', color: '#999', mt: 0.5 }}>{hint}</Typography>
             </Box>
           </Box>
@@ -143,7 +145,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Button size="small" sx={{ mr: 1, color: '#28aeb1' }} onClick={() => setCustomModalOpen(false)}>
-          キャンセル
+          {t('csv.upload.cancel')}
         </Button>
         <Button
           disableElevation
@@ -161,7 +163,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
             handleSure();
           }}
         >
-          一括登録・更新
+          {t('csv.upload.bulkRegister')}
         </Button>
       </Box>
       <input ref={fileRef} type="file" accept=".csv, .xlsx, .xls" hidden onChange={(e) => uploadCsv(e, setData)} />
@@ -180,7 +182,7 @@ export const CSVbutton = ({ hint, setData, isShowFileClick, loading }) => {
         setCustomModalOpen(true);
       }}
     >
-      一括登録・更新
+      {t('csv.upload.bulkRegister')}
     </LoadingButton>
   );
 };

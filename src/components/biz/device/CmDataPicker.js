@@ -1,8 +1,10 @@
 import DatePicker from 'react-datepicker';
 import { Box, TextField, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export const CmDataPicker = ({ callTime, sTitle = '利用開始日時', eTitle = '利用終了日時', sx = {} }) => {
+export const CmDataPicker = ({ callTime, sTitle, eTitle, sx = {} }) => {
+  const { t } = useTranslation();
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 1800000)); // 1800秒后的时间
 
@@ -27,7 +29,7 @@ export const CmDataPicker = ({ callTime, sTitle = '利用開始日時', eTitle =
             whiteSpace: 'no-wrap !important',
           }}
         >
-          {sTitle}
+          {sTitle ?? t('bizui.datePicker.start')}
         </Typography>
         <Box>
           <DatePicker
@@ -35,7 +37,7 @@ export const CmDataPicker = ({ callTime, sTitle = '利用開始日時', eTitle =
             showTimeSelect
             locale="ja"
             dateFormat="Pp"
-            timeCaption="時間"
+            timeCaption={t('bizui.datePicker.time')}
             popperPlacement="top-start"
             selected={startDate}
             minDate={new Date()}
@@ -68,14 +70,14 @@ export const CmDataPicker = ({ callTime, sTitle = '利用開始日時', eTitle =
             whiteSpace: 'no-wrap !important',
           }}
         >
-          {eTitle}
+          {eTitle ?? t('bizui.datePicker.end')}
         </Typography>
         <DatePicker
           selectsStart
           showTimeSelect
           locale="ja"
           dateFormat="Pp"
-          timeCaption="時間"
+          timeCaption={t('bizui.datePicker.time')}
           popperPlacement="top-start"
           selected={endDate}
           minDate={new Date(startDate)}

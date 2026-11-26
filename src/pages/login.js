@@ -9,6 +9,8 @@ import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { gUtils } from '@/utils/gUtils';
 import { biz3utils } from '@/utils/biz3utils';
+import LanguageMenu from '@/components/LanguageMenu';
+import { followsSystemLanguage } from '@/i18n';
 
 const LoginIndex = () => {
   const navigate = useNavigate();
@@ -141,6 +143,11 @@ const LoginIndex = () => {
         justifyContent: 'space-between',
       }}
     >
+      {!followsSystemLanguage && (
+        <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
+          <LanguageMenu />
+        </Box>
+      )}
       <Box
         sx={{
           padding: '24px 10px 0 10px',
@@ -323,7 +330,7 @@ const LoginIndex = () => {
               marginBottom: '30px',
             }}
           >
-            入力された認証コードが正しくありません。認証コードが再発行されていますので、新しく受け取ったコードを入力して下さい。
+            {t('admin.login.codeReissued')}
           </Typography>
 
           <Typography

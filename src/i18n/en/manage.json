@@ -1,0 +1,67 @@
+{
+  "manage": {
+    "share": {
+      "selectedDevices": "Selected devices",
+      "selectedUsers": "Selected users",
+      "selectUsers": "Select users",
+      "reselect": "Reselect",
+      "confirm": "Confirm",
+      "setValidTime": "Set validity period",
+      "temporary": "Temporary",
+      "issueKey": "Issue key"
+    },
+    "group": {
+      "addNew": "Add new group",
+      "name": "Group name",
+      "devicesCount": "Devices ({{num}})",
+      "usersCount": "Users ({{num}})",
+      "selectUsers": "Select users",
+      "groupKey": "Group keys",
+      "doorGroupName": "Door group name",
+      "selectUserGroup": "Select a user group",
+      "selectKeyPermission": "Select group key permission",
+      "setGuestValidTime": "Set guest validity period",
+      "issueKey": "Issue group key"
+    },
+    "role": {
+      "addNew": "Add new role",
+      "name": "Role name",
+      "reservedName": "This name is reserved for a default role",
+      "viewablePages": "Accessible pages"
+    },
+    "member": {
+      "removeTitle": "The user will be deleted",
+      "removeMessage": "If the connection between the access readers and Hub3 is unstable, the user's cards and fingerprints may not be deleted at the same time.\nPlease check the connection before proceeding."
+    },
+    "devices": {
+      "selectToImport": "Select devices to register in the access control system",
+      "addNew": "Add new device",
+      "fileDownload": "Download file",
+      "csvDownload": "Download CSV",
+      "excelDownload": "Download Excel",
+      "limitExceeded": "The device limit has been reached. Please upgrade your plan.",
+      "checkHub3Connection": "Please check the connection with Hub3",
+      "matterPairingFailed": "Hub3 may already be connected to too many Matter networks. Please reset Hub3 and try again.",
+      "missingHub3DeviceId": "The hub3DeviceId parameter is missing"
+    },
+    "qrDialog": {
+      "addMeToContacts": "Add me to your contacts"
+    },
+    "date": {
+      "ymd": "{{month}}/{{day}}/{{year}}"
+    },
+    "authText": {
+      "cards": {
+        "title": "Add new card",
+        "h2": "Read card",
+        "b2t": "Press the + button and hold the card over Touch / Touch Pro.",
+        "warningMsg": "A bulk import deletes all existing data and replaces it with the uploaded content. To add or change entries, download the current list as CSV or Excel, add new cards / passcodes or edit existing ones, and then upload it."
+      },
+      "passcode": {
+        "title": "Add new passcode",
+        "h2": "Enter passcode",
+        "b2t": "Press the + button, enter the passcode on Touch Pro, and press the unlock button."
+      }
+    }
+  }
+}

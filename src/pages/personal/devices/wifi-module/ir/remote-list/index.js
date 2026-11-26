@@ -20,6 +20,7 @@ import {
   markRemoteListVerified,
   isRemoteListVerified,
 } from '../utils/remoteListCache.js';
+import { PATHS } from '@/routes/manifest';
 
 // 列表和搜索结果都缓存在 IndexedDB（见 remoteListCache.js），只存列表页和遥控器页实际用到的字段
 const slimRemote = ({ code, model, alias, direction }) => ({ code, model, alias, direction });
@@ -356,9 +357,9 @@ export default function RemoteList() {
       let path = '';
       let irTypeNum = parseInt(irType);
       if (irTypeNum === 0xc000) {
-        path = '/biz/access-control/remote-air';
+        path = PATHS.ir.air;
       } else {
-        path = '/biz/access-control/remote-non-air';
+        path = PATHS.ir.nonAir;
       }
       const processedAlias = item.alias ? item.alias.split('\n')[0].trim() : item.alias;
       let remote = { ...item, type: irTypeNum, alias: processedAlias };

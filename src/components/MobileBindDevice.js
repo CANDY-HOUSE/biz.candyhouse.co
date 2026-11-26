@@ -7,7 +7,7 @@ import { gConfig } from '@/constants/gConfig';
 import { registerIotCallback } from '@/hooks/useIotCallbackRegistry';
 import CheckTable from './biz/CheckTable';
 import { gUtils } from '@/utils/gUtils';
-import { useNavigate } from 'react-router-dom';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
   const { gIot, gManageDevice, setCustomModalOpen, setModalContent, gStripe, customModalOpen } =
@@ -16,7 +16,7 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = useSettingsNavigate();
   const singleLineTextSx = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -70,7 +70,7 @@ const MobileBindDevice = ({ device: currentDevice, editable = true }) => {
     setModalContent(
       <CheckTable
         loadingAble
-        title={'デバイスを選択'}
+        title={t('contacts.selectDevices')}
         setOpenModal={setCustomModalOpen}
         enableFilter={!gStripe.isFromApp}
         selectableRows={'single'}

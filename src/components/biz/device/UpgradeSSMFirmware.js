@@ -1,16 +1,16 @@
 import BackButton from '@/components/BackButton';
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import UpgradeFirmware from './UpgradeFirmware';
 import { useContext, useMemo } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const UpgradeSSMFirmware = () => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const back = useSettingsBack();
+  const [searchParams] = useSettingsSearchParams();
   const ssmUUID = searchParams.get('ssmUUID');
   const hub3UUID = searchParams.get('deviceUUID');
 
@@ -25,8 +25,7 @@ const UpgradeSSMFirmware = () => {
     <>
       {!gStripe.isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <BackButton onClick={() => navigate(-1)}></BackButton>
-          <Typography variant="h3">{t('pages.login.ReturnToMailInput')}</Typography>
+          <BackButton onClick={() => back()}></BackButton>
         </Box>
       )}
       <Box sx={{ width: '100%', bgcolor: 'background.paper', pl: 0 }}>

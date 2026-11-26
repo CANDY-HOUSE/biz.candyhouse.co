@@ -1,0 +1,104 @@
+{
+  "admin": {
+    "home": {
+      "userCount": "Users",
+      "doorCount": "Doors",
+      "authDeviceCount": "Access readers",
+      "unlimited": "/Unlimited",
+      "memberQuota": "/{{value}} users",
+      "lockQuota": "/{{value}} doors",
+      "deviceUnit": "devices"
+    },
+    "settings": {
+      "company": "Company",
+      "currentPlan": "Current plan",
+      "nextPaymentDate": "Next payment date",
+      "nextPaymentAmount": "Next payment amount",
+      "priceWithTax": "{{price}} yen (tax incl.)",
+      "paymentInfo": "Payment information",
+      "plan": "Plans",
+      "priceNote": "※All plan prices shown are the monthly equivalent of the annual plan (excluding tax).",
+      "unlimitedPlan": "Unlimited plan",
+      "date": "{{month}}/{{day}}/{{year}}",
+      "downgradeNotice": "※Will downgrade to {{level}} ({{method}}) on {{date}}."
+    },
+    "plan": {
+      "monthly": "Monthly plan",
+      "yearly": "Annual plan",
+      "perMonth": " yen / month",
+      "users": "Users: {{value}}",
+      "doors": "Doors: {{value}}",
+      "apiLimit": "API request limit\n {{value}} requests",
+      "authDevicePages": "Access reader and card management pages",
+      "upgrade": "Upgrade",
+      "current": "Current plan",
+      "cancelDowngrade": "Cancel downgrade",
+      "downgrade": "Downgrade",
+      "upgradeTo": "Upgrade to {{name}}",
+      "downgradeTo": "Downgrade to {{name}}",
+      "upgradeNote": "※Your current plan will end and the new plan will take effect immediately.",
+      "downgradeNote": "※Your current plan continues until the end of the paid period, and the new plan takes effect from the next period.",
+      "taxNote": "※All prices shown exclude tax.",
+      "detailsPrefix": "For plan details, see ",
+      "detailsLink": "here",
+      "price": "{{price}} yen",
+      "yearlyPrice": "{{price}} yen ({{monthly}} yen/month)",
+      "yearlySaving": "Save {{amount}} yen a year!",
+      "confirm": "Confirm"
+    },
+    "payment": {
+      "addMethod": "Add payment method",
+      "addCard": "Add credit card",
+      "default": "Default"
+    },
+    "developer": {
+      "qrReadFailed": "Failed to read. Please check that the QR code is correct.",
+      "ownerRequired": "Registration failed. \"{{role}}\" permission for the device is required.",
+      "deviceLimit": "The device limit has been reached. Please upgrade your plan.",
+      "selectDevice": "Select device",
+      "apiKey": "API key",
+      "copy": "Copy",
+      "changeApiKey": "Change API key",
+      "monthlyApiUsage": "API calls this month",
+      "usageCount": "{{value}} calls",
+      "demo": "Demo",
+      "step1": "1. Select a device",
+      "importQrHint": "[QR code] Import a device from a QR code",
+      "importPersonalHint": "[Personally registered devices] Import devices you have registered in the Sesame app",
+      "addByQr": "Add via QR code",
+      "addFromPersonal": "Add from personally registered devices",
+      "deviceUuid": "Device UUID",
+      "deviceSecretKey": "Device secret key",
+      "step2": "2. Run the demo",
+      "getStatus": "Get status",
+      "getHistory": "Get history",
+      "operateDevice": "Operate device"
+    },
+    "webhook": {
+      "saveFailed": "Failed to save: {{message}}",
+      "unknownError": "An error occurred",
+      "saved": "Saved",
+      "notifyUrl": "Notification URL",
+      "hintStateChange": "When a device state (locked, unlocked, online, battery, etc.) changes, a POST notification is sent to the specified URL.",
+      "hintSignature": "Signatures use the API key above (X-Candyhouse-Signature).",
+      "save": "Save",
+      "edit": "Edit"
+    },
+    "notFound": {
+      "noPermission": "You do not have permission to view this page",
+      "backHome": "Back to home"
+    },
+    "login": {
+      "codeReissued": "The verification code you entered is incorrect. A new code has been issued; please enter the code you just received."
+    },
+    "snackbar": {
+      "unknown": "Unknown message"
+    },
+    "authData": {
+      "checkHubConnection": "Please check the connection between the access reader and Hub3."
+    },
+    "remote": {
+      "listFetchFailed": "Failed to load the remote list."
+    }
+  }
+}

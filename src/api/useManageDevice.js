@@ -8,6 +8,7 @@ import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import { useCallbacks } from '../hooks/useCallbacks.js';
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
+import i18n from '@/i18n';
 
 const PubedCompanyDevice = 'PubedCompanyDevice';
 const PubedUserDevice = 'PubedUserDevice';
@@ -49,7 +50,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       invokeCallbacks(message);
       if (!message.success) {
         if (message.message === 'Limit Exceeded') {
-          setSnackbarValue({ open: true, msg: 'デバイス数の上限に達しました。プランのアップグレードが必要です。' });
+          setSnackbarValue({ open: true, msg: i18n.t('manage.devices.limitExceeded') });
         } else {
           setSnackbarValue({
             logScope: 'api/useManageDevice.handleManageDeviceResponse',
@@ -215,7 +216,7 @@ export const useManageDevice = (gAuth, gStripe, setSnackbarValue) => {
       }
 
       if (!result) {
-        setSnackbarValue({ open: true, msg: 'Hub3との通信状況をご確認ください' });
+        setSnackbarValue({ open: true, msg: i18n.t('manage.devices.checkHub3Connection') });
       }
 
       return result;

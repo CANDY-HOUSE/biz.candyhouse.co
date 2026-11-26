@@ -1,0 +1,104 @@
+{
+  "admin": {
+    "home": {
+      "userCount": "用户数",
+      "doorCount": "门数",
+      "authDeviceCount": "认证设备数",
+      "unlimited": "/无限制",
+      "memberQuota": "/{{value}}人",
+      "lockQuota": "/{{value}}台",
+      "deviceUnit": "台"
+    },
+    "settings": {
+      "company": "公司",
+      "currentPlan": "当前套餐",
+      "nextPaymentDate": "下次付款日期",
+      "nextPaymentAmount": "下次付款金额",
+      "priceWithTax": "{{price}}日元（含税）",
+      "paymentInfo": "付款信息",
+      "plan": "套餐",
+      "priceNote": "※所有套餐的显示价格均为年付套餐折算为每月的金额（不含税）。",
+      "unlimitedPlan": "无限制套餐",
+      "date": "{{year}}年{{month}}月{{day}}日",
+      "downgradeNotice": "※将于{{date}}降级为 {{level}}（{{method}}）。"
+    },
+    "plan": {
+      "monthly": "月付套餐",
+      "yearly": "年付套餐",
+      "perMonth": "日元 /月",
+      "users": "{{value}} 位用户",
+      "doors": "{{value}} 扇门",
+      "apiLimit": "API 请求上限\n {{value}} 次",
+      "authDevicePages": "可使用认证设备・卡片管理页面",
+      "upgrade": "升级",
+      "current": "当前套餐",
+      "cancelDowngrade": "取消降级",
+      "downgrade": "降级",
+      "upgradeTo": "升级到 {{name}}",
+      "downgradeTo": "降级到 {{name}}",
+      "upgradeNote": "※当前套餐将终止，新套餐立即生效。",
+      "downgradeNote": "※当前套餐将持续至已付费期间结束，新套餐从下一期开始生效。",
+      "taxNote": "※所有显示价格均不含税。",
+      "detailsPrefix": "套餐详情请见",
+      "detailsLink": "此处",
+      "price": "{{price}}日元",
+      "yearlyPrice": "{{price}}日元（折合每月{{monthly}}日元）",
+      "yearlySaving": "每年节省{{amount}}日元！",
+      "confirm": "确定"
+    },
+    "payment": {
+      "addMethod": "添加付款方式",
+      "addCard": "添加信用卡",
+      "default": "默认"
+    },
+    "developer": {
+      "qrReadFailed": "读取失败，请确认二维码是否正确。",
+      "ownerRequired": "注册失败，需要设备的\"{{role}}\"权限",
+      "deviceLimit": "已达到设备数量上限，需要升级套餐。",
+      "selectDevice": "选择设备",
+      "apiKey": "API 密钥",
+      "copy": "复制",
+      "changeApiKey": "更换 API 密钥",
+      "monthlyApiUsage": "本月 API 调用次数",
+      "usageCount": "{{value}} 次",
+      "demo": "演示",
+      "step1": "1.选择设备",
+      "importQrHint": "【二维码】通过二维码导入设备",
+      "importPersonalHint": "【个人已注册的设备】导入个人在 Sesame 应用中已注册的设备",
+      "addByQr": "通过二维码添加",
+      "addFromPersonal": "从个人已注册的设备添加",
+      "deviceUuid": "设备 UUID",
+      "deviceSecretKey": "设备密钥",
+      "step2": "2.运行演示",
+      "getStatus": "获取状态",
+      "getHistory": "获取历史记录",
+      "operateDevice": "操作设备"
+    },
+    "webhook": {
+      "saveFailed": "保存失败：{{message}}",
+      "unknownError": "发生错误",
+      "saved": "已保存",
+      "notifyUrl": "通知 URL",
+      "hintStateChange": "设备状态（上锁、解锁、在线、电量等）发生变化时，会以 POST 方式通知指定的 URL。",
+      "hintSignature": "签名使用上方的 API 密钥（X-Candyhouse-Signature）。",
+      "save": "保存",
+      "edit": "编辑"
+    },
+    "notFound": {
+      "noPermission": "您没有权限查看此页面",
+      "backHome": "返回首页"
+    },
+    "login": {
+      "codeReissued": "输入的验证码不正确。验证码已重新发送，请输入新收到的验证码。"
+    },
+    "snackbar": {
+      "unknown": "未知信息"
+    },
+    "authData": {
+      "checkHubConnection": "请检查认证设备与 Hub3 的连接。"
+    },
+    "remote": {
+      "listFetchFailed": "获取遥控器列表失败。"
+    }
+  }
+}

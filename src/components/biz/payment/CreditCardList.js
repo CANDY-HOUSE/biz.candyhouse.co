@@ -5,8 +5,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CreditCard from '@mui/icons-material/CreditCard';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import Hider from '@/components/biz/Hider';
+import { useTranslation } from 'react-i18next';
 
 export default function CreditCardList() {
+  const { t } = useTranslation();
   const { gStripe } = useContext(GlobalStateContext);
   const [loadingId, setLoadingId] = useState('');
 
@@ -56,7 +58,7 @@ export default function CreditCardList() {
                         marginRight: '5px',
                       }}
                     >
-                      デフォルト
+                      {t('admin.payment.default')}
                     </Typography>
                   }
                 />

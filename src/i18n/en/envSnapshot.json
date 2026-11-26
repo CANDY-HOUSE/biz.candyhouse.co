@@ -1,0 +1,30 @@
+{
+  "envSnapshot": {
+    "title": "Environment Snapshot",
+    "bundleId": "Bundle ID",
+    "language": "Language",
+    "region": "Region",
+    "build": "Build",
+    "version": "Version",
+    "displayName": "Name",
+    "collectedAt": "Collected At",
+    "deviceType": "Device Type",
+    "cardType": "Card Type",
+    "screenWidth": "Screen Width",
+    "screenScale": "Screen Scale",
+    "systemName": "System Name",
+    "screenHeight": "Screen Height",
+    "timeZone": "Time Zone",
+    "model": "Model",
+    "systemVersion": "System Version",
+    "batteryLevel": "Battery Level",
+    "lightLoadVoltage_mV": "High Voltage",
+    "heavyLoadVoltage_mV": "Low Voltage",
+    "isRechargeBattery": "3.7V Rechargeable Battery",
+    "notification": "Notification",
+    "location": "Location",
+    "bluetooth": "Bluetooth",
+    "network": "Network",
+    "noData": "No Data"
+  }
+}

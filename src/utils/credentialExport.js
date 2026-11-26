@@ -1,5 +1,7 @@
 import { saveAs } from 'file-saver';
 import { gUtils } from './gUtils';
+import i18n from '@/i18n';
+import { PATHS } from '@/routes/manifest';
 
 // Use the raw cardID, not the UUID padded for display by formatCardID.
 export function buildCredentialJson(list, type) {
@@ -11,7 +13,10 @@ export function buildCredentialJson(list, type) {
           throw new Error('Invalid card ID');
         }
         const name = String(item.name ?? '');
-        return { name: name.trim() ? name : index === 0 ? 'NFC' : `NFCカード${index + 1}`, id };
+        return {
+          name: name.trim() ? name : index === 0 ? 'NFC' : i18n.t('csv.defaultName.nfcCard', { index: index + 1 }),
+          id,
+        };
       }),
     };
   }
@@ -24,7 +29,11 @@ export function buildCredentialJson(list, type) {
         }
         const name = String(item.name ?? '');
         return {
-          account: name.trim() ? name : index === 0 ? '暗証番号' : `暗証番号${index + 1}`,
+          account: name.trim()
+            ? name
+            : index === 0
+              ? i18n.t('csv.defaultName.passcode')
+              : i18n.t('csv.defaultName.passcodeIndexed', { index: index + 1 }),
           password: gUtils.binaryToDecimal(encoded),
         };
       }),
@@ -38,6 +47,7 @@ export function downloadCredentials(list, type, format, fileName = 'sesamebiz') 
     const json = JSON.stringify(buildCredentialJson(list, type), null, 2);
     saveAs(new Blob([json], { type: 'application/json;charset=utf-8' }), `${fileName}.json`);
   } else {
-    gUtils.csvUtils.downloadLists(list, format === 'csv', fileName);
+    const tablePath = type === 'cards' ? PATHS.accessControl.cards : PATHS.accessControl.passwords;
+    gUtils.csvUtils.downloadLists(list, format === 'csv', fileName, tablePath);
   }
 }

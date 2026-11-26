@@ -1,61 +1,64 @@
 import { Box, Button, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-const levelData = () => [
+import { useTranslation } from 'react-i18next';
+import { ios } from '@/theme/appHomeStyle';
+
+const levelData = (t) => [
   {
     id: 0,
     name: 'Free',
     feeC: 0,
-    fee: '円 /月',
+    fee: t('admin.plan.perMonth'),
     isUpgrade: true,
-    users: '5 ユーザー',
-    doors: '1 ドア',
-    apis: 'APIリクエスト上限\n 1,000 回',
-    cfpUse: '認証機器・カード管理ページの利用可能',
+    users: t('admin.plan.users', { value: '5' }),
+    doors: t('admin.plan.doors', { value: '1' }),
+    apis: t('admin.plan.apiLimit', { value: '1,000' }),
+    cfpUse: t('admin.plan.authDevicePages'),
   },
   {
     id: 1,
     name: 'Light',
     feeC: '1,980',
-    fee: '円 /月',
+    fee: t('admin.plan.perMonth'),
     isUpgrade: false,
-    users: '20 ユーザー',
-    doors: '2 ドア',
-    apis: 'APIリクエスト上限\n 20,000 回',
-    cfpUse: '認証機器・カード管理ページの利用可能',
+    users: t('admin.plan.users', { value: '20' }),
+    doors: t('admin.plan.doors', { value: '2' }),
+    apis: t('admin.plan.apiLimit', { value: '20,000' }),
+    cfpUse: t('admin.plan.authDevicePages'),
   },
   {
     id: 2,
     name: 'Pro',
     feeC: '4,980',
-    fee: '円 /月',
+    fee: t('admin.plan.perMonth'),
     isUpgrade: false,
-    users: '50 ユーザー',
-    doors: '5 ドア',
-    apis: 'APIリクエスト上限\n 50,000 回',
-    cfpUse: '認証機器・カード管理ページの利用可能',
+    users: t('admin.plan.users', { value: '50' }),
+    doors: t('admin.plan.doors', { value: '5' }),
+    apis: t('admin.plan.apiLimit', { value: '50,000' }),
+    cfpUse: t('admin.plan.authDevicePages'),
   },
   {
     id: 3,
     name: 'Business',
     feeC: '9,800',
-    fee: '円 /月',
+    fee: t('admin.plan.perMonth'),
     isUpgrade: false,
-    users: '100 ユーザー',
-    doors: '10 ドア',
-    apis: 'APIリクエスト上限\n 200,000 回',
-    cfpUse: '認証機器・カード管理ページの利用可能',
+    users: t('admin.plan.users', { value: '100' }),
+    doors: t('admin.plan.doors', { value: '10' }),
+    apis: t('admin.plan.apiLimit', { value: '200,000' }),
+    cfpUse: t('admin.plan.authDevicePages'),
   },
   {
     id: 4,
     name: 'Enterprise',
     feeC: '19,800',
-    fee: '円 /月',
+    fee: t('admin.plan.perMonth'),
     isUpgrade: false,
-    users: '200 ユーザー',
-    doors: '50 ドア',
-    apis: 'APIリクエスト上限\n 1,000,000 回',
-    cfpUse: '認証機器・カード管理ページの利用可能',
+    users: t('admin.plan.users', { value: '200' }),
+    doors: t('admin.plan.doors', { value: '50' }),
+    apis: t('admin.plan.apiLimit', { value: '1,000,000' }),
+    cfpUse: t('admin.plan.authDevicePages'),
   },
 ];
 
@@ -64,37 +67,16 @@ const CmCheckText = ({ item, name }) => {
   if (!item[name]) return null;
 
   return (
-    <Box sx={{ marginBottom: '15px', display: 'flex' }}>
-      <Box
-        size="small"
-        sx={{
-          paddingTop: '6px',
-          paddingRight: '4px',
-          paddingLeft: '4px',
-        }}
-      >
-        <CheckCircleIcon style={{ color: item.isUpgrade ? '#333333' : '#D3D3D3' }} />
-      </Box>
-      <Typography
-        sx={{
-          fontFamily: "'Noto Sans JP', sans-serif", // 注意字体名称的引号
-          fontSize: '16px',
-          fontWeight: 400,
-          lineHeight: '22px',
-          marginTop: '5px',
-          marginLeft: '4px',
-          letterSpacing: '0.06em',
-          textAlign: 'left',
-        }}
-      >
-        {item[name]}
-      </Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', mt: '10px' }}>
+      <CheckCircleIcon sx={{ fontSize: 18, color: item.isUpgrade ? ios.tint : ios.tertiaryLabel }} />
+      <Typography sx={{ fontSize: 14, color: ios.label }}>{item[name]}</Typography>
     </Box>
   );
 };
 
-export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
-  const [data, setData] = useState(levelData());
+export const CmFeeLevel = ({ callUpdate, nextPrice, levleInfo }) => {
+  const { t } = useTranslation();
+  const [data, setData] = useState(levelData(t));
 
   useEffect(() => {
     setData((prevState) =>
@@ -111,91 +93,36 @@ export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
   }, [levleInfo, nextPrice]);
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        display: 'flex',
-        marginTop: '15px',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: '5px',
-      }}
-    >
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
       {data.map((item, index) => (
         <Box
           key={index}
           sx={{
-            width: '100%',
-            height: 'auto',
-            paddingLeft: '15px',
-            borderRadius: '15px',
-            border: `2px solid #F1F1F1`,
             display: 'flex',
-            paddingBottom: '30px',
             flexDirection: 'column',
-            p: 1,
-            m: 1,
+            p: '20px',
+            bgcolor: ios.card,
+            borderRadius: '18px',
+            boxShadow: item.isUpgrade ? `inset 0 0 0 2px ${ios.tint}` : 'none',
           }}
         >
-          <Typography
-            sx={{
-              fontFamily: "'Noto Sans JP', sans-serif", // 注意字体名称的引号
-              fontSize: '24px',
-              fontWeight: 600,
-              lineHeight: '30px',
-              marginTop: '15px',
-              marginLeft: '6px',
-              letterSpacing: '0.06em',
-              textAlign: 'left',
-            }}
-          >
-            {item.name}
-          </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', marginTop: '20px' }}>
-            <Typography
-              sx={{
-                fontFamily: "'Noto Sans JP', sans-serif", // 注意字体名称的引号
-                fontSize: '30px',
-                fontWeight: 600,
-                lineHeight: '55px',
-                letterSpacing: '0.06em',
-                textAlign: 'left',
-                marginLeft: '6px',
-              }}
-            >
-              {item.feeC}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: "'Noto Sans JP', sans-serif", // 注意字体名称的引号
-                fontSize: '20px',
-                fontWeight: 600,
-                lineHeight: '27.24px',
-                letterSpacing: '0.06em',
-                textAlign: 'left',
-                marginBottom: '10px',
-              }}
-            >
-              {item.fee}
-            </Typography>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, color: ios.label }}>{item.name}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '4px', mt: '8px' }}>
+            <Typography sx={{ fontSize: 28, fontWeight: 700, color: ios.label }}>{item.feeC}</Typography>
+            <Typography sx={{ fontSize: 14, color: ios.secondaryLabel }}>{item.fee}</Typography>
           </Box>
           <Button
             disableElevation
             variant="contained"
             size="large"
             sx={{
-              margin: '25px 6px',
-              fontFamily: "'Noto Sans JP', sans-serif", // 注意字体名称的引号
-              fontSize: item.isCancel ? '14px' : '16px',
+              my: '16px',
+              height: 40,
+              borderRadius: '10px',
+              fontSize: 15,
+              fontWeight: 600,
               color: 'white',
-              fontWeight: 500,
-              lineHeight: '22px',
-              letterSpacing: '0.06em',
-              textAlign: 'left',
-              '&:hover': {
-                backgroundColor: '#28aeb1',
-                opacity: '0.8',
-              },
+              '&:hover': { backgroundColor: ios.tint, opacity: 0.8 },
             }}
             disabled={item.isUpgrade}
             onClick={() => {
@@ -204,14 +131,14 @@ export const CmFeeLevel = ({ isMobile, callUpdate, nextPrice, levleInfo }) => {
             }}
           >
             {!levleInfo
-              ? 'アップグレード'
+              ? t('admin.plan.upgrade')
               : item.isUpgrade
-                ? '現在のプラン'
+                ? t('admin.plan.current')
                 : item.id > levleInfo.level
-                  ? 'アップグレード'
+                  ? t('admin.plan.upgrade')
                   : item.isCancel
-                    ? 'ダウングレード取消'
-                    : 'ダウングレード'}
+                    ? t('admin.plan.cancelDowngrade')
+                    : t('admin.plan.downgrade')}
           </Button>
           <CmCheckText item={item} name={'users'} />
           <CmCheckText item={item} name={'doors'} />

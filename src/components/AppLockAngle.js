@@ -90,7 +90,7 @@ export function LockAngle({ deviceUUID, onBack, embedded = false }) {
       {src ? (
         <Box component="img" src={src} alt="" sx={{ position: 'absolute', left: '12%', width: 24, height: 24 }} />
       ) : (
-        <Box sx={{ position: 'absolute', left: '15%', height: 30, borderLeft: '2px dashed #999' }} />
+        <Box sx={{ position: 'absolute', left: 'calc(12% + 11px)', height: 30, borderLeft: '2px dashed #999' }} />
       )}
       <Box component="span" sx={{ ml: 2 }}>
         {text}

@@ -10,6 +10,7 @@ import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { ios, homeCards, hoverSx } from '@/theme/appHomeStyle';
+import { PATHS } from '@/routes/manifest';
 
 const cardSx = { bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' };
 
@@ -56,7 +57,7 @@ const Me = () => {
     // 将单键对象数组合并成一个对象，复用 env-snapshot 详情页
     const data = Buffer.from(JSON.stringify(login), 'utf8').toString('base64');
     const url = new URL(window.location.href);
-    url.pathname = '/biz/history/env-snapshot';
+    url.pathname = PATHS.history.envSnapshot;
     url.searchParams.set('data', data);
     navigate({
       pathname: url.pathname,

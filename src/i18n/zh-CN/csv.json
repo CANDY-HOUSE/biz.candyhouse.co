@@ -1,0 +1,79 @@
+{
+  "csv": {
+    "header": {
+      "userName": "用户名",
+      "email": "邮箱地址",
+      "optionalDepartment": "部门（可选）",
+      "optionalPhone": "电话号码（可选）",
+      "subUUID": "子 UUID",
+      "role": "角色",
+      "groupName": "群组名称",
+      "uuid": "UUID",
+      "linkedUsers": "关联的用户",
+      "linkedDevices": "关联的设备",
+      "state": "状态",
+      "time": "时间",
+      "via": "操作方式",
+      "deviceName": "设备名称",
+      "model": "型号",
+      "deviceUUID": "设备 UUID",
+      "battery": "电池电量",
+      "cardName": "卡片名称",
+      "id": "ID",
+      "user": "用户",
+      "authDevices": "认证设备",
+      "fingerName": "指纹名称",
+      "passcodeName": "数字密码名称",
+      "passcode": "数字密码"
+    },
+    "historyType": {
+      "lock": "上锁",
+      "unlock": "开锁",
+      "botLockUnlock": "Bot 上锁/开锁",
+      "open": "开",
+      "close": "关"
+    },
+    "via": {
+      "manual": "手动",
+      "bluetooth": "蓝牙",
+      "autoLock": "自动上锁",
+      "wifiModule": "Wi-Fi 模块",
+      "webApi": "Web API"
+    },
+    "defaultName": {
+      "nfcCard": "NFC卡{{index}}",
+      "passcode": "数字密码",
+      "passcodeIndexed": "数字密码{{index}}"
+    },
+    "upload": {
+      "template": "模板",
+      "forWindows": "适用于 Windows",
+      "forMac": "适用于 Mac",
+      "notice": "注意",
+      "cancel": "取消",
+      "bulkRegister": "批量添加/更新",
+      "modify": "修改"
+    },
+    "export": {
+      "tooltip": "导出数据",
+      "currentData": "当前数据",
+      "allUsedCards": "曾使用过的全部卡片",
+      "downloadingCards": "正在下载卡片数据...",
+      "noUsedCards": "没有在此认证设备上使用过的卡片数据。",
+      "fetchCardsFailed": "获取卡片数据失败，请稍后重试。"
+    },
+    "history": {
+      "csvDownload": "下载 CSV",
+      "excelDownload": "下载 Excel",
+      "downloading": "正在下载历史记录..."
+    },
+    "cards": {
+      "invalid": "请输入有效的卡片名称和 ID，两者均不能为空。"
+    },
+    "passcodes": {
+      "invalid": "请输入有效的密码名称和密码，两者均不能为空。",
+      "manualTitle": "手动输入数字密码",
+      "register": "添加"
+    }
+  }
+}

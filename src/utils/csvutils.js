@@ -4,7 +4,66 @@ import { gUtils } from './gUtils';
 // import { useLocation } from 'react'
 import * as XLSX from 'xlsx';
 import { Buffer } from 'buffer';
-import { wordConfig } from '@constants/wordConfig';
+import { PATHS } from '@/routes/manifest';
+import i18n, { languages } from '@/i18n';
+
+// Field -> header key, in template column order.
+const importFields = {
+  members: {
+    userName: 'csv.header.userName',
+    email: 'csv.header.email',
+    department: 'csv.header.optionalDepartment',
+    phone: 'csv.header.optionalPhone',
+  },
+  cards: {
+    cardName: 'csv.header.cardName',
+    id: 'csv.header.id',
+    user: 'csv.header.user',
+  },
+  passcodes: {
+    passcodeName: 'csv.header.passcodeName',
+    passcode: 'csv.header.passcode',
+  },
+};
+
+// Headers of files exported or downloaded as templates before the UI was translated.
+const legacyHeaders = {
+  'csv.header.userName': ['ユーザー名'],
+  'csv.header.email': ['メールアドレス'],
+  'csv.header.optionalDepartment': ['所属（任意）'],
+  'csv.header.optionalPhone': ['電話番号（任意）'],
+  'csv.header.cardName': ['カード名'],
+  'csv.header.id': ['ID'],
+  'csv.header.user': ['ユーザー'],
+  'csv.header.passcodeName': ['暗証番号名'],
+  'csv.header.passcode': ['暗証番号'],
+};
+
+const headerName = (name) =>
+  String(name)
+    .replace(/^\uFEFF/, '')
+    .trim()
+    .toLowerCase();
+
+// Copies each field from whichever column carries its header in any language, keeping the original columns.
+function normalizeCsvRows(rows, fields) {
+  const aliases = Object.entries(fields).map(([field, key]) => {
+    const names = [...languages.map(({ code }) => i18n.t(key, { lng: code })), ...(legacyHeaders[key] || [])];
+    return [field, new Set(names.map(headerName))];
+  });
+  return rows.map((row) => {
+    const normalized = { ...row };
+    aliases.forEach(([field, names]) => {
+      const column = Object.keys(row).find((name) => names.has(headerName(name)));
+      if (column !== undefined) {
+        normalized[field] = row[column];
+      }
+    });
+    return normalized;
+  });
+}
+
+const templateRow = (fields) => Object.fromEntries(Object.values(fields).map((key) => [i18n.t(key), '']));
 
 function processDeviceHistoryItem(item) {
   const processedItem = { ...item };
@@ -15,39 +74,39 @@ function processDeviceHistoryItem(item) {
     case 7:
     case 14:
     case 16:
-      processedItem.type = '施錠';
+      processedItem.type = i18n.t('csv.historyType.lock');
       break;
     case 2:
     case 8:
     case 15:
     case 17:
-      processedItem.type = '解錠';
+      processedItem.type = i18n.t('csv.historyType.unlock');
       break;
     case 18:
     case 19:
     case 20:
-      processedItem.type = 'bot 施解錠';
+      processedItem.type = i18n.t('csv.historyType.botLockUnlock');
       break;
     case 90:
-      processedItem.type = '開';
+      processedItem.type = i18n.t('csv.historyType.open');
       break;
     case 91:
-      processedItem.type = '閉';
+      processedItem.type = i18n.t('csv.historyType.close');
       break;
     default:
       processedItem.type = '';
   }
   if (processedItem.timestamp) {
     const time = processedItem.timestamp;
-    processedItem.timestamp =
-      new Date(time).toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }) +
-      new Date(time).toLocaleTimeString('ja-JP', {
-        hour12: true,
-      });
+    processedItem.timestamp = new Date(time).toLocaleString(i18n.language, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
   }
   if (processedItem.history_tag) {
     try {
@@ -63,27 +122,27 @@ function processDeviceHistoryItem(item) {
   switch (via) {
     case 7:
     case 8:
-      processedItem.via = '手動';
+      processedItem.via = i18n.t('csv.via.manual');
       break;
     case 1:
     case 2:
     case 18:
     case 90:
     case 91:
-      processedItem.via = 'Bluetooth';
+      processedItem.via = i18n.t('csv.via.bluetooth');
       break;
     case 6:
-      processedItem.via = 'オートロック';
+      processedItem.via = i18n.t('csv.via.autoLock');
       break;
     case 14:
     case 15:
     case 19:
-      processedItem.via = 'WiFiモジュール';
+      processedItem.via = i18n.t('csv.via.wifiModule');
       break;
     case 16:
     case 17:
     case 20:
-      processedItem.via = 'web API';
+      processedItem.via = i18n.t('csv.via.webApi');
       break;
     default:
       processedItem.via = '';
@@ -95,30 +154,12 @@ function downloadTemplate(format) {
   try {
     let data = [];
     const pathname = window.location.pathname;
-    if (pathname === '/biz/employees/list') {
-      data = [
-        {
-          ユーザー名: '',
-          メールアドレス: '',
-          '所属（任意）': '',
-          '電話番号（任意）': '',
-        },
-      ];
-    } else if (pathname === '/biz/access-control/cards' || pathname === '/biz/cards') {
-      data = [
-        {
-          カード名: '',
-          ID: '',
-          ユーザー: '',
-        },
-      ];
-    } else if (pathname === '/biz/access-control/passwords') {
-      data = [
-        {
-          暗証番号名: '',
-          暗証番号: '',
-        },
-      ];
+    if (pathname === PATHS.members.list) {
+      data = [templateRow(importFields.members)];
+    } else if (pathname === PATHS.accessControl.cards || pathname === PATHS.cards.index) {
+      data = [templateRow(importFields.cards)];
+    } else if (pathname === PATHS.accessControl.passwords) {
+      data = [templateRow(importFields.passcodes)];
     } else {
       console.log(`no setting pathname download${format}`);
       return;
@@ -157,64 +198,64 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = wi
 
   // 定義各header
   const headersUserGroup = {
-    name: 'グループ名',
-    gid: 'UUID',
-    uuids: '紐付けているユーザー',
+    name: 'csv.header.groupName',
+    gid: 'csv.header.uuid',
+    uuids: 'csv.header.linkedUsers',
   };
   const headersDeviceGroup = {
-    name: 'グループ名',
-    gid: 'UUID',
-    uuids: '紐付けているデバイス',
+    name: 'csv.header.groupName',
+    gid: 'csv.header.uuid',
+    uuids: 'csv.header.linkedDevices',
   };
   const headersDeviceHistory = {
-    type: '状態',
-    timestamp: '時間',
-    history_tag: 'ユーザー名',
-    via: '操作方法',
+    type: 'csv.header.state',
+    timestamp: 'csv.header.time',
+    history_tag: 'csv.header.userName',
+    via: 'csv.header.via',
   };
   const headersUser = {
-    employeeName: 'ユーザー名',
-    employeeEmail: 'メールアドレス',
-    subUUID: 'サブUUID',
-    tag: 'ロール',
-    department: '所属（任意）',
-    phone: '電話番号（任意）',
+    employeeName: 'csv.header.userName',
+    employeeEmail: 'csv.header.email',
+    subUUID: 'csv.header.subUUID',
+    tag: 'csv.header.role',
+    department: 'csv.header.optionalDepartment',
+    phone: 'csv.header.optionalPhone',
   };
   const headersDevice = {
-    deviceName: 'デバイス名',
-    deviceModel: 'モデル',
-    deviceUUID: 'デバイスUUID',
-    battery: '電池残量',
+    deviceName: 'csv.header.deviceName',
+    deviceModel: 'csv.header.model',
+    deviceUUID: 'csv.header.deviceUUID',
+    battery: 'csv.header.battery',
   };
   const headersDevice2 = {
-    deviceName: 'デバイス名',
-    deviceModel: 'モデル',
-    deviceUUID: 'デバイスUUID',
-    battery: '電池残量',
+    deviceName: 'csv.header.deviceName',
+    deviceModel: 'csv.header.model',
+    deviceUUID: 'csv.header.deviceUUID',
+    battery: 'csv.header.battery',
   };
   const headersCfpDevice = {
-    deviceName: 'デバイス名',
-    deviceModel: 'モデル',
-    deviceUUID: 'デバイスUUID',
-    battery: '電池残量',
+    deviceName: 'csv.header.deviceName',
+    deviceModel: 'csv.header.model',
+    deviceUUID: 'csv.header.deviceUUID',
+    battery: 'csv.header.battery',
     //  battery: "連携するセサミ",
   };
   const headersCfpCards = {
-    name: 'カード名',
-    cardID: 'ID',
-    subUUID: 'ユーザー',
-    uuids: '認証機器',
+    name: 'csv.header.cardName',
+    cardID: 'csv.header.id',
+    subUUID: 'csv.header.user',
+    uuids: 'csv.header.authDevices',
   };
   const headersFingers = {
-    name: '指紋名',
-    fingerID: 'ID',
+    name: 'csv.header.fingerName',
+    fingerID: 'csv.header.id',
     // id: "インデックス",
-    memberName: 'ユーザー',
+    memberName: 'csv.header.user',
   };
   const headersPasswords = {
-    name: '暗証番号名',
+    name: 'csv.header.passcodeName',
     // t: "インデックス",
-    passwordID: '暗証番号',
+    passwordID: 'csv.header.passcode',
   };
   console.log('pathname', pathname);
   var isPw = false;
@@ -222,25 +263,25 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = wi
     let headers;
     let newItem = {};
 
-    if (pathname === '/biz/employees/group') {
+    if (pathname === PATHS.members.group) {
       headers = headersUserGroup;
-    } else if (pathname === '/biz/devices/group') {
+    } else if (pathname === PATHS.doors.group) {
       headers = headersDeviceGroup;
-    } else if (pathname === '/biz/employees/list' || pathname === '/biz/employees/group-item') {
+    } else if (pathname === PATHS.members.list || pathname === PATHS.members.groupItem) {
       headers = headersUser;
-    } else if (pathname === '/biz/devices/list') {
+    } else if (pathname === PATHS.doors.list) {
       headers = headersDevice;
       if (item.stateInfo?.batteryPercentage) {
         item.battery = item.stateInfo?.batteryPercentage;
       }
-    } else if (pathname === '/biz/devices/list-item' || pathname === '/biz/access-control/region') {
+    } else if (pathname === PATHS.doors.item || pathname === PATHS.accessControl.region) {
       headers = headersDeviceHistory;
       item = processDeviceHistoryItem(item);
-    } else if (pathname === '/biz/devices/group-item') {
+    } else if (pathname === PATHS.doors.groupItem) {
       headers = headersDevice2;
-    } else if (pathname === '/biz/access-control/index') {
+    } else if (pathname === PATHS.accessControl.index) {
       headers = headersCfpDevice;
-    } else if (pathname === '/biz/access-control/cards' || pathname === '/biz/cards') {
+    } else if (pathname === PATHS.accessControl.cards || pathname === PATHS.cards.index) {
       headers = headersCfpCards;
       if (item.hasOwnProperty('uuids') && Array.isArray(item.uuids)) {
         // 有含'cus_'的數據不要顯示
@@ -249,7 +290,7 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = wi
       }
     } else if (pathname === '/biz/access-control/fingers') {
       headers = headersFingers;
-    } else if (pathname === '/biz/access-control/passwords') {
+    } else if (pathname === PATHS.accessControl.passwords) {
       isPw = true;
       headers = headersPasswords;
     } else {
@@ -258,14 +299,15 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = wi
 
     // 根據標題建立新項目
     Object.keys(headers).forEach((key) => {
+      const label = i18n.t(headers[key]);
       if (item.hasOwnProperty(key)) {
         if (key === 'passwordID' && isPw) {
-          newItem[headers[key]] = gUtils.binaryToDecimal(item[key]);
+          newItem[label] = gUtils.binaryToDecimal(item[key]);
         } else {
-          newItem[headers[key]] = item[key];
+          newItem[label] = item[key];
         }
       } else {
-        newItem[headers[key]] = '';
+        newItem[label] = '';
       }
     });
 
@@ -293,11 +335,12 @@ function downloadLists(list, isCsv = true, fileName = 'sesamebiz', pathname = wi
 
 const downloadExcel = (data, pathname, fileName = 'sesamebiz') => {
   let processedData = {};
-  if (pathname === '/biz/access-control/cards' || pathname === '/biz/cards') {
+  if (pathname === PATHS.accessControl.cards || pathname === PATHS.cards.index) {
+    const authDevices = i18n.t('csv.header.authDevices');
     processedData = data.map((item) => ({
       ...item,
 
-      [wordConfig.touchCertEquipment]: Array.isArray(item.認証機器) ? item.認証機器.join(', ') : item.認証機器,
+      [authDevices]: Array.isArray(item[authDevices]) ? item[authDevices].join(', ') : item[authDevices],
     }));
   } else {
     processedData = data.map((item) => ({
@@ -321,4 +364,6 @@ export const csvUtils = {
   downloadCsv,
   downloadLists,
   downloadExcelTemp,
+  importFields,
+  normalizeCsvRows,
 };

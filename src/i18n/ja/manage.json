@@ -1,0 +1,67 @@
+{
+  "manage": {
+    "share": {
+      "selectedDevices": "選択済デバイス",
+      "selectedUsers": "選択済ユーザー",
+      "selectUsers": "ユーザーを選択",
+      "reselect": "再選択",
+      "confirm": "確認",
+      "setValidTime": "有効時間を設定",
+      "temporary": "一時利用",
+      "issueKey": "合鍵発行"
+    },
+    "group": {
+      "addNew": "新規グループを追加",
+      "name": "グループ名",
+      "devicesCount": "デバイス({{num}})",
+      "usersCount": "ユーザー({{num}})",
+      "selectUsers": "ユーザーを選択",
+      "groupKey": "グループ鍵",
+      "doorGroupName": "ドアグループ名",
+      "selectUserGroup": "ユーザーグループを選択",
+      "selectKeyPermission": "グループ鍵の権限を選択",
+      "setGuestValidTime": "ゲストの有効時間を設定",
+      "issueKey": "グループ鍵発行"
+    },
+    "role": {
+      "addNew": "新規ロールを追加",
+      "name": "ロールの名称",
+      "reservedName": "デフォルトの権限と同じ名前は使用できません",
+      "viewablePages": "閲覧可能ページ"
+    },
+    "member": {
+      "removeTitle": "ユーザーが削除されます",
+      "removeMessage": "認証機器とHub3との通信が不安定な場合、ユーザーに紐づいたカード・指紋が同時に削除されない可能性がございます。\n通信状況をご確認のうえで操作ください。"
+    },
+    "devices": {
+      "selectToImport": "入退室システムへ登録するデバイスを選択",
+      "addNew": "新規デバイスを追加",
+      "fileDownload": "ファイルダウンロード",
+      "csvDownload": "CSVダウンロード",
+      "excelDownload": "Excelダウンロード",
+      "limitExceeded": "デバイス数の上限に達しました。プランのアップグレードが必要です。",
+      "checkHub3Connection": "Hub3との通信状況をご確認ください",
+      "matterPairingFailed": "Hub3がすでに多数のMatterネットワークに接続されている可能性があります。Hub3をリセットしてから再試行してください。",
+      "missingHub3DeviceId": "hub3DeviceId パラメータがありません"
+    },
+    "qrDialog": {
+      "addMeToContacts": "私を連絡先に追加してください"
+    },
+    "date": {
+      "ymd": "{{year}}年{{month}}月{{day}}日"
+    },
+    "authText": {
+      "cards": {
+        "title": "新規カード追加",
+        "h2": "カード読み取り",
+        "b2t": "＋ボタンを押しタッチ/タッチプロにカードをかざして下さい。",
+        "warningMsg": "一括登録・更新をすると既存データは一度全て削除され、アップロード内容に置き換わります。追加・変更する場合は現在の一覧をCSVまたはExcelでダウンロードし、新しいカード/暗証番号を追加または既存カード/暗証番号を編集したうえでアップロードしてください。"
+      },
+      "passcode": {
+        "title": "新規暗証番号追加",
+        "h2": "暗証番号入力",
+        "b2t": "＋ボタンを押しタッチプロに暗証番号を入力し、解錠ボタンを押してください。"
+      }
+    }
+  }
+}

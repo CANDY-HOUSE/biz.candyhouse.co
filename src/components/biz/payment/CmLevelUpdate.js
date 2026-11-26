@@ -6,8 +6,10 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import { URLs } from '@constants/URLs';
+import { useTranslation } from 'react-i18next';
 
 export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, levelConfig }) => {
+  const { t } = useTranslation();
   const [isYear, setIsYear] = useState(false);
   const [title, setTitle] = useState('');
   const [submitting, setIsSubmitting] = useState(false);
@@ -127,18 +129,14 @@ export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, l
 
     setTitle(
       chooseLevel > curLevel
-        ? `${bills[chooseLevel].name}へアップグレード`
-        : `${bills[chooseLevel].name}へダウングレード`
+        ? t('admin.plan.upgradeTo', { name: bills[chooseLevel].name })
+        : t('admin.plan.downgradeTo', { name: bills[chooseLevel].name })
     );
-    setTitleTag(
-      chooseLevel > curLevel
-        ? '※ご利用中のプランは終了し、新しいプランがすぐに有効になります。'
-        : '※ご利用中のプランはお支払い済み期間まで継続し、次の期間より新しいプランが有効になります。'
-    );
-    setTaxTag('※表示価格はすべて税抜き価格です。');
+    setTitleTag(chooseLevel > curLevel ? t('admin.plan.upgradeNote') : t('admin.plan.downgradeNote'));
+    setTaxTag(t('admin.plan.taxNote'));
     setSupportTag(
       <span>
-        プランの詳細は
+        {t('admin.plan.detailsPrefix')}
         <a
           href={URLs.plans}
           target="_blank"
@@ -148,16 +146,18 @@ export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, l
             textDecoration: 'underline',
           }}
         >
-          こちら
+          {t('admin.plan.detailsLink')}
         </a>
       </span>
     );
 
     // 月支付
-    setTextMonth(`月額プラン         ${formatNumber(bills[chooseLevel].price_m)}円 `);
+    setTextMonth(
+      `${t('admin.plan.monthly')}         ${t('admin.plan.price', { price: formatNumber(bills[chooseLevel].price_m) })} `
+    );
     // 年支付
     setTextYear(
-      `年額プラン         ${formatNumber(bills[chooseLevel].price_y_total)}円（月換算${formatNumber(bills[chooseLevel].price_y_total / 12)}円） `
+      `${t('admin.plan.yearly')}         ${t('admin.plan.yearlyPrice', { price: formatNumber(bills[chooseLevel].price_y_total), monthly: formatNumber(bills[chooseLevel].price_y_total / 12) })} `
     );
   }, [chooseLevel]);
 
@@ -210,7 +210,9 @@ export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, l
                 </Typography>
                 <Chip
                   sx={tyStyle4}
-                  label={`年間${formatNumber(bills[chooseLevel].price_m * 12 - bills[chooseLevel].price_y_total)}円お得!`}
+                  label={t('admin.plan.yearlySaving', {
+                    amount: formatNumber(bills[chooseLevel].price_m * 12 - bills[chooseLevel].price_y_total),
+                  })}
                 />
               </Stack>
             }
@@ -237,7 +239,7 @@ export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, l
             }}
             onClick={clickCancel}
           >
-            キャンセル
+            {t('setting.cancel')}
           </Button>
           <LoadingButton
             loading={submitting}
@@ -256,7 +258,7 @@ export const CmLevelUpdate = ({ clickCancel, clickSure, chooseLevel, curLevel, l
               });
             }}
           >
-            確定
+            {t('admin.plan.confirm')}
           </LoadingButton>
         </Box>
       </Box>

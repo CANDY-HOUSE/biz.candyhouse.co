@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Box, styled, Typography } from '@mui/material';
 import { CfpBindMM } from './CfpBindMember';
 import { LoadingButton } from '@mui/lab';
+import { useTranslation } from 'react-i18next';
 
 const DgBindMember = styled(Dialog)({
   '& .MuiDialog-paper': {
@@ -15,6 +16,7 @@ const DgBindMember = styled(Dialog)({
 });
 
 const DgSureCanle = ({ isLoading, handleClose, handleSure }) => {
+  const { t } = useTranslation();
   return (
     <Box
       sx={{
@@ -26,16 +28,17 @@ const DgSureCanle = ({ isLoading, handleClose, handleSure }) => {
       }}
     >
       <Button onClick={handleClose} size="small" sx={{ mr: '10px 20px' }}>
-        キャンセル
+        {t('bizui.common.cancel')}
       </Button>
       <LoadingButton disableElevation loading={isLoading} size="small" variant="outlined" onClick={handleSure}>
-        確認
+        {t('bizui.common.confirm')}
       </LoadingButton>
     </Box>
   );
 };
 
 export const CfpDgBindMember = ({ mOpen, handleClose, handleSure, defaultVal }) => {
+  const { t } = useTranslation();
   const [mm, setMm] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   return (
@@ -56,7 +59,7 @@ export const CfpDgBindMember = ({ mOpen, handleClose, handleSure, defaultVal }) 
             paddingBottom: '20px',
           }}
         >
-          ユーザーを紐付け
+          {t('bizui.bindMember.title')}
         </Typography>
         <CfpBindMM
           defaultVal={defaultVal}

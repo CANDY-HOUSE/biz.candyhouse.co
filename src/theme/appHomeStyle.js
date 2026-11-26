@@ -1,4 +1,5 @@
 import { isAppHome } from '@/services/deviceService';
+import { ROUTES } from '@/routes/manifest';
 
 // iOS system colors for the APP home tabs (grouped background, labels, fills, separators).
 export const ios = {
@@ -40,15 +41,7 @@ export const appSectionLabelSx = {
 export const homeCards = isAppHome || new URLSearchParams(window.location.search).get('fromType') !== 'app';
 
 // Browser routes drawn as cards on the grouped background.
-export const pcCardPaths = [
-  '/',
-  '/vision',
-  '/contacts',
-  '/me',
-  '/biz',
-  '/biz/devices/list',
-  '/biz/access-control/index',
-];
+export const pcCardPaths = ROUTES.filter((route) => route.pcCard).map((route) => route.path);
 
 // Pointer-only feedback; touch screens keep the pressed state alone.
 export const hoverSx = (sx) => ({ '@media (hover: hover)': { '&:hover': sx } });

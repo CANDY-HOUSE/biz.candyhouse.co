@@ -2,8 +2,7 @@ import React, { useContext, useState, useEffect, useCallback, useRef } from 'rea
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { styled } from '@mui/material/styles';
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
-import Paper from '@mui/material/Paper';
-import { Typography, TextField, Card, CardHeader, CardContent, Box, Button, IconButton } from '@mui/material';
+import { Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Refresh from '@mui/icons-material/Refresh';
 import QrCodeIcon from '@mui/icons-material/QrCode';
@@ -15,6 +14,9 @@ import { useTranslation } from 'react-i18next';
 import CheckTable from '@/components/biz/CheckTable';
 import { gConfig } from '@constants/gConfig';
 import WebhookCard from './WebhookCard';
+import { roleLabel } from '@/utils/accessLabels';
+import { PcPage, PcRow, PcSection, pcFieldSx } from '@/components/PcGrouped';
+import { ios } from '@/theme/appHomeStyle';
 
 export default function Developer() {
   const { t } = useTranslation(); // i18n
@@ -52,16 +54,11 @@ export default function Developer() {
     },
   });
 
-  const infoItem = {
-    display: 'flex',
-    alignItems: 'center',
-  };
-
   const readQrcode = (imgFile) => {
     // 1) 解码图片得到二维码 URL（qrToken）
     biz3utils.readQrcodeUrl(imgFile, (err, qrUrl) => {
       if (!qrUrl) {
-        setSnackbarValue({ open: true, msg: '読み取りに失敗しました。QRコードが正しいか確認してください。' });
+        setSnackbarValue({ open: true, msg: t('admin.developer.qrReadFailed') });
         return;
       }
       // 2) 先去服务端换取真正的二维码内容（对齐 app 的 redeem 流程）
@@ -79,14 +76,14 @@ export default function Developer() {
         // 3) 从换取的内容解析设备信息
         const d = redeemedUrl ? biz3utils.parseDeviceKeyFromUrl(redeemedUrl) : null;
         if (!d) {
-          setSnackbarValue({ open: true, msg: '読み取りに失敗しました。QRコードが正しいか確認してください。' });
+          setSnackbarValue({ open: true, msg: t('admin.developer.qrReadFailed') });
           return;
         }
         if (d.keyLevel !== 0) {
-          setSnackbarValue({ open: true, msg: '登録失敗、デバイスの"オーナー"権限が必要です' });
+          setSnackbarValue({ open: true, msg: t('admin.developer.ownerRequired', { role: roleLabel(t, 'オーナー') }) });
           return;
         } else if (gUtils.isSesameAccessControlDevice(d.deviceModel)) {
-          setSnackbarValue({ open: true, msg: 'デバイス数の上限に達しました。プランのアップグレードが必要です。' });
+          setSnackbarValue({ open: true, msg: t('admin.developer.deviceLimit') });
           return;
         } else {
           setSesameKey({ deviceUUID: d.deviceUUID, secretKey: d.secretKey, deviceModel: d.deviceModel });
@@ -95,23 +92,10 @@ export default function Developer() {
     });
   };
 
-  const paperStyles = {
-    height: '10em',
-    overflow: 'auto', // 文字數超過minHeigh的話顯示scrollbar
-    padding: '8px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    color: '#999',
-    wordBreak: 'break-all',
-    whiteSpace: 'pre-wrap', // 保留空白符和换行符
-    overflowX: 'auto', // 如果内容过宽，添加滚动条
-    border: '1px solid #F1F1F1',
-  };
-
   const handleOpenModal = async () => {
     setModalContent(
       <CheckTable
-        title={'デバイスを選択'}
+        title={t('admin.developer.selectDevice')}
         setOpenModal={setCustomModalOpen}
         enableFilter={false}
         selectableRows={'single'}
@@ -129,258 +113,218 @@ export default function Developer() {
     setCustomModalOpen(true);
   };
 
+  const demoButtonSx = { minWidth: 'auto', px: '10px', color: ios.tint };
+
+  if (!gStripe.customerInfo.tag) return null;
+
   return (
-    <>
-      {gStripe.customerInfo.tag && (
-        <Card sx={{ p: 0 }}>
-          <CardHeader
-            title={
-              <Typography variant="h2" sx={{ p: '16px', pb: 0 }}>
-                {t('developer.ForDeveloper')}
-              </Typography>
-            }
-          />
-          <CardContent
-            sx={{
-              mt: 2,
-              p: '0px',
+    <PcPage title={t('developer.ForDeveloper')}>
+      <PcSection title="API">
+        <PcRow label={t('admin.developer.apiKey')}>
+          <Typography
+            sx={{ fontSize: 15, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: ios.label }}
+          >
+            {gStripe.apiKey.apiKeyValue || ''}
+          </Typography>
+          <Tooltip title={t('admin.developer.copy')}>
+            <IconButton
+              size="small"
+              onClick={() => {
+                navigator.clipboard.writeText(gStripe.apiKey.apiKeyValue || '');
+              }}
+            >
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('admin.developer.changeApiKey')}>
+            <IconButton
+              size="small"
+              sx={{
+                mr: '-6px',
+                animation: isKeyRefresing ? 'rotate 1.5s linear infinite' : 'none',
+                color: isKeyRefresing ? 'primary.main' : undefined,
+                '@keyframes rotate': {
+                  '0%': {
+                    transform: 'rotate(0deg)',
+                  },
+                  '100%': {
+                    transform: 'rotate(360deg)',
+                  },
+                },
+              }}
+              onClick={() => {
+                setIsKeyRefresing(true);
+                getApiInfo(true);
+                setTimeout(() => {
+                  setIsKeyRefresing(false);
+                }, 1500);
+              }}
+            >
+              <Refresh fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </PcRow>
+        <PcRow
+          label={t('admin.developer.monthlyApiUsage')}
+          value={t('admin.developer.usageCount', { value: gStripe.apiKey.usedCount })}
+        />
+      </PcSection>
+      {gStripe.isOwner && <WebhookCard />}
+      <PcSection title={t('admin.developer.demo')}>
+        <PcRow
+          label={
+            <>
+              {t('admin.developer.step1')}
+              <CustomWidthTooltip
+                title={
+                  <div>
+                    {t('admin.developer.importQrHint')}
+                    <br />
+                    {t('admin.developer.importPersonalHint')}
+                  </div>
+                }
+                placement="right-start"
+              >
+                <InfoIcon sx={{ fontSize: 18, color: ios.tertiaryLabel, cursor: 'pointer', ml: '6px' }} />
+              </CustomWidthTooltip>
+            </>
+          }
+        >
+          <Button varient="text" component="label" startIcon={<QrCodeIcon />} sx={demoButtonSx}>
+            {t('admin.developer.addByQr')}
+            <input
+              type="file"
+              hidden
+              ref={fileInputRef}
+              onChange={(event) => {
+                if (event.target.files[0]) {
+                  readQrcode(event.target.files[0]);
+                }
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+            />
+          </Button>
+          <Button
+            variant="text"
+            startIcon={<SmartphoneIcon />}
+            sx={{ ...demoButtonSx, mr: '-10px' }}
+            onClick={() => {
+              handleOpenModal();
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-              <Card>
-                <CardHeader title={<Typography variant="h3">APIキー</Typography>} />
-                <CardContent>
-                  <Box
-                    className="currentPlan"
-                    sx={{
-                      ...infoItem,
-                      flexWrap: 'wrap',
-                      wordBreak: 'break-all',
-                      gap: '6px',
-                    }}
-                  >
-                    <Typography>{gStripe.apiKey.apiKeyValue || ''}</Typography>
-                    <Tooltip title="コピー">
-                      <IconButton
-                        size="small"
-                        sx={{ marginLeft: '6px' }}
-                        onClick={() => {
-                          navigator.clipboard.writeText(gStripe.apiKey.apiKeyValue || '');
-                        }}
-                      >
-                        <ContentCopyIcon fontSize="inherit" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="APIキーの変更">
-                      <IconButton
-                        size="small"
-                        sx={{
-                          animation: isKeyRefresing ? 'rotate 1.5s linear infinite' : 'none',
-                          color: isKeyRefresing ? 'primary.main' : undefined,
-                          '@keyframes rotate': {
-                            '0%': {
-                              transform: 'rotate(0deg)',
-                            },
-                            '100%': {
-                              transform: 'rotate(360deg)',
-                            },
-                          },
-                        }}
-                        onClick={() => {
-                          setIsKeyRefresing(true);
-                          getApiInfo(true);
-                          setTimeout(() => {
-                            setIsKeyRefresing(false);
-                          }, 1500);
-                        }}
-                      >
-                        <Refresh fontSize="medium" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader
-                  title={
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        // color: "#8a8994",
-                        display: 'inline-block',
-                      }}
-                    >
-                      今月のAPIご利用回数
-                    </Typography>
+            {t('admin.developer.addFromPersonal')}
+          </Button>
+        </PcRow>
+        <PcRow sx={{ py: '12px' }}>
+          <TextField
+            size="small"
+            label={t('admin.developer.deviceUuid')}
+            variant="filled"
+            fullWidth
+            sx={pcFieldSx}
+            value={sesameKey.deviceUUID || ''}
+            onChange={(e) => {
+              setSesameKey({ ...sesameKey, deviceUUID: e.target.value });
+            }}
+          />
+          <TextField
+            size="small"
+            label={t('admin.developer.deviceSecretKey')}
+            variant="filled"
+            fullWidth
+            sx={pcFieldSx}
+            value={sesameKey.secretKey || ''}
+            onChange={(e) => {
+              setSesameKey({ ...sesameKey, secretKey: e.target.value });
+            }}
+          />
+        </PcRow>
+        {sesameKey.deviceUUID && sesameKey.secretKey && (
+          <>
+            <PcRow label={t('admin.developer.step2')}>
+              <Button
+                sx={demoButtonSx}
+                disabled={!sesameKey.deviceUUID}
+                variant="text"
+                onClick={() => {
+                  setPending(true);
+                  gDeveloper.getIoTDeviceState(sesameKey.deviceUUID, (res) => {
+                    setApiResponse(res.data);
+                    setPending(false);
+                  });
+                }}
+              >
+                {t('admin.developer.getStatus')}
+              </Button>
+              <Button
+                sx={demoButtonSx}
+                disabled={!sesameKey.deviceUUID}
+                variant="text"
+                onClick={() => {
+                  setPending(true);
+                  gDeveloper.getDeviceHistory(sesameKey.deviceUUID, (res) => {
+                    setApiResponse(res.data);
+                    setPending(false);
+                  });
+                }}
+              >
+                {t('admin.developer.getHistory')}
+              </Button>
+              <Button
+                sx={{ ...demoButtonSx, mr: '-10px' }}
+                disabled={!sesameKey.deviceUUID || !sesameKey.secretKey}
+                variant="text"
+                onClick={() => {
+                  let cmd = 88;
+                  if (sesameKey.deviceModel === gConfig.sesameDeviceModel.bot_2) {
+                    cmd = 89;
+                  } else if (sesameKey.deviceModel === gConfig.sesameDeviceModel.ssm_bike2) {
+                    cmd = 83;
                   }
-                />
-                <CardContent>
-                  <Box sx={{ ...infoItem }}>
-                    <Typography>{`${gStripe.apiKey.usedCount} 回`}</Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-            {gStripe.isOwner && <WebhookCard />}
-            <Card>
-              <CardHeader title={<Typography variant="h3">デモ</Typography>} />
-              <CardContent>
-                <Box sx={{ ...infoItem, paddingTop: '6px' }}>
-                  <Typography variant="h3" sx={{ fontWeight: 'normal' }}>
-                    1.デバイスを選択
-                  </Typography>
-                  <CustomWidthTooltip
-                    title={
-                      <div>
-                        【QRコード】QRコードからデバイスをインポート
-                        <br />
-                        【個人で登録済のデバイス】個人でセサミアプリに登録済みのデバイスをインポート
-                      </div>
+                  setPending(true);
+                  gDeveloper.triggerDevice(
+                    {
+                      device_id: sesameKey.deviceUUID,
+                      cmd,
+                      sescretKey: sesameKey.secretKey,
+                    },
+                    (res) => {
+                      setApiResponse(res.data);
+                      setPending(false);
                     }
-                    placement="right-start"
-                  >
-                    <InfoIcon sx={{ color: '#cccccc', cursor: 'pointer', ml: '5px' }} />
-                  </CustomWidthTooltip>
-                </Box>
-                <Box sx={{ display: 'flex', paddingTop: '6px' }}>
-                  <Button varient="text" component="label" startIcon={<QrCodeIcon />}>
-                    QRコードで追加
-                    <input
-                      type="file"
-                      hidden
-                      ref={fileInputRef}
-                      onChange={(event) => {
-                        if (event.target.files[0]) {
-                          readQrcode(event.target.files[0]);
-                        }
-                        if (fileInputRef.current) {
-                          fileInputRef.current.value = '';
-                        }
-                      }}
-                    />
-                  </Button>
-                  <Button
-                    variant="text"
-                    startIcon={<SmartphoneIcon />}
-                    onClick={() => {
-                      handleOpenModal();
-                    }}
-                  >
-                    個人で登録済のデバイスから追加
-                  </Button>
-                </Box>
-              </CardContent>
-              <CardContent sx={{ paddingBottom: 'unset' }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  <TextField
-                    size="small"
-                    label="デバイスUUID"
-                    variant="filled"
-                    sx={{ marginBottom: '10px', flexGrow: '1' }}
-                    fullWidth
-                    value={sesameKey.deviceUUID || ''}
-                    onChange={(e) => {
-                      setSesameKey({ ...sesameKey, deviceUUID: e.target.value });
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    label="デバイスシークレットキー"
-                    variant="filled"
-                    fullWidth
-                    value={sesameKey.secretKey || ''}
-                    onChange={(e) => {
-                      setSesameKey({ ...sesameKey, secretKey: e.target.value });
-                    }}
-                    sx={{
-                      marginBottom: '10px',
-                      marginLeft: '10px',
-                      flexGrow: '1',
-                    }}
-                  />
-                </Box>
-              </CardContent>
-
-              {sesameKey.deviceUUID && sesameKey.secretKey && (
-                <>
-                  <CardContent>
-                    <Typography variant="h3" sx={{ fontWeight: 'normal', paddingTop: '8px' }}>
-                      2.デモを実行する
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', marginTop: '6px' }}>
-                      <Button
-                        sx={{ marginRight: '10px', color: '#28aeb1' }}
-                        disabled={!sesameKey.deviceUUID}
-                        variant="text"
-                        onClick={() => {
-                          setPending(true);
-                          gDeveloper.getIoTDeviceState(sesameKey.deviceUUID, (res) => {
-                            setApiResponse(res.data);
-                            setPending(false);
-                          });
-                        }}
-                      >
-                        ステータス取得
-                      </Button>
-                      <Button
-                        sx={{ marginRight: '10px', color: '#28aeb1' }}
-                        disabled={!sesameKey.deviceUUID}
-                        variant="text"
-                        onClick={() => {
-                          setPending(true);
-                          gDeveloper.getDeviceHistory(sesameKey.deviceUUID, (res) => {
-                            setApiResponse(res.data);
-                            setPending(false);
-                          });
-                        }}
-                      >
-                        履歴取得
-                      </Button>
-                      <Button
-                        sx={{ marginRight: '10px', color: '#28aeb1' }}
-                        disabled={!sesameKey.deviceUUID || !sesameKey.secretKey}
-                        variant="text"
-                        onClick={() => {
-                          let cmd = 88;
-                          if (sesameKey.deviceModel === gConfig.sesameDeviceModel.bot_2) {
-                            cmd = 89;
-                          } else if (sesameKey.deviceModel === gConfig.sesameDeviceModel.ssm_bike2) {
-                            cmd = 83;
-                          }
-                          setPending(true);
-                          gDeveloper.triggerDevice(
-                            {
-                              device_id: sesameKey.deviceUUID,
-                              cmd,
-                              sescretKey: sesameKey.secretKey,
-                            },
-                            (res) => {
-                              setApiResponse(res.data);
-                              setPending(false);
-                            }
-                          );
-                        }}
-                      >
-                        デバイス操作
-                      </Button>
-                    </Box>
-                  </CardContent>
-                  <Paper style={paperStyles} variant="outlined">
-                    {pending ? '...' : JSON.stringify(apiResponse, null, 2)}
-                  </Paper>
-                </>
-              )}
-            </Card>
-          </CardContent>
-        </Card>
-      )}
-    </>
+                  );
+                }}
+              >
+                {t('admin.developer.operateDevice')}
+              </Button>
+            </PcRow>
+            <PcRow sx={{ pb: '16px' }}>
+              <Box
+                component="pre"
+                sx={{
+                  m: 0,
+                  width: '100%',
+                  height: 200,
+                  overflow: 'auto',
+                  p: '12px',
+                  borderRadius: '10px',
+                  bgcolor: ios.fill,
+                  fontSize: 12,
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                  color: ios.secondaryLabel,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  textAlign: 'left',
+                }}
+              >
+                {pending ? '...' : JSON.stringify(apiResponse, null, 2)}
+              </Box>
+            </PcRow>
+          </>
+        )}
+      </PcSection>
+    </PcPage>
   );
 }

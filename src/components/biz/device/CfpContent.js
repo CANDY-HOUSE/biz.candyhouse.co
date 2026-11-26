@@ -53,16 +53,7 @@ const CfpContentCount = ({ count, onClick, name, isShow = true }) => {
     </>
   );
 };
-export default function CfpContent({
-  cc,
-  pc,
-  fc = 'Coming soon',
-  faceCount = 'Coming soon',
-  palmCount = 'Coming soon',
-  call,
-  model,
-  isMobile = false,
-}) {
+export default function CfpContent({ cc, pc, fc, faceCount, palmCount, call, model, isMobile = false }) {
   const { t } = useTranslation(); // i18n
   return (
     <>
@@ -76,7 +67,7 @@ export default function CfpContent({
             letterSpacing: '0.06em',
           }}
         >
-          登録内容
+          {t('deviceDetail.credentials')}
         </Typography>
 
         <Stack direction={isMobile ? 'column' : 'row'} spacing={2} sx={{ p: '18px 18px 18px 0' }}>
@@ -93,19 +84,19 @@ export default function CfpContent({
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.password)}
           />
           <CfpContentCount
-            count={fc}
+            count={fc ?? t('bizui.credential.comingSoon')}
             name={t('accessCtl.auth.fingerprint')}
             onClick={() => call(gConfig.sesameTouchProAuthType.finger)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.finger)}
           />
           <CfpContentCount
-            count={faceCount}
+            count={faceCount ?? t('bizui.credential.comingSoon')}
             name={t('accessCtl.auth.face')}
             onClick={() => call(gConfig.sesameTouchProAuthType.face)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.face)}
           />
           <CfpContentCount
-            count={palmCount}
+            count={palmCount ?? t('bizui.credential.comingSoon')}
             name={t('accessCtl.auth.palm')}
             onClick={() => call(gConfig.sesameTouchProAuthType.palm)}
             isShow={gUtils.isShowType(model, gConfig.sesameTouchProAuthType.palm)}

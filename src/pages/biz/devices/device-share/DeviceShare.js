@@ -1,29 +1,20 @@
-import BackButton from '@/components/BackButton';
-import {
-  Card,
-  CardHeader,
-  Box,
-  Typography,
-  Button,
-  CardContent,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-} from '@mui/material';
+import { Box, Typography, Button, FormControl, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import MUIDataTable from 'mui-datatables';
 import Hider from '@/components/biz/Hider';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { useContext, useEffect, useState } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 import { CmDataPicker } from '@/components/biz/device/CmDataPicker';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LoadingButton } from '@mui/lab';
-import DataTable from '@/components/biz/device/DataTable';
 import { registerLocale } from 'react-datepicker';
 import { ja } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import KeyLevelSelector from '@/components/biz/KeyLevelSelector';
+import { useTranslation } from 'react-i18next';
+import { PcPage, PcRow, PcSection } from '@/components/PcGrouped';
+import { ios } from '@/theme/appHomeStyle';
+import { RoleLabel } from '@/utils/accessLabels';
 registerLocale('ja', ja);
 
 const DeviceShare = () => {
@@ -34,11 +25,12 @@ const DeviceShare = () => {
   const [startDate, setStartDate] = useState(+new Date());
   const [endDate, setEndDate] = useState(+new Date() + 1800000);
   const [guestKeyTime, setGuestKeyTime] = useState('常時利用');
-  const [level, setLevel] = useState(2);
+  const [level, setLevel] = useState(1);
   const [disableSend, setDisableSend] = useState(true);
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const didsString = searchParams.get('dids') || '';
@@ -75,193 +67,185 @@ const DeviceShare = () => {
   };
 
   return (
-    <>
-      <Box sx={{ mb: '15px', bgcolor: 'white', borderRadius: '5px' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            p: '10px 5px',
-          }}
-        >
-          <BackButton size="small" onClick={() => window.history.back()}>
-            <Typography variant="h2" sx={{ ml: '5px', color: 'black' }}>
-              選択済デバイス
+    <PcPage title={t('manage.share.issueKey')} onBack={() => window.history.back()}>
+      <PcSection title={t('manage.share.selectedDevices')}>
+        {selectedDevices.map((device) => (
+          <PcRow key={device.deviceUUID}>
+            <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <Typography sx={{ fontSize: 16, color: ios.label }}>{device.deviceName}</Typography>
+              <Typography sx={{ mt: '2px', fontSize: 13, color: ios.secondaryLabel }}>{device.deviceUUID}</Typography>
+            </Box>
+            <Typography sx={{ flexShrink: 0, fontSize: 15, color: ios.secondaryLabel }}>
+              {device.keyLevel === 0
+                ? t('contacts.ownerKey')
+                : device.keyLevel === 1
+                  ? t('contacts.managerKey')
+                  : t('contacts.guestKey')}
             </Typography>
-          </BackButton>
-        </Box>
-        <DataTable
-          isMobile={gMediaType.isMobile}
-          isAdd={false}
-          data={selectedDevices}
-          isBind={false}
-          isBack={false}
-          isPagination={false}
-          isHideToolBar={true}
-          selectableRows={'none'}
-          isShowFooter={false}
-          columns={DataTableColumns.deviceShareFromDevice()}
-        />
-      </Box>
+          </PcRow>
+        ))}
+      </PcSection>
       <Hider show={showShare}>
-        <Box sx={{ mb: '15px', bgcolor: 'white', borderRadius: '5px' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              p: '10px 15px',
-            }}
-          >
-            <Typography variant="h2">選択済ユーザー</Typography>
+        <PcSection
+          title={t('manage.share.selectedUsers')}
+          action={
             <Button
-              variant="outlined"
               size="small"
+              sx={{ minWidth: 'auto', mr: '-8px', color: ios.tint }}
               onClick={() => {
                 setSelectedUsers([]);
                 setShowShare(false);
               }}
             >
-              再選択
+              {t('manage.share.reselect')}
             </Button>
-          </Box>
-          <DataTable
-            isMobile={gMediaType.isMobile}
-            isAdd={false}
-            data={selectedUsers}
-            isBind={false}
-            isBack={false}
-            isPagination={false}
-            isHideToolBar={true}
-            selectableRows={'none'}
-            columns={DataTableColumns.deviceShareChoosedEmployee()}
-          />
-        </Box>
-        <MUIDataTable
-          title={<Typography variant="h2">選択済ユーザー</Typography>}
-          columns={DataTableColumns.deviceShareCanChooseEmployee()}
-          data={gManageEmployee.employees.Items}
-          options={{
-            setTableProps: () => {
-              return {
-                size: 'small',
-                padding: 'none',
-                sx: {
-                  '& .MuiTableRow-root': {
-                    borderTop: 'none',
-                    borderBottom: gMediaType.isMobile ? 'solid 1px rgba(0, 0, 0, 0.10)' : 'none',
+          }
+        >
+          {selectedUsers.map((user, index) => (
+            <PcRow key={user.subUUID || user.employeeEmail || index}>
+              <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <Typography sx={{ fontSize: 16, color: ios.label }}>{user.employeeName}</Typography>
+                <Typography sx={{ mt: '2px', fontSize: 13, color: ios.secondaryLabel }}>
+                  {user.employeeEmail}
+                </Typography>
+              </Box>
+              <Typography sx={{ flexShrink: 0, fontSize: 15, color: ios.secondaryLabel }}>
+                {user.tag?.map((tag, i) => (
+                  <Fragment key={tag}>
+                    {i > 0 && ' / '}
+                    <RoleLabel tag={tag} />
+                  </Fragment>
+                ))}
+              </Typography>
+            </PcRow>
+          ))}
+        </PcSection>
+        <PcSection title={t('manage.share.selectUsers')}>
+          <MUIDataTable
+            title=""
+            columns={DataTableColumns.deviceShareCanChooseEmployee()}
+            data={gManageEmployee.employees.Items}
+            options={{
+              setTableProps: () => {
+                return {
+                  size: 'small',
+                  padding: 'none',
+                  sx: {
+                    '& .MuiTableRow-root': {
+                      borderTop: 'none',
+                      borderBottom: gMediaType.isMobile ? 'solid 1px rgba(0, 0, 0, 0.10)' : 'none',
+                    },
+                    '& .MuiTableCell-root': {
+                      borderBottom: 'none',
+                    },
+                    '& .MuiTableCell-paddingCheckbox': {
+                      padding: '0',
+                      paddingLeft: '8px',
+                    },
+                    '& .tss-1vd39vz-MUIDataTableBodyCell-stackedCommon': {
+                      fontSize: '13px',
+                    },
                   },
-                  '& .MuiTableCell-root': {
-                    borderBottom: 'none',
-                  },
-                  '& .MuiTableCell-paddingCheckbox': {
-                    padding: '0',
-                    paddingLeft: '8px',
-                  },
-                  '& .tss-1vd39vz-MUIDataTableBodyCell-stackedCommon': {
-                    fontSize: '13px',
-                  },
-                },
-              };
-            },
-            search: false,
-            print: false,
-            filter: true,
-            toolbar: false,
-            download: false,
-            viewColumns: false,
-            customToolbarSelect: (selectedRows, displayData) => (
-              <div style={{ marginRight: '24px' }}>
-                <Button
-                  disableElevation
-                  variant="contained"
-                  size="small"
-                  sx={{ color: 'white' }}
-                  onClick={() => {
-                    checkShare(selectedRows, displayData);
-                    setShowShare(true);
-                    setDisableSend(false);
-                  }}
-                >
-                  {'確認'}
-                </Button>
-              </div>
-            ),
-            filterType: 'textField',
-            elevation: 0,
-            textLabels: {
-              pagination: {
-                next: 'Next Page',
-                previous: 'Previous Page',
-                rowsPerPage: '表示数',
-                displayRows: '/',
+                };
               },
-            },
+              search: false,
+              print: false,
+              filter: true,
+              toolbar: false,
+              download: false,
+              viewColumns: false,
+              customToolbarSelect: (selectedRows, displayData) => (
+                <div style={{ marginRight: '24px' }}>
+                  <Button
+                    disableElevation
+                    variant="contained"
+                    size="small"
+                    sx={{ color: 'white' }}
+                    onClick={() => {
+                      checkShare(selectedRows, displayData);
+                      setShowShare(true);
+                      setDisableSend(false);
+                    }}
+                  >
+                    {t('manage.share.confirm')}
+                  </Button>
+                </div>
+              ),
+              filterType: 'textField',
+              elevation: 0,
+              textLabels: {
+                pagination: {
+                  next: t('contacts.nextPage'),
+                  previous: t('contacts.previousPage'),
+                  rowsPerPage: t('contacts.rowsPerPage'),
+                  displayRows: '/',
+                },
+              },
+            }}
+          />
+        </PcSection>
+      </Hider>
+      <PcSection title={t('contacts.keyPermission')} cardSx={{ px: '20px', py: '6px' }}>
+        <KeyLevelSelector
+          bare
+          onConfirm={(keyLevel) => {
+            setLevel(keyLevel);
           }}
         />
-      </Hider>
-      <KeyLevelSelector
-        onConfirm={(keyLevel) => {
-          setLevel(keyLevel);
-        }}
-      />
+      </PcSection>
       <Hider show={showShare && level > 1}>
-        <Card sx={{ overflow: 'unset' }}>
-          <CardHeader title={<Typography variant="h2">有効時間を設定</Typography>} sx={{ pb: '5px' }} />
-          <CardContent>
-            <FormControl fullWidth>
-              <RadioGroup
-                row
-                value={guestKeyTime}
-                onChange={(e) => {
-                  setGuestKeyTime(e.target.value);
-                }}
-              >
-                <FormControlLabel value="常時利用" control={<Radio />} label="常時利用" />
-                <Box sx={{ display: 'flex', flexGrow: '1' }}>
-                  <FormControlLabel value="一時利用" control={<Radio />} label="一時利用" />
-                  <Hider show={guestKeyTime === '一時利用'}>
-                    <CmDataPicker
-                      callTime={(startTime, endTime) => {
-                        setStartDate(startTime);
-                        setEndDate(endTime);
-                      }}
-                      sx={{
-                        display: 'flex',
-                        flexDirection: gMediaType.isMobile ? 'column' : 'row',
-                        marginBottom: '10px',
-                        justifyContent: gMediaType.isMobile ? 'space-between' : 'start',
-                        alignItems: 'center',
-                        marginLeft: '40px',
-                        flexGrow: '1',
-                      }}
-                    />
-                  </Hider>
-                </Box>
-              </RadioGroup>
-            </FormControl>
-          </CardContent>
-        </Card>
+        <PcSection title={t('manage.share.setValidTime')} cardSx={{ px: '20px', py: '6px', overflow: 'visible' }}>
+          <FormControl fullWidth>
+            <RadioGroup
+              row
+              value={guestKeyTime}
+              onChange={(e) => {
+                setGuestKeyTime(e.target.value);
+              }}
+            >
+              <FormControlLabel value="常時利用" control={<Radio />} label={t('contacts.alwaysAvailable')} />
+              <Box sx={{ display: 'flex', flexGrow: '1' }}>
+                <FormControlLabel value="一時利用" control={<Radio />} label={t('manage.share.temporary')} />
+                <Hider show={guestKeyTime === '一時利用'}>
+                  <CmDataPicker
+                    callTime={(startTime, endTime) => {
+                      setStartDate(startTime);
+                      setEndDate(endTime);
+                    }}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: gMediaType.isMobile ? 'column' : 'row',
+                      justifyContent: gMediaType.isMobile ? 'space-between' : 'start',
+                      alignItems: 'center',
+                      marginLeft: '40px',
+                      flexGrow: '1',
+                    }}
+                  />
+                </Hider>
+              </Box>
+            </RadioGroup>
+          </FormControl>
+        </PcSection>
       </Hider>
-      <LoadingButton
-        disableElevation
-        loading={loading}
-        size="small"
-        sx={{ m: '15px', color: 'white' }}
-        variant="contained"
-        disabled={selectedUsers.length === 0 || disableSend}
-        onClick={() => {
-          setLoading(true);
-          submitShare(() => {
-            setLoading(false);
-            navigate(-1);
-          });
-        }}
-      >
-        合鍵発行
-      </LoadingButton>
-    </>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <LoadingButton
+          disableElevation
+          loading={loading}
+          sx={{ minWidth: 140, height: 40, borderRadius: '10px', fontSize: 15, fontWeight: 600, color: 'white' }}
+          variant="contained"
+          disabled={selectedUsers.length === 0 || disableSend}
+          onClick={() => {
+            setLoading(true);
+            submitShare(() => {
+              setLoading(false);
+              navigate(-1);
+            });
+          }}
+        >
+          {t('manage.share.issueKey')}
+        </LoadingButton>
+      </Box>
+    </PcPage>
   );
 };
 

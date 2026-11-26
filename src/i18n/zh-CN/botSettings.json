@@ -1,0 +1,20 @@
+{
+  "botSettings": {
+    "mode": "模式",
+    "modes": {
+      "normal": "下压后归位",
+      "circle": "绕一圈",
+      "longPress": "放开后归位"
+    },
+    "script": "剧本",
+    "add": "添加动作",
+    "duration": "执行时间",
+    "seconds": "{{value}} 秒",
+    "type0": "正转",
+    "type1": "反转",
+    "type2": "停止",
+    "type3": "等待",
+    "hint": "点击⊕添加动作。\n如果秒数为「永远」并被执行，除非切换到其他剧本并执行，否则{{deviceName}}的动作不会停止。\n电机正反转速度有公差，请让按下时间比返回稍长一些。",
+    "forever": "永远"
+  }
+}

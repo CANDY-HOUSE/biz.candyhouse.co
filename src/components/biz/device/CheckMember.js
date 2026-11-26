@@ -2,17 +2,18 @@ import { Box, Button, Checkbox, FormControl, FormControlLabel, FormGroup, FormLa
 import React, { useContext, useState } from 'react';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { LoadingButton } from '@mui/lab';
+import { RoleLabel } from '@/utils/accessLabels';
+import { useTranslation } from 'react-i18next';
 
 const CheckMember = ({ btnClose, btnSure, tags }) => {
+  const { t } = useTranslation();
   const { gStripe } = useContext(GlobalStateContext);
   const [tagItems, setTagItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   return (
     <Box>
-      <Typography sx={{ paddingTop: '16px' }}>
-        CSVファイル内のユーザーには全て同じロールが付与されます。（オーナーのロールは変更されません）
-      </Typography>
+      <Typography sx={{ paddingTop: '16px' }}>{t('bizui.checkMember.hint')}</Typography>
       <Box>
         <FormControl sx={{ display: 'center', alignItems: 'center' }}>
           <FormLabel
@@ -25,7 +26,7 @@ const CheckMember = ({ btnClose, btnSure, tags }) => {
             }}
             required
           >
-            ロール
+            {t('bizui.common.role')}
           </FormLabel>
           <FormGroup sx={{ width: '100%', display: 'flex', flexDirection: 'row' }}>
             {tags
@@ -65,7 +66,7 @@ const CheckMember = ({ btnClose, btnSure, tags }) => {
                         checked={tagItems.includes(i.tag)}
                       />
                     }
-                    label={i.tag}
+                    label={<RoleLabel tag={i.tag} />}
                     value={i.tag}
                   />
                 );
@@ -90,7 +91,7 @@ const CheckMember = ({ btnClose, btnSure, tags }) => {
             if (btnClose) btnClose(false);
           }}
         >
-          キャンセル
+          {t('bizui.common.cancel')}
         </Button>
         <LoadingButton
           loading={isLoading}
@@ -111,7 +112,7 @@ const CheckMember = ({ btnClose, btnSure, tags }) => {
             });
           }}
         >
-          新規ユーザーを追加
+          {t('bizui.checkMember.addUsers')}
         </LoadingButton>
       </Box>
     </Box>

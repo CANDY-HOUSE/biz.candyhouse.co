@@ -1,9 +1,12 @@
 import React, { useState, useContext } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Chip, Menu, MenuItem, ListItemText } from '@mui/material';
+import { AccessLabel } from '@/utils/accessLabels';
+import { useTranslation } from 'react-i18next';
 
 const RoleAccessChip = ({ handleCheck, label, isShowAdd }) => {
   const { gStripe } = useContext(GlobalStateContext);
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClose = () => {
@@ -13,7 +16,7 @@ const RoleAccessChip = ({ handleCheck, label, isShowAdd }) => {
   return (
     <>
       {gStripe.customerInfo.access && (
-        <Chip style={{ margin: 1 }} label={label} onDelete={isShowAdd ? handleCheck : undefined} />
+        <Chip style={{ margin: 1 }} label={<AccessLabel id={label} />} onDelete={isShowAdd ? handleCheck : undefined} />
       )}
       <Menu
         elevation={1}
@@ -39,7 +42,7 @@ const RoleAccessChip = ({ handleCheck, label, isShowAdd }) => {
             setAnchorEl(null);
           }}
         >
-          <ListItemText primary="削除" />
+          <ListItemText primary={t('pages.ir.remote.delete')} />
         </MenuItem>
       </Menu>
     </>

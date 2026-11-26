@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Chip, Menu, MenuItem, ListItemText } from '@mui/material';
+import { roleLabel } from '@/utils/accessLabels';
 
 const EmployeeRoleChip = ({ handleCheck, label, rowChipLength }) => {
   const { t } = useTranslation();
-  const roleKeys = { オーナー: 'owner', マネージャー: 'manager', ゲスト: 'guest' };
-  const displayLabel = roleKeys[label] ? t(`deviceMember.role.${roleKeys[label]}`) : label;
+  const displayLabel = roleLabel(t, label);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClick = (event) => {

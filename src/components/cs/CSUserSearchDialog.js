@@ -14,6 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { gUtils } from '@/utils/gUtils';
 
 const getItemText = (item) => {
@@ -75,6 +76,7 @@ const initialSearchState = {
 };
 
 const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
+  const { t } = useTranslation();
   const [keyword, setKeyword] = useState('');
   const [resultKeyword, setResultKeyword] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -253,7 +255,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
           fullWidth
           size="small"
           value={keyword}
-          placeholder="email subUUID deviceUUID deviceName"
+          placeholder={t('cs.userSearch.placeholder')}
           variant="filled"
           sx={{
             '& .MuiFilledInput-root': {
@@ -286,14 +288,14 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
           loading={searching}
           sx={{ width: { xs: '100%', sm: 'auto' }, flexShrink: 0, height: '40px', color: 'white' }}
         >
-          Search
+          {t('cs.search')}
         </LoadingButton>
       </Box>
 
       <Box sx={{ mt: 2, flex: 1, minHeight: 0, overflow: 'auto' }}>
         {rowDatas && filteredResultItems.length === 0 && (
           <Typography variant="body2" sx={{ color: 'info.light' }}>
-            No information found
+            {t('cs.userSearch.noResults')}
           </Typography>
         )}
         {filteredResultItems.length > 0 && (
@@ -312,7 +314,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
         <TextField
           size="small"
           value={resultKeyword}
-          placeholder="Search in results"
+          placeholder={t('cs.userSearch.filterPlaceholder')}
           variant="filled"
           sx={{
             width: { xs: '60%', sm: 240 },
@@ -336,7 +338,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
           }}
         />
         <Typography variant="caption" sx={{ color: 'info.light' }}>
-          {`Showing ${resultItems.length} / Total ${totalCount ?? 0}`}
+          {t('cs.userSearch.resultCount', { shown: resultItems.length, total: totalCount ?? 0 })}
         </Typography>
       </Box>
 
@@ -361,7 +363,7 @@ const CSUserSearchDialog = ({ open, gManageEmployee, setSnackbarValue }) => {
             },
           }}
         >
-          {`Auto Login`}
+          {t('cs.userSearch.autoLogin')}
         </MenuItem>
       </Menu>
     </Box>

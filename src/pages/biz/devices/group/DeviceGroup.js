@@ -9,6 +9,8 @@ import { createSearchParams, useNavigate } from 'react-router-dom';
 import DataTable from '@/components/biz/device/DataTable';
 import { LoadingButton } from '@mui/lab';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
+import { PATHS } from '@/routes/manifest';
+import { useTranslation } from 'react-i18next';
 
 const DeviceGroup = () => {
   const {
@@ -26,6 +28,7 @@ const DeviceGroup = () => {
   const [submitState, setSubmitState] = useState({ ready: false, loading: false });
   const [data, setData] = useState([]);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const floatingAddRef = useRef(null);
 
   useEffect(() => {
@@ -75,7 +78,7 @@ const DeviceGroup = () => {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: '10px' }}>
-              <Typography variant="h2">新規グループを追加</Typography>
+              <Typography variant="h2">{t('manage.group.addNew')}</Typography>
             </Box>
           }
         />
@@ -88,7 +91,7 @@ const DeviceGroup = () => {
             required
             size="small"
             id="outlined-basic"
-            label="グループ名"
+            label={t('manage.group.name')}
             variant="filled"
             value={name}
             sx={{
@@ -119,7 +122,7 @@ const DeviceGroup = () => {
                 textAlign: 'left',
               }}
             >
-              {`デバイス(${choosedItems.length})`}
+              {t('manage.group.devicesCount', { num: choosedItems.length })}
             </Typography>
             <IconButton
               disabled={deviceItems.length === 0}
@@ -128,7 +131,7 @@ const DeviceGroup = () => {
                 setCustomModalOpen(true);
                 setModalContent(
                   <CheckTable
-                    title={'デバイスを選択'}
+                    title={t('contacts.selectDevices')}
                     data={deviceItems}
                     selectableRows={'multiple'}
                     enableFilter={true}
@@ -174,12 +177,12 @@ const DeviceGroup = () => {
               });
             }}
           >
-            登録
+            {t('contacts.register')}
           </LoadingButton>
         </CardContent>
       </Card>
     ),
-    [name, choosedItems, deviceItems, submitState.loading, submitState.ready]
+    [name, choosedItems, deviceItems, submitState.loading, submitState.ready, t]
   );
 
   return (
@@ -194,7 +197,7 @@ const DeviceGroup = () => {
         isKey={true}
         callRowClick={(index) => {
           navigate({
-            pathname: '/biz/devices/group-item',
+            pathname: PATHS.doors.groupItem,
             search: createSearchParams({ gid: data[index].gid }).toString(),
           });
         }}
@@ -219,7 +222,7 @@ const DeviceGroup = () => {
           let gids = choosedItems.map((item) => item.gid).join(',');
           if (!gids) return;
           navigate({
-            pathname: '/biz/devices/group-share',
+            pathname: PATHS.doors.groupShare,
             search: createSearchParams({ gids }).toString(),
           });
         }}

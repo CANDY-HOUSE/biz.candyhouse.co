@@ -4,8 +4,12 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditableText from '../../EditableText';
 import EditIcon from '@mui/icons-material/Edit';
+import { useTranslation } from 'react-i18next';
+import { wordLabel } from '@/constants/wordConfig';
 
 const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
+  const { t } = useTranslation();
+  const labelText = wordLabel(t, label);
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
 
@@ -28,7 +32,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
     if (isMobile) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', mb: 2 }}>
-          <Typography sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>{label}</Typography>
+          <Typography sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>{labelText}</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography sx={{ color: '##333' }}>{value}</Typography>
             {onEdit && (
@@ -42,7 +46,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
     }
     return (
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Typography sx={{ width: 120, fontWeight: 'bold', color: '#333' }}>{label}</Typography>
+        <Typography sx={{ width: 120, fontWeight: 'bold', color: '#333' }}>{labelText}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography sx={{ color: '##333' }}>{value}</Typography>
           {onEdit && (
@@ -59,7 +63,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
     if (isMobile) {
       return (
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mb: 2 }}>
-          <Typography sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>{label}</Typography>
+          <Typography sx={{ fontWeight: 'bold', color: '#333', mb: 1 }}>{labelText}</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
             {value.map((item, index) => (
               <Box key={index} sx={{ mb: 2 }}>
@@ -143,7 +147,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
                 handleConfirmDelete();
               }}
             >
-              削除
+              {t('bizui.common.delete')}
             </MenuItem>
           </Menu>
         </Box>
@@ -152,7 +156,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
 
     return (
       <Box sx={{ display: 'flex', width: '100%' }}>
-        <Typography sx={{ width: 120, fontWeight: 'bold', color: '#333', pt: 1 }}>{label}</Typography>
+        <Typography sx={{ width: 120, fontWeight: 'bold', color: '#333', pt: 1 }}>{labelText}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {value.map((item, index) => (
             <Box
@@ -210,7 +214,7 @@ const InfoItem = ({ label, value, onEdit, onDelete, onAdd, isMobile }) => {
                 handleConfirmDelete();
               }}
             >
-              削除
+              {t('bizui.common.delete')}
             </MenuItem>
           </Menu>
         </Box>

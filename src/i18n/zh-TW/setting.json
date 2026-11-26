@@ -1,0 +1,17 @@
+{
+  "setting": {
+    "enableNotification": "通知",
+    "notificationEnabled": "已取得通知權限",
+    "notificationDisabled": "未取得通知權限",
+    "shop": "小店舖",
+    "loginRegist": "登入 / 註冊",
+    "logout": "登出",
+    "deleteAccount": "刪除帳號",
+    "deleteOrgConfirm": "刪除後當前組織中所有資料將不可恢復（app資料不受影響），確定繼續嗎？",
+    "deleteOrgLast": "這是你擁有的最後一個組織，無法刪除。",
+    "deleteOrgDowngrade": "請先降級到 Free 方案再刪除。",
+    "deleteOrgFailed": "刪除失敗，請重試。",
+    "cancel": "取消",
+    "delete": "確定"
+  }
+}

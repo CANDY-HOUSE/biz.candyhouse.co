@@ -1,0 +1,21 @@
+{
+  "lockExtras": {
+    "notificationGranted": "Android notification permissions granted",
+    "on": "On",
+    "txPower": "BLE TX power",
+    "nfcHint": "Setup by tapping the NFC tag",
+    "nfcReset": "Delete the NFC tag",
+    "widget": "Notification widget",
+    "notificationHint": "Android notification permissions NOT granted(Tap here)",
+    "autoUnlock": "Auto Unlock",
+    "autoHint": "1. Set the red circle around your Sesame. Leaving the circle arms one Auto Unlock. When you return, the door unlocks only after this phone connects to the registered Sesame over nearby Bluetooth.\n2. If location detection is unstable, make the red circle larger. You can adjust Sesame\\'s location by tapping the map.\n3. Restart your smartphone if Auto Unlock is not functional.",
+    "locationTitle": "Allow background location",
+    "locationMessage": "Sesame collects location data to enable Auto Unlock even when the app is closed or not in use. Auto Unlock detects when you leave the area you set and does not send this location to Sesame servers. Leaving the area only arms Auto Unlock. Your door unlocks only after this phone connects to your registered Sesame over nearby Bluetooth. Select “{{option}}” for Location. You can turn Auto Unlock off at any time.",
+    "openSettings": "Open settings",
+    "continue": "Continue",
+    "allowAllTheTime": "Allow all the time",
+    "always": "Always",
+    "radius": "Radius: {{value}} m",
+    "deleteName": "Delete {{deviceName}}"
+  }
+}

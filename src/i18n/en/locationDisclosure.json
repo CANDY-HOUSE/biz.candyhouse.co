@@ -1,0 +1,7 @@
+{
+  "locationDisclosure": {
+    "title": "Location access",
+    "message": "Sesame collects location data to find and connect to nearby Sesame devices over Bluetooth, and to enable Auto Unlock even when the app is closed or not in use.",
+    "continue": "Continue"
+  }
+}

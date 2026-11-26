@@ -1,0 +1,8 @@
+{
+  "hubWifi": {
+    "title": "Select your WiFi network",
+    "refresh": "↓You can pull to refresh",
+    "password": "Please enter the WiFi password",
+    "close": "Close"
+  }
+}

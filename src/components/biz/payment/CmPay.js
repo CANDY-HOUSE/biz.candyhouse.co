@@ -3,8 +3,13 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { Typography } from '@mui/material';
 import getStripe from '@/utils/stripe';
 import { LoadingButton } from '@mui/lab';
+import { useTranslation } from 'react-i18next';
+
+// Stripe would otherwise follow the browser language; it names Simplified Chinese 'zh'.
+const stripeLocales = { ja: 'ja', en: 'en', 'zh-CN': 'zh', 'zh-TW': 'zh-TW' };
 
 export const CmPay = ({ gStripe, submit }) => {
+  const { i18n } = useTranslation();
   const [clientSecret, setClientSecret] = useState('');
   const appearance = {
     theme: 'stripe',
@@ -21,6 +26,7 @@ export const CmPay = ({ gStripe, submit }) => {
   const options = {
     clientSecret: clientSecret,
     appearance,
+    locale: stripeLocales[i18n.language] || 'auto',
   };
 
   return (
@@ -43,6 +49,7 @@ export const CmPay = ({ gStripe, submit }) => {
 };
 
 const CheckoutForm = ({ gStripe, submit }) => {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [isPending, setIsPending] = useState(false);
@@ -78,7 +85,9 @@ const CheckoutForm = ({ gStripe, submit }) => {
 
   return (
     <>
-      <Typography sx={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>お支払い方法の追加</Typography>
+      <Typography sx={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
+        {t('admin.payment.addMethod')}
+      </Typography>
       <PaymentElement
         onFocus={() => {
           setErrorMsg('');
@@ -103,7 +112,7 @@ const CheckoutForm = ({ gStripe, submit }) => {
         disabled={!stripe}
         onClick={handleSubmit}
       >
-        クレジットカードを追加
+        {t('admin.payment.addCard')}
       </LoadingButton>
       <Typography
         color="error"

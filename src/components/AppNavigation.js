@@ -7,13 +7,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { appTabBarHeight, appTabPaths } from '@/services/appNavigation';
 import { navIconMap } from './biz/layout/navIcons';
+import { PATHS } from '@/routes/manifest';
 
 const tabInset = 5;
 const tabs = [
   ['/', 'sesame', 'appHome.sesame'],
-  ['/vision', 'vision', 'appHome.vision'],
-  ['/contacts', 'contacts', 'appHome.contacts'],
-  ['/me/homepage', 'me', 'appHome.me'],
+  [PATHS.vision, 'vision', 'appHome.vision'],
+  [PATHS.contacts, 'contacts', 'appHome.contacts'],
+  [PATHS.meHomepage, 'me', 'appHome.me'],
 ];
 export default function AppNavigation() {
   const promotion = useSyncExternalStore(appPromotion.subscribe, appPromotion.getSnapshot);
@@ -21,7 +22,7 @@ export default function AppNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const selected = location.pathname.startsWith('/me') ? '/me/homepage' : location.pathname;
+  const selected = location.pathname.startsWith(PATHS.me) ? PATHS.meHomepage : location.pathname;
   if (!appTabPaths.includes(location.pathname)) return null;
   const selectedIndex = tabs.findIndex(([path]) => path === selected);
   return (
@@ -43,6 +44,8 @@ export default function AppNavigation() {
       <Box
         sx={{
           position: 'relative',
+          maxWidth: 480,
+          mx: 'auto',
           height: appTabBarHeight - 16,
           p: `${tabInset}px`,
           borderRadius: '32px',

@@ -1,0 +1,17 @@
+{
+  "accessCtl": {
+    "auth": {
+      "card": "NFC卡",
+      "fingerprint": "指紋",
+      "password": "數字密碼",
+      "face": "人臉",
+      "palm": "掌靜脈",
+      "manageCard": "管理NFC卡",
+      "manageFingerprint": "管理指紋",
+      "managePasscode": "管理數字密碼",
+      "manageFace": "管理人臉",
+      "managePalmVeins": "管理掌靜脈",
+      "radarDetectionDistance": "雷達偵測距離"
+    }
+  }
+}

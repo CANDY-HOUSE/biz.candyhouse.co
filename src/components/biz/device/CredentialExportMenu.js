@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { Divider, IconButton, ListSubheader, Menu, MenuItem, Tooltip } from '@mui/material';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { downloadCredentials } from '@/utils/credentialExport';
+import { useTranslation } from 'react-i18next';
 
 const formats = ['csv', 'excel', 'json'];
 
 export default function CredentialExportMenu({ data, type, onExportAll, isExporting = false }) {
   const [anchorEl, setAnchorEl] = useState(null);
+  const { t } = useTranslation();
 
   const handleExport = async (format, all = false) => {
     setAnchorEl(null);
@@ -24,10 +26,10 @@ export default function CredentialExportMenu({ data, type, onExportAll, isExport
 
   return (
     <>
-      <Tooltip title="データをエクスポート">
+      <Tooltip title={t('csv.export.tooltip')}>
         <span>
           <IconButton
-            aria-label="データをエクスポート"
+            aria-label={t('csv.export.tooltip')}
             aria-haspopup="menu"
             aria-expanded={Boolean(anchorEl)}
             disabled={isExporting}
@@ -48,14 +50,14 @@ export default function CredentialExportMenu({ data, type, onExportAll, isExport
         onClose={() => setAnchorEl(null)}
         onClick={(event) => event.stopPropagation()}
       >
-        {onExportAll && <ListSubheader>現在のデータ</ListSubheader>}
+        {onExportAll && <ListSubheader>{t('csv.export.currentData')}</ListSubheader>}
         {formats.map((format) => (
           <MenuItem key={format} disabled={isExporting} onClick={() => handleExport(format)}>
             {format === 'excel' ? 'Excel' : format.toUpperCase()}
           </MenuItem>
         ))}
         {onExportAll && <Divider />}
-        {onExportAll && <ListSubheader>過去に使用した全カード</ListSubheader>}
+        {onExportAll && <ListSubheader>{t('csv.export.allUsedCards')}</ListSubheader>}
         {onExportAll &&
           formats.map((format) => (
             <MenuItem key={`all-${format}`} disabled={isExporting} onClick={() => handleExport(format, true)}>

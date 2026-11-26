@@ -1,0 +1,104 @@
+{
+  "admin": {
+    "home": {
+      "userCount": "ユーザー数",
+      "doorCount": "ドア数",
+      "authDeviceCount": "認証機器数",
+      "unlimited": "/無制限",
+      "memberQuota": "/{{value}}人",
+      "lockQuota": "/{{value}}台",
+      "deviceUnit": "台"
+    },
+    "settings": {
+      "company": "会社",
+      "currentPlan": "現在ご契約中のプラン",
+      "nextPaymentDate": "次のお支払い日",
+      "nextPaymentAmount": "次のお支払い金額",
+      "priceWithTax": "{{price}}円(税込)",
+      "paymentInfo": "お支払い情報",
+      "plan": "プラン",
+      "priceNote": "※プランの表示価格はすべて年額プランの月換算した金額（税抜き）です。",
+      "unlimitedPlan": "無制限プラン",
+      "date": "{{year}}年{{month}}月{{day}}日",
+      "downgradeNotice": "※{{date}} {{level}}({{method}})にダウングレードします。"
+    },
+    "plan": {
+      "monthly": "月額プラン",
+      "yearly": "年額プラン",
+      "perMonth": "円 /月",
+      "users": "{{value}} ユーザー",
+      "doors": "{{value}} ドア",
+      "apiLimit": "APIリクエスト上限\n {{value}} 回",
+      "authDevicePages": "認証機器・カード管理ページの利用可能",
+      "upgrade": "アップグレード",
+      "current": "現在のプラン",
+      "cancelDowngrade": "ダウングレード取消",
+      "downgrade": "ダウングレード",
+      "upgradeTo": "{{name}}へアップグレード",
+      "downgradeTo": "{{name}}へダウングレード",
+      "upgradeNote": "※ご利用中のプランは終了し、新しいプランがすぐに有効になります。",
+      "downgradeNote": "※ご利用中のプランはお支払い済み期間まで継続し、次の期間より新しいプランが有効になります。",
+      "taxNote": "※表示価格はすべて税抜き価格です。",
+      "detailsPrefix": "プランの詳細は",
+      "detailsLink": "こちら",
+      "price": "{{price}}円",
+      "yearlyPrice": "{{price}}円（月換算{{monthly}}円）",
+      "yearlySaving": "年間{{amount}}円お得!",
+      "confirm": "確定"
+    },
+    "payment": {
+      "addMethod": "お支払い方法の追加",
+      "addCard": "クレジットカードを追加",
+      "default": "デフォルト"
+    },
+    "developer": {
+      "qrReadFailed": "読み取りに失敗しました。QRコードが正しいか確認してください。",
+      "ownerRequired": "登録失敗、デバイスの\"{{role}}\"権限が必要です",
+      "deviceLimit": "デバイス数の上限に達しました。プランのアップグレードが必要です。",
+      "selectDevice": "デバイスを選択",
+      "apiKey": "APIキー",
+      "copy": "コピー",
+      "changeApiKey": "APIキーの変更",
+      "monthlyApiUsage": "今月のAPIご利用回数",
+      "usageCount": "{{value}} 回",
+      "demo": "デモ",
+      "step1": "1.デバイスを選択",
+      "importQrHint": "【QRコード】QRコードからデバイスをインポート",
+      "importPersonalHint": "【個人で登録済のデバイス】個人でセサミアプリに登録済みのデバイスをインポート",
+      "addByQr": "QRコードで追加",
+      "addFromPersonal": "個人で登録済のデバイスから追加",
+      "deviceUuid": "デバイスUUID",
+      "deviceSecretKey": "デバイスシークレットキー",
+      "step2": "2.デモを実行する",
+      "getStatus": "ステータス取得",
+      "getHistory": "履歴取得",
+      "operateDevice": "デバイス操作"
+    },
+    "webhook": {
+      "saveFailed": "保存に失敗しました：{{message}}",
+      "unknownError": "エラーが発生しました",
+      "saved": "保存しました",
+      "notifyUrl": "通知先 URL",
+      "hintStateChange": "デバイスの状態（施錠・解錠・オンライン・電池など）が変化すると、指定した URL に POST で通知します。",
+      "hintSignature": "署名には上記の API キーを使用します（X-Candyhouse-Signature）。",
+      "save": "保存",
+      "edit": "編集"
+    },
+    "notFound": {
+      "noPermission": "このページを閲覧する権限がありません",
+      "backHome": "ホームに戻る"
+    },
+    "login": {
+      "codeReissued": "入力された認証コードが正しくありません。認証コードが再発行されていますので、新しく受け取ったコードを入力して下さい。"
+    },
+    "snackbar": {
+      "unknown": "不明なメッセージ"
+    },
+    "authData": {
+      "checkHubConnection": "認証機器とHub3の接続を確認してください。"
+    },
+    "remote": {
+      "listFetchFailed": "リモコンリストの取得に失敗しました。"
+    }
+  }
+}

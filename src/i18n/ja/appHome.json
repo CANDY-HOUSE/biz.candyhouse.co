@@ -1,0 +1,29 @@
+{
+  "appHome": {
+    "unloginHistoryTag": "未登録利用者",
+    "registrationNetworkRequired": "登録するにはインターネットに接続してください",
+    "resetToRegister": "リセットしてから登録してください",
+    "noDevices": "⊕から新規デバイスを登録するか、QRコードをスキャンして登録済みデバイスのアクセス権を取得",
+    "sesame": "セサミ",
+    "vision": "ビジョン",
+    "contacts": "連絡先",
+    "me": "自分",
+    "networkError": "接続できません。ネットワークを確認して再試行してください。",
+    "searching": "近くの未登録デバイスを検索しています。スマートフォンに近づけてください。",
+    "noBleDevices": "Bluetooth信号が見つかりません",
+    "noBleDevicesDescription": "1. スマートフォンのBluetoothがオンになっていますか？\n2. スマートフォンの再起動で解決できる場合がございます。\n3. 未登録のデバイスが近くにありますか？\n4. 登録済のデバイスをリセットするには、細い棒でリセットボタンをLED点灯が消えるまで長押ししてください。",
+    "loginRequired": "ログインしてください",
+    "unsupportedQr": "対応していないQRコードです",
+    "refreshing": "更新中",
+    "addNewDevice": "新しいデバイスを追加",
+    "scanQrCode": "QRコードのスキャン",
+    "addContacts": "連絡先の追加",
+    "gallery": "写真ライブラリ",
+    "close": "閉じる",
+    "qrNotFound": "画像にQRコードが見つかりません",
+    "searchDevices": "デバイスを検索",
+    "deviceCount": "デバイス（{{count}}台）",
+    "searchContacts": "名前・メールアドレスで検索",
+    "contactCount": "連絡先（{{count}}人）"
+  }
+}

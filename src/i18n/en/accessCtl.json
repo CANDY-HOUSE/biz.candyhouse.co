@@ -1,0 +1,17 @@
+{
+  "accessCtl": {
+    "auth": {
+      "card": "NFC Card",
+      "fingerprint": "Fingerprint",
+      "password": "Passcode",
+      "face": "Face",
+      "palm": "Palm Veins",
+      "manageCard": "Manage NFC Card",
+      "manageFingerprint": "Manage Fingerprint",
+      "managePasscode": "Manage Passcode",
+      "manageFace": "Manage Face",
+      "managePalmVeins": "Manage Palm Veins",
+      "radarDetectionDistance": "Radar Detection Distance"
+    }
+  }
+}

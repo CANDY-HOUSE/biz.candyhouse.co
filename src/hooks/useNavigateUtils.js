@@ -2,17 +2,18 @@ import { isAppLockModel } from '@/services/appLockSettings';
 import { isAppHome } from '@/services/deviceService';
 import { gUtils } from '@/utils/gUtils';
 import { createSearchParams, useNavigate } from 'react-router-dom';
+import { PATHS } from '@/routes/manifest';
 
 export const deviceDetailPath = (device) => {
   const isAppGuest = isAppHome && Number(device.keyLevel) === 2;
   // Bot 1 keeps no device history; open its settings directly.
-  if (isAppHome && device.deviceModel === 'ssmbot_1') return '/device-setting';
+  if (isAppHome && device.deviceModel === 'ssmbot_1') return PATHS.deviceSetting.index;
   if (gUtils.isLockModel(device.deviceModel) || isAppLockModel(device.deviceModel)) {
-    return isAppGuest ? '/device-setting' : '/biz/devices/list-item';
+    return isAppGuest ? PATHS.deviceSetting.index : PATHS.doors.item;
   }
-  if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) return '/device-setting';
-  if (gUtils.isWifiModel(device.deviceModel)) return '/biz/wifi-module/index';
-  return '/biz/access-control/region';
+  if (isAppGuest && gUtils.isOPSModel(device.deviceModel)) return PATHS.deviceSetting.index;
+  if (gUtils.isWifiModel(device.deviceModel)) return PATHS.hub.index;
+  return PATHS.accessControl.region;
 };
 
 export const useNavigateUtils = () => {
@@ -36,7 +37,7 @@ export const useNavigateUtils = () => {
   const navigateToDeviceShare = (dids) => {
     if (!dids) return;
     navigate({
-      pathname: '/biz/devices/device-share',
+      pathname: PATHS.doors.share,
       search: createSearchParams({ dids }).toString(),
     });
   };
@@ -49,7 +50,7 @@ export const useNavigateUtils = () => {
       isAppLockModel(device.deviceModel) ||
       gUtils.isOPSModel(device.deviceModel)
     ) {
-      path = '/device-setting';
+      path = PATHS.deviceSetting.index;
     }
     navigate({
       pathname: path,

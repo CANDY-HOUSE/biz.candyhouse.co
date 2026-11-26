@@ -3,16 +3,11 @@ import { Box, Button, TextField, Typography } from '@mui/material';
 import { CfpBindMM } from './CfpBindMember';
 import { gUtils } from '@/utils/gUtils';
 import { biz3utils } from '@/utils/biz3utils';
+import { useTranslation } from 'react-i18next';
 
-export const Cfpupload = ({
-  mdatas = [],
-  isBindMm = true,
-  addCard,
-  buttonTitle = '修正',
-  tagTitle = 'カード名',
-  id = 'cardID',
-}) => {
+export const Cfpupload = ({ mdatas = [], isBindMm = true, addCard, buttonTitle, tagTitle, id = 'cardID' }) => {
   const [cards, setCards] = useState([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setCards(mdatas);
@@ -51,7 +46,7 @@ export const Cfpupload = ({
             >
               <Box sx={{ width: isBindMm ? '40%' : '60%' }}>
                 <TextField
-                  label={tagTitle}
+                  label={tagTitle ?? t('csv.header.cardName')}
                   required
                   size="small"
                   variant={isBindMm ? 'outlined' : 'filled'}
@@ -96,7 +91,7 @@ export const Cfpupload = ({
                 });
               }}
             >
-              {buttonTitle}
+              {buttonTitle ?? t('csv.upload.modify')}
             </Button>
           </Box>
         </React.Fragment>

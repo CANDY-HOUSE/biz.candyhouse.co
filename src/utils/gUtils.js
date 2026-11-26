@@ -1,7 +1,9 @@
 import { gConfig } from '@constants/gConfig';
+import { pageNames } from '@/routes/manifest';
 import { modelNameByProductType } from '@constants/sesameDeviceModel';
 import { biz3utils } from './biz3utils';
 import { csvUtils } from './csvutils';
+import i18n from '@/i18n';
 
 const uuidsToNames = (uuids, alltouchs) => {
   if (!uuids || uuids.length === 0) {
@@ -115,7 +117,7 @@ function timeToDate(time) {
   const month = date.getMonth() + 1;
   const day = date.getDate();
   console.log(`${year}年${month}月${day}日`);
-  return `${year}年${month}月${day}日`;
+  return i18n.t('manage.date.ymd', { year, month, day });
 }
 
 function formatTimestampToMonthDayLocal(time) {
@@ -130,116 +132,6 @@ function formatTimestampToMonthDayLocal(time) {
   const minutes = date.getMinutes().toString();
   return `${month}/${day} ${hours}:${minutes}`;
 }
-
-const pageNames = {
-  members: 'ユーザー',
-  membersGroup: 'ユーザーグループ',
-  membersRole: 'ロール',
-  historys: '全体履歴',
-  scheduleList: '予約一覧',
-  developer: '開発者向け',
-  cards: 'カード管理',
-  devices: 'デバイス（ドア・認証機器）',
-  touchDevices: '認証機器',
-  ssmDevices: 'ドア',
-  ssmDevicesGroup: 'ドアグループ',
-  vision: 'Vision',
-  appDevices: 'セサミ',
-  appContacts: '連絡先',
-  appMe: '自分',
-};
-
-const categoriesConf = [
-  {
-    id: pageNames.appDevices,
-    router: '/',
-    isRoot: true,
-    icon: 'sesame',
-  },
-  {
-    id: pageNames.appContacts,
-    router: '/contacts',
-    isRoot: true,
-    icon: 'contacts',
-  },
-  {
-    id: pageNames.appMe,
-    router: '/me',
-    isRoot: true,
-    icon: 'me',
-  },
-  {
-    id: pageNames.vision,
-    name: 'navigator.Vision',
-    router: '/vision',
-    isRoot: true,
-    icon: 'vision',
-  },
-  {
-    id: pageNames.members,
-    router: '/biz/employees',
-    icon: 'members',
-    items: [
-      {
-        id: pageNames.members,
-        router: '/biz/employees/list',
-      },
-      {
-        id: pageNames.membersGroup,
-        router: '/biz/employees/group',
-      },
-      {
-        id: pageNames.membersRole,
-        router: '/biz/employees/role',
-      },
-    ],
-  },
-  {
-    id: pageNames.ssmDevices,
-    router: '/biz/devices',
-    icon: 'ssmDevices',
-    items: [
-      {
-        id: pageNames.ssmDevices,
-        router: '/biz/devices/list',
-      },
-      {
-        id: pageNames.ssmDevicesGroup,
-        router: '/biz/devices/group',
-      },
-    ],
-  },
-  {
-    id: pageNames.touchDevices,
-    router: '/biz/access-control/index',
-    isRoot: true,
-    icon: 'touchDevices',
-  },
-  {
-    id: pageNames.cards,
-    router: '/biz/cards',
-    isRoot: true,
-    icon: 'cards',
-  },
-  {
-    id: pageNames.historys,
-    router: '/biz/history',
-    isRoot: true,
-    icon: 'history',
-  },
-  {
-    id: pageNames.scheduleList,
-    router: '/biz/schedule-list',
-    isRoot: true,
-    icon: 'schedule',
-  },
-  {
-    id: pageNames.developer,
-    router: '/biz/developer',
-    isRoot: true,
-    icon: 'developer',
-  },
-];
 
 const isContainPage = (access, id, isSesameApp = false) => {
   if (!access) {
@@ -467,18 +359,32 @@ function isValidEmail(strEmail) {
   return emailRegex.test(strEmail);
 }
 
+let localizedAuthText = {};
+const authTextFor = (language) => {
+  if (localizedAuthText.language !== language) {
+    localizedAuthText = {
+      language,
+      fontCfpCards: {
+        title: i18n.t('manage.authText.cards.title'),
+        h2: i18n.t('manage.authText.cards.h2'),
+        b2t: i18n.t('manage.authText.cards.b2t'),
+        warningMsg: i18n.t('manage.authText.cards.warningMsg'),
+      },
+      fontCfpPw: {
+        title: i18n.t('manage.authText.passcode.title'),
+        h2: i18n.t('manage.authText.passcode.h2'),
+        b2t: i18n.t('manage.authText.passcode.b2t'),
+      },
+    };
+  }
+  return localizedAuthText;
+};
 const authText = {
-  fontCfpCards: {
-    title: '新規カード追加',
-    h2: 'カード読み取り',
-    b2t: '＋ボタンを押しタッチ/タッチプロにカードをかざして下さい。',
-    warningMsg:
-      '一括登録・更新をすると既存データは一度全て削除され、アップロード内容に置き換わります。追加・変更する場合は現在の一覧をCSVまたはExcelでダウンロードし、新しいカード/暗証番号を追加または既存カード/暗証番号を編集したうえでアップロードしてください。',
+  get fontCfpCards() {
+    return authTextFor(i18n.language).fontCfpCards;
   },
-  fontCfpPw: {
-    title: '新規暗証番号追加',
-    h2: '暗証番号入力',
-    b2t: '＋ボタンを押しタッチプロに暗証番号を入力し、解錠ボタンを押してください。',
+  get fontCfpPw() {
+    return authTextFor(i18n.language).fontCfpPw;
   },
 };
 
@@ -497,7 +403,6 @@ export const gUtils = {
   uniqueByProperty,
   allTags,
   pageNames,
-  categoriesConf,
   isWifiModel,
   isDeviceKeyOwner,
   isDeviceKeyGuest,

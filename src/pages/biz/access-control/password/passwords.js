@@ -6,9 +6,8 @@ import CfpheaderCards from '@/components/biz/CfpHeaderCards';
 import DataTable from '@/components/biz/device/DataTable';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import { CfpMsg } from '@/components/biz/device/CfpMsg';
-import { createSearchParams, useNavigate } from 'react-router-dom';
+import { createSearchParams } from 'react-router-dom';
 import { gConfig } from '@constants/gConfig';
-import { useLocation } from 'react-router-dom';
 import useOperateIoT from '@hooks/useOperateIoT';
 import { registerIotCallback, unregisterIotCallback } from '@hooks/useIotCallbackRegistry';
 import { biz3utils } from '@/utils/biz3utils';
@@ -18,13 +17,17 @@ import usePasscodeUploader from '@/hooks/TouchProDataBufferUploader/usePasscodeU
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { sesameTouchProAuthType } from '@constants/sesameTouchProAuthType';
 import { gUtils } from '@/utils/gUtils';
+import { PATHS } from '@/routes/manifest';
+import { useTranslation } from 'react-i18next';
+import { useSettingsBack, useSettingsLocationState, useSettingsNavigate } from '@/components/settingsSubPage';
 
 export default function Passwords() {
   const cfpheaderCardsRef = useRef(null);
   const floatingAddRef = useRef(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { state = {} } = location;
+  const navigate = useSettingsNavigate();
+  const back = useSettingsBack();
+  const { t } = useTranslation();
+  const state = useSettingsLocationState();
   const { gManageAuthData, gManageDevice, setModalTitle, setCustomModalOpen, setModalContent, gMediaType } =
     useContext(GlobalStateContext);
 
@@ -72,7 +75,7 @@ export default function Passwords() {
     setModalTitle('');
     setModalContent(
       <CfpMsg
-        msg={'有効なパスワード名およびコードを入力してください。いずれも空欄では登録できません。'}
+        msg={t('csv.passcodes.invalid')}
         onClick={() => {
           setCustomModalOpen(false);
         }}
@@ -226,12 +229,12 @@ export default function Passwords() {
             if (gManageDevice.getWifiState(state.uuid)) {
               let list = [];
               let isPasswordExist = true;
-              data.forEach((item) => {
+              gUtils.csvUtils.normalizeCsvRows(data, gUtils.csvUtils.importFields.passcodes).forEach((item) => {
                 let it = {};
-                const pwdValue = item.暗証番号;
+                const pwdValue = item.passcode;
                 if (pwdValue && /^\d+$/.test(pwdValue)) {
-                  it.passwordID = biz3utils.formatPasscodeID(item.暗証番号 || item.passwordID);
-                  it.nameUUID = String(item.暗証番号名 || item.nameUUID || '');
+                  it.passwordID = biz3utils.formatPasscodeID(item.passcode || item.passwordID);
+                  it.nameUUID = String(item.passcodeName || item.nameUUID || '');
                   list.push(it);
                 } else {
                   isPasswordExist = false;
@@ -250,7 +253,7 @@ export default function Passwords() {
             handleCarSetInputMode(isChoose);
           }}
           isBindMm={false}
-          tagTitle={'暗証番号名'}
+          tagTitle={t('csv.header.passcodeName')}
           id={'passwordID'}
           mdatas={recentlyAddedPasswords}
           addCard={(d) => {
@@ -260,12 +263,12 @@ export default function Passwords() {
           }}
         />
         <Card sx={{ px: 3.5, pb: 0 }}>
-          <Typography variant="h3">暗証番号を手入力</Typography>
+          <Typography variant="h3">{t('csv.passcodes.manualTitle')}</Typography>
           <Grid container spacing={1} sx={{ pt: 0, mt: 1, lineHeight: 3 }}>
             <Grid item xs={4}>
               <TextField
                 size="small"
-                label="暗証番号"
+                label={t('csv.header.passcode')}
                 variant="filled"
                 fullWidth
                 required
@@ -283,7 +286,7 @@ export default function Passwords() {
             <Grid item xs={4}>
               <TextField
                 size="small"
-                label="暗証番号名"
+                label={t('csv.header.passcodeName')}
                 variant="filled"
                 fullWidth
                 required
@@ -310,7 +313,7 @@ export default function Passwords() {
                   manualAddPasscode();
                 }}
               >
-                登録
+                {t('csv.passcodes.register')}
               </LoadingButton>
             </Grid>
           </Grid>
@@ -346,6 +349,7 @@ export default function Passwords() {
         data={tableData}
         isBind={false}
         isBack={true}
+        onBack={back}
         text={title}
         columns={DataTableColumns.passwordColumns({
           ref: ref,
@@ -356,7 +360,7 @@ export default function Passwords() {
         }}
         callRowClick={(index) => {
           navigate({
-            pathname: '/biz/access-control/password-details',
+            pathname: PATHS.accessControl.passwordDetails,
             search: createSearchParams({ did: tableData[index].passwordID, uuid: state.uuid }).toString(),
           });
         }}

@@ -8,6 +8,7 @@ import WebSocketManager from '../websocket/WebSocketManager.ts';
 import { Auth } from '@aws-amplify/auth';
 import { Hub } from '@aws-amplify/core';
 import { biz3utils } from '../utils/biz3utils';
+import { PATHS } from '@/routes/manifest';
 
 // App 内桥接调用：复用 biz3utils.triggerBridge + window[callbackName] 回调机制
 // 返回 false 表示不在 App 内（无 bridge），object 为 native 回调结果，null 为超时
@@ -184,7 +185,7 @@ export const useAuthState = () => {
       clearCache();
       setIsClearData(true);
       cb && cb({ success: true });
-      if (isAppHome) window.location.replace('/me/homepage?appHome=1&fromType=app');
+      if (isAppHome) window.location.replace(`${PATHS.meHomepage}?appHome=1&fromType=app`);
     }
   };
 

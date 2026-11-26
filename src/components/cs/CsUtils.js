@@ -1,5 +1,6 @@
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse';
+import i18n from '@/i18n';
 
 export const yamatoHeaders = [
   'お客様管理番号半角英数字50文字',
@@ -341,7 +342,7 @@ export const initialRepairTableData = {
 const fetchFreshdeskJson = async (url, authorizationKey) => {
   const response = await fetch(url, { headers: { Authorization: authorizationKey } });
   if (!response.ok) {
-    throw new Error(`Freshdesk request failed: ${response.status}`);
+    throw new Error(i18n.t('cs.repair.freshdeskFailed', { status: response.status }));
   }
   return response.json();
 };

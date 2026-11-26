@@ -1,0 +1,17 @@
+{
+  "setting": {
+    "enableNotification": "通知",
+    "notificationEnabled": "通知は許可されています",
+    "notificationDisabled": "通知は許可されていません",
+    "shop": "お店",
+    "loginRegist": "ログイン/登録",
+    "logout": "ログアウト",
+    "deleteAccount": "アカウントを削除する",
+    "deleteOrgConfirm": "削除すると、現在の組織内のすべてのデータは復元できません（アプリのデータには影響しません）。続行してもよろしいですか？",
+    "deleteOrgLast": "オーナーである最後の組織は削除できません。",
+    "deleteOrgDowngrade": "Freeプランにダウングレードしてから削除してください。",
+    "deleteOrgFailed": "削除に失敗しました。もう一度お試しください。",
+    "cancel": "キャンセル",
+    "delete": "決定"
+  }
+}

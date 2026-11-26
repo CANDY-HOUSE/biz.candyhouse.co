@@ -1,0 +1,90 @@
+{
+  "bizui": {
+    "common": {
+      "delete": "刪除",
+      "cancel": "取消",
+      "confirm": "確認",
+      "notSet": "未設定",
+      "user": "使用者",
+      "userName": "使用者名稱",
+      "email": "電子郵件地址",
+      "role": "角色",
+      "department": "所屬部門",
+      "deviceName": "裝置名稱",
+      "authDevices": "認證裝置",
+      "authDeviceCount": "{{count}}台認證裝置"
+    },
+    "table": {
+      "rowsPerPage": "每頁顯示",
+      "nextPage": "下一頁",
+      "previousPage": "上一頁",
+      "linkOtherDevices": "與其他認證裝置連結",
+      "issueKey": "發放鑰匙",
+      "csvDownload": "下載 CSV",
+      "excelDownload": "下載 Excel",
+      "refresh": "重新整理",
+      "noMatch": "沒有符合的結果"
+    },
+    "columns": {
+      "cardName": "卡片名稱",
+      "groupName": "群組名稱",
+      "groupKeys": "持有的群組鑰匙",
+      "doorGroupName": "門群組名稱",
+      "groupKeyHolders": "群組鑰匙持有者",
+      "bulkActions": "批次操作",
+      "bulkUnlock": "全部開鎖",
+      "bulkLock": "全部上鎖",
+      "deviceGroupName": "裝置群組名稱",
+      "keyLevel": "鑰匙權限",
+      "validPeriod": "有效期間",
+      "phone": "電話號碼",
+      "linkedSesame": "已連結的芝麻",
+      "battery": "電池電量",
+      "lockButton": "開關鎖",
+      "userPermission": "使用者權限",
+      "viewablePages": "可存取頁面",
+      "noAccess": "無權限",
+      "passcodeName": "密碼名稱",
+      "passcode": "密碼"
+    },
+    "checkMember": {
+      "hint": "CSV 檔案中的所有使用者都將被指派相同的角色。（擁有者的角色不會變更）",
+      "addUsers": "新增使用者"
+    },
+    "addIcCard": {
+      "title": "新增卡片",
+      "readCard": "讀取卡片",
+      "hint": "請按 + 按鈕，然後將卡片靠近 Touch / Touch Pro。"
+    },
+    "bindMember": {
+      "title": "綁定使用者"
+    },
+    "credential": {
+      "comingSoon": "即將推出"
+    },
+    "datePicker": {
+      "start": "開始使用時間",
+      "end": "結束使用時間",
+      "time": "時間"
+    },
+    "history": {
+      "all": "全部歷史"
+    },
+    "sureCancel": {
+      "deleteAnyway": "仍然刪除"
+    },
+    "deviceUser": {
+      "selectUsers": "選擇使用者",
+      "alwaysAvailable": "長期有效"
+    },
+    "schedule": {
+      "empty": "暫無預約",
+      "cancel": "取消預約",
+      "action": {
+        "lock": "上鎖",
+        "unlock": "開鎖",
+        "upgrade_firmware": "升級韌體"
+      }
+    }
+  }
+}

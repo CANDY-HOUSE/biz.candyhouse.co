@@ -8,6 +8,7 @@ import useAppLayer from '@/hooks/useAppLayer';
 import { ios } from '@/theme/appHomeStyle';
 import { appRouteInfo, appTabHeaderSx, appTabTopBarHeight, appTopBarHeight } from '@/services/appNavigation';
 import { ContactIcon, CubeIcon, ScanIcon } from './appIcons';
+import { PATHS } from '@/routes/manifest';
 
 const appEvent = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
 
@@ -53,9 +54,9 @@ export default function AppTopBar() {
     appEvent(type, detail);
   };
   const items = [
-    ['appHome.addNewDevice', CubeIcon, () => choose('app-navigate', '/app/register')],
+    ['appHome.addNewDevice', CubeIcon, () => choose('app-navigate', PATHS.appRegister)],
     ['appHome.scanQrCode', ScanIcon, () => choose('app-scan-qr')],
-    ['appHome.addContacts', ContactIcon, () => choose('app-navigate', '/contact-add')],
+    ['appHome.addContacts', ContactIcon, () => choose('app-navigate', PATHS.contactAdd)],
   ];
   return (
     <Box

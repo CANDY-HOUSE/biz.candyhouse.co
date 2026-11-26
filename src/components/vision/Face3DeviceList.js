@@ -21,10 +21,11 @@ import { useMasterDetail } from '@/components/MasterDetail';
 import { biz3utils } from '@/utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
 import { gConfig } from '@constants/gConfig';
+import { PATHS } from '@/routes/manifest';
 
 /** 设备详情页地址（Face3 的录像卡片在里面，手机上默认显示录像）。参数与 useNavigateUtils 一致。
  *  宽屏 PC 改去设备页，由列表旁的详情面板显示这台。 */
-const face3DetailLocation = (device, companyDevices, pathname = '/biz/access-control/region') => {
+const face3DetailLocation = (device, companyDevices, pathname = PATHS.accessControl.region) => {
   const listed = companyDevices.find((d) => d.deviceUUID?.toUpperCase() === device.deviceUUID?.toUpperCase());
   return {
     pathname,
@@ -356,11 +357,11 @@ export default function Face3DeviceList() {
   const addDeviceMenu = (
     <Box>
       <Typography variant="h2" sx={{ px: 1 }}>
-        新規デバイスを追加
+        {t('face3.addNewDevice')}
       </Typography>
       <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
         <Button variant="text" component="label" startIcon={<QrCodeIcon />} sx={{ justifyContent: 'flex-start' }}>
-          QRコードで追加
+          {t('contacts.addByQr')}
           <input
             type="file"
             hidden

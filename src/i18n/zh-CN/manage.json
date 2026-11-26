@@ -1,0 +1,67 @@
+{
+  "manage": {
+    "share": {
+      "selectedDevices": "已选设备",
+      "selectedUsers": "已选用户",
+      "selectUsers": "选择用户",
+      "reselect": "重新选择",
+      "confirm": "确认",
+      "setValidTime": "设置有效时间",
+      "temporary": "临时使用",
+      "issueKey": "发放钥匙"
+    },
+    "group": {
+      "addNew": "添加新群组",
+      "name": "群组名称",
+      "devicesCount": "设备({{num}})",
+      "usersCount": "用户({{num}})",
+      "selectUsers": "选择用户",
+      "groupKey": "群组钥匙",
+      "doorGroupName": "门组名称",
+      "selectUserGroup": "选择用户组",
+      "selectKeyPermission": "选择群组钥匙权限",
+      "setGuestValidTime": "设置访客有效时间",
+      "issueKey": "发放群组钥匙"
+    },
+    "role": {
+      "addNew": "添加新角色",
+      "name": "角色名称",
+      "reservedName": "不能使用与默认权限相同的名称",
+      "viewablePages": "可浏览页面"
+    },
+    "member": {
+      "removeTitle": "将删除该用户",
+      "removeMessage": "如果认证设备与 Hub3 的通信不稳定，与该用户关联的卡片和指纹可能不会被同时删除。\n请确认通信状况后再操作。"
+    },
+    "devices": {
+      "selectToImport": "选择要登记到门禁系统的设备",
+      "addNew": "添加新设备",
+      "fileDownload": "文件下载",
+      "csvDownload": "下载 CSV",
+      "excelDownload": "下载 Excel",
+      "limitExceeded": "设备数量已达上限，请升级方案。",
+      "checkHub3Connection": "请确认与 Hub3 的通信状况",
+      "matterPairingFailed": "Hub3 可能已连接了过多的 Matter 网络。请重置 Hub3 后重试。",
+      "missingHub3DeviceId": "缺少 hub3DeviceId 参数"
+    },
+    "qrDialog": {
+      "addMeToContacts": "请将我添加为联系人"
+    },
+    "date": {
+      "ymd": "{{year}}年{{month}}月{{day}}日"
+    },
+    "authText": {
+      "cards": {
+        "title": "添加新卡片",
+        "h2": "读取卡片",
+        "b2t": "请按＋按钮，并将卡片靠近 Touch / Touch Pro。",
+        "warningMsg": "批量登记/更新会先删除全部现有数据，并替换为上传的内容。如需添加或修改，请先以 CSV 或 Excel 下载当前列表，添加新的卡片/密码或编辑现有卡片/密码后再上传。"
+      },
+      "passcode": {
+        "title": "添加新密码",
+        "h2": "输入密码",
+        "b2t": "请按＋按钮，在 Touch Pro 上输入密码，然后按开锁按钮。"
+      }
+    }
+  }
+}

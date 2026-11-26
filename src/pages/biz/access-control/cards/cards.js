@@ -4,9 +4,8 @@ import CfpheaderCards from '@/components/biz/CfpHeaderCards';
 import DataTable from '@/components/biz/device/DataTable';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import { CfpMsg } from '@/components/biz/device/CfpMsg';
-import { createSearchParams, useNavigate } from 'react-router-dom';
+import { createSearchParams } from 'react-router-dom';
 import { gConfig } from '@constants/gConfig';
-import { useLocation } from 'react-router-dom';
 import useOperateIoT from '@hooks/useOperateIoT';
 import { registerIotCallback, unregisterIotCallback } from '@hooks/useIotCallbackRegistry';
 import { biz3utils } from '@/utils/biz3utils';
@@ -16,13 +15,17 @@ import { sesameTouchProAuthType } from '@constants/sesameTouchProAuthType';
 import { gUtils } from '@/utils/gUtils';
 import { Backdrop, CircularProgress } from '@mui/material';
 import useStpDeviceCardsExport from '@hooks/useStpDeviceCardsExport';
+import { PATHS } from '@/routes/manifest';
+import { useTranslation } from 'react-i18next';
+import { useSettingsBack, useSettingsLocationState, useSettingsNavigate } from '@/components/settingsSubPage';
 
 export default function VCards() {
   const cfpheaderCardsRef = useRef(null); // 根据刷卡机报告的 录入/验证 状态， 在子组件里 更新UI，
   const floatingAddRef = useRef(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { state = {} } = location;
+  const navigate = useSettingsNavigate();
+  const back = useSettingsBack();
+  const { t } = useTranslation();
+  const state = useSettingsLocationState();
   const {
     gManageAuthData,
     gManageDevice,
@@ -88,7 +91,7 @@ export default function VCards() {
   };
 
   const showError = async () => {
-    showMessage('有効なカード名およびIDを入力してください。いずれも空欄では登録できません。');
+    showMessage(t('csv.cards.invalid'));
   };
 
   // 导出该认证机器上曾经用过的全部卡片（数据来自 nfc_card 表，不是设备当前的卡片列表）
@@ -96,11 +99,11 @@ export default function VCards() {
     try {
       const count = await exportCards(state.uuid, format);
       if (count === 0) {
-        showMessage('この認証機器で使用されたカードのデータがありません。');
+        showMessage(t('csv.export.noUsedCards'));
       }
     } catch (error) {
       console.error('[cards][handleExportAllCards]', error);
-      showMessage('カードデータの取得に失敗しました。時間をおいて再度お試しください。');
+      showMessage(t('csv.export.fetchCardsFailed'));
     }
   };
 
@@ -206,14 +209,14 @@ export default function VCards() {
           if (gManageDevice.getWifiState(state.uuid)) {
             let list = [];
             let isCardIDExist = true;
-            data.forEach((item) => {
+            gUtils.csvUtils.normalizeCsvRows(data, gUtils.csvUtils.importFields.cards).forEach((item) => {
               let data = {};
               if (item.id || item.ID || item.cardID) {
                 data.cardID = item.id || item.ID || item.cardID;
-                data.nameUUID = String(item.カード名 || item.name || '');
+                data.nameUUID = String(item.cardName || item.name || '');
                 data.cardType = item.cardType || '02';
-                if (item.ユーザー) {
-                  let member = gManageEmployee.employees.Items.find((it) => it.subUUID === item.ユーザー);
+                if (item.user) {
+                  let member = gManageEmployee.employees.Items.find((it) => it.subUUID === item.user);
                   if (member) {
                     data.memberID = member.subUUID;
                   }
@@ -285,6 +288,7 @@ export default function VCards() {
           data={tableData}
           isBind={false}
           isBack={true}
+          onBack={back}
           text={title}
           columns={DataTableColumns.cardColumns({
             gManageEmployee: gManageEmployee,
@@ -297,7 +301,7 @@ export default function VCards() {
           }}
           callRowClick={(index) => {
             navigate({
-              pathname: '/biz/cards/details',
+              pathname: PATHS.cards.details,
               search: createSearchParams({ did: tableData[index].cardID }).toString(),
             });
           }}
@@ -340,7 +344,7 @@ export default function VCards() {
         open={isExporting}
       >
         <CircularProgress />
-        <div>カードデータをダウンロード中...</div>
+        <div>{t('csv.export.downloadingCards')}</div>
       </Backdrop>
     </>
   );

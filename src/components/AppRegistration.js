@@ -18,6 +18,7 @@ import { deviceService } from '@/services/deviceService';
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
 import AppRefreshIndicator from './AppRefreshIndicator';
 import BleStatusBar from './BleStatusBar';
+import { PATHS } from '@/routes/manifest';
 
 export default function AppRegistration() {
   const { t } = useTranslation();
@@ -145,7 +146,7 @@ export default function AppRegistration() {
             setup: '1',
           });
           navigate({
-            pathname: isHub ? '/biz/wifi-module/index' : isPeripheral ? '/device-setting' : '/device-setting/angle',
+            pathname: isHub ? PATHS.hub.index : isPeripheral ? PATHS.deviceSetting.index : PATHS.deviceSetting.angle,
             search: params.toString(),
           });
         }

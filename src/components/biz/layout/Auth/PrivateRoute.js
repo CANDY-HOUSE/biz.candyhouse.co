@@ -4,6 +4,7 @@ import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import LoadingPage from './LoadingPage';
 import { gConfig } from '@constants/gConfig';
+import { PATHS } from '@/routes/manifest';
 
 function PrivateRoute({ children }) {
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,7 @@ function PrivateRoute({ children }) {
     } else {
       let redirectPath = `/login?redirect=${encodeURIComponent(location.pathname + location.search)}`;
       if (gAuth.isClearData) {
-        redirectPath = '/login';
+        redirectPath = PATHS.login;
       }
       return <Navigate to={redirectPath} replace />;
     }

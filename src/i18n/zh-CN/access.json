@@ -1,0 +1,19 @@
+{
+  "access": {
+    "members": "用户",
+    "membersGroup": "用户组",
+    "membersRole": "角色",
+    "historys": "全部历史",
+    "scheduleList": "预约列表",
+    "developer": "开发者",
+    "cards": "卡片管理",
+    "devices": "设备（门与认证设备）",
+    "touchDevices": "认证设备",
+    "ssmDevices": "门",
+    "ssmDevicesGroup": "门组",
+    "vision": "视觉",
+    "appDevices": "芝麻",
+    "appContacts": "通讯录",
+    "appMe": "我"
+  }
+}

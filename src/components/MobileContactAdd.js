@@ -2,12 +2,13 @@ import React from 'react';
 import { Box } from '@mui/material';
 import AddEmployee from './biz/device/AddEmployee';
 import { biz3utils } from '@/utils/biz3utils';
+import { PATHS } from '@/routes/manifest';
 
 const MobileContactAdd = () => {
   const handleOpenPage = (paramStr) => {
     const { protocol, host } = new URL(window.location.href);
     const domainUrl = `${protocol}//${host}`;
-    const fullUrl = `${domainUrl}/biz/employees/list-item?${paramStr}`;
+    const fullUrl = `${domainUrl}${PATHS.members.item}?${paramStr}`;
     const scheme = `ssm://UI/webview/open?${new URLSearchParams({
       notifyName: 'FriendChanged',
       url: fullUrl,

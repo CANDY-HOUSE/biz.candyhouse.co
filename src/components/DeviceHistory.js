@@ -22,6 +22,7 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BlurOverlay from './BlurOverlay';
 import { isAppHome } from '@/services/deviceService';
 import { useTranslation } from 'react-i18next';
+import { PATHS } from '@/routes/manifest';
 
 export default function DeviceHistory({
   deviceUUID: propDeviceUUID,
@@ -101,7 +102,7 @@ export default function DeviceHistory({
     };
     await fetchAllHistory();
     if (allHistory.length > 0) {
-      gUtils.csvUtils.downloadLists(allHistory, isCsv, undefined, '/biz/devices/list-item');
+      gUtils.csvUtils.downloadLists(allHistory, isCsv, undefined, PATHS.doors.item);
     }
   };
 
@@ -166,12 +167,12 @@ export default function DeviceHistory({
     <>
       <Box sx={fill ? { height: '100%', display: 'flex', flexDirection: 'column' } : undefined}>
         <Box sx={fill ? { flexShrink: 0 } : { display: 'contents' }}>
-          <Tooltip title="CSVダウンロード">
+          <Tooltip title={t('csv.history.csvDownload')}>
             <IconButton onClick={() => downloadDeviceHistory(true)}>
               <CloudDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Excelダウンロード">
+          <Tooltip title={t('csv.history.excelDownload')}>
             <IconButton onClick={() => downloadDeviceHistory(false)}>
               <SimCardDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
             </IconButton>
@@ -211,7 +212,7 @@ export default function DeviceHistory({
         open={isDownloading}
       >
         <CircularProgress />
-        <div>履歴データをダウンロード中...</div>
+        <div>{t('csv.history.downloading')}</div>
       </Backdrop>
     </>
   );

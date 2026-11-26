@@ -36,7 +36,6 @@ import {
 import { isAppLockModel } from '@/services/appLockSettings';
 import { isBotModel } from '@/services/botScripts';
 import usePeripheralSettings from '@/hooks/usePeripheralSettings';
-import { Credentials } from './AppCredentials';
 import MobileDeviceSetting from './MobileDeviceSetting';
 import MobileBindDevice from './MobileBindDevice';
 import MobileRemoveDevice from './MobileRemoveDevice';
@@ -53,12 +52,16 @@ import Face3UnlockClipSetting from './vision/Face3UnlockClipSetting';
 import { sesameDeviceModel } from '@/constants/sesameDeviceModel';
 import { appHostSupports } from '@/services/appSession';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
+import { PATHS } from '@/routes/manifest';
+import { useOpenCredential } from '@/hooks/useOpenCredential';
+import { useSettingsNavigate } from '@/components/settingsSubPage';
 
 export default function PeripheralDeviceSetting({ showBack = true }) {
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const settingsNavigate = useSettingsNavigate();
   const location = useLocation();
   const id = params.get('deviceUUID') || '';
   const detail = deviceDetailFor(id, gManageDevice.deviceStatus, gManageDevice.companyDevices);
@@ -98,7 +101,6 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
     setParams(next, { replace: true });
   }, []);
   const [bindOpen, setBindOpen] = useState(false);
-  const [panel, setPanel] = useState(null);
   const [bindingTarget, setBindingTarget] = useState(null);
   const [unbindingTarget, setUnbindingTarget] = useState(null);
   const [delayOpen, setDelayOpen] = useState(false);
@@ -188,22 +190,14 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
       <Divider variant="middle" sx={{ opacity: 0.4 }} />
     </React.Fragment>
   );
-  const openChild = (kind) => {
-    if (!isAppHome && (kind === 'card' || kind === 'passcode')) {
-      navigate(kind === 'card' ? '/biz/access-control/cards' : '/biz/access-control/passwords', {
-        state: { title: device.deviceName || params.get('deviceName') || '', uuid: id },
-      });
-      return;
-    }
-    if (!showBack && !isAppHome) {
-      setPanel({ id, kind });
-      return;
-    }
-    const search = new URLSearchParams(location.search);
-    search.set('kind', kind);
-    search.set('deviceModel', model);
-    navigate({ pathname: '/device-setting/credentials', search: search.toString() });
-  };
+  const openCredential = useOpenCredential();
+  const openChild = (kind) =>
+    openCredential({
+      kind,
+      deviceUUID: id,
+      deviceName: device.deviceName || params.get('deviceName'),
+      deviceModel: model,
+    });
   const targets = gManageDevice.companyDevices.filter((target) => {
     if (
       !target.deviceUUID ||
@@ -273,19 +267,6 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   );
   /* Face3 的雷达侦查距离放进「感应与声音」分组（分组目前只在开发环境显示） */
   const face3Group = model === sesameDeviceModel.sesame_face_3;
-  if (id && panel?.id === id)
-    return (
-      <Box>
-        <Credentials
-          key={panel.kind}
-          deviceUUID={id}
-          kind={panel.kind}
-          deviceModel={model}
-          embedded
-          onBack={() => setPanel(null)}
-        />
-      </Box>
-    );
   return (
     <Box sx={{ height: showBack ? '100dvh' : '100%', overflowY: 'auto', bgcolor: 'background.default' }}>
       {showBack &&
@@ -376,7 +357,9 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
         />
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {!wifi && <BatteryPercent device={device} />}
-        {row('UUID', id, () => navigate({ pathname: '/device-setting/factory-info', search: location.search }))}
+        {row('UUID', id, () =>
+          settingsNavigate({ pathname: PATHS.deviceSetting.factoryInfo, search: location.search })
+        )}
         {/* 识别成功动画：Face3 一律显示；能否修改由云端按钥匙级别判定 */}
         {face3Group && <Face3UnlockClipSetting deviceUUID={id} />}
         {face3Group ? <Face3DeviceSettings radar={radarSetting} /> : radarSetting}

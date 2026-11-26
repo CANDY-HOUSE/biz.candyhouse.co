@@ -148,7 +148,7 @@ function LiveButton({ online, lastSeenAt, onClick }) {
 }
 
 /**
- * Face3 的录像卡片，放在设备详情页（/biz/access-control/region）里，只有 Face3 才显示。
+ * Face3 的录像卡片，放在设备详情页里，只有 Face3 才显示。
  * 交互参考 Wyze：上面是画面框 + 工具栏，下面是事件录像（宽屏左右平分：左画面 + 工具栏，右录像）。
  * PC 在详情页最上面，手机上是详情页默认显示的内容，设置走页头 ⋯（见 region.js）。
  *

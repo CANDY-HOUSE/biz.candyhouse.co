@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { Grid2, Card, CardContent, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const NotFoundPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <Grid2
@@ -28,13 +30,13 @@ const NotFoundPage = () => {
             height: '100%',
           }}
         >
-          <Typography>このページを閲覧する権限がありません</Typography>
+          <Typography>{t('admin.notFound.noPermission')}</Typography>
           <Button
             onClick={() => {
               navigate(`/`);
             }}
           >
-            ホームに戻る
+            {t('admin.notFound.backHome')}
           </Button>
         </CardContent>
       </Card>

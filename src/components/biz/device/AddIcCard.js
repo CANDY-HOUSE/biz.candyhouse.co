@@ -101,7 +101,7 @@ const AddIcCard = forwardRef(
               }}
             >
               <Typography variant="h2" sx={{ ml: '9px' }}>
-                新規カード追加
+                {t('bizui.addIcCard.title')}
               </Typography>
               {isShowCsv && (
                 <Box sx={{ display: 'flex' }}>
@@ -148,7 +148,7 @@ const AddIcCard = forwardRef(
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="h3" sx={{ ml: '9px' }}>
-              {'2.カード読み取り'}
+              {`2.${t('bizui.addIcCard.readCard')}`}
             </Typography>
             <IconButton
               disabled={list.length === 0}
@@ -167,7 +167,7 @@ const AddIcCard = forwardRef(
             </IconButton>
           </Box>
           <Cfpuploaddata
-            b2t={'＋ボタンを押しタッチ/タッチプロにカードをかざして下さい。'}
+            b2t={t('bizui.addIcCard.hint')}
             addCard={addCard}
             cards={mdatas}
             readCardContent={readCardContent}

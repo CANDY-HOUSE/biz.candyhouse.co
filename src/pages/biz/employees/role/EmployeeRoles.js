@@ -19,6 +19,8 @@ import {
 import DataTable from '@/components/biz/device/DataTable';
 import { DataTableColumns } from '@/components/biz/device/DataTableColumns';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
+import { accessLabel } from '@/utils/accessLabels';
+import { useTranslation } from 'react-i18next';
 
 const EmployeeRoles = () => {
   const [tags, setTags] = useState([]);
@@ -30,6 +32,7 @@ const EmployeeRoles = () => {
   const { gManageEmployee, gStripe, gMediaType } = useContext(GlobalStateContext);
   const [isPending, setIsPending] = useState();
   const floatingAddRef = useRef(null);
+  const { t } = useTranslation();
 
   const handleTagsChange = (e) => {
     const index = tags.indexOf(e.target.value);
@@ -83,7 +86,7 @@ const EmployeeRoles = () => {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: '10px' }}>
-              <Typography variant="h2">新規ロールを追加</Typography>
+              <Typography variant="h2">{t('manage.role.addNew')}</Typography>
             </Box>
           }
         />
@@ -96,12 +99,12 @@ const EmployeeRoles = () => {
             <Grid item xs={gMediaType.isMobile ? 12 : 3}>
               <TextField
                 size="small"
-                label="ロールの名称"
+                label={t('manage.role.name')}
                 variant="filled"
                 fullWidth
                 required
                 error={!roleCheck}
-                helperText={roleCheck ? '' : 'デフォルトの権限と同じ名前は使用できません'}
+                helperText={roleCheck ? '' : t('manage.role.reservedName')}
                 onChange={(e) => {
                   setRole(e.target.value);
                   setroleCheck(
@@ -122,7 +125,7 @@ const EmployeeRoles = () => {
                   mt: gMediaType.isMobile ? 1 : 0,
                 }}
               >
-                <FormLabel sx={{ mr: '15px' }}>閲覧可能ページ</FormLabel>
+                <FormLabel sx={{ mr: '15px' }}>{t('manage.role.viewablePages')}</FormLabel>
                 <FormGroup
                   sx={{
                     width: '100%',
@@ -141,7 +144,7 @@ const EmployeeRoles = () => {
                             checked={tags.includes(tag)}
                           />
                         }
-                        label={tag}
+                        label={accessLabel(t, tag)}
                         key={tag}
                         value={tag}
                       />
@@ -171,14 +174,14 @@ const EmployeeRoles = () => {
                   });
                 }}
               >
-                登録
+                {t('contacts.register')}
               </LoadingButton>
             </Grid>
           </Grid>
         </CardContent>
       </Card>
     );
-  }, [roleCheck, role, appAccessTags, tags, isPending, handleTagsChange, gManageEmployee]);
+  }, [roleCheck, role, appAccessTags, tags, isPending, handleTagsChange, gManageEmployee, t]);
 
   return (
     <SesameFloatingAdd ref={floatingAddRef} isMobile={gMediaType.isMobile} popupComponent={addRoleComp}>

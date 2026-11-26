@@ -1,0 +1,19 @@
+{
+  "access": {
+    "members": "ユーザー",
+    "membersGroup": "ユーザーグループ",
+    "membersRole": "ロール",
+    "historys": "全体履歴",
+    "scheduleList": "予約一覧",
+    "developer": "開発者向け",
+    "cards": "カード管理",
+    "devices": "デバイス（ドア・認証機器）",
+    "touchDevices": "認証機器",
+    "ssmDevices": "ドア",
+    "ssmDevicesGroup": "ドアグループ",
+    "vision": "ビジョン",
+    "appDevices": "セサミ",
+    "appContacts": "連絡先",
+    "appMe": "自分"
+  }
+}

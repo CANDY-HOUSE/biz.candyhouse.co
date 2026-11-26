@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Portal, Snackbar } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const GSnackbar = ({ value }) => {
+  const { t } = useTranslation();
   const [data, setData] = useState(value);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ const GSnackbar = ({ value }) => {
         open={data.open}
         autoHideDuration={data.duration || 1500}
         onClose={closeSnackbar}
-        message={data.msg || '未知信息'}
+        message={data.msg || t('admin.snackbar.unknown')}
         onClick={() => closeSnackbar()}
       />
     </Portal>

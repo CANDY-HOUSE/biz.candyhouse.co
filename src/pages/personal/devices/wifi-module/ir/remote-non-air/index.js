@@ -22,6 +22,7 @@ import LearnKeyCell from '../components/LearnKeyCell.js';
 import KeyHints from '../components/KeyHints.js';
 import { KEY_KIND, mergeRemoteKeys, mapKeyIds } from '../utils/remoteKeys.js';
 import { getNonAirKeyId, isNonAirKeyAvailable, getNonAirPowerOnKeyId, getNonAirPowerOffKeyId } from './keyIds.js';
+import { PATHS } from '@/routes/manifest';
 
 const RemoteNonAir = () => {
   const navigate = useNavigate();
@@ -326,7 +327,7 @@ const RemoteNonAir = () => {
     keepForReturn();
     remoteKeys.keepForReturn();
     navigate({
-      pathname: '/biz/access-control/remote-match',
+      pathname: PATHS.ir.match,
       search: createSearchParams({
         hub3DeviceId: hub3DeviceId,
         remote: JSON.stringify(remote),

@@ -1,0 +1,36 @@
+{
+  "cs": {
+    "search": "搜尋",
+    "userSearch": {
+      "placeholder": "電子郵件 subUUID deviceUUID 裝置名稱",
+      "noResults": "找不到相關資訊",
+      "filterPlaceholder": "在結果中搜尋",
+      "resultCount": "顯示 {{shown}} 筆 / 共 {{total}} 筆",
+      "autoLogin": "自動登入"
+    },
+    "repair": {
+      "columns": {
+        "ticketNo": "工單號",
+        "phone": "客戶電話",
+        "zip": "客戶郵遞區號",
+        "address": "客戶地址",
+        "building": "客戶建築名稱",
+        "recipient": "收件人姓名",
+        "items": "工單號：維修物品"
+      },
+      "ticketLabel": "工單號",
+      "download": "下載維修 CSV",
+      "freshdeskFailed": "Freshdesk 請求失敗：{{status}}"
+    },
+    "shipping": {
+      "dropHere": "拖放到此處（order_export.csv）",
+      "chooseFile": "或點擊選擇 CSV 檔案",
+      "download": "Yamato CSV",
+      "stats": "出貨統計",
+      "endOrder": "結束單號：{{name}}",
+      "startOrder": "開始單號：{{name}}",
+      "exceptions": "例外狀況",
+      "changedOrders": "更動訂單情況"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '@/i18n';
 import { Box, ThemeProvider, Typography } from '@mui/material';
 import { onNativeEvent, requestNative } from '@/services/appBridge';
 import theme from '@/theme/theme';
@@ -62,14 +63,7 @@ export default function AppOfflineDevices({ retry, connecting }) {
         .then(({ data }) => {
           if (!active) return;
           setDevices(data.devices);
-          if (data.language) {
-            const language = /^zh(?:-|$)/i.test(data.language)
-              ? /-(?:Hant|TW|HK|MO)(?:-|$)/i.test(data.language)
-                ? 'zh-TW'
-                : 'zh-CN'
-              : data.language;
-            i18n.changeLanguage(language);
-          }
+          if (data.language) i18n.changeLanguage(normalizeLanguage(data.language) || 'en');
         })
         .catch(() => {
           if (active) logOperationFailure('AppOfflineDevices', 'loadDevices');

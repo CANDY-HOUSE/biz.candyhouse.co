@@ -1,21 +1,18 @@
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import ClearIcon from '@mui/icons-material/Clear';
-import { Box, List, ListItem, ListItemText, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
+import { useTranslation } from 'react-i18next';
+import { PcPage, PcRow, PcSection } from '@/components/PcGrouped';
+import { ios } from '@/theme/appHomeStyle';
 import CircularProgress from '@mui/material/CircularProgress';
-import { useContext, useEffect, useRef } from 'react';
-
-const ACTION_LABELS = {
-  lock: 'lock',
-  unlock: 'unlock',
-  upgrade_firmware: 'upgrade firmware',
-};
+import { useContext, useEffect } from 'react';
 
 const formatActionText = (action = '') => {
   const raw = String(action).trim();
   if (!raw) return '';
-
-  const normalized = raw.toLowerCase().replace(/[\s-]+/g, '_');
-  if (ACTION_LABELS[normalized]) return ACTION_LABELS[normalized];
 
   return raw
     .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -24,20 +21,15 @@ const formatActionText = (action = '') => {
     .trim();
 };
 
-const formatTimeText = (displayTime = '') => {
-  const text = String(displayTime).trim();
-  if (!text) return '';
-
-  if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}$/.test(text) || /^\d{2}:\d{2}$/.test(text)) {
-    return ` at ${text}`;
-  }
-
-  return ` ${text}`;
+const actionIcons = {
+  lock: { Icon: LockOutlinedIcon, color: ios.red, bg: ios.redFill },
+  unlock: { Icon: LockOpenOutlinedIcon, color: ios.tint, bg: ios.tintFill },
+  upgrade_firmware: { Icon: SystemUpdateAltIcon, color: ios.secondaryLabel, bg: ios.fill },
 };
 
 const ScheduleList = () => {
   const { gStripe, gSchedule } = useContext(GlobalStateContext);
-  const containerRef = useRef(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     gSchedule.getScheduleList();
@@ -51,63 +43,67 @@ const ScheduleList = () => {
     gSchedule.cancelSchedule(scheduleId);
   };
 
-  return (
-    <Box
-      ref={containerRef}
-      sx={{
-        width: '100%',
-        height: '100%',
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Box
-        sx={{
-          width: '100%',
-          height: '100%',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-        }}
-      >
-        <List>
-          {gSchedule.schedules.Items.map((item) => {
-            const actionText = formatActionText(item.action);
-            const timeText = formatTimeText(item.displayTime);
+  const items = gSchedule.schedules.Items;
 
-            return (
-              <ListItem
-                key={`${item.scheduleId}`}
+  return (
+    <PcPage title={t('access.scheduleList')}>
+      <PcSection>
+        {items.length === 0 && (
+          <PcRow sx={{ minHeight: 120 }}>
+            <Typography sx={{ width: '100%', textAlign: 'center', fontSize: 15, color: ios.secondaryLabel }}>
+              {t('bizui.schedule.empty')}
+            </Typography>
+          </PcRow>
+        )}
+        {items.map((item) => {
+          const action = String(item.action || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, '_');
+          const { Icon, color, bg } = actionIcons[action] || actionIcons.upgrade_firmware;
+          const actionText = actionIcons[action] ? t(`bizui.schedule.action.${action}`) : formatActionText(item.action);
+          return (
+            <PcRow key={`${item.scheduleId}`} sx={{ minHeight: 64 }}>
+              <Box
                 sx={{
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
+                  flexShrink: 0,
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: bg,
                 }}
               >
-                <ListItemText
-                  primary={
-                    <Typography variant="body1">
-                      {item.deviceName} will {actionText}
-                      {timeText}
-                    </Typography>
-                  }
-                />
-
-                <Tooltip title="Cancel Schedule">
-                  {item.isCancelling ? (
-                    <CircularProgress size={18} aria-label="Loading" />
-                  ) : (
-                    <ClearIcon sx={{ cursor: 'pointer' }} onClick={() => handleCancelSchedule(item.scheduleId)} />
-                  )}
-                </Tooltip>
-              </ListItem>
-            );
-          })}
-        </List>
-      </Box>
-    </Box>
+                <Icon sx={{ fontSize: 20, color }} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <Typography sx={{ fontSize: 16, color: ios.label }}>{item.deviceName}</Typography>
+                <Typography sx={{ mt: '2px', fontSize: 14, color: ios.secondaryLabel }}>
+                  {actionText}
+                  {item.displayTime ? ` · ${item.displayTime}` : ''}
+                </Typography>
+              </Box>
+              <Tooltip title={t('bizui.schedule.cancel')}>
+                {item.isCancelling ? (
+                  <CircularProgress size={18} aria-label="Loading" sx={{ m: '7px' }} />
+                ) : (
+                  <IconButton
+                    size="small"
+                    aria-label={t('bizui.schedule.cancel')}
+                    sx={{ mr: '-6px' }}
+                    onClick={() => handleCancelSchedule(item.scheduleId)}
+                  >
+                    <ClearIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                )}
+              </Tooltip>
+            </PcRow>
+          );
+        })}
+      </PcSection>
+    </PcPage>
   );
 };
 

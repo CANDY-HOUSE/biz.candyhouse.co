@@ -20,6 +20,8 @@ yarn dev
 
 Browsers default to PC mode. App preview: `http://localhost:3000/?appHome=1&fromType=app`. Validate BLE, QR scanning and NFC in the Web App host.
 
+PC language: manual choice (`localStorage.bizLanguage`) > browser language > `ja`. The APP follows the system language (unsupported languages fall back to `en`).
+
 ## Environments
 
 The APP entry point is set through its page URL configuration. The page URL and Biz cloud endpoints are separate settings.
@@ -52,19 +54,20 @@ The page cache is registered only in the Web App host when Service Worker suppor
 
 ## Code entry points
 
-| Path                                                            | Responsibility                                                    |
-| --------------------------------------------------------------- | ----------------------------------------------------------------- |
-| src/components/AppBootstrap.js                                  | Session startup + offline fallback                                |
-| src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                         |
-| src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                             |
-| src/services/appBridge.js                                       | Trusted native bridge requests                                    |
-| src/services/appSession.js                                      | Web/legacy/guest session selection                                |
-| src/services/appOperations.js                                   | Existing socket app-operation adapter                             |
-| src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation |
-| src/services/appPageCache.js + public/app-worker.js             | Automatic public page cache                                       |
-| src/components/BackButton.js                                    | Shared PC and Web App back button                                 |
-| src/api + src/websocket                                         | Existing business requests and socket lifecycle                   |
-| src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings                                |
+| Path                                                            | Responsibility                                                                                  |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| src/components/AppBootstrap.js                                  | Session startup + offline fallback                                                              |
+| src/components/AppHomeRuntime.js                                | Cloud/BLE events, key handoff, navigation                                                       |
+| src/components/AppOfflineDevices.js                             | Local data + shared device list + BLE                                                           |
+| src/services/appBridge.js                                       | Trusted native bridge requests                                                                  |
+| src/services/appSession.js                                      | Web/legacy/guest session selection                                                              |
+| src/services/appOperations.js                                   | Existing socket app-operation adapter                                                           |
+| src/services/deviceService.js + src/services/blePresentation.js | App mode, native device events and shared BLE status presentation                               |
+| src/services/appPageCache.js + public/app-worker.js             | Automatic public page cache                                                                     |
+| src/components/BackButton.js                                    | Shared PC and Web App back button                                                               |
+| src/routes/manifest.js + src/routes/routes.js                   | Route paths, flags and menu (data) + component mapping                                          |
+| src/api + src/websocket                                         | Existing business requests and socket lifecycle                                                 |
+| src/i18n                                                        | ja / en / zh-CN / zh-TW UI strings: `<lang>/<namespace>.json`, one top-level namespace per file |
 
 ## Toast
 

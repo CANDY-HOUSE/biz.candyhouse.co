@@ -6,12 +6,12 @@ import { DataTableColumns } from './biz/device/DataTableColumns';
 import { Cmac } from '@/utils/Cmac';
 import KeyLevelSelector from './biz/KeyLevelSelector';
 import MobileDeviceUsers from './MobileDeviceUsers';
-import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ModifyName from './ModifyName';
 import MobileQRCodeDialog from './MobileQRCodeDialog';
 import { biz3utils } from '@/utils/biz3utils';
 import BlurOverlay from './BlurOverlay';
+import { useSettingsSearchParams } from '@/components/settingsSubPage';
 
 // Modal content lives in global state; read employees here so async results remain reactive.
 function DeviceUserSelection({ users, ...props }) {
@@ -24,7 +24,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
   const { gManageGroup, gStripe, gMediaType, setCustomModalOpen, setModalContent, gManageEmployee, gManageDevice } =
     useContext(GlobalStateContext);
   const [users, setUsers] = useState([]);
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const searchDeviceUUID = searchParams.get('deviceUUID');
   const deviceUUID = propDeviceUUID || searchDeviceUUID;
   const keyLevel = searchParams.get('keyLevel');
@@ -36,7 +36,7 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
     gManageGroup.getDeviceEmployeeKeys({ deviceUUID, limit }, (resp) => {
       setHasMore(resp.hasMore);
       let userList = resp.data.map((item) => {
-        let data = '常時利用';
+        let data = t('bizui.deviceUser.alwaysAvailable');
         if (item.keyLevel === 2) {
           if (item.startAt && item.endAt) {
             data = gUtils.getStartTimeEndTime(item);
@@ -108,8 +108,8 @@ export default function DeviceUserList({ deviceUUID: propDeviceUUID, defaultMana
     setModalContent(
       <DeviceUserSelection
         users={users}
-        title={'ユーザーを選択'}
-        customColumns={DataTableColumns.groupMember}
+        title={t('bizui.deviceUser.selectUsers')}
+        customColumns={DataTableColumns.groupMember()}
         selectableRows={'multiple'}
         enableFilter={!gStripe.isFromApp}
         useCustomSelection={true}

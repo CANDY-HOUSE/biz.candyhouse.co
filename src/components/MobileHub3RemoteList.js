@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useRemoteCtrl } from '../api/useRemoteCtrl.js';
 import { buildMatterPowerCommands } from '@/pages/personal/devices/wifi-module/ir/utils/irMatterCommands.js';
 import { AirStatusInline } from '@/pages/personal/devices/wifi-module/ir/components/AirRemoteStatus.js';
+import { PATHS } from '@/routes/manifest';
 
 export default function MobileHub3RemoteList({ deviceUUID, editable = true, device: listDevice }) {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -62,7 +63,7 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
     url.searchParams.delete('deviceUUID');
     const params = Object.fromEntries(url.searchParams.entries());
     navigate({
-      pathname: '/biz/access-control/ir-type',
+      pathname: PATHS.ir.type,
       search: createSearchParams({ ...params, hub3DeviceId: device.deviceUUID }).toString(),
     });
   };
@@ -137,11 +138,11 @@ export default function MobileHub3RemoteList({ deviceUUID, editable = true, devi
     let remotePath = '';
     let irTypeNum = parseInt(remote.type);
     if (remote.code === 0) {
-      remotePath = '/biz/access-control/learn';
+      remotePath = PATHS.ir.learn;
     } else if (irTypeNum === 0xc000) {
-      remotePath = '/biz/access-control/remote-air';
+      remotePath = PATHS.ir.air;
     } else {
-      remotePath = '/biz/access-control/remote-non-air';
+      remotePath = PATHS.ir.nonAir;
     }
     const currentUrl = window.location.href;
     const url = new URL(currentUrl);

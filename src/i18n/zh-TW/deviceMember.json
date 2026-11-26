@@ -1,0 +1,24 @@
+{
+  "deviceMember": {
+    "user": "利用者",
+    "permission": "角色&權限",
+    "role": {
+      "owner": "擁有者",
+      "manager": "管理員",
+      "guest": "訪客"
+    },
+    "opt": {
+      "revoke": "撤銷",
+      "addContact": "新增為聯絡人",
+      "cancel": "取消",
+      "ok": "確定"
+    },
+    "qr": "QR Code",
+    "qrEncrypted": "加密 QR Code，10分鐘內可掃",
+    "nickName": "使用者名稱",
+    "findFriendHint": "請輸入對方的郵箱",
+    "modifyDeviceNameHint": "請輸入新的設備名稱",
+    "editName": "修改名稱",
+    "shareManagement": "共享權限"
+  }
+}

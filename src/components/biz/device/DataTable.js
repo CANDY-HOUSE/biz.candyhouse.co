@@ -15,6 +15,7 @@ import { DataSearch } from './DataSearch';
 import TablePagination from '@mui/material/TablePagination';
 import { Box, Stack, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import CredentialExportMenu from './CredentialExportMenu';
+import { useTranslation } from 'react-i18next';
 
 const CustomPagination = ({
   hasNext,
@@ -27,6 +28,7 @@ const CustomPagination = ({
   showCount = false,
   inTableFooter = false,
 }) => {
+  const { t } = useTranslation();
   const isDisable = showCount ? (page + 1) * rowsPerPage >= count : !hasNext;
 
   if (inTableFooter) {
@@ -42,7 +44,7 @@ const CustomPagination = ({
           onRowsPerPageChange={(event) => onChangeRowsPerPage(parseInt(event.target.value, 10))}
           nextIconButtonProps={{ disabled: isDisable }}
           backIconButtonProps={{ disabled: page === 0 }}
-          labelRowsPerPage="表示数"
+          labelRowsPerPage={t('bizui.table.rowsPerPage')}
           labelDisplayedRows={({ from, to, count }) => `${from}-${to}${showCount ? '/' + count : ''}`}
         />
       </td>
@@ -60,7 +62,7 @@ const CustomPagination = ({
       onRowsPerPageChange={(event) => onChangeRowsPerPage(parseInt(event.target.value, 10))}
       nextIconButtonProps={{ disabled: isDisable }}
       backIconButtonProps={{ disabled: page === 0 }}
-      labelRowsPerPage="表示数"
+      labelRowsPerPage={t('bizui.table.rowsPerPage')}
       labelDisplayedRows={({ from, to, count }) => `${from}-${to}${showCount ? '/' + count : ''}`}
     />
   );
@@ -84,6 +86,7 @@ export default function DataTable({
   credentialExport = null,
   isBind = true,
   isBack = false,
+  onBack,
   isHideToolBar = false,
   adjustToolBar = false,
   btnCallKey,
@@ -98,6 +101,7 @@ export default function DataTable({
   onPageConfChange = null,
   hasNext = false,
 }) {
+  const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [key, setKey] = useState(undefined);
@@ -358,9 +362,7 @@ export default function DataTable({
                     {isBack && (
                       <BackButton
                         size="small"
-                        onClick={() => {
-                          window.history.back();
-                        }}
+                        onClick={onBack || (() => window.history.back())}
                         sx={{ color: 'rgba(0, 0, 0, 0.87)' }}
                       ></BackButton>
                     )}
@@ -408,7 +410,7 @@ export default function DataTable({
                       </IconButton>
                     )}
                     {isBind && (
-                      <Tooltip title="他の認証機器と連携">
+                      <Tooltip title={t('bizui.table.linkOtherDevices')}>
                         <IconButton
                           onClick={() => {
                             if (callBind) callBind();
@@ -419,7 +421,7 @@ export default function DataTable({
                       </Tooltip>
                     )}
                     {isKey && (
-                      <Tooltip title="合鍵発行">
+                      <Tooltip title={t('bizui.table.issueKey')}>
                         <IconButton
                           onClick={(event) => {
                             event.stopPropagation();
@@ -435,7 +437,7 @@ export default function DataTable({
                     {isCsv && credentialExport && <CredentialExportMenu data={sortableData} {...credentialExport} />}
                     {isCsv && !credentialExport && (
                       <>
-                        <Tooltip title="CSVダウンロード">
+                        <Tooltip title={t('bizui.table.csvDownload')}>
                           <IconButton
                             onClick={() => {
                               if (onCsvClick) {
@@ -448,7 +450,7 @@ export default function DataTable({
                             <CloudDownloadIcon fontSize="small" sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Excelダウンロード">
+                        <Tooltip title={t('bizui.table.excelDownload')}>
                           <IconButton
                             onClick={() => {
                               if (onCsvClick) {
@@ -465,7 +467,7 @@ export default function DataTable({
                     )}
                     {toolbarActions}
                     {isDel && (
-                      <Tooltip title="削除">
+                      <Tooltip title={t('bizui.common.delete')}>
                         <IconButton
                           onClick={(event) => {
                             event.stopPropagation();
@@ -479,7 +481,7 @@ export default function DataTable({
                       </Tooltip>
                     )}
                     {callRefresh && (
-                      <Tooltip title="リフレッシュ">
+                      <Tooltip title={t('bizui.table.refresh')}>
                         <IconButton onClick={callRefresh}>
                           <RefreshOutlinedIcon sx={{ color: 'rgba(0, 0, 0, 0.54)' }} />
                         </IconButton>
@@ -510,7 +512,7 @@ export default function DataTable({
                           handleDeleteClose();
                         }}
                       >
-                        削除
+                        {t('bizui.common.delete')}
                       </MenuItem>
                     </Menu>
                   </Box>
@@ -615,12 +617,12 @@ export default function DataTable({
             },
             textLabels: {
               body: {
-                noMatch: '検索結果は０件です',
+                noMatch: t('bizui.table.noMatch'),
               },
               pagination: {
-                next: 'Next Page',
-                previous: 'Previous Page',
-                rowsPerPage: '表示数',
+                next: t('bizui.table.nextPage'),
+                previous: t('bizui.table.previousPage'),
+                rowsPerPage: t('bizui.table.rowsPerPage'),
                 displayRows: '/',
               },
             },

@@ -30,6 +30,7 @@ import { biz3utils } from '@/utils/biz3utils';
 import { useTranslation } from 'react-i18next';
 import { isAppHome } from '@/services/deviceService';
 import { appQrScanner } from '@/services/appQrScanner';
+import { roleLabel } from '@/utils/accessLabels';
 
 export default function AddEmployee({ tags, completionCallback }) {
   const navigate = useNavigate();
@@ -131,20 +132,19 @@ export default function AddEmployee({ tags, completionCallback }) {
   };
 
   const handleCsvSubmit = async (fileData, tag, callback) => {
-    const csvData = fileData.filter((item) => {
-      return (
-        item.メールアドレス && item.メールアドレス !== 'undefined' && item.ユーザー名 && item.ユーザー名 !== 'undefined'
-      );
+    const rows = gUtils.csvUtils.normalizeCsvRows(fileData, gUtils.csvUtils.importFields.members);
+    const csvData = rows.filter((item) => {
+      return item.email && item.email !== 'undefined' && item.userName && item.userName !== 'undefined';
     });
     const ownerEmail = gStripe.customerInfo.mainEmail || gStripe.customerInfo.employeeEmail;
     const items = csvData.map((item) => {
       let param = {
         companyID: gStripe.customerInfo.companyID,
-        employeeEmail: item['メールアドレス'],
-        employeeName: item['ユーザー名'],
+        employeeEmail: item.email,
+        employeeName: item.userName,
         tag,
-        phone: item['電話番号（任意）'] || '',
-        department: item['所属（任意）'] || '',
+        phone: item.phone || '',
+        department: item.department || '',
       };
       if (param.employeeEmail && ownerEmail && param.employeeEmail.toLowerCase() === ownerEmail.toLowerCase()) {
         param.tag = gStripe.customerInfo.tag;
@@ -211,7 +211,7 @@ export default function AddEmployee({ tags, completionCallback }) {
   };
 
   const downloadTemplate = () => {
-    const fields = ['ユーザー名', 'メールアドレス', '所属（任意）', '電話番号（任意）'];
+    const fields = Object.values(gUtils.csvUtils.importFields.members).map((key) => t(key));
     var csv = Papa.unparse({ fields });
     var blob = new Blob([csv]);
     var a = window.document.createElement('a');
@@ -384,13 +384,7 @@ export default function AddEmployee({ tags, completionCallback }) {
                               checked={tagItems.includes(i.tag)}
                             />
                           }
-                          label={
-                            {
-                              オーナー: t('deviceMember.role.owner'),
-                              マネージャー: t('deviceMember.role.manager'),
-                              ゲスト: t('deviceMember.role.guest'),
-                            }[i.tag] || i.tag
-                          }
+                          label={roleLabel(t, i.tag)}
                           value={i.tag}
                           key={i.tag}
                         />

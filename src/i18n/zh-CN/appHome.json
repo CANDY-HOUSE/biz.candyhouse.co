@@ -1,0 +1,29 @@
+{
+  "appHome": {
+    "unloginHistoryTag": "未登入用户",
+    "registrationNetworkRequired": "请连接网络后再注册",
+    "resetToRegister": "请重置设备后再注册",
+    "noDevices": "从⊕开始注册新设备，或扫描二维码获取已注册设备的使用权限",
+    "sesame": "芝麻",
+    "vision": "视觉",
+    "contacts": "通讯录",
+    "me": "我",
+    "networkError": "无法连接，请检查网络后重试",
+    "searching": "正在搜索附近尚未注册的设备，请将设备靠近手机。",
+    "noBleDevices": "未发现蓝牙设备",
+    "noBleDevicesDescription": "1. 您的手机蓝牙开启了吗？\n2. 重启手机有时可解决问题。\n3. 附近有未注册设备吗？\n4. 用针戳复位键直到LED灯熄灭以重置设备",
+    "loginRequired": "请登录",
+    "unsupportedQr": "不支持此二维码",
+    "refreshing": "刷新中",
+    "addNewDevice": "添加新设备",
+    "scanQrCode": "扫描二维码",
+    "addContacts": "添加联系人",
+    "gallery": "图库",
+    "close": "关闭",
+    "qrNotFound": "图片中未发现二维码",
+    "searchDevices": "搜索设备",
+    "deviceCount": "设备（{{count}}台）",
+    "searchContacts": "搜索姓名或邮箱",
+    "contactCount": "联系人（{{count}}人）"
+  }
+}

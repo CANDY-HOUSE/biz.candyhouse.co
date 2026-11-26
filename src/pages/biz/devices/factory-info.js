@@ -1,9 +1,9 @@
 import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useState } from 'react';
 import { Box, Divider, List, ListItem, Typography } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const formatValue = (value) => {
   if (value === null || value === undefined) return '';
@@ -28,9 +28,9 @@ const flattenFactoryInfo = (data) => {
 
 const FactoryInfoDetail = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const back = useSettingsBack();
   const { gManageDevice } = useContext(GlobalStateContext);
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const deviceUUID = searchParams.get('deviceUUID');
   const isFromApp = searchParams.get('fromType') === 'app';
 
@@ -51,7 +51,7 @@ const FactoryInfoDetail = () => {
     <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper' }}>
       {!isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <BackButton onClick={() => navigate(-1)} disableRipple>
+          <BackButton onClick={() => back()} disableRipple>
             <Typography variant="h3" sx={{ color: 'title.main' }}>
               {searchParams.get('deviceName')}
             </Typography>

@@ -1,0 +1,79 @@
+{
+  "csv": {
+    "header": {
+      "userName": "ユーザー名",
+      "email": "メールアドレス",
+      "optionalDepartment": "所属（任意）",
+      "optionalPhone": "電話番号（任意）",
+      "subUUID": "サブUUID",
+      "role": "ロール",
+      "groupName": "グループ名",
+      "uuid": "UUID",
+      "linkedUsers": "紐付けているユーザー",
+      "linkedDevices": "紐付けているデバイス",
+      "state": "状態",
+      "time": "時間",
+      "via": "操作方法",
+      "deviceName": "デバイス名",
+      "model": "モデル",
+      "deviceUUID": "デバイスUUID",
+      "battery": "電池残量",
+      "cardName": "カード名",
+      "id": "ID",
+      "user": "ユーザー",
+      "authDevices": "認証機器",
+      "fingerName": "指紋名",
+      "passcodeName": "暗証番号名",
+      "passcode": "暗証番号"
+    },
+    "historyType": {
+      "lock": "施錠",
+      "unlock": "解錠",
+      "botLockUnlock": "bot 施解錠",
+      "open": "開",
+      "close": "閉"
+    },
+    "via": {
+      "manual": "手動",
+      "bluetooth": "Bluetooth",
+      "autoLock": "オートロック",
+      "wifiModule": "WiFiモジュール",
+      "webApi": "web API"
+    },
+    "defaultName": {
+      "nfcCard": "NFCカード{{index}}",
+      "passcode": "暗証番号",
+      "passcodeIndexed": "暗証番号{{index}}"
+    },
+    "upload": {
+      "template": "テンプレート",
+      "forWindows": "Windows向け",
+      "forMac": "Mac向け",
+      "notice": "注意",
+      "cancel": "キャンセル",
+      "bulkRegister": "一括登録・更新",
+      "modify": "修正"
+    },
+    "export": {
+      "tooltip": "データをエクスポート",
+      "currentData": "現在のデータ",
+      "allUsedCards": "過去に使用した全カード",
+      "downloadingCards": "カードデータをダウンロード中...",
+      "noUsedCards": "この認証機器で使用されたカードのデータがありません。",
+      "fetchCardsFailed": "カードデータの取得に失敗しました。時間をおいて再度お試しください。"
+    },
+    "history": {
+      "csvDownload": "CSVダウンロード",
+      "excelDownload": "Excelダウンロード",
+      "downloading": "履歴データをダウンロード中..."
+    },
+    "cards": {
+      "invalid": "有効なカード名およびIDを入力してください。いずれも空欄では登録できません。"
+    },
+    "passcodes": {
+      "invalid": "有効なパスワード名およびコードを入力してください。いずれも空欄では登録できません。",
+      "manualTitle": "暗証番号を手入力",
+      "register": "登録"
+    }
+  }
+}

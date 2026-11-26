@@ -2,9 +2,8 @@ import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { Box, Card, CardHeader, Typography } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import CheckTable from '@/components/biz/CheckTable';
-import { wordConfig } from '@constants/wordConfig';
+import { wordConfig, wordLabel } from '@constants/wordConfig';
 import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import useOperateIoT from '@hooks/useOperateIoT';
@@ -14,11 +13,12 @@ import { gConfig } from '@constants/gConfig';
 import { Buffer } from 'buffer';
 import { registerIotCallback, unregisterIotCallback } from '@hooks/useIotCallbackRegistry';
 import { gUtils } from '@/utils/gUtils';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 export default function PasswordDetails() {
   const { t } = useTranslation(); // i18n
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const back = useSettingsBack();
+  const [searchParams, setSearchParams] = useSettingsSearchParams();
   const did = searchParams.get('did') || '';
   const uuid = searchParams.get('uuid') || '';
   const { gManageDevice, setCustomModalOpen, setModalContent, gManageAuthData, setSnackbarValue, gMediaType } =
@@ -157,9 +157,9 @@ export default function PasswordDetails() {
   };
 
   const handleChangeDid = (newDid) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('did', newDid);
-    navigate(url.pathname + url.search, { replace: true });
+    const next = new URLSearchParams(searchParams);
+    next.set('did', newDid);
+    setSearchParams(next, { replace: true });
   };
 
   const refreshPasswords = async (devicePasscodes, cb) => {
@@ -197,14 +197,15 @@ export default function PasswordDetails() {
         <CardHeader
           title={
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <BackButton onClick={() => navigate(-1)}></BackButton>
-              <Typography variant="h3">{t('pages.login.ReturnToMailInput')}</Typography>
+              <BackButton onClick={back}></BackButton>
             </Box>
           }
         />
       </Card>
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', pl: '25px', mt: '0px' }}>
-        <Typography sx={{ fontWeight: 'bold', color: '#333', mr: 6 }}>{wordConfig.touchPinNumber}</Typography>
+        <Typography sx={{ fontWeight: 'bold', color: '#333', mr: 6 }}>
+          {wordLabel(t, wordConfig.touchPinNumber)}
+        </Typography>
         <EditableText
           initialValue={biz3utils.convertHexPairsToDecimal(did)}
           onSave={(newValue, callback) => {

@@ -1,7 +1,6 @@
 import BackButton from '@/components/BackButton';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Card, Typography, Switch, List, ListItem, ListItemText, Drawer, ListItemButton } from '@mui/material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ACTION_TYPES } from '@constants/messageConstants';
 import { useWebSocket, sendMessage } from '@hooks/useWebSocket.ts';
 import MobileBatteryTrendChart from './MobileBatteryTrendChart';
@@ -10,6 +9,7 @@ import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils';
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@constants/gConfig';
+import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
 
 const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const { gManageDevice, gMediaType } = useContext(GlobalStateContext);
@@ -17,10 +17,10 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
   const [lastKey, setLastKey] = useState(null);
   const [isRechargeableBattery, setIsRechargeableBattery] = useState(false);
   const [menuState, setMenuState] = useState({ open: false, selectedPoint: null });
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSettingsSearchParams();
   const deviceUUID = searchParams.get('deviceUUID') || userDeviceUUID;
   const isFromApp = searchParams.get('fromType') === 'app';
-  const navigate = useNavigate();
+  const back = useSettingsBack();
   const { t } = useTranslation();
   const isSettingPush = Boolean(searchParams.get('setting')) === true;
 
@@ -142,11 +142,7 @@ const MobileBatteryChart = ({ deviceUUID: userDeviceUUID }) => {
     <>
       {!isFromApp && isSettingPush && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
-          <BackButton onClick={() => navigate(-1)} disableRipple>
-            <Typography variant="h3" sx={{ color: 'title.main' }}>
-              {t('pages.login.ReturnToMailInput')}
-            </Typography>
-          </BackButton>
+          <BackButton onClick={() => back()} disableRipple />
         </Box>
       )}
       <Card>

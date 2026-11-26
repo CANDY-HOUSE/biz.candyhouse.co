@@ -1,0 +1,26 @@
+{
+  "lockSettings": {
+    "immediate": "すぐに",
+    "off": "オフ",
+    "seconds": "{{count}} 秒",
+    "connectBluetooth": "Bluetoothをオンにしてデバイスに接続してください",
+    "useApp": "アプリで操作してください",
+    "failed": "操作に失敗しました。再試行してください",
+    "firmwareBusy": "他のCANDY HOUSE製品を更新中、お待ち下さいませ",
+    "setLocked": "施錠の位置を固定する",
+    "setUnlocked": "解錠の位置を固定する",
+    "magnet": "水平の校正",
+    "switchPoint": "施解錠の境界を固定する",
+    "frequency": "角度の検知頻度",
+    "stopped": "省エネモード",
+    "hertz": "1秒あたり{{count}}回",
+    "frequencyHint": "180°以上回す鍵を手動で素早く回した際に回転数の検知が追いつかない場合、検知頻度を「1秒あたり10回」に設定してください。\n180°未満の場合は「省エネモード」のままでのご使用をお願いします。",
+    "downloading": "ファームウェアをダウンロード中",
+    "retry": "再試行",
+    "configure": "施錠・解錠位置を設定してください。",
+    "instructions": "セサミを完全に施錠・解錠した状態まで手動で回し、画面の設定ボタンをそれぞれタップしてください",
+    "minutes": "{{count}} 分",
+    "hours": "{{count}} 時間",
+    "back": "戻る"
+  }
+}

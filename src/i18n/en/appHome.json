@@ -1,0 +1,29 @@
+{
+  "appHome": {
+    "unloginHistoryTag": "Unlogin user",
+    "registrationNetworkRequired": "Connect to the internet to register",
+    "resetToRegister": "Reset the device before registering",
+    "noDevices": "Press ⊕ to register a new device, or scan the QR code to obtain access to an already registered device",
+    "sesame": "Sesame",
+    "vision": "Vision",
+    "contacts": "Contacts",
+    "me": "Me",
+    "networkError": "Unable to connect. Check your network and retry.",
+    "searching": "Searching for nearby unregistered devices. Move the device closer to your phone.",
+    "noBleDevices": "Bluetooth devices not found",
+    "noBleDevicesDescription": "1. Is phone Bluetooth on？\n2. Restarting phone may resolve the problem.\n3. Is the unregistered device nearby？\n4. To reset the registered device, please press the reset button with a pin until the LED light turns off.",
+    "loginRequired": "Please log in",
+    "unsupportedQr": "Unsupported QR code",
+    "refreshing": "Refreshing",
+    "addNewDevice": "Add Device",
+    "scanQrCode": "Scan QR Code",
+    "addContacts": "Add Contacts",
+    "gallery": "Photo library",
+    "close": "Close",
+    "qrNotFound": "No QR code found in this image",
+    "searchDevices": "Search devices",
+    "deviceCount": "Devices ({{count}})",
+    "searchContacts": "Search by name or email",
+    "contactCount": "Contacts ({{count}})"
+  }
+}

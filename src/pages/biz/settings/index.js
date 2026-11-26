@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { Box, Button, Card, CardContent, CardHeader, IconButton, Typography } from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import { CmPay } from '@/components/biz/payment/CmPay';
 import CreditCardList from '@/components/biz/payment/CreditCardList';
@@ -12,57 +12,19 @@ import { gUtils } from '@/utils/gUtils';
 import EditableText from '@/components/EditableText';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-
-const leftItemStyle = {
-  fontFamily: "'Noto Sans JP', sans-serif",
-  fontSize: '16px',
-  fontWeight: 600,
-  width: '400px',
-  lineHeight: '22px',
-  letterSpacing: '0.06em',
-  textAlign: 'left',
-  color: '#333333',
-};
-
-const rightItemStyle = {
-  fontFamily: "'Noto Sans JP', sans-serif",
-  fontSize: '16px',
-  marginLeft: '20px',
-  fontWeight: 400, // Normal weight
-  lineHeight: '22px',
-  letterSpacing: '0.06em',
-  textAlign: 'left',
-  color: '#333333',
-  whiteSpace: 'pre',
-};
-
-const CmTextItem = ({ leftItem, rightItem }) => {
-  const [rightText, setRightText] = useState('');
-  useEffect(() => {
-    setRightText(rightItem);
-  }, [rightItem]);
-  return (
-    <>
-      <Box sx={{ display: 'flex', mt: '20px' }}>
-        <Typography variant="h3" sx={{ ...leftItemStyle }}>
-          {leftItem}
-        </Typography>
-
-        {rightText && (
-          <Typography variant="h3" sx={{ ...rightItemStyle }}>
-            {rightText}
-          </Typography>
-        )}
-      </Box>
-    </>
-  );
-};
+import LanguageMenu from '@/components/LanguageMenu';
+import { followsSystemLanguage } from '@/i18n';
+import { PcPage, PcRow, PcSection } from '@/components/PcGrouped';
+import { logOperationFailure } from '@/services/operationFailure';
+import { ios } from '@/theme/appHomeStyle';
 
 const DeleteConfirm = ({ t, onCancel, onConfirm }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   return (
     <Box>
       <Typography sx={{ mt: '8px', lineHeight: 1.6 }}>{t('setting.deleteOrgConfirm')}</Typography>
+      {error && <Typography sx={{ mt: '8px', lineHeight: 1.6, color: 'error.main' }}>{error}</Typography>}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: '16px' }}>
         <Button size="small" disabled={isLoading} onClick={onCancel}>
           {t('setting.cancel')}
@@ -76,7 +38,11 @@ const DeleteConfirm = ({ t, onCancel, onConfirm }) => {
           sx={{ ml: '8px' }}
           onClick={() => {
             setIsLoading(true);
-            onConfirm(() => setIsLoading(false));
+            setError('');
+            onConfirm((message) => {
+              setIsLoading(false);
+              setError(message || '');
+            });
           }}
         >
           {t('setting.delete')}
@@ -87,7 +53,7 @@ const DeleteConfirm = ({ t, onCancel, onConfirm }) => {
 };
 
 export default function Settings() {
-  const { gStripe, setCustomModalOpen, setModalContent, setCustomModalKeep, setSnackbarValue, gMediaType } =
+  const { gStripe, setCustomModalOpen, setModalContent, setCustomModalKeep, setSnackbarValue } =
     useContext(GlobalStateContext);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -152,16 +118,21 @@ export default function Settings() {
         }}
         onConfirm={(done) => {
           gStripe.deleteCompany((res) => {
-            done();
             if (!res.success) {
-              setSnackbarValue({
-                logScope: 'pages/biz/settings/index.confirmDelete',
-                open: true,
-                msg: res.message,
-                severity: 'error',
-              });
+              logOperationFailure('pages/biz/settings/index.confirmDelete');
+              // Error toasts are log-only, so the reason the server refused is shown inside the dialog.
+              done(
+                t(
+                  res.code === 400
+                    ? 'setting.deleteOrgDowngrade'
+                    : res.code === 403 && res.message !== 'Forbidden'
+                      ? 'setting.deleteOrgLast'
+                      : 'setting.deleteOrgFailed'
+                )
+              );
               return;
             }
+            done();
             setCustomModalOpen(false);
             navigate('/');
           });
@@ -226,137 +197,110 @@ export default function Settings() {
 
   const getNextLevelTitle = (gStripe) => {
     if (gStripe.priorityCompany.isRootUser) {
-      return '無制限プラン';
+      return t('admin.settings.unlimitedPlan');
     }
     let info = paymentConfig;
-    const paymentMethod = info.isYear ? '年額プラン' : '月額プラン';
+    const paymentMethod = info.isYear ? t('admin.plan.yearly') : t('admin.plan.monthly');
     if (info.nextEndDate) {
       console.log('info.nextPrice', info.nextPrice);
       let date = new Date(parseInt(info.nextEndDate) * 1000);
-      let time = date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
-      let myear = info.nextPrice % 2 === 1 ? '年額プラン' : '月額プラン';
-      return `${getLevel(info.level)} (${paymentMethod})        ※${time} ${getLevel(Math.floor(info.nextPrice / 2))}(${myear})にダウングレードします。`;
+      let time = t('admin.settings.date', {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+      });
+      let myear = info.nextPrice % 2 === 1 ? t('admin.plan.yearly') : t('admin.plan.monthly');
+      return `${getLevel(info.level)} (${paymentMethod})        ${t('admin.settings.downgradeNotice', { date: time, level: getLevel(Math.floor(info.nextPrice / 2)), method: myear })}`;
     } else {
       return `${getLevel(info.level || 0)} (${paymentMethod})`;
     }
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader
-          title={
-            <Typography variant="h2" sx={{ ml: '9px' }}>
-              {t('navigator.Settings')}
-            </Typography>
-          }
-        />
-        <CardContent
-          sx={{
-            mt: 0,
-            p: '0px',
-          }}
-        >
-          <Card>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                lineHeight: leftItemStyle.lineHeight,
-                height: '22px',
-              }}
-            >
-              <Typography sx={{ ...leftItemStyle }}>会社</Typography>
-              <Box sx={{ ml: '20px' }}>
-                <EditableText
-                  style={{ ...rightItemStyle, marginLeft: '0' }}
-                  initialValue={gStripe.priorityCompany.name}
-                  onSave={
-                    gStripe.isOwner &&
-                    ((newValue, callback) => {
-                      if (!newValue || !callback) {
-                        return;
-                      }
-                      gStripe.updateCompanyName(newValue, (res) => {
-                        callback(res.success);
-                        if (res.success && !gStripe.customerInfo.isSesameApp) {
-                          gStripe.setCustomerInfo((prev) => {
-                            return {
-                              ...prev,
-                              name: newValue,
-                            };
-                          });
-                        }
-                      });
-                    })
+    <PcPage title={t('navigator.Settings')}>
+      <PcSection>
+        <PcRow label={t('admin.settings.company')}>
+          <EditableText
+            style={{ fontSize: '16px', color: ios.secondaryLabel }}
+            initialValue={gStripe.priorityCompany.name}
+            onSave={
+              gStripe.isOwner &&
+              ((newValue, callback) => {
+                if (!newValue || !callback) {
+                  return;
+                }
+                gStripe.updateCompanyName(newValue, (res) => {
+                  callback(res.success);
+                  if (res.success && !gStripe.customerInfo.isSesameApp) {
+                    gStripe.setCustomerInfo((prev) => {
+                      return {
+                        ...prev,
+                        name: newValue,
+                      };
+                    });
                   }
-                />
-              </Box>
-              {gStripe.isOwner && (
-                <IconButton color="error" onClick={confirmDelete}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              )}
+                });
+              })
+            }
+          />
+          {gStripe.isOwner && (
+            <IconButton color="error" size="small" sx={{ mr: '-6px' }} onClick={confirmDelete}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
+        </PcRow>
+        <PcRow
+          label={t('admin.settings.currentPlan')}
+          value={getNextLevelTitle(gStripe)}
+          sx={{ whiteSpace: 'pre-wrap' }}
+        />
+        {!gStripe.priorityCompany.isRootUser && (
+          <>
+            <PcRow label={t('admin.settings.nextPaymentDate')} value={formattedDate} />
+            <PcRow
+              label={t('admin.settings.nextPaymentAmount')}
+              value={t('admin.settings.priceWithTax', { price: formattedPrice })}
+            />
+          </>
+        )}
+      </PcSection>
+      {!followsSystemLanguage && (
+        <PcSection>
+          <PcRow label={t('language.title')}>
+            <Box sx={{ mr: '-12px' }}>
+              <LanguageMenu />
             </Box>
-            <CmTextItem leftItem={'現在ご契約中のプラン'} rightItem={getNextLevelTitle(gStripe)} />
-            {!gStripe.priorityCompany.isRootUser && (
-              <>
-                <CmTextItem leftItem={'次のお支払い日'} rightItem={formattedDate} />
-                <CmTextItem leftItem={'次のお支払い金額'} rightItem={`${formattedPrice}円(税込)`} />
-              </>
+          </PcRow>
+        </PcSection>
+      )}
+      {isShowPaymentPlan && (
+        <>
+          <PcSection
+            title={t('admin.settings.paymentInfo')}
+            action={
+              <IconButton size="small" aria-label={t('admin.settings.paymentInfo')} onClick={openCmPay}>
+                <AddCircleIcon sx={{ color: ios.tint }} />
+              </IconButton>
+            }
+          >
+            {gStripe.cardList.length > 0 ? (
+              <CreditCardList />
+            ) : (
+              <PcRow
+                value={<Typography sx={{ color: ios.tint }}>{t('admin.payment.addMethod')}</Typography>}
+                onClick={openCmPay}
+              />
             )}
-            {isShowPaymentPlan && (
-              <Box>
-                <Box sx={{ display: 'flex', marginTop: '36px' }}>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontFamily: "'Noto Sans JP', sans-serif",
-                      fontSize: '20px',
-                      fontWeight: 600,
-                      marginTop: '5px',
-                      lineHeight: '27px',
-                      letterSpacing: '0.06em',
-                      textAlign: 'left',
-                      color: '#333333',
-                    }}
-                  >
-                    {'お支払い情報'}
-                  </Typography>
-                  <IconButton sx={{ ml: '10px' }} onClick={openCmPay}>
-                    <AddCircleIcon style={{ color: '#28AEB1' }} />
-                  </IconButton>
-                </Box>
-                <CreditCardList />
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: '20px',
-                    fontWeight: 600,
-                    marginTop: '36px',
-                    lineHeight: '27px',
-                    letterSpacing: '0.06em',
-                    textAlign: 'left',
-                    color: '#333333',
-                  }}
-                >
-                  {'プラン'}
-                </Typography>
-                <CmFeeLevel
-                  isMobile={gMediaType.isMobile}
-                  callUpdate={callUpdate}
-                  nextPrice={paymentConfig.nextPrice}
-                  levleInfo={paymentConfig}
-                />
-                <Typography sx={{ marginLeft: '8px' }}>
-                  ※プランの表示価格はすべて年額プランの月換算した金額（税抜き）です。
-                </Typography>
-              </Box>
-            )}
-          </Card>
-        </CardContent>
-      </Card>
-    </>
+          </PcSection>
+          <PcSection
+            title={t('admin.settings.plan')}
+            footer={t('admin.settings.priceNote')}
+            cardSx={{ bgcolor: 'transparent', borderRadius: 0, overflow: 'visible' }}
+          >
+            <CmFeeLevel callUpdate={callUpdate} nextPrice={paymentConfig.nextPrice} levleInfo={paymentConfig} />
+          </PcSection>
+        </>
+      )}
+    </PcPage>
   );
 }

@@ -1,0 +1,24 @@
+{
+  "deviceMember": {
+    "user": "User",
+    "permission": "Role & Permission",
+    "role": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "guest": "Guest"
+    },
+    "opt": {
+      "revoke": "Revoke",
+      "addContact": "Add to Contacts",
+      "cancel": "Cancel",
+      "ok": "OK"
+    },
+    "qr": "QR Code",
+    "qrEncrypted": "Encrypt QR code, scannable for 10 min",
+    "nickName": "Nick name",
+    "findFriendHint": "Please enter friend's email address",
+    "modifyDeviceNameHint": "Please enter a new device name",
+    "editName": "Edit Name",
+    "shareManagement": "Share Access"
+  }
+}

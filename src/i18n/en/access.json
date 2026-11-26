@@ -1,0 +1,19 @@
+{
+  "access": {
+    "members": "Users",
+    "membersGroup": "User groups",
+    "membersRole": "Roles",
+    "historys": "All history",
+    "scheduleList": "Schedules",
+    "developer": "Developers",
+    "cards": "Cards",
+    "devices": "Devices (doors & access readers)",
+    "touchDevices": "Access readers",
+    "ssmDevices": "Doors",
+    "ssmDevicesGroup": "Door groups",
+    "vision": "Vision",
+    "appDevices": "Sesame",
+    "appContacts": "Contacts",
+    "appMe": "Me"
+  }
+}

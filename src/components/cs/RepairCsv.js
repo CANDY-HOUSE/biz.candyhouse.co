@@ -14,55 +14,60 @@ import {
   TableRow,
   TextField,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { downloadCsv, fetchRepairData, initialRepairTableData, yamatoHeaders } from './CsUtils';
 
-const RepairTable = ({ tableData }) => (
-  <TableContainer>
-    <Table size="small">
-      <TableHead
-        sx={{
-          backgroundColor: 'action.disabledBackground',
-          '& .MuiTableCell-root': { color: 'action.disabled' },
-        }}
-      >
-        <TableRow>
-          <TableCell>Ticket No.</TableCell>
-          <TableCell>Customer Phone Number</TableCell>
-          <TableCell>Customer Postal Code</TableCell>
-          <TableCell>Customer Address</TableCell>
-          <TableCell>Customer Building Name</TableCell>
-          <TableCell>Recipient Name</TableCell>
-          <TableCell>Ticket Number: Repair Item</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {tableData.ticket !== '' && (
-          <TableRow key={tableData.ticket}>
-            <TableCell
-              component={Link}
-              href={`https://candyhouseinc.freshdesk.com/a/tickets/${tableData.ticket}`}
-              target="_blank"
-              sx={{ color: 'primary.main' }}
-            >
-              {tableData.ticket}
-            </TableCell>
-            <TableCell>{tableData.mobile}</TableCell>
-            <TableCell>{tableData.zip}</TableCell>
-            <TableCell>{tableData.address}</TableCell>
-            <TableCell>{tableData.addressDetail}</TableCell>
-            <TableCell>{tableData.name}</TableCell>
-            <TableCell>
-              {tableData.ticket}:{tableData.products}
-              {tableData.otherProducts}
-            </TableCell>
+const RepairTable = ({ tableData }) => {
+  const { t } = useTranslation();
+  return (
+    <TableContainer>
+      <Table size="small">
+        <TableHead
+          sx={{
+            backgroundColor: 'action.disabledBackground',
+            '& .MuiTableCell-root': { color: 'action.disabled' },
+          }}
+        >
+          <TableRow>
+            <TableCell>{t('cs.repair.columns.ticketNo')}</TableCell>
+            <TableCell>{t('cs.repair.columns.phone')}</TableCell>
+            <TableCell>{t('cs.repair.columns.zip')}</TableCell>
+            <TableCell>{t('cs.repair.columns.address')}</TableCell>
+            <TableCell>{t('cs.repair.columns.building')}</TableCell>
+            <TableCell>{t('cs.repair.columns.recipient')}</TableCell>
+            <TableCell>{t('cs.repair.columns.items')}</TableCell>
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  </TableContainer>
-);
+        </TableHead>
+        <TableBody>
+          {tableData.ticket !== '' && (
+            <TableRow key={tableData.ticket}>
+              <TableCell
+                component={Link}
+                href={`https://candyhouseinc.freshdesk.com/a/tickets/${tableData.ticket}`}
+                target="_blank"
+                sx={{ color: 'primary.main' }}
+              >
+                {tableData.ticket}
+              </TableCell>
+              <TableCell>{tableData.mobile}</TableCell>
+              <TableCell>{tableData.zip}</TableCell>
+              <TableCell>{tableData.address}</TableCell>
+              <TableCell>{tableData.addressDetail}</TableCell>
+              <TableCell>{tableData.name}</TableCell>
+              <TableCell>
+                {tableData.ticket}:{tableData.products}
+                {tableData.otherProducts}
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
 
 const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
+  const { t } = useTranslation();
   const [ticket, setTicket] = useState('');
   const [csvData, setCsvData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -105,7 +110,7 @@ const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
       <Card sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <TextField
-            label="Ticket Number"
+            label={t('cs.repair.ticketLabel')}
             size="small"
             variant="filled"
             value={ticket}
@@ -126,7 +131,7 @@ const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
             onClick={handleCreateRepairCsv}
             sx={{ color: 'white', height: '40px' }}
           >
-            Search
+            {t('cs.search')}
           </LoadingButton>
         </Box>
         <RepairTable tableData={tableData} />
@@ -136,7 +141,7 @@ const RepairCsv = ({ gManageEmployee, setSnackbarValue }) => {
             startIcon={<GetAppIcon />}
             onClick={() => downloadCsv(csvData, `${ticket}.csv`, yamatoHeaders)}
           >
-            Download Repair CSV
+            {t('cs.repair.download')}
           </Button>
         )}
       </Card>

@@ -1,30 +1,10 @@
 import { alpha, createTheme, ThemeProvider } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import theme from './theme';
+import { routeOf } from '@/routes/manifest';
 
-// Only migrated Native APP pages (including their shared PC routes).
-// IR, billing and other Biz management pages retain the original theme.
 export function isNativePage(path) {
-  return (
-    path === '/device-setting' ||
-    path.startsWith('/device-setting/') ||
-    [
-      '/',
-      '/vision',
-      '/contacts',
-      '/contact-add',
-      '/me',
-      '/me/index',
-      '/me/homepage',
-      '/app/register',
-      '/device-history',
-      '/device-notify',
-      '/biz/devices/list-item',
-      '/biz/access-control/region',
-      '/biz/wifi-module',
-      '/biz/wifi-module/index',
-    ].includes(path)
-  );
+  return !!routeOf(path)?.nativeTheme;
 }
 
 export const nativePageTheme = createTheme(theme, {

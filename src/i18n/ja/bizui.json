@@ -1,0 +1,90 @@
+{
+  "bizui": {
+    "common": {
+      "delete": "削除",
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "notSet": "未設定",
+      "user": "ユーザー",
+      "userName": "ユーザー名",
+      "email": "メールアドレス",
+      "role": "ロール",
+      "department": "所属",
+      "deviceName": "デバイス名",
+      "authDevices": "認証機器",
+      "authDeviceCount": "{{count}}台の認証機器"
+    },
+    "table": {
+      "rowsPerPage": "表示数",
+      "nextPage": "次のページ",
+      "previousPage": "前のページ",
+      "linkOtherDevices": "他の認証機器と連携",
+      "issueKey": "合鍵発行",
+      "csvDownload": "CSVダウンロード",
+      "excelDownload": "Excelダウンロード",
+      "refresh": "リフレッシュ",
+      "noMatch": "検索結果は０件です"
+    },
+    "columns": {
+      "cardName": "カード名",
+      "groupName": "グループ名",
+      "groupKeys": "所有グループ鍵",
+      "doorGroupName": "ドアグループ名",
+      "groupKeyHolders": "グループ鍵所有者",
+      "bulkActions": "一括操作",
+      "bulkUnlock": "一括解錠",
+      "bulkLock": "一括施錠",
+      "deviceGroupName": "デバイスグループ名",
+      "keyLevel": "合鍵権限",
+      "validPeriod": "有効期間",
+      "phone": "電話番号",
+      "linkedSesame": "連携済みセサミ",
+      "battery": "電池残量",
+      "lockButton": "開閉ボタン",
+      "userPermission": "ユーザー権限",
+      "viewablePages": "閲覧可能ページ",
+      "noAccess": "権限なし",
+      "passcodeName": "暗証番号名",
+      "passcode": "暗証番号"
+    },
+    "checkMember": {
+      "hint": "CSVファイル内のユーザーには全て同じロールが付与されます。（オーナーのロールは変更されません）",
+      "addUsers": "新規ユーザーを追加"
+    },
+    "addIcCard": {
+      "title": "新規カード追加",
+      "readCard": "カード読み取り",
+      "hint": "＋ボタンを押しタッチ/タッチプロにカードをかざして下さい。"
+    },
+    "bindMember": {
+      "title": "ユーザーを紐付け"
+    },
+    "credential": {
+      "comingSoon": "Coming soon"
+    },
+    "datePicker": {
+      "start": "利用開始日時",
+      "end": "利用終了日時",
+      "time": "時間"
+    },
+    "history": {
+      "all": "全体履歴"
+    },
+    "sureCancel": {
+      "deleteAnyway": "このまま削除を実行"
+    },
+    "deviceUser": {
+      "selectUsers": "ユーザーを選択",
+      "alwaysAvailable": "常時利用"
+    },
+    "schedule": {
+      "empty": "予約はありません",
+      "cancel": "予約をキャンセル",
+      "action": {
+        "lock": "施錠",
+        "unlock": "解錠",
+        "upgrade_firmware": "ファームウェア更新"
+      }
+    }
+  }
+}

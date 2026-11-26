@@ -27,6 +27,7 @@ import { useKeyEditMenu } from '../components/KeyEditMenu.js';
 import LearnKeyCell from '../components/LearnKeyCell.js';
 import KeyHints from '../components/KeyHints.js';
 import { KEY_KIND, mergeRemoteKeys, mapKeyIds } from '../utils/remoteKeys.js';
+import { PATHS } from '@/routes/manifest';
 
 // 可以改名的空调控件：开机、关机。其余是组合控件（标题随状态变化，如温度、模式、风速），只能删除、不能改名
 const AIR_RENAMABLE_IDS = ['power_on', 'power_off'];
@@ -675,7 +676,7 @@ const RemoteAir = () => {
     keepForReturn();
     remoteKeys.keepForReturn();
     navigate({
-      pathname: '/biz/access-control/remote-match',
+      pathname: PATHS.ir.match,
       search: createSearchParams({
         hub3DeviceId: hub3DeviceId,
         remote: JSON.stringify(remote),

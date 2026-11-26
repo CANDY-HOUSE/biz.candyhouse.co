@@ -41,6 +41,8 @@ import PrivateRoute from './Auth/PrivateRoute.js';
 import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
 import WsStatusIndicator from '@/components/WsStatusIndicator.js';
+import { useTranslation } from 'react-i18next';
+import { PATHS } from '@/routes/manifest';
 const CSUserSearchDialog = deferredComponent(() => import('@/components/cs/CSUserSearchDialog.js'));
 const RepairCsv = deferredComponent(() => import('@/components/cs/RepairCsv.js'));
 const YamatoShippingCsv = deferredComponent(() => import('@/components/cs/YamatoShippingCsv.js'));
@@ -59,6 +61,7 @@ const savedNavCollapsed = () => {
 const Layout = () => {
   const navigate = useNavigate();
   const { gAuth, gStripe, gMediaType, gManageEmployee, setSnackbarValue } = useContext(GlobalStateContext);
+  const { t } = useTranslation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [csTool, setCsTool] = useState(null);
   const isMobile = gMediaType.isMobile;
@@ -263,7 +266,7 @@ const Layout = () => {
                         localStorage.setItem('curLogin', row.companyID);
                         gStripe.getCustomerInfo(row.companyID);
                         setAnchorEl(null);
-                        navigate(row.isSesameApp ? '/' : '/biz');
+                        navigate(row.isSesameApp ? '/' : PATHS.bizHome);
                       }}
                       sx={{
                         display: 'flex',
@@ -312,7 +315,7 @@ const Layout = () => {
                   sx={{ paddingLeft: '50px' }}
                 >
                   <AddIcon sx={{ fontSize: '14px', mr: '5px' }} />
-                  新規会社登録
+                  {t('company.add')}
                 </MenuItem>
                 <Divider />
                 {/* CS */}
@@ -355,7 +358,7 @@ const Layout = () => {
                     gAuth.handleSignout();
                   }}
                 >
-                  ログアウト
+                  {t('setting.logout')}
                 </MenuItem>
               </Menu>
             </Toolbar>
@@ -372,7 +375,7 @@ const Layout = () => {
                 {/* 切換公司名稱或新增公司 */}
                 <Box>
                   <Typography variant="h3" sx={{ fontWeight: 'bold', paddingBottom: '16px' }}>
-                    新規会社登録
+                    {t('company.add')}
                   </Typography>
                   <Box
                     fullWidth="true"
@@ -383,7 +386,7 @@ const Layout = () => {
                       alignItems: isMobile ? 'flex-start' : 'center',
                     }}
                   >
-                    <Typography sx={{ mr: '5px', mb: isMobile ? '5px' : '0' }}>会社名</Typography>
+                    <Typography sx={{ mr: '5px', mb: isMobile ? '5px' : '0' }}>{t('company.name')}</Typography>
                     <TextField
                       required
                       size="small"
@@ -418,7 +421,7 @@ const Layout = () => {
                         setAnchorEl(null);
                       }}
                     >
-                      キャンセル
+                      {t('setting.cancel')}
                     </Button>
                     <LoadingButton
                       loading={isPending}
@@ -444,7 +447,7 @@ const Layout = () => {
                         );
                       }}
                     >
-                      会社を登録
+                      {t('company.register')}
                     </LoadingButton>
                   </Box>
                 </Box>

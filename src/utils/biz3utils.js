@@ -4,6 +4,8 @@ import { Buffer } from 'buffer';
 import { qrMode } from '@constants/qrType';
 import { sesameTouchProAuthType } from '@constants/sesameTouchProAuthType';
 import { modelNameByProductType } from '@/constants/sesameDeviceModel';
+import { PATHS } from '@/routes/manifest';
+import i18n from '@/i18n';
 
 function timestampToTime(timestamp, ymd = true) {
   if (!timestamp) {
@@ -30,7 +32,7 @@ function timestampToTime(timestamp, ymd = true) {
     let minutes = ('0' + date.getMinutes()).slice(-2);
     let seconds = ('0' + date.getSeconds()).slice(-2);
     if (ymd) {
-      return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds} ${meridiem}`;
+      return `${i18n.t('manage.date.ymd', { year, month, day })} ${hours}:${minutes}:${seconds} ${meridiem}`;
     } else {
       return `${meridiem} ${hours}:${minutes}:${seconds}`;
     }
@@ -490,7 +492,7 @@ const triggerBridge = (message) => {
 // 打开环境快照详情页：App 内走 scheme，网页内走路由跳转
 const openEnvSnapshot = (data, isFromApp, navigate) => {
   const url = new URL(window.location.href);
-  url.pathname = '/biz/history/env-snapshot';
+  url.pathname = PATHS.history.envSnapshot;
   url.searchParams.set('data', data);
   if (isFromApp) {
     const scheme = `ssm://UI/webview/open?${new URLSearchParams({ url: url.href })}`;

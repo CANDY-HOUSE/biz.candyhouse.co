@@ -4,9 +4,10 @@ import { useLocation } from 'react-router-dom';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { gUtils } from '@/utils/gUtils';
+import { MENU } from '@/routes/manifest';
 import { navIconMap } from './navIcons';
 import { ios } from '@/theme/appHomeStyle';
+import { accessLabel } from '@/utils/accessLabels';
 
 const itemSx = (selected) => ({
   minHeight: 40,
@@ -92,7 +93,7 @@ const getStyleAttributes = (matchPath, router) => {
 };
 
 const openStates = {};
-export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => {
+export const NavigatorItemTop = ({ id, router, items, icon, onClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -114,8 +115,7 @@ export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => 
   };
 
   const isRootPath = (path) => {
-    return gUtils.categoriesConf
-      .filter((it) => !!it.isRoot)
+    return MENU.filter((it) => !!it.isRoot)
       .map((it) => it.router)
       .includes(path);
   };
@@ -145,7 +145,7 @@ export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => 
             />
           )}
 
-          <ListItemText sx={labelSx(isActive)}>{name ? t(name) : id}</ListItemText>
+          <ListItemText sx={labelSx(isActive)}>{accessLabel(t, id)}</ListItemText>
         </Box>
         {items && items.length > 0 && (
           <IconButton size="small" sx={{ mr: '-6px', color: ios.tertiaryLabel }}>
@@ -180,7 +180,7 @@ export const NavigatorItemTop = ({ id, name, router, items, icon, onClick }) => 
                 ...getStyleAttributes(currentPath, router),
               }}
             >
-              {id}
+              {accessLabel(t, id)}
             </Typography>
           ))}
         </Collapse>

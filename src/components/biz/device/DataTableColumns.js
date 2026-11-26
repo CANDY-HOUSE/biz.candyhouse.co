@@ -8,11 +8,13 @@ import { biz3utils } from '@/utils/biz3utils';
 import RoleAccessChip from '@/components/biz/RoleAccessChip';
 import TagAccessAdd from '@/components/biz/TagAccessAdd';
 import { BatteryLevel } from './BatteryLevel';
+import { RoleLabel } from '@/utils/accessLabels';
+import i18n from '@/i18n';
 
 const cardColumns = ({ isMobile, gManageEmployee, _click, ref, listDevices }) => [
   {
     name: 'name',
-    label: 'カード名',
+    label: i18n.t('bizui.columns.cardName'),
     options: {
       customBodyRender: (value, tableMeta, _updateValue) => {
         const uuids = tableMeta.rowData[3];
@@ -41,7 +43,7 @@ const cardColumns = ({ isMobile, gManageEmployee, _click, ref, listDevices }) =>
   },
   {
     name: 'subUUID',
-    label: 'ユーザー',
+    label: i18n.t('bizui.common.user'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         return <Typography variant="h5">{gManageEmployee.findEmployeeById(value).employeeName}</Typography>;
@@ -50,7 +52,7 @@ const cardColumns = ({ isMobile, gManageEmployee, _click, ref, listDevices }) =>
   },
   {
     name: 'uuids',
-    label: '認証機器',
+    label: i18n.t('bizui.common.authDevices'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         let deviceNames = gUtils.uuidsToNames(value, listDevices);
@@ -73,7 +75,9 @@ const cardColumns = ({ isMobile, gManageEmployee, _click, ref, listDevices }) =>
                   },
                 }}
               >
-                <Typography variant="h5">{`${deviceNames?.length ?? 0}台の認証機器`}</Typography>
+                <Typography variant="h5">
+                  {i18n.t('bizui.common.authDeviceCount', { count: deviceNames?.length ?? 0 })}
+                </Typography>
               </Tooltip>
             </div>
           </>
@@ -83,15 +87,15 @@ const cardColumns = ({ isMobile, gManageEmployee, _click, ref, listDevices }) =>
   },
 ];
 
-const membersGroup = [
+const membersGroup = () => [
   {
     name: 'name',
-    label: 'グループ名',
+    label: i18n.t('bizui.columns.groupName'),
   },
 
   {
     name: 'members',
-    label: '所有グループ鍵',
+    label: i18n.t('bizui.columns.groupKeys'),
 
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
@@ -100,7 +104,7 @@ const membersGroup = [
             {value && value.length > 0 ? (
               value.map((item) => <Chip key={item.memberGName} label={item.memberGName} style={{ margin: 1 }} />)
             ) : (
-              <Typography sx={{ fontSize: '14px', color: '#cccccc' }}>未設定</Typography>
+              <Typography sx={{ fontSize: '14px', color: '#cccccc' }}>{i18n.t('bizui.common.notSet')}</Typography>
             )}
           </>
         );
@@ -112,12 +116,12 @@ const membersGroup = [
 const deviceGroup = ({ clickCall }) => [
   {
     name: 'name',
-    label: 'ドアグループ名',
+    label: i18n.t('bizui.columns.doorGroupName'),
   },
 
   {
     name: 'members',
-    label: 'グループ鍵所有者',
+    label: i18n.t('bizui.columns.groupKeyHolders'),
 
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
@@ -126,7 +130,7 @@ const deviceGroup = ({ clickCall }) => [
             {value && value.length > 0 ? (
               value.map((item) => <Chip key={item.memberGName} label={item.memberGName} style={{ margin: 1 }} />)
             ) : (
-              <Typography sx={{ fontSize: '14px', color: '#cccccc' }}>未設定</Typography>
+              <Typography sx={{ fontSize: '14px', color: '#cccccc' }}>{i18n.t('bizui.common.notSet')}</Typography>
             )}
           </>
         );
@@ -136,7 +140,7 @@ const deviceGroup = ({ clickCall }) => [
 
   {
     name: 'uuids',
-    label: '一括操作',
+    label: i18n.t('bizui.columns.bulkActions'),
 
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
@@ -164,7 +168,7 @@ const deviceGroup = ({ clickCall }) => [
                 }
               }}
             >
-              {'一括解錠'}
+              {i18n.t('bizui.columns.bulkUnlock')}
             </Button>
             <Button
               size="medium"
@@ -188,7 +192,7 @@ const deviceGroup = ({ clickCall }) => [
                 }
               }}
             >
-              {'一括施錠'}
+              {i18n.t('bizui.columns.bulkLock')}
             </Button>
           </Box>
         );
@@ -197,21 +201,21 @@ const deviceGroup = ({ clickCall }) => [
   },
 ];
 
-const groupMember = [
+const groupMember = () => [
   {
     name: 'employeeName',
-    label: 'ユーザー名',
+    label: i18n.t('bizui.common.userName'),
   },
   {
     name: 'employeeEmail',
-    label: 'メールアドレス',
+    label: i18n.t('bizui.common.email'),
   },
 ];
 
 const groupMemberKey = ({ click }) => [
   {
     name: 'memberGName',
-    label: 'デバイスグループ名',
+    label: i18n.t('bizui.columns.deviceGroupName'),
 
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
@@ -223,16 +227,16 @@ const groupMemberKey = ({ click }) => [
 
   {
     name: 'keyLevel',
-    label: '合鍵権限',
+    label: i18n.t('bizui.columns.keyLevel'),
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
-        let data = 'ゲスト鍵';
+        let data = i18n.t('contacts.guestKey');
 
         if (value === '0' || value === 0) {
-          data = 'オーナー鍵';
+          data = i18n.t('contacts.ownerKey');
         }
         if (value === '1' || value === 1) {
-          data = 'マネージャー鍵';
+          data = i18n.t('contacts.managerKey');
         }
         return <Typography variant="h5">{data}</Typography>;
       },
@@ -240,7 +244,7 @@ const groupMemberKey = ({ click }) => [
   },
   {
     name: 'msgdata',
-    label: '有效時間',
+    label: i18n.t('bizui.columns.validPeriod'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         return <Typography variant="h5">{value}</Typography>;
@@ -249,7 +253,7 @@ const groupMemberKey = ({ click }) => [
   },
   {
     name: 'did',
-    label: '削除',
+    label: i18n.t('bizui.common.delete'),
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
         return (
@@ -267,20 +271,20 @@ const groupMemberKey = ({ click }) => [
 const groupDeviceKey = ({ click }) => [
   {
     name: 'memberGName',
-    label: 'デバイスグループ名',
+    label: i18n.t('bizui.columns.deviceGroupName'),
   },
   {
     name: 'keyLevel',
-    label: '合鍵権限',
+    label: i18n.t('bizui.columns.keyLevel'),
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
-        let data = 'ゲスト鍵';
+        let data = i18n.t('contacts.guestKey');
 
         if (value === '0' || value === 0) {
-          data = 'オーナー鍵';
+          data = i18n.t('contacts.ownerKey');
         }
         if (value === '1' || value === 1) {
-          data = 'マネージャー鍵';
+          data = i18n.t('contacts.managerKey');
         }
         return <Typography variant="h5">{data}</Typography>;
       },
@@ -288,7 +292,7 @@ const groupDeviceKey = ({ click }) => [
   },
   {
     name: 'msgdata',
-    label: '有效時間',
+    label: i18n.t('bizui.columns.validPeriod'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         return <Typography variant="h5">{value}</Typography>;
@@ -297,7 +301,7 @@ const groupDeviceKey = ({ click }) => [
   },
   {
     name: 'mid',
-    label: '削除',
+    label: i18n.t('bizui.common.delete'),
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
         return (
@@ -315,7 +319,7 @@ const groupDeviceKey = ({ click }) => [
 const employeeList = () => [
   {
     name: 'employeeName',
-    label: 'ユーザー名',
+    label: i18n.t('bizui.common.userName'),
     options: {
       filter: false,
       sort: false,
@@ -323,7 +327,7 @@ const employeeList = () => [
   },
   {
     name: 'employeeEmail',
-    label: 'メールアドレス',
+    label: i18n.t('bizui.common.email'),
     options: {
       filter: false,
       sort: false,
@@ -331,7 +335,7 @@ const employeeList = () => [
   },
   {
     name: 'department',
-    label: '所属',
+    label: i18n.t('bizui.common.department'),
     options: {
       filter: true,
       filterType: 'dropdown',
@@ -342,7 +346,7 @@ const employeeList = () => [
               color: value === undefined ? 'lightgray' : 'rgba(0, 0, 0, 0.87)',
             }}
           >
-            {value === undefined ? '未設定' : value}
+            {value === undefined ? i18n.t('bizui.common.notSet') : value}
           </span>
         );
       },
@@ -350,7 +354,7 @@ const employeeList = () => [
   },
   {
     name: 'phone',
-    label: '電話番号',
+    label: i18n.t('bizui.columns.phone'),
     options: {
       filter: false,
       customBodyRender: (value) => {
@@ -360,7 +364,7 @@ const employeeList = () => [
               color: value === undefined ? 'lightgray' : 'rgba(0, 0, 0, 0.87)',
             }}
           >
-            {value === undefined ? '未設定' : value}
+            {value === undefined ? i18n.t('bizui.common.notSet') : value}
           </span>
         );
       },
@@ -369,7 +373,7 @@ const employeeList = () => [
 
   {
     name: 'tag',
-    label: 'ロール',
+    label: i18n.t('bizui.common.role'),
     options: {
       filter: true,
       filterType: 'dropdown',
@@ -382,7 +386,7 @@ const employeeList = () => [
           return (
             <>
               {tags.map((tag, index) => (
-                <Chip key={index} label={tag} style={{ margin: 1 }} />
+                <Chip key={index} label={<RoleLabel tag={tag} />} style={{ margin: 1 }} />
               ))}
             </>
           );
@@ -396,10 +400,10 @@ const employeeList = () => [
 
 const touchColumns = ({ datas, listNames }) => {
   const ssmColums = ssmDevices(datas, listNames);
-  const findLockStateIdx = ssmColums.findIndex((it) => it.label === '開閉ボタン');
+  const findLockStateIdx = ssmColums.findIndex((it) => it.name === 'deviceUUID');
   ssmColums.splice(findLockStateIdx, 1, {
     name: 'stateInfo',
-    label: '連携済みセサミ',
+    label: i18n.t('bizui.columns.linkedSesame'),
     options: {
       customBodyRender: (value, _tableMeta) => {
         if (!value.sesameDevices?.length) return '';
@@ -420,7 +424,7 @@ const touchColumns = ({ datas, listNames }) => {
 const ssmDevices = ({ datas, gIot }) => [
   {
     name: 'deviceName',
-    label: 'デバイス名',
+    label: i18n.t('bizui.common.deviceName'),
     options: {
       customBodyRender: (value, tableMeta) => {
         return (
@@ -438,7 +442,7 @@ const ssmDevices = ({ datas, gIot }) => [
   },
   {
     name: 'stateInfo',
-    label: '電池残量',
+    label: i18n.t('bizui.columns.battery'),
     options: {
       filter: false,
       sort: false,
@@ -453,7 +457,7 @@ const ssmDevices = ({ datas, gIot }) => [
   },
   {
     name: 'deviceUUID',
-    label: '開閉ボタン',
+    label: i18n.t('bizui.columns.lockButton'),
     options: {
       filter: false,
       sort: false,
@@ -484,37 +488,21 @@ const ssmDevices = ({ datas, gIot }) => [
   },
 ];
 
-const deviceShareFromDevice = () => [
-  { name: 'deviceName', label: 'デバイス名' },
-  { name: 'deviceUUID', label: 'UUID' },
-  {
-    name: 'keyLevel',
-    label: '合鍵権限',
-    options: {
-      customBodyRender: (value) => {
-        return <>{value === 0 ? 'オーナー鍵' : value === 1 ? 'マネージャー鍵' : 'ゲスト鍵'}</>;
-      },
-    },
-  },
-];
-
-const deviceShareChoosedEmployee = () => [
-  { name: 'employeeName', label: 'ユーザー名' },
-  { name: 'tag', label: 'ユーザー権限 ' },
-  { name: 'employeeEmail', label: 'メールアドレス' },
-];
-
 const deviceShareCanChooseEmployee = () => [
-  { name: 'employeeName', label: 'ユーザー名' },
-  { name: 'tag', label: 'ユーザー権限 ' },
-  { name: 'employeeEmail', label: 'メールアドレス' },
-  { name: 'department', label: '所属' },
+  { name: 'employeeName', label: i18n.t('bizui.common.userName') },
+  {
+    name: 'tag',
+    label: i18n.t('bizui.columns.userPermission'),
+    options: { customBodyRender: (value) => value?.map((tag) => <RoleLabel key={tag} tag={tag} />) },
+  },
+  { name: 'employeeEmail', label: i18n.t('bizui.common.email') },
+  { name: 'department', label: i18n.t('bizui.common.department') },
 ];
 
 const deviceItemCards = ({ gManageDevice, ref }) => [
   {
     name: 'name',
-    label: 'カード名',
+    label: i18n.t('bizui.columns.cardName'),
   },
   {
     name: 'cardID',
@@ -527,7 +515,7 @@ const deviceItemCards = ({ gManageDevice, ref }) => [
   },
   {
     name: 'uuids',
-    label: '認証機器',
+    label: i18n.t('bizui.common.authDevices'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         let deviceNames = gUtils.uuidsToNames(value, gManageDevice.filteredAccessControlDevices);
@@ -550,9 +538,9 @@ const deviceItemCards = ({ gManageDevice, ref }) => [
                   },
                 }}
               >
-                <Typography
-                  sx={{ fontSize: '14px !important' }}
-                >{`${deviceNames?.length ?? 0}台の認証機器`}</Typography>
+                <Typography sx={{ fontSize: '14px !important' }}>
+                  {i18n.t('bizui.common.authDeviceCount', { count: deviceNames?.length ?? 0 })}
+                </Typography>
               </Tooltip>
             </div>
           </>
@@ -565,16 +553,17 @@ const deviceItemCards = ({ gManageDevice, ref }) => [
 const companyRole = ({ companyRoles, setCompanyRoles, gManageEmployee, changeSingleAccess }) => [
   {
     name: 'tag',
-    label: 'ロール',
+    label: i18n.t('bizui.common.role'),
     options: {
       filter: true,
       filterType: 'dropdown',
       sort: false,
+      customBodyRender: (value) => <RoleLabel tag={value} />,
     },
   },
   {
     name: 'access',
-    label: '閲覧可能ページ',
+    label: i18n.t('bizui.columns.viewablePages'),
     options: {
       filter: false,
       sort: false,
@@ -599,7 +588,7 @@ const companyRole = ({ companyRoles, setCompanyRoles, gManageEmployee, changeSin
                     //2.後端覆蓋刪除完的資料
                     changeSingleAccess({ ...tagSetting });
                   }}
-                  label={item}
+                  label={item === '権限なし' ? i18n.t('bizui.columns.noAccess') : item}
                   rowChipLength={tagSetting?.access.length}
                   tag={tagSetting?.tag}
                 />
@@ -615,7 +604,7 @@ const companyRole = ({ companyRoles, setCompanyRoles, gManageEmployee, changeSin
   },
   {
     name: '削除',
-    label: '削除',
+    label: i18n.t('bizui.common.delete'),
     options: {
       filter: false,
       sort: false,
@@ -643,12 +632,12 @@ const companyRole = ({ companyRoles, setCompanyRoles, gManageEmployee, changeSin
 const passwordColumns = ({ ref, listDevices }) => [
   {
     name: 'name',
-    label: '暗証番号名',
+    label: i18n.t('bizui.columns.passcodeName'),
   },
 
   {
     name: 'passwordID',
-    label: '暗証番号',
+    label: i18n.t('bizui.columns.passcode'),
     options: {
       customBodyRender: (value, _dataIndex, _rowIndex) => {
         return <Typography variant="h5">{gUtils.binaryToDecimal(value)}</Typography>;
@@ -657,7 +646,7 @@ const passwordColumns = ({ ref, listDevices }) => [
   },
   {
     name: 'uuids',
-    label: '認証機器',
+    label: i18n.t('bizui.common.authDevices'),
     options: {
       customBodyRender: (value, _tableMeta, _updateValue) => {
         let deviceNames = gUtils.uuidsToNames(value, listDevices);
@@ -680,9 +669,9 @@ const passwordColumns = ({ ref, listDevices }) => [
                   },
                 }}
               >
-                <Typography
-                  sx={{ fontSize: '14px !important' }}
-                >{`${deviceNames?.length ?? 0}台の認証機器`}</Typography>
+                <Typography sx={{ fontSize: '14px !important' }}>
+                  {i18n.t('bizui.common.authDeviceCount', { count: deviceNames?.length ?? 0 })}
+                </Typography>
               </Tooltip>
             </div>
           </>
@@ -703,9 +692,7 @@ export const DataTableColumns = {
   membersGroup,
   employeeList,
   passwordColumns,
-  deviceShareFromDevice,
   deviceShareCanChooseEmployee,
-  deviceShareChoosedEmployee,
   deviceItemCards,
   companyRole,
 };

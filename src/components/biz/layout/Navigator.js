@@ -1,5 +1,5 @@
-import { gUtils } from '@/utils/gUtils';
 import { URLs } from '@constants/URLs';
+import { MENU, PATHS, pageNames } from '@/routes/manifest';
 import { Box, List } from '@mui/material';
 import { ios } from '@/theme/appHomeStyle';
 import { useContext, useMemo } from 'react';
@@ -15,22 +15,27 @@ export default function Navigator({ location, onClick }) {
 
   const renderCategories = useMemo(() => {
     const access = Array.isArray(customerInfo.access) ? customerInfo.access : [];
-    const { categoriesConf, pageNames } = gUtils;
     const processedAccess = access.flatMap((item) =>
       item === pageNames.devices ? [pageNames.ssmDevices, pageNames.touchDevices] : item
     );
     const routerParams = processedAccess
-      .map((id) => categoriesConf.find((cat) => cat.id === id))
+      .map((id) => MENU.find((entry) => pageNames[entry.access] === id))
       .filter(Boolean)
-      .map(({ id, items, router, name, icon }) => ({ id, items, router, name, icon, onClick }));
+      .map(({ access, items, router, icon }) => ({
+        id: pageNames[access],
+        items: items?.map((item) => ({ id: pageNames[item.access], router: item.router })),
+        router,
+        icon,
+        onClick,
+      }));
     const devIndex = routerParams.findIndex((item) => item.id === pageNames.developer);
     return devIndex === -1 ? [routerParams, []] : [routerParams.slice(0, devIndex), routerParams.slice(devIndex)];
   }, [customerInfo, onClick]);
 
   const renderCategoryItems = (categories) =>
-    categories.map(({ id, items, router, name, icon }) => (
+    categories.map(({ id, items, router, icon }) => (
       <Box key={id}>
-        <NavigatorItemTop items={items} id={id} name={name} icon={icon} router={router} onClick={onClick} />
+        <NavigatorItemTop items={items} id={id} icon={icon} router={router} onClick={onClick} />
       </Box>
     ));
 
@@ -52,7 +57,13 @@ export default function Navigator({ location, onClick }) {
     >
       <Box>
         {!isSesameApp && (
-          <NavigatorItem to="/biz" name={t('navigator.Home')} icon="home" location={location} onClick={onClick} />
+          <NavigatorItem
+            to={PATHS.bizHome}
+            name={t('navigator.Home')}
+            icon="home"
+            location={location}
+            onClick={onClick}
+          />
         )}
         {renderCategoryItems(renderCategories[0])}
       </Box>
@@ -68,7 +79,13 @@ export default function Navigator({ location, onClick }) {
             onClick={onClick}
           />
         )}
-        <NavigatorItem to="/biz/settings" name={t('navigator.Settings')} icon="settings" location={location} onClick={onClick} />
+        <NavigatorItem
+          to={PATHS.settings}
+          name={t('navigator.Settings')}
+          icon="settings"
+          location={location}
+          onClick={onClick}
+        />
       </Box>
     </List>
   );

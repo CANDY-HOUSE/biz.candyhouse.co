@@ -1,0 +1,19 @@
+{
+  "access": {
+    "members": "使用者",
+    "membersGroup": "使用者群組",
+    "membersRole": "角色",
+    "historys": "全部歷史",
+    "scheduleList": "預約列表",
+    "developer": "開發者",
+    "cards": "卡片管理",
+    "devices": "裝置（門與認證裝置）",
+    "touchDevices": "認證裝置",
+    "ssmDevices": "門",
+    "ssmDevicesGroup": "門群組",
+    "vision": "視覺",
+    "appDevices": "芝麻",
+    "appContacts": "通訊錄",
+    "appMe": "我"
+  }
+}

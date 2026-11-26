@@ -1,0 +1,29 @@
+{
+  "appHome": {
+    "unloginHistoryTag": "未登入用戶",
+    "registrationNetworkRequired": "請連接網路後再註冊",
+    "resetToRegister": "請重置設備後再註冊",
+    "noDevices": "從⊕開始註冊新設備，或掃描QR碼獲取已註冊設備的使用權限",
+    "sesame": "芝麻",
+    "vision": "視覺",
+    "contacts": "通訊錄",
+    "me": "我",
+    "networkError": "無法連線，請檢查網路後重試",
+    "searching": "正在搜尋附近尚未註冊的裝置，請將裝置靠近手機。",
+    "noBleDevices": "未發現藍芽設備",
+    "noBleDevicesDescription": "1. 您已經允許了手機的藍牙和位置權限嗎？\n2. 重啟手機有時可解決問題。\n3. 附近是否有未註冊的設備？ \n4. 若要重置已註冊的設備，請用針戳長按重置按鈕直到LED燈熄滅。",
+    "loginRequired": "請登入",
+    "unsupportedQr": "不支援此 QR 碼",
+    "refreshing": "重新整理中",
+    "addNewDevice": "新增裝置",
+    "scanQrCode": "掃描QR code",
+    "addContacts": "添加聯絡人",
+    "gallery": "圖庫",
+    "close": "關閉",
+    "qrNotFound": "圖片中未發現 QR 碼",
+    "searchDevices": "搜尋裝置",
+    "deviceCount": "裝置（{{count}}台）",
+    "searchContacts": "搜尋姓名或電子郵件",
+    "contactCount": "聯絡人（{{count}}人）"
+  }
+}

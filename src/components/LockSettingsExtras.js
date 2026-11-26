@@ -10,6 +10,7 @@ import { appHostSupports } from '@/services/appSession';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
+import { PATHS } from '@/routes/manifest';
 
 export default function LockSettingsExtras({
   deviceUUID,
@@ -141,7 +142,7 @@ export default function LockSettingsExtras({
           )}
           {autoUnlock && (
             <>
-              <ListItem onClick={() => navigate({ pathname: '/device-setting/auto-unlock', search: location.search })}>
+              <ListItem onClick={() => navigate({ pathname: PATHS.deviceSetting.autoUnlock, search: location.search })}>
                 <ListItemText primary={t('lockExtras.autoUnlock')} />
                 <Typography sx={{ color: 'title.other' }}>
                   {preferences.autoUnlock ? t('lockExtras.on') : t('lockSettings.off')}

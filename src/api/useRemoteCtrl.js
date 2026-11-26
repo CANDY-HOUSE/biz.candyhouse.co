@@ -5,6 +5,7 @@ import { useCallbacks } from '../hooks/useCallbacks.js';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils.js';
+import { deviceDetailFor } from '@/services/deviceDetail';
 
 // 红外遥控器相关的后台操作类型，统一在此声明，避免字符串散落各处
 const IR_OPS = {
@@ -75,7 +76,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         logScope: 'api/useRemoteCtrl.handleRemoteResponse',
         severity: 'error',
         open: true,
-        msg: message.message || 'リモコンリストの取得に失敗しました。',
+        msg: message.message || t('admin.remote.listFetchFailed'),
       });
       return;
     }
@@ -344,8 +345,8 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
       biz3utils.triggerBridge({
         action: 'requestRefreshApp',
       });
-      const foundDevice = gManageDevice?.deviceStatus;
-      if (!foundDevice) {
+      const foundDevice = deviceDetailFor(hub3DeviceId, gManageDevice?.deviceStatus, gManageDevice?.companyDevices);
+      if (!foundDevice.deviceUUID) {
         console.warn(`Device with ID ${hub3DeviceId} not found`);
         return;
       }
@@ -369,7 +370,7 @@ export const useRemoteCtrl = (gAuth, gStripe, setSnackbarValue) => {
         stateInfo: { remoteList: newRemoteList },
       });
     },
-    [gManageDevice, gManageDevice?.deviceStatus]
+    [gManageDevice, gManageDevice?.deviceStatus, gManageDevice?.companyDevices]
   );
 
   // 处理 IR 模式订阅响应

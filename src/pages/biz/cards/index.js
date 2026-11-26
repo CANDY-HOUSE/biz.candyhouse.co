@@ -15,6 +15,8 @@ import { registerIotCallback, unregisterIotCallback } from '@hooks/useIotCallbac
 import useNfcCardUploader from '@/hooks/TouchProDataBufferUploader/useNfcCardUploader';
 import SesameFloatingAdd from '@/components/biz/device/SesameFloatingAdd';
 import { sesameTouchProAuthType } from '@constants/sesameTouchProAuthType';
+import { PATHS } from '@/routes/manifest';
+import { gUtils } from '@/utils/gUtils';
 
 export default function Cards({ location }) {
   const addIcCardRef = useRef(null); // 创建 ref
@@ -238,15 +240,15 @@ export default function Cards({ location }) {
     console.log('csv数据', data);
     let list = [];
     let isError = false;
-    data.forEach((item) => {
+    gUtils.csvUtils.normalizeCsvRows(data, gUtils.csvUtils.importFields.cards).forEach((item) => {
       if (item.id || item.ID || item.cardID) {
         let obj = {
           cardID: item.id || item.ID || item.cardID,
-          nameUUID: item.カード名 || item.name || '',
+          nameUUID: item.cardName || item.name || '',
           cardType: item.cardType || '02',
         };
-        if (item.ユーザー) {
-          let member = gManageEmployee.employees.Items.find((it) => it.subUUID === item.ユーザー);
+        if (item.user) {
+          let member = gManageEmployee.employees.Items.find((it) => it.subUUID === item.user);
           if (member) {
             obj.memberID = member.subUUID;
           }
@@ -432,7 +434,7 @@ export default function Cards({ location }) {
         }}
         callRowClick={(index) => {
           navigate({
-            pathname: '/biz/cards/details',
+            pathname: PATHS.cards.details,
             search: createSearchParams({ did: tbData[index].cardID }).toString(),
           });
         }}

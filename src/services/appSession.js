@@ -1,7 +1,7 @@
 import { Auth } from '@aws-amplify/auth';
 import { Signer } from '@aws-amplify/core';
 import { Buffer } from 'buffer';
-import i18n from '../i18n';
+import i18n, { normalizeLanguage } from '../i18n';
 import { envConfig } from '../env_config';
 import { isAppShell, requestNative } from './appBridge';
 
@@ -111,14 +111,7 @@ export async function prepareAppSession() {
   // Native only hands over existing sessions/keys; new guest credentials belong to Biz.
   if (isAppShell) {
     const { language } = await nativeSession();
-    if (language) {
-      const resolvedLanguage = /^zh(?:-|$)/i.test(language)
-        ? /-(?:Hant|TW|HK|MO)(?:-|$)/i.test(language)
-          ? 'zh-TW'
-          : 'zh-CN'
-        : language;
-      await i18n.changeLanguage(resolvedLanguage);
-    }
+    if (language) await i18n.changeLanguage(normalizeLanguage(language) || 'en');
   }
   initialToken = await currentAppToken();
 }

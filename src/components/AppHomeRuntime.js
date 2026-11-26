@@ -28,6 +28,7 @@ import {
   onAppLayersChange,
   rememberAppTab,
 } from '@/services/appNavigation';
+import { PATHS } from '@/routes/manifest';
 
 export default function AppHomeRuntime() {
   const navigate = useNavigate();
@@ -44,8 +45,8 @@ export default function AppHomeRuntime() {
       ?.deviceModel || settingParams.get('deviceModel');
   // The parent setting and credentials page own their watches. Keep the same BLE connection across other child pages.
   const peripheralChild =
-    location.pathname.startsWith('/device-setting/') &&
-    location.pathname !== '/device-setting/credentials' &&
+    location.pathname.startsWith(`${PATHS.deviceSetting.index}/`) &&
+    location.pathname !== PATHS.deviceSetting.credentials &&
     isPeripheralModel(settingModel);
   usePeripheralSettings(peripheralChild ? settingId : undefined, settingModel === 'wm_2');
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function AppHomeRuntime() {
       if (closeTopAppLayer()) return;
       const path = current.current.location.pathname;
       const index = window.history.state?.idx ?? 0;
-      if (path === '/app/register' || path === '/login') go(currentAppTab(), true);
+      if (path === PATHS.appRegister || path === PATHS.login) go(currentAppTab(), true);
       else if (index > (tabIndex.current ?? 0)) navigate(-1);
       else go(currentAppTab(), true);
     };
@@ -165,7 +166,7 @@ export default function AppHomeRuntime() {
               // useManageEmployee displays the localized contact error.
               if (!response.success) return;
               ctx.gManageEmployee.getEmployees();
-              go('/contacts');
+              go(PATHS.contacts);
             }
           );
           return;
@@ -195,7 +196,7 @@ export default function AppHomeRuntime() {
         }
         ctx.gManageDevice.getCompanyDevices(true);
         if (model === gConfig.sesameDeviceModel.sesame_face_3) {
-          go('/vision');
+          go(PATHS.vision);
         } else go('/');
       });
     };
@@ -264,7 +265,7 @@ export default function AppHomeRuntime() {
           startScan(message.callbackName);
           break;
         case 'requestLogin':
-          go('/login');
+          go(PATHS.login);
           break;
         case 'requestSignOut':
           current.current.context.gAuth.handleSignout(callback);
@@ -436,7 +437,7 @@ export default function AppHomeRuntime() {
       current.current.context.gAuth.loginState === gConfig.loginState.login &&
       isGuestAppSession() === guest;
     const sync = async () => {
-      if (!active || uploading.current || !sameAccount() || current.current.location.pathname === '/app/register')
+      if (!active || uploading.current || !sameAccount() || current.current.location.pathname === PATHS.appRegister)
         return;
       uploading.current = true;
       try {

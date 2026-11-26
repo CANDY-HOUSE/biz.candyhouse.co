@@ -1,0 +1,36 @@
+{
+  "cs": {
+    "search": "Search",
+    "userSearch": {
+      "placeholder": "email subUUID deviceUUID deviceName",
+      "noResults": "No information found",
+      "filterPlaceholder": "Search in results",
+      "resultCount": "Showing {{shown}} / Total {{total}}",
+      "autoLogin": "Auto Login"
+    },
+    "repair": {
+      "columns": {
+        "ticketNo": "Ticket No.",
+        "phone": "Customer Phone Number",
+        "zip": "Customer Postal Code",
+        "address": "Customer Address",
+        "building": "Customer Building Name",
+        "recipient": "Recipient Name",
+        "items": "Ticket Number: Repair Item"
+      },
+      "ticketLabel": "Ticket Number",
+      "download": "Download Repair CSV",
+      "freshdeskFailed": "Freshdesk request failed: {{status}}"
+    },
+    "shipping": {
+      "dropHere": "DROP HERE (order_export.csv)",
+      "chooseFile": "or click to choose a CSV file",
+      "download": "Yamato CSV",
+      "stats": "Shipping Statistics",
+      "endOrder": "End order number: {{name}}",
+      "startOrder": "Start order number: {{name}}",
+      "exceptions": "Exceptions",
+      "changedOrders": "Changed Orders"
+    }
+  }
+}

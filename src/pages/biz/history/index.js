@@ -1,6 +1,7 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
-import { Box } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { PcPage, PcSection } from '@/components/PcGrouped';
 import { useNavigate } from 'react-router-dom';
 import { biz3utils } from '@/utils/biz3utils';
 import { Buffer } from 'buffer';
@@ -10,6 +11,7 @@ import MobileDeviceHistory from '@components/MobileDeviceHistory';
 const HistoryList = () => {
   const { gManageGroup, gManageDevice, gStripe } = useContext(GlobalStateContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [deviceHistory, setDeviceHistory] = useState([]);
   const [lastKeys, setLastKeys] = useState(undefined);
   const [selectedDeviceId, setSelectedDeviceId] = useState('0'); // '0' 表示全部
@@ -83,11 +85,15 @@ const HistoryList = () => {
   );
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ px: 0, pb: 2 }}>
-        <CmDropdownSelect callSelect={handleSelectDevice} itemsSelect={gManageDevice.filteredSsmDevices} />
-      </Box>
-      <Box sx={{ px: 1, flex: 1, height: '100%' }}>
+    <PcPage
+      title={t('access.historys')}
+      action={<CmDropdownSelect callSelect={handleSelectDevice} itemsSelect={gManageDevice.filteredSsmDevices} />}
+      sx={{ height: 'calc(100dvh - 68px)', display: 'flex', flexDirection: 'column', pb: '16px' }}
+    >
+      <PcSection
+        sx={{ flex: 1, minHeight: 0, mb: 0, display: 'flex', flexDirection: 'column' }}
+        cardSx={{ flex: 1, minHeight: 0 }}
+      >
         <MobileDeviceHistory
           key={selectedDeviceId}
           fullHeight={false}
@@ -101,8 +107,8 @@ const HistoryList = () => {
           }}
           onItemClick={handleItemClick}
         />
-      </Box>
-    </Box>
+      </PcSection>
+    </PcPage>
   );
 };
 

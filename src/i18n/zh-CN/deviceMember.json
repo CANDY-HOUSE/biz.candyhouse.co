@@ -1,0 +1,24 @@
+{
+  "deviceMember": {
+    "user": "利用者",
+    "permission": "角色与权限",
+    "role": {
+      "owner": "群主",
+      "manager": "管理员",
+      "guest": "成员"
+    },
+    "opt": {
+      "revoke": "撤销",
+      "addContact": "添加为联系人",
+      "cancel": "取消",
+      "ok": "确定"
+    },
+    "qr": "二维码",
+    "qrEncrypted": "加密 二维码，10分钟内可扫",
+    "nickName": "用户名",
+    "findFriendHint": "请输入对方的邮箱号",
+    "modifyDeviceNameHint": "请输入新的设备名称",
+    "editName": "修改名称",
+    "shareManagement": "共享权限"
+  }
+}

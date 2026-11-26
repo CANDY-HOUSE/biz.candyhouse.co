@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { ios, homeCards, hoverSx } from '@/theme/appHomeStyle';
+import { PATHS } from '@/routes/manifest';
 
 const BizHomePage = () => {
   const { t } = useTranslation();
@@ -12,7 +13,7 @@ const BizHomePage = () => {
   const [memberCount, setMemberCount] = useState('');
   const [lockCount, setLockCount] = useState('');
 
-  const noLimit = '/無制限';
+  const noLimit = t('admin.home.unlimited');
   const statSx = homeCards
     ? {
         minWidth: 0,
@@ -51,8 +52,8 @@ const BizHomePage = () => {
       setMemberCount(noLimit);
       setLockCount(noLimit);
     } else if (gStripe.quotas) {
-      setMemberCount(`/${gStripe.quotas?.memberCount ?? '-'}人`);
-      setLockCount(`/${gStripe.quotas?.lockCount ?? '-'}台`);
+      setMemberCount(t('admin.home.memberQuota', { value: gStripe.quotas?.memberCount ?? '-' }));
+      setLockCount(t('admin.home.lockQuota', { value: gStripe.quotas?.lockCount ?? '-' }));
     }
   }, [gStripe.quotas, gStripe.customerInfo]);
 
@@ -79,25 +80,25 @@ const BizHomePage = () => {
               : undefined
           }
         >
-          <Box component={Link} to={'/biz/employees/list'} sx={statSx}>
-            <Typography>ユーザー数</Typography>
+          <Box component={Link} to={PATHS.members.list} sx={statSx}>
+            <Typography>{t('admin.home.userCount')}</Typography>
             <Typography style={numberStyle}>
               {gManageEmployee.employees?.count || 0}
               <span style={unitStyle}>{memberCount}</span>
             </Typography>
           </Box>
-          <Box component={Link} to={'/biz/devices/list'} sx={statSx}>
-            <Typography>ドア数</Typography>
+          <Box component={Link} to={PATHS.doors.list} sx={statSx}>
+            <Typography>{t('admin.home.doorCount')}</Typography>
             <Typography style={numberStyle}>
               {gManageDevice.filteredSsmDevices?.length || 0}
               <span style={unitStyle}>{lockCount}</span>
             </Typography>
           </Box>
-          <Box component={Link} to={'/biz/access-control/index'} sx={statSx}>
-            <Typography>認証機器数</Typography>
+          <Box component={Link} to={PATHS.accessControl.index} sx={statSx}>
+            <Typography>{t('admin.home.authDeviceCount')}</Typography>
             <Typography style={numberStyle}>
               {gManageDevice.filteredAccessControlDevices?.length || 0}
-              <span style={unitStyle}>台</span>
+              <span style={unitStyle}>{t('admin.home.deviceUnit')}</span>
             </Typography>
           </Box>
         </Stack>

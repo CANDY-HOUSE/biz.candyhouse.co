@@ -1,6 +1,7 @@
 import WebSocketManager, { WS_STATUS } from '@/websocket/WebSocketManager.ts';
 import { onNativeEvent } from './appBridge';
 import { appBuildHash, appUpdateEnabled } from './appBuildVersion';
+import { PATHS } from '@/routes/manifest';
 
 const action = 'biz3AppRelease';
 let availableVersion = '';
@@ -20,7 +21,7 @@ export const appUpdate = {
 };
 
 export function applyAppUpdate(pathname) {
-  if (!appUpdateEnabled || pathname !== '/me/homepage' || !availableVersion || !navigator.onLine || reloading) return;
+  if (!appUpdateEnabled || pathname !== PATHS.meHomepage || !availableVersion || !navigator.onLine || reloading) return;
   // If navigation falls back to the old offline shell, don't reload it endlessly.
   const attempt = `${appBuildHash}:${availableVersion}`;
   if (sessionStorage.getItem('sesame.appUpdateAttempt') === attempt) return;

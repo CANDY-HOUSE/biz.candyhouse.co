@@ -1,0 +1,26 @@
+{
+  "lockSettings": {
+    "immediate": "马上",
+    "off": "关闭",
+    "seconds": "{{count}} 秒",
+    "connectBluetooth": "请开启蓝牙并连接设备",
+    "useApp": "请使用APP操作",
+    "failed": "操作失败，请重试",
+    "firmwareBusy": "其他CANDY HOUSE产品正在进行升级, 请稍候",
+    "setLocked": "设置上锁角度",
+    "setUnlocked": "设置解锁角度",
+    "magnet": "水平校正",
+    "switchPoint": "设置上锁・解锁的分界",
+    "frequency": "角度的检测频率",
+    "stopped": "省电模式",
+    "hertz": "{{count}} 次/秒",
+    "frequencyHint": "若旋钮的旋转角度在180°以上，手动快速转动时可能出现圈数检测跟不上的情况，请将检测频率设置为「10 次/秒」。\n旋转角度不足180°的旋钮，请保持使用「省电模式」。",
+    "downloading": "正在下载固件",
+    "retry": "重试",
+    "configure": "请设置开锁角度与关锁角度",
+    "instructions": "请手转芝麻设备至 完全上锁/完全解锁 位置，\n然后分别点击下方按钮设置 上锁角度/解锁角度",
+    "minutes": "{{count}} 分",
+    "hours": "{{count}} 小时",
+    "back": "返回"
+  }
+}

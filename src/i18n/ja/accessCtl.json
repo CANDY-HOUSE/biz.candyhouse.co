@@ -1,0 +1,17 @@
+{
+  "accessCtl": {
+    "auth": {
+      "card": "ICカード",
+      "fingerprint": "指紋",
+      "password": "暗証番号",
+      "face": "顔",
+      "palm": "手のひら静脈",
+      "manageCard": "ICカードの管理",
+      "manageFingerprint": "指紋の管理",
+      "managePasscode": "暗証番号の管理",
+      "manageFace": "顔認識の管理",
+      "managePalmVeins": "手のひら静脈の管理",
+      "radarDetectionDistance": "レーダーの\n探知距離"
+    }
+  }
+}

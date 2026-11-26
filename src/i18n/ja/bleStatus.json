@@ -1,0 +1,6 @@
+{
+  "bleStatus": {
+    "off": "Bluetoothがオフ",
+    "noSignal": "Bluetooth信号見つからず、近づいてください"
+  }
+}

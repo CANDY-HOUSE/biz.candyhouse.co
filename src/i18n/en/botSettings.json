@@ -1,0 +1,20 @@
+{
+  "botSettings": {
+    "mode": "Mode",
+    "modes": {
+      "normal": "Click then return",
+      "circle": "Make a circle",
+      "longPress": "Release then return"
+    },
+    "script": "Script",
+    "add": "Add action",
+    "duration": "Duration",
+    "seconds": "{{value}} sec",
+    "type0": "Forward",
+    "type1": "Reverse",
+    "type2": "Stop",
+    "type3": "Sleep",
+    "hint": "Click ⊕ to add actions.\nIf the duration is \\\"forever\\\" and executed, {{deviceName}} will never stop until switched to another script and executed.\nMotor speed varies. Make press time longer than release slightly.",
+    "forever": "forever"
+  }
+}
