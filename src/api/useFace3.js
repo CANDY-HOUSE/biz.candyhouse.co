@@ -72,6 +72,36 @@ const useFace3 = () => {
     []
   );
 
+  /**
+   * 识别成功时门铃屏幕播放的视频（Face3_qr op:welcomeVid*）。welcomeVid 是视频 id（S3 上的 UUID），
+   * defaultVid 是默认那个（= 固件出厂内置的那段），没选过时当前选择就是它。
+   * 只有绑过这台设备的人能查；保存另要拥有者 / 管理员，访客回 no_permission。
+   * Get 回 { welcomeVid, defaultVid, canEdit, item }（item 为当前那项）；
+   * List 分页（默认那个排第一，其余按上传顺序），cursor 传上一页的 nextCursor，
+   * 每项 { welcomeVid, name, desc, preview, poster }，name / desc 按语言（ja / en / zh-CN / zh-TW），
+   * preview / poster 是 1 小时有效的地址；
+   * Set 保存后，门铃下次开机联网时自己同步（选默认就回到内置，选别的就下载替换）。
+   */
+  const getFace3WelcomeVid = useCallback(
+    (deviceUUID, signal) =>
+      recordingRequests.current.request('welcomeVidGet', { deviceId: deviceUUID.toUpperCase() }, signal),
+    []
+  );
+  const listFace3WelcomeVids = useCallback(
+    (deviceUUID, { cursor, limit = 12, signal } = {}) =>
+      recordingRequests.current.request(
+        'welcomeVidList',
+        { deviceId: deviceUUID.toUpperCase(), ...(cursor ? { cursor } : {}), limit },
+        signal
+      ),
+    []
+  );
+  const setFace3WelcomeVid = useCallback(
+    (deviceUUID, welcomeVid, signal) =>
+      recordingRequests.current.request('welcomeVidSet', { deviceId: deviceUUID.toUpperCase(), welcomeVid }, signal),
+    []
+  );
+
   const requestAiSession = useCallback(
     (deviceId, operation, fields, signal) =>
       recordingRequests.current.request('aiSession', { deviceId, operation, ...fields }, signal, 'clientRequestId'),
@@ -200,6 +230,9 @@ const useFace3 = () => {
     playFace3Recording,
     deleteFace3Recording,
     synthesizeFace3Speech,
+    getFace3WelcomeVid,
+    listFace3WelcomeVids,
+    setFace3WelcomeVid,
     wakeFace3Device,
     wakeFace3ForAi,
     requestAiSession,

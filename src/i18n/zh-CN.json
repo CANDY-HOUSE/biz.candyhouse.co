@@ -651,6 +651,20 @@
       "female": "女声",
       "male": "男声"
     },
+    "unlockClip": {
+      "group": "欢迎回家",
+      "title": "识别成功动画",
+      "unavailable": "未获取",
+      "cancel": "取消",
+      "save": "保存",
+      "defaultTag": "默认",
+      "loadMore": "加载更多",
+      "loadFailed": "加载失败，点击重试",
+      "saveFailed": "保存失败，请稍后再试",
+      "noPermission": "只有拥有者或管理员可以修改",
+      "syncHint": "保存后，门铃下次开机联网时自动更新。",
+      "saved": "已保存，门铃下次开机时更新"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "开启 AI 需要先登录",

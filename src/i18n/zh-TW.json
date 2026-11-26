@@ -651,6 +651,20 @@
       "female": "女聲",
       "male": "男聲"
     },
+    "unlockClip": {
+      "group": "歡迎回家",
+      "title": "辨識成功動畫",
+      "unavailable": "未取得",
+      "cancel": "取消",
+      "save": "儲存",
+      "defaultTag": "預設",
+      "loadMore": "載入更多",
+      "loadFailed": "載入失敗，點擊重試",
+      "saveFailed": "儲存失敗，請稍後再試",
+      "noPermission": "只有擁有者或管理員可以修改",
+      "syncHint": "儲存後，門鈴下次開機連網時自動更新。",
+      "saved": "已儲存，門鈴下次開機時更新"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "開啟 AI 需要先登入",

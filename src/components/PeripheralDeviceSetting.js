@@ -49,6 +49,7 @@ import LockSettingWheel from './LockSettingWheel';
 import AppHubWifi from './AppHubWifi';
 import AppVoiceShortcut from './AppVoiceShortcut';
 import Face3DeviceSettings from './vision/Face3DeviceSettings';
+import Face3UnlockClipSetting from './vision/Face3UnlockClipSetting';
 import { sesameDeviceModel } from '@/constants/sesameDeviceModel';
 import { appHostSupports } from '@/services/appSession';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
@@ -376,6 +377,8 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
         <Divider variant="middle" sx={{ opacity: 0.4 }} />
         {!wifi && <BatteryPercent device={device} />}
         {row('UUID', id, () => navigate({ pathname: '/device-setting/factory-info', search: location.search }))}
+        {/* 识别成功动画：Face3 一律显示；能否修改由云端按钥匙级别判定 */}
+        {face3Group && <Face3UnlockClipSetting deviceUUID={id} />}
         {face3Group ? <Face3DeviceSettings radar={radarSetting} /> : radarSetting}
         {sleeping && (
           <Typography sx={{ p: 2, color: 'text.secondary', fontSize: 13, whiteSpace: 'pre-line' }}>

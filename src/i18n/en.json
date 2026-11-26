@@ -651,6 +651,20 @@
       "female": "Female",
       "male": "Male"
     },
+    "unlockClip": {
+      "group": "Welcome home",
+      "title": "Recognition animation",
+      "unavailable": "Unavailable",
+      "cancel": "Cancel",
+      "save": "Save",
+      "defaultTag": "Default",
+      "loadMore": "Load more",
+      "loadFailed": "Couldn't load. Tap to retry",
+      "saveFailed": "Couldn't save. Please try again later",
+      "noPermission": "Only the owner or a manager can change this",
+      "syncHint": "After you save, the doorbell updates the next time it starts up and goes online.",
+      "saved": "Saved. The doorbell updates on its next startup"
+    },
     "ai": {
       "label": "AI",
       "loginRequired": "Sign in to turn on AI.",
