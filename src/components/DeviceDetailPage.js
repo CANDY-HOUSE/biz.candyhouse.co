@@ -15,6 +15,7 @@ import DeviceHistory from './DeviceHistory';
 import DeviceSetting from './DeviceSetting';
 import MobileWifiModule from './MobileWifiModule';
 import Face3DevicePanel from './vision/Face3DevicePanel';
+import { settingsHeaderSx } from './SettingsGroup';
 
 // The phone layout keeps the page to the viewport and scrolls inside its one section.
 const phonePageSx = {
@@ -64,9 +65,9 @@ const PhoneLockPage = () => {
     window.scrollTo(0, 0);
   }, []);
   return (
-    <Box sx={phonePageSx}>
+    <Box sx={{ ...phonePageSx, ...settingsHeaderSx }}>
       <PageHeader
-        sx={{ position: 'sticky', zIndex: 1100, top: 'var(--page-header-offset, 0px)' }}
+        sx={{ ...settingsHeaderSx, position: 'sticky', zIndex: 1100, top: 'var(--page-header-offset, 0px)' }}
         onBack={() => navigate(-1)}
         // The list carries renames made in device settings; the query keeps the name from entry.
         title={device.deviceName || deviceName}
@@ -105,7 +106,7 @@ const PhoneRegionPage = () => {
     <Box sx={phonePageSx}>
       {/* The root is a fixed-height overflow container, so sticky must use top 0, not the browser bar offset. */}
       <PageHeader
-        sx={{ position: 'sticky', zIndex: 1100, top: 0 }}
+        sx={{ ...(!isFace3 && settingsHeaderSx), position: 'sticky', zIndex: 1100, top: 0 }}
         onBack={() => navigate(-1)}
         title={deviceName}
         action={

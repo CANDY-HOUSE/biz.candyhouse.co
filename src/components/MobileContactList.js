@@ -3,7 +3,7 @@ import { Box, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import { useTranslation } from 'react-i18next';
 import { isAppHome } from '@/services/deviceService';
-import { ios, appSearchSx, appSectionLabelSx, homeCards, hoverSx } from '@/theme/appHomeStyle';
+import { ios, appSearchSx, appSectionLabelSx, homeCards, hoverSx, hairline } from '@/theme/appHomeStyle';
 import { appStickySearchSx } from '@/services/appNavigation';
 import { DataSearch } from './biz/device/DataSearch';
 import Avatar from '@mui/material/Avatar';
@@ -84,8 +84,8 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag, selected }
             left: 72,
             right: 0,
             bottom: 0,
-            height: '0.5px',
-            bgcolor: ios.separator,
+            height: 0,
+            borderBottom: hairline,
           },
         }}
       >

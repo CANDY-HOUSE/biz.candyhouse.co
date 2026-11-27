@@ -4,6 +4,22 @@ import { SvgArrow } from '@/assets/svg/svgLock';
 import { CmHistoryExt } from './biz/device/CmHistoryExt';
 import { Buffer } from 'buffer';
 import { biz3utils } from '@/utils/biz3utils';
+import { ios, hairline } from '@/theme/appHomeStyle';
+
+// Rows scroll under the sticky date; these corners keep the card's top rounded to match its bottom.
+const corner = (at) => ({
+  content: '""',
+  position: 'absolute',
+  top: '100%',
+  width: ios.cardRadius,
+  height: ios.cardRadius,
+  pointerEvents: 'none',
+  background: `radial-gradient(circle at ${at}, transparent calc(${ios.cardRadius} - 0.5px), ${ios.background} ${ios.cardRadius})`,
+});
+const stuckCornersSx = {
+  '&::before': { ...corner('100% 100%'), left: 16 },
+  '&::after': { ...corner('0 100%'), right: 16 },
+};
 
 const MobileDeviceHistory = ({
   fullHeight = true,
@@ -12,6 +28,7 @@ const MobileDeviceHistory = ({
   onLoadMore,
   onItemLongPress,
   onItemClick,
+  inset = false,
 }) => {
   const [groupedHistories, setGroupedHistories] = useState([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -20,7 +37,7 @@ const MobileDeviceHistory = ({
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const loadMoreTriggerRef = useRef(null);
-  const rowHeight = 72;
+  const rowHeight = 64;
   const longPressTimer = useRef(null);
   const longPressFired = useRef(false);
   const longPressThreshold = 500;
@@ -172,7 +189,7 @@ const MobileDeviceHistory = ({
       sx={{
         width: '100%',
         height: fullHeight ? '100vh' : '100%',
-        bgcolor: 'background.paper',
+        bgcolor: inset ? ios.background : 'background.paper',
         position: 'relative',
       }}
     >
@@ -206,24 +223,28 @@ const MobileDeviceHistory = ({
       >
         {hasMore && <Box ref={loadMoreTriggerRef} sx={{ height: 40 }} />}
         {groupedHistories.map((group, _groupIndex) => (
-          <Box key={group.date}>
+          <Box key={group.date} sx={{ pb: inset ? '8px' : 0 }}>
             <Box
               sx={{
                 position: 'sticky',
                 top: 0,
-                bgcolor: 'secondary.main',
-                height: 30,
+                bgcolor: inset ? ios.background : ios.card,
+                height: 36,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                px: inset ? '32px' : '16px',
                 zIndex: 1000,
+                ...(inset && stuckCornersSx),
               }}
             >
-              <Typography variant="h4" sx={{ p: '0px !important' }}>
-                {group.date}
-              </Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: ios.secondaryLabel }}>{group.date}</Typography>
             </Box>
-            <List sx={{ p: 0 }}>
+            <List
+              sx={{
+                p: 0,
+                ...(inset && { mx: '16px', bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' }),
+              }}
+            >
               {group.items.map((item, index) => (
                 <ListItem
                   key={`${item.record_id}-${index}`}
@@ -232,6 +253,16 @@ const MobileDeviceHistory = ({
                     py: 0,
                     userSelect: 'none',
                     cursor: 'pointer',
+                    '&:active': { bgcolor: ios.pressed },
+                    '&:not(:last-child)::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 56,
+                      right: 0,
+                      bottom: 0,
+                      height: 0,
+                      borderBottom: hairline,
+                    },
                   }}
                   onClick={() => handleItemClick(item)}
                   onTouchStart={(e) => handleTouchStart(e, item)}
@@ -246,20 +277,18 @@ const MobileDeviceHistory = ({
                   </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Typography variant="body1" sx={{ fontWeight: 400 }}>
+                      <Typography sx={{ fontSize: { xs: 17, md: 16 }, color: ios.label }}>
                         {getPrimaryTitle(item)}
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="body2" sx={{ color: 'info.light', mt: 0.5 }}>
+                      <Typography sx={{ fontSize: 13, color: ios.secondaryLabel, mt: '2px' }}>
                         {biz3utils.timestampToTime(item.timestamp, false)}
                       </Typography>
                     }
                   />
                   {item.deviceName?.length > 0 && (
-                    <Typography variant="h4" sx={{ color: 'info.light', pl: 2 }}>
-                      {item.deviceName}
-                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: ios.secondaryLabel, pl: 2 }}>{item.deviceName}</Typography>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <CmHistoryExt.ViaView

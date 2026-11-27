@@ -8,6 +8,13 @@ Biz3 is a React project providing the PC management console and Web App UI. The 
 
 ![Architecture](architecture.png)
 
+## Related repositories
+
+The app UI runs inside the Web App host's WebView.
+
+- [SesameSDK_Android_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp): Android Web App host
+- [SesameSDK_iOS_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_iOS_with_DemoApp): iOS Web App host
+
 ## Development
 
 Node.js 20 (`.nvmrc`), Yarn 1.x. Production build: `yarn build`.

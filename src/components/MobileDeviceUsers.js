@@ -398,7 +398,8 @@ const MobileDeviceUsers = ({
               maxWidth: 48,
               height: 'auto',
               aspectRatio: '1 / 1',
-              bgcolor: 'info.light',
+              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+              fontWeight: 600,
             }}
           >
             {user.employeeName?.charAt(0)?.toUpperCase() ?? ''}
@@ -412,7 +413,8 @@ const MobileDeviceUsers = ({
               maxWidth: 48,
               height: 'auto',
               aspectRatio: '1 / 1',
-              bgcolor: 'info.light',
+              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+              fontWeight: 600,
             }}
           >
             <MoreHoriz />

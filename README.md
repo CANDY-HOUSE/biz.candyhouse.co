@@ -8,6 +8,13 @@ Biz3 は PC 管理画面と Web App の業務画面を提供する React プロ�
 
 ![Architecture](architecture.png)
 
+## 関連リポジトリ
+
+App 画面は Web App ホストの WebView で動作します。
+
+- [SesameSDK_Android_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp)：Android Web App ホスト
+- [SesameSDK_iOS_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_iOS_with_DemoApp)：iOS Web App ホスト
+
 ## 開発
 
 Node.js 20（`.nvmrc`）、Yarn 1.x。配信用ビルド：`yarn build`。

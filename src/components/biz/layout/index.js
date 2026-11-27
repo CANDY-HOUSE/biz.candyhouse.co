@@ -1,7 +1,7 @@
 import deferredComponent from '@/components/deferredComponent';
 import { appTabBarHeight, appTabPaths } from '@/services/appNavigation';
 import { isAppHome } from '@/services/deviceService';
-import { ios, pcCardPaths } from '@/theme/appHomeStyle';
+import { ios, pcCardPaths, hairline } from '@/theme/appHomeStyle';
 import siteIcon from '@assets/site-icon.png';
 import { URLs } from '@constants/URLs';
 import { GlobalStateContext } from '@context/GlobalContextProvider.js';
@@ -42,7 +42,7 @@ import BuildInfoBar from './BuildInfoBar.js';
 import Navigator from './Navigator.js';
 import WsStatusIndicator from '@/components/WsStatusIndicator.js';
 import { useTranslation } from 'react-i18next';
-import { PATHS } from '@/routes/manifest';
+import { PATHS, routeOf } from '@/routes/manifest';
 const CSUserSearchDialog = deferredComponent(() => import('@/components/cs/CSUserSearchDialog.js'));
 const RepairCsv = deferredComponent(() => import('@/components/cs/RepairCsv.js'));
 const YamatoShippingCsv = deferredComponent(() => import('@/components/cs/YamatoShippingCsv.js'));
@@ -100,6 +100,7 @@ const Layout = () => {
   const location = useLocation();
   const appTab = isAppHome && appTabPaths.includes(location.pathname);
   const pcCards = !isFromApp && pcCardPaths.includes(location.pathname);
+  const groupedBackground = pcCards || !!routeOf(location.pathname)?.grouped;
 
   const toggleDrawer = (open) => (event) => {
     if (event && event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -154,7 +155,7 @@ const Layout = () => {
 
   return (
     <PrivateRoute>
-      {pcCards && <GlobalStyles styles={{ body: { backgroundColor: ios.background } }} />}
+      {groupedBackground && <GlobalStyles styles={{ body: { backgroundColor: ios.background } }} />}
       <Box sx={appTab ? { height: '100%' } : undefined}>
         <Grid2
           key={appTab ? location.pathname : undefined}
@@ -166,7 +167,7 @@ const Layout = () => {
             elevation={0}
             sx={{
               color: ios.label,
-              backgroundColor: pcCards ? 'rgba(242,242,247,0.8)' : 'rgba(255,255,255,0.8)',
+              backgroundColor: groupedBackground ? 'rgba(242,242,247,0.8)' : 'rgba(255,255,255,0.8)',
               backdropFilter: 'saturate(180%) blur(20px)',
               WebkitBackdropFilter: 'saturate(180%) blur(20px)',
               width: isMobile ? '100%' : `calc(100% - ${menuWidth})`,
@@ -469,7 +470,7 @@ const Layout = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 bgcolor: '#FAFAFC',
-                borderRight: `0.5px solid ${ios.separator}`,
+                borderRight: hairline,
               }}
             >
               <SidebarContent onCollapse={() => collapseNav(true)} />

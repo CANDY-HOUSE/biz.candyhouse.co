@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { biz3utils } from '@/utils/biz3utils';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { useSettingsNavigate } from '@/components/settingsSubPage';
+import SettingsGroup from './SettingsGroup';
 
 const MobileDeviceSetting = () => {
   const { gStripe, gManageDevice } = useContext(GlobalStateContext);
@@ -76,47 +77,48 @@ const MobileDeviceSetting = () => {
   }, [gStripe.customerInfo.isAnonymous, deviceName]);
 
   return (
-    <Box ref={containerRef} sx={{ width: '100%', bgcolor: 'background.paper' }}>
+    <Box ref={containerRef} sx={{ width: '100%' }}>
       {!gStripe.customerInfo.isAnonymous && parseInt(keyLevel) < 2 && (
-        <>
+        <SettingsGroup>
           <DeviceUserList deviceUUID={deviceUUID} />
-          <Box sx={{ height: '10px', bgcolor: 'secondary.light', width: '100%' }} />
-        </>
+        </SettingsGroup>
       )}
-      <List disablePadding>
-        <ListItem onClick={() => handleOpenPage('/rename')}>
-          <ListItemText primary={t('deviceMember.editName')} />
-          <Typography sx={{ color: 'title.other' }}>{deviceName}</Typography>
-          <ListItemIcon sx={{ minWidth: 'auto' }}>
-            <SvgIcon component={SvgArrow} />
-          </ListItemIcon>
-        </ListItem>
-        {parseInt(keyLevel) < 2 && (
+      <SettingsGroup>
+        <List disablePadding>
+          <ListItem onClick={() => handleOpenPage('/rename')}>
+            <ListItemText primary={t('deviceMember.editName')} />
+            <Typography sx={{ color: 'title.other' }}>{deviceName}</Typography>
+            <ListItemIcon sx={{ minWidth: 'auto' }}>
+              <SvgIcon component={SvgArrow} />
+            </ListItemIcon>
+          </ListItem>
+          {parseInt(keyLevel) < 2 && (
+            <>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              <ListItem onClick={() => handleOpenPage('/share')}>
+                <ListItemText primary={t('deviceMember.shareManagement')} />
+                <ListItemIcon sx={{ minWidth: 'auto' }}>
+                  <QrCode />
+                  <SvgIcon component={SvgArrow} />
+                </ListItemIcon>
+              </ListItem>
+            </>
+          )}
           <>
             <Divider variant="middle" sx={{ opacity: 0.4 }} />
-            <ListItem onClick={() => handleOpenPage('/share')}>
-              <ListItemText primary={t('deviceMember.shareManagement')} />
-              <ListItemIcon sx={{ minWidth: 'auto' }}>
-                <QrCode />
-                <SvgIcon component={SvgArrow} />
-              </ListItemIcon>
+            <ListItem>
+              <ListItemText primary={t('deviceMember.permission')} />
+              <Typography sx={{ color: 'title.other' }}>
+                {parseInt(keyLevel) === 0
+                  ? t('deviceMember.role.owner')
+                  : parseInt(keyLevel) === 1
+                    ? t('deviceMember.role.manager')
+                    : t('deviceMember.role.guest')}
+              </Typography>
             </ListItem>
           </>
-        )}
-        <>
-          <Divider variant="middle" sx={{ opacity: 0.4 }} />
-          <ListItem>
-            <ListItemText primary={t('deviceMember.permission')} />
-            <Typography sx={{ color: 'title.other' }}>
-              {parseInt(keyLevel) === 0
-                ? t('deviceMember.role.owner')
-                : parseInt(keyLevel) === 1
-                  ? t('deviceMember.role.manager')
-                  : t('deviceMember.role.guest')}
-            </Typography>
-          </ListItem>
-        </>
-      </List>
+        </List>
+      </SettingsGroup>
     </Box>
   );
 };

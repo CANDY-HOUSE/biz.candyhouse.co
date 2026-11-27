@@ -26,6 +26,8 @@ import { rememberBleSnapshot } from '@/services/bleSnapshot';
 import LockSettingWheel from './LockSettingWheel';
 import BleStatusBar from './BleStatusBar';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
+import { ios } from '@/theme/appHomeStyle';
+import { groupCardSx, groupLabelSx, settingsHeaderSx } from './SettingsGroup';
 
 const icons = [RotateRight, RotateLeft, Stop, Pause];
 const times = Array.from({ length: 255 }, (_, i) => i + 1);
@@ -56,9 +58,10 @@ function ActionRow({ position, disabled, onDelete, children }) {
           onDelete();
       }}
       sx={{
-        minHeight: 80,
-        borderBottom: '1px solid #eee',
+        minHeight: 64,
+        bgcolor: ios.card,
         gap: 1,
+        '&:not(:last-child)': { boxShadow: `inset 0 -0.5px 0 ${ios.separator}` },
         touchAction: 'pan-y',
         transform: transform ? `translateY(${transform.y}px)` : undefined,
         transition,
@@ -144,9 +147,9 @@ export function BotScript({ deviceUUID, index, onBack, embedded = false }) {
     value === 255 ? t('botSettings.forever') : t('botSettings.seconds', { value: (value / 10).toFixed(1) });
   const disabled = busy || !(bot.connected || bot.readOnly) || !script || !!pendingCloud;
   return (
-    <Box sx={lockSettingsInteraction}>
+    <Box sx={{ ...lockSettingsInteraction, minHeight: embedded ? '100%' : '100dvh', bgcolor: ios.background }}>
       <PageHeader
-        sx={{ pr: 2, ...(embedded && { pl: 0 }) }}
+        sx={{ ...settingsHeaderSx, pr: 2, ...(embedded && { pl: 0 }) }}
         onBack={onBack ?? (() => navigate(-1))}
         centerTitle={
           <Button
@@ -170,7 +173,7 @@ export function BotScript({ deviceUUID, index, onBack, embedded = false }) {
         }
       />
       <BleStatusBar deviceUUID={deviceUUID} />
-      <Typography sx={{ bgcolor: 'secondary.main', p: 2, color: 'text.secondary', whiteSpace: 'pre-line' }}>
+      <Typography sx={{ ...groupLabelSx, mx: '16px', pt: '12px', pb: '12px' }}>
         {t('botSettings.hint', {
           deviceName: bot.deviceName || params.get('deviceName') || 'Sesame Bot',
         })}
@@ -178,6 +181,7 @@ export function BotScript({ deviceUUID, index, onBack, embedded = false }) {
       {error && (
         <Alert
           severity="error"
+          sx={{ mx: '16px', mb: '12px', borderRadius: '12px' }}
           action={
             <Button
               disabled={busy}
@@ -215,52 +219,54 @@ export function BotScript({ deviceUUID, index, onBack, embedded = false }) {
         }}
       >
         <SortableContext items={script?.actions.map((_, i) => i) || []} strategy={verticalListSortingStrategy}>
-          {script?.actions.map((action, position) => {
-            const Icon = icons[action.type];
-            return (
-              <ActionRow
-                key={position}
-                position={position}
-                disabled={disabled}
-                onDelete={() => persist({ ...script, actions: script.actions.filter((_, i) => i !== position) })}
-              >
-                <IconButton
-                  disableRipple
+          <Box sx={{ ...groupCardSx, mx: '16px', mb: '24px', display: script?.actions.length ? 'block' : 'none' }}>
+            {script?.actions.map((action, position) => {
+              const Icon = icons[action.type];
+              return (
+                <ActionRow
+                  key={position}
+                  position={position}
                   disabled={disabled}
-                  aria-label={t(`botSettings.type${action.type}`)}
-                  onClick={() => change(position, { type: (action.type + 1) % 4 })}
+                  onDelete={() => persist({ ...script, actions: script.actions.filter((_, i) => i !== position) })}
                 >
-                  <Icon />
-                </IconButton>
-                <Button
-                  disableRipple
-                  disabled={disabled}
-                  sx={{
-                    flex: 1,
-                    justifyContent: 'flex-start',
-                    color: 'text.secondary',
-                    fontWeight: 'bold',
-                    fontSize: 17,
-                  }}
-                  onClick={() => {
-                    if (bot.readOnly) return appOnly();
-                    setEditing(position);
-                    if (!action.time) change(position, { time: 1 });
-                  }}
-                >
-                  {label(action.time)}
-                </Button>
-                <IconButton
-                  disableRipple
-                  disabled={disabled}
-                  aria-label={t('pages.ir.remote.delete')}
-                  onClick={() => persist({ ...script, actions: script.actions.filter((_, i) => i !== position) })}
-                >
-                  <DeleteOutline />
-                </IconButton>
-              </ActionRow>
-            );
-          })}
+                  <IconButton
+                    disableRipple
+                    disabled={disabled}
+                    aria-label={t(`botSettings.type${action.type}`)}
+                    onClick={() => change(position, { type: (action.type + 1) % 4 })}
+                  >
+                    <Icon />
+                  </IconButton>
+                  <Button
+                    disableRipple
+                    disabled={disabled}
+                    sx={{
+                      flex: 1,
+                      justifyContent: 'flex-start',
+                      color: ios.label,
+                      fontWeight: 500,
+                      fontSize: 17,
+                    }}
+                    onClick={() => {
+                      if (bot.readOnly) return appOnly();
+                      setEditing(position);
+                      if (!action.time) change(position, { time: 1 });
+                    }}
+                  >
+                    {label(action.time)}
+                  </Button>
+                  <IconButton
+                    disableRipple
+                    disabled={disabled}
+                    aria-label={t('pages.ir.remote.delete')}
+                    onClick={() => persist({ ...script, actions: script.actions.filter((_, i) => i !== position) })}
+                  >
+                    <DeleteOutline />
+                  </IconButton>
+                </ActionRow>
+              );
+            })}
+          </Box>
         </SortableContext>
       </DndContext>
       <Drawer anchor="bottom" open={editing !== null} onClose={() => setEditing(null)}>

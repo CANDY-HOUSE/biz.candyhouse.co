@@ -97,15 +97,6 @@ const CheckTable = ({
             },
           },
         },
-        MuiTableHead: {
-          styleOverrides: {
-            root: {
-              ...(isMobile && {
-                display: 'none',
-              }),
-            },
-          },
-        },
         MUIDataTableSelectCell: {
           styleOverrides: {
             root: {

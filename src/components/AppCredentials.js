@@ -40,6 +40,8 @@ import usePeripheralSettings from '@/hooks/usePeripheralSettings';
 import { useAppOnlyNotice } from '@/hooks/useBleSnapshot';
 import { loadCredentials } from '@/services/bleSnapshot';
 import BleStatusBar from './BleStatusBar';
+import { ios } from '@/theme/appHomeStyle';
+import SettingsGroup, { groupedRowsSx, settingsHeaderSx } from './SettingsGroup';
 import fingerImage from '@/assets/peripheral/gif_finger.gif';
 import faceImage from '@/assets/peripheral/face_tips.png';
 import faceProImage from '@/assets/peripheral/facepro_tips.png';
@@ -344,9 +346,9 @@ export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedde
           : null;
   if (!supported) return <Alert severity="warning">{t('peripheral.unsupported')}</Alert>;
   return (
-    <Box sx={{ height: embedded ? '100%' : '100vh', overflow: 'auto', bgcolor: 'background.default' }}>
+    <Box sx={{ height: embedded ? '100%' : '100vh', overflow: 'auto', bgcolor: ios.background, pb: '32px' }}>
       <PageHeader
-        sx={embedded ? { pl: 0, pr: 2 } : undefined}
+        sx={{ ...settingsHeaderSx, ...(embedded && { pl: 0, pr: 2 }) }}
         onBack={onBack ?? (() => navigate(-1))}
         centerTitle={
           <Typography>
@@ -396,6 +398,7 @@ export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedde
       {error && (
         <Alert
           severity="error"
+          sx={{ mx: '16px', mt: '8px', borderRadius: '12px' }}
           action={
             <Button
               onClick={() => {
@@ -417,7 +420,7 @@ export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedde
           {t('lockSettings.failed')}
         </Alert>
       )}
-      <Box sx={{ display: kind === 'fingerprint' ? 'flex' : 'block', alignItems: 'center', bgcolor: 'secondary.main' }}>
+      <Box sx={{ display: kind === 'fingerprint' ? 'flex' : 'block', alignItems: 'center', px: '16px', pt: '8px' }}>
         {illustration && (
           <Box
             component="img"
@@ -434,44 +437,54 @@ export function Credentials({ deviceUUID: id, kind, deviceModel, onBack, embedde
             }}
           />
         )}
-        <Typography sx={{ p: 2, whiteSpace: 'pre-line' }}>
+        <Typography sx={{ px: '16px', py: '12px', fontSize: 15, color: ios.secondaryLabel, whiteSpace: 'pre-line' }}>
           {t(`peripheral.hint_${kind}`, { device: device?.deviceName || model })}
         </Typography>
       </Box>
-      <List>
-        {items.map((item) => (
-          <Box key={item.credentialId}>
-            <ListItem
-              onClick={() => {
-                if (!isAppHome) {
-                  appOnly();
-                  return;
-                }
-                setSelected(item);
-                setName(label(item));
-              }}
-              sx={{ cursor: 'pointer' }}
-            >
-              {kind === 'card' ? (
-                <Box
-                  component="img"
-                  src={nfcCardIcon}
-                  alt=""
-                  sx={{ width: 44, height: 44, objectFit: 'contain', mr: 1 }}
-                />
-              ) : (
-                <ItemIcon sx={{ fontSize: 44, color: 'text.secondary', mr: 1 }} />
-              )}
-              <ListItemText
-                primary={label(item)}
-                primaryTypographyProps={{ sx: { fontSize: 24, fontWeight: 600, color: 'text.secondary' } }}
-                secondary={credentialDisplayId(kind, item.credentialId)}
-              />
-            </ListItem>
-            <Divider variant="middle" />
-          </Box>
-        ))}
-      </List>
+      {items.length > 0 && (
+        <SettingsGroup
+          sx={{ mt: '12px' }}
+          cardSx={{ '& .MuiDivider-root': { ...groupedRowsSx['& .MuiDivider-root'], ml: '64px' } }}
+        >
+          <List disablePadding>
+            {items.map((item) => (
+              <Box key={item.credentialId}>
+                <ListItem
+                  onClick={() => {
+                    if (!isAppHome) {
+                      appOnly();
+                      return;
+                    }
+                    setSelected(item);
+                    setName(label(item));
+                  }}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  {kind === 'card' ? (
+                    <Box
+                      component="img"
+                      src={nfcCardIcon}
+                      alt=""
+                      sx={{ width: 36, height: 36, objectFit: 'contain', mr: '12px', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <ItemIcon sx={{ fontSize: 36, color: ios.secondaryLabel, mr: '12px', flexShrink: 0 }} />
+                  )}
+                  <ListItemText
+                    primary={label(item)}
+                    primaryTypographyProps={{ sx: { fontSize: 17, fontWeight: 600, wordBreak: 'break-all' } }}
+                    secondary={credentialDisplayId(kind, item.credentialId)}
+                    secondaryTypographyProps={{
+                      sx: { fontSize: 13, color: ios.secondaryLabel, wordBreak: 'break-all' },
+                    }}
+                  />
+                </ListItem>
+                <Divider variant="middle" />
+              </Box>
+            ))}
+          </List>
+        </SettingsGroup>
+      )}
       <Drawer anchor="bottom" open={!!selected && !edit} onClose={() => !busy && setSelected(null)}>
         <List>
           <ListItem>

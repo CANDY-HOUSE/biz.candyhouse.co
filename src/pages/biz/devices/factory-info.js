@@ -4,6 +4,8 @@ import { Box, Divider, List, ListItem, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { useSettingsBack, useSettingsSearchParams } from '@/components/settingsSubPage';
+import SettingsGroup, { settingsPageSx } from '@/components/SettingsGroup';
+import { ios } from '@/theme/appHomeStyle';
 
 const formatValue = (value) => {
   if (value === null || value === undefined) return '';
@@ -48,7 +50,7 @@ const FactoryInfoDetail = () => {
   }, [deviceUUID]);
 
   return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: 'background.paper' }}>
+    <Box sx={{ width: '100%', minHeight: '100vh', ...settingsPageSx, pt: 0 }}>
       {!isFromApp && (
         <Box sx={{ display: 'flex', alignItems: 'center', pt: 1, pl: 2 }}>
           <BackButton onClick={() => back()} disableRipple>
@@ -61,34 +63,38 @@ const FactoryInfoDetail = () => {
 
       {rows.length === 0 ? (
         <Box sx={{ p: 3 }}>
-          <Typography variant="body2" sx={{ color: 'info.light' }}>
+          <Typography variant="body2" sx={{ color: ios.secondaryLabel }}>
             {t('envSnapshot.noData', 'No Data')}
           </Typography>
         </Box>
       ) : (
-        <List>
-          {rows.map((row, index) => (
-            <React.Fragment key={`${row.key}-${index}`}>
-              <ListItem
-                sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  py: 1,
-                  px: 2,
-                }}
-              >
-                <Typography variant="body1" sx={{ fontWeight: 400, color: 'title.main', mr: 2 }}>
-                  {t(`factoryInfo.${row.key}`, row.key)}
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'info.light', textAlign: 'right', wordBreak: 'break-all' }}>
-                  {row.value}
-                </Typography>
-              </ListItem>
-              <Divider variant="middle" sx={{ opacity: 0.4 }} />
-            </React.Fragment>
-          ))}
-        </List>
+        <SettingsGroup sx={{ pt: '16px' }}>
+          <List disablePadding>
+            {rows.map((row, index) => (
+              <React.Fragment key={`${row.key}-${index}`}>
+                <ListItem
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    py: '14px',
+                    px: 2,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 17, color: ios.label, mr: 2, flexShrink: 0 }}>
+                    {t(`factoryInfo.${row.key}`, row.key)}
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 17, color: ios.secondaryLabel, textAlign: 'right', wordBreak: 'break-all' }}
+                  >
+                    {row.value}
+                  </Typography>
+                </ListItem>
+                <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              </React.Fragment>
+            ))}
+          </List>
+        </SettingsGroup>
       )}
     </Box>
   );

@@ -11,6 +11,7 @@ import { SvgArrow } from '@/assets/svg/svgLock';
 import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
 import { PATHS } from '@/routes/manifest';
+import SettingsGroup from './SettingsGroup';
 
 export default function LockSettingsExtras({
   deviceUUID,
@@ -64,95 +65,108 @@ export default function LockSettingsExtras({
   const divider = <Divider variant="middle" sx={{ opacity: 0.4 }} />;
   return (
     <Box sx={lockSettingsInteraction}>
-      <Box sx={{ bgcolor: 'secondary.main', height: 500 }} />
+      {/* As before, these show only after scrolling past a long gap below the main settings. */}
+      <Box sx={{ height: 476 }} />
       {txPower !== undefined && (
-        <Box sx={{ px: 2, minHeight: 53, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography sx={{ color: 'text.primary', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {t('lockExtras.txPower')}
-          </Typography>
-          <LockSettingsSlider
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              mr: 1,
-            }}
-            min={-4}
-            max={20}
-            step={1}
-            value={power ?? -4}
-            disabled={isAppHome && !native?.bleConnected}
-            aria-label={t('lockExtras.txPower')}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${value} dBm`}
-            onChange={(_, value) => {
-              if (!isAppHome) return;
-              if (value !== power) deviceService.notify('haptic');
-              setPower(value);
-            }}
-            onChangeCommitted={(_, value) =>
-              isAppHome
-                ? deviceService.request(settingsAction, { deviceUUID, operation: 'txPower', value }).catch(error)
-                : appOnly()
-            }
-          />
-        </Box>
+        <SettingsGroup sx={{ mb: 0 }} cardSx={{ overflow: 'visible' }}>
+          <Box sx={{ px: 2, minHeight: 53, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography sx={{ color: 'text.primary', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {t('lockExtras.txPower')}
+            </Typography>
+            <LockSettingsSlider
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                mr: 1,
+              }}
+              min={-4}
+              max={20}
+              step={1}
+              value={power ?? -4}
+              disabled={isAppHome && !native?.bleConnected}
+              aria-label={t('lockExtras.txPower')}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value} dBm`}
+              onChange={(_, value) => {
+                if (!isAppHome) return;
+                if (value !== power) deviceService.notify('haptic');
+                setPower(value);
+              }}
+              onChangeCommitted={(_, value) =>
+                isAppHome
+                  ? deviceService.request(settingsAction, { deviceUUID, operation: 'txPower', value }).catch(error)
+                  : appOnly()
+              }
+            />
+          </Box>
+        </SettingsGroup>
       )}
       {nativePreferences && (
         <>
-          <Box sx={{ bgcolor: 'secondary.main', height: 500 }} />
-          {nfc && (
-            <>
-              <ListItem onClick={() => preferences.nfc && setReset(true)}>
-                <ListItemText primary="NFC" sx={{ flex: '0 0 auto', mr: 2 }} />
-                <Typography
-                  sx={{ ml: 'auto', color: 'title.other', fontSize: 14, textAlign: 'right', overflowWrap: 'anywhere' }}
+          <Box sx={{ height: 500 }} />
+          <SettingsGroup sx={{ mb: 0 }}>
+            {nfc && (
+              <>
+                <ListItem onClick={() => preferences.nfc && setReset(true)}>
+                  <ListItemText primary="NFC" sx={{ flex: '0 0 auto', mr: 2 }} />
+                  <Typography
+                    sx={{
+                      ml: 'auto',
+                      color: 'title.other',
+                      fontSize: 14,
+                      textAlign: 'right',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {preferences.nfc || t('lockExtras.nfcHint')}
+                  </Typography>
+                </ListItem>
+                {divider}
+              </>
+            )}
+            {widget && (
+              <>
+                <ListItem onClick={() => deviceService.request('notificationSettings').catch(error)}>
+                  <ListItemText
+                    primary={t('lockExtras.widget')}
+                    secondary={
+                      preferences.notificationsEnabled === false
+                        ? t('lockExtras.notificationHint')
+                        : t('lockExtras.notificationGranted')
+                    }
+                    secondaryTypographyProps={{
+                      sx: {
+                        fontSize: 11,
+                        color: preferences.notificationsEnabled === false ? 'error.main' : 'text.secondary',
+                      },
+                    }}
+                  />
+                  <Switch
+                    disableRipple
+                    checked={!!preferences.widget}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(_, value) => request('widget', { value }).catch(error)}
+                  />
+                </ListItem>
+                {divider}
+              </>
+            )}
+            {autoUnlock && (
+              <>
+                <ListItem
+                  onClick={() => navigate({ pathname: PATHS.deviceSetting.autoUnlock, search: location.search })}
                 >
-                  {preferences.nfc || t('lockExtras.nfcHint')}
-                </Typography>
-              </ListItem>
-              {divider}
-            </>
-          )}
-          {widget && (
-            <>
-              <ListItem onClick={() => deviceService.request('notificationSettings').catch(error)}>
-                <ListItemText
-                  primary={t('lockExtras.widget')}
-                  secondary={
-                    preferences.notificationsEnabled === false
-                      ? t('lockExtras.notificationHint')
-                      : t('lockExtras.notificationGranted')
-                  }
-                  secondaryTypographyProps={{
-                    sx: {
-                      fontSize: 11,
-                      color: preferences.notificationsEnabled === false ? 'error.main' : 'text.secondary',
-                    },
-                  }}
-                />
-                <Switch
-                  disableRipple
-                  checked={!!preferences.widget}
-                  onClick={(event) => event.stopPropagation()}
-                  onChange={(_, value) => request('widget', { value }).catch(error)}
-                />
-              </ListItem>
-              {divider}
-            </>
-          )}
-          {autoUnlock && (
-            <>
-              <ListItem onClick={() => navigate({ pathname: PATHS.deviceSetting.autoUnlock, search: location.search })}>
-                <ListItemText primary={t('lockExtras.autoUnlock')} />
-                <Typography sx={{ color: 'title.other' }}>
-                  {preferences.autoUnlock ? t('lockExtras.on') : t('lockSettings.off')}
-                </Typography>
-                <SvgIcon component={SvgArrow} />
-              </ListItem>
-              {divider}
-            </>
-          )}
-          <Box sx={{ bgcolor: 'secondary.main', height: 48 }} />
+                  <ListItemText primary={t('lockExtras.autoUnlock')} />
+                  <Typography sx={{ color: 'title.other' }}>
+                    {preferences.autoUnlock ? t('lockExtras.on') : t('lockSettings.off')}
+                  </Typography>
+                  <SvgIcon component={SvgArrow} />
+                </ListItem>
+                {divider}
+              </>
+            )}
+          </SettingsGroup>
+          <Box sx={{ height: 48 }} />
           <Drawer anchor="bottom" open={reset} onClose={() => setReset(false)}>
             <ListItem
               onClick={() =>

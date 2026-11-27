@@ -31,8 +31,10 @@ import { useTranslation } from 'react-i18next';
 import { isAppHome } from '@/services/deviceService';
 import { appQrScanner } from '@/services/appQrScanner';
 import { roleLabel } from '@/utils/accessLabels';
+import { ios } from '@/theme/appHomeStyle';
 
-export default function AddEmployee({ tags, completionCallback }) {
+// grouped: drawn on the grouped background (the APP add-contact page) rather than in a dialog.
+export default function AddEmployee({ tags, completionCallback, grouped = false }) {
   const navigate = useNavigate();
   const { gStripe, gManageEmployee, setModalTitle, setModalContent, setCustomModalOpen, setSnackbarValue, gMediaType } =
     useContext(GlobalStateContext);
@@ -240,8 +242,19 @@ export default function AddEmployee({ tags, completionCallback }) {
     },
   };
 
+  // A contact needs only an email (or a QR code); the company form with roles keeps its own layout.
+  const contactForm = !tags?.length;
+  const contactFieldSx = {
+    '& .MuiFilledInput-root': {
+      borderRadius: '12px',
+      bgcolor: grouped ? ios.card : ios.fill,
+      '&:hover, &.Mui-focused': { bgcolor: grouped ? ios.card : ios.fill },
+      '&::before, &::after': { display: 'none' },
+    },
+  };
+
   return (
-    <Card elevation={0} sx={{ padding: 0 }}>
+    <Card elevation={0} sx={{ padding: 0, ...(contactForm && grouped && { bgcolor: 'transparent' }) }}>
       <CardHeader
         title={
           <Box
@@ -252,8 +265,18 @@ export default function AddEmployee({ tags, completionCallback }) {
               alignItems: 'center',
             }}
           >
-            <Box sx={{ bgcolor: gStripe.isFromApp ? 'secondary.light' : 'white', p: 2, flex: 1 }}>
-              <Typography sx={{ fontWeight: 'bold', color: 'info.main' }}>
+            <Box
+              sx={
+                contactForm
+                  ? { pl: '28px', pr: '16px', pt: '12px', flex: 1 }
+                  : { bgcolor: gStripe.isFromApp ? 'secondary.light' : 'white', p: 2, flex: 1 }
+              }
+            >
+              <Typography
+                sx={
+                  contactForm ? { fontSize: 15, color: ios.secondaryLabel } : { fontWeight: 'bold', color: 'info.main' }
+                }
+              >
                 {t('deviceMember.findFriendHint')}
               </Typography>
             </Box>
@@ -300,7 +323,7 @@ export default function AddEmployee({ tags, completionCallback }) {
                 setMember({ ...member, employeeEmail: e.target.value });
                 setMailChk(gUtils.isValidEmail(e.target.value));
               }}
-              sx={inputSX}
+              sx={contactForm ? { ...inputSX, ...contactFieldSx } : inputSX}
             />
           </Grid>
           {tags?.length > 0 && (
@@ -436,7 +459,8 @@ export default function AddEmployee({ tags, completionCallback }) {
           <Grid item xs={12} sx={{ mt: isMobile ? 1 : 0 }}>
             <LoadingButton
               loading={!isDisableSubmit && isPending}
-              variant="outlined"
+              variant={contactForm ? 'contained' : 'outlined'}
+              disableElevation
               size={isMobile ? 'large' : 'small'}
               disabled={isDisableSubmit}
               onClick={(e) => {
@@ -444,7 +468,18 @@ export default function AddEmployee({ tags, completionCallback }) {
                 setIsPending(true);
                 handleSubmit();
               }}
-              sx={{ height: '40px' }}
+              sx={
+                contactForm
+                  ? {
+                      height: '50px',
+                      borderRadius: '14px',
+                      fontSize: 17,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      color: '#fff',
+                    }
+                  : { height: '40px' }
+              }
               fullWidth
             >
               {t('contacts.register')}

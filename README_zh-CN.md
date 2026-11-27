@@ -8,6 +8,13 @@ Biz3 是提供 PC 管理页面和 Web App 业务界面的 React 项目。Web App
 
 ![Architecture](architecture.png)
 
+## 关联仓库
+
+App 界面运行在 Web App 宿主的 WebView 中。
+
+- [SesameSDK_Android_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_Android_with_DemoApp)：Android Web App 宿主
+- [SesameSDK_iOS_with_DemoApp](https://github.com/CANDY-HOUSE/SesameSDK_iOS_with_DemoApp)：iOS Web App 宿主
+
 ## 开发
 
 Node.js 20（`.nvmrc`）、Yarn 1.x。发布构建：`yarn build`。

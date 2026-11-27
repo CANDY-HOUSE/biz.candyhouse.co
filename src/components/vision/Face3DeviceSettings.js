@@ -3,6 +3,7 @@ import { Box, Divider, ListItem, ListItemText, ToggleButton, ToggleButtonGroup, 
 import { useTranslation } from 'react-i18next';
 import LockSettingsSlider from '../LockSettingsSlider';
 import { deviceService, isAppHome } from '@/services/deviceService';
+import SettingsGroup from '../SettingsGroup';
 
 /**
  * Face3 设置页的「感应与声音」分组：雷达侦查距离（设置页原有的那一项，由 radar 传入）、
@@ -21,10 +22,7 @@ export default function Face3DeviceSettings({ radar }) {
   const [volume, setVolume] = useState(80);
 
   return (
-    <>
-      <Typography sx={{ bgcolor: 'secondary.main', color: 'text.secondary', px: 2, pt: 4, pb: 1, fontSize: 13 }}>
-        {t('face3.settings.group')}
-      </Typography>
+    <SettingsGroup header={t('face3.settings.group')} cardSx={{ overflow: 'visible' }}>
       {radar && (
         <>
           {radar}
@@ -65,6 +63,6 @@ export default function Face3DeviceSettings({ radar }) {
           }}
         />
       </Box>
-    </>
+    </SettingsGroup>
   );
 }

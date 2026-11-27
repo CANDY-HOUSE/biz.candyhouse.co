@@ -9,7 +9,7 @@ import MobileQRCodeDialog from '@/components/MobileQRCodeDialog';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { useTranslation } from 'react-i18next';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import { ios, homeCards, hoverSx } from '@/theme/appHomeStyle';
+import { ios, homeCards, hoverSx, hairline } from '@/theme/appHomeStyle';
 import { PATHS } from '@/routes/manifest';
 
 const cardSx = { bgcolor: ios.card, borderRadius: ios.cardRadius, overflow: 'hidden' };
@@ -162,7 +162,7 @@ const Me = () => {
             }}
           />
           <Typography sx={{ mt: '8px', fontSize: 13, color: ios.secondaryLabel }}>{t('deviceMember.qr')}</Typography>
-          <Box sx={{ mt: '20px', pt: '14px', width: '100%', borderTop: `0.5px solid ${ios.separator}` }}>
+          <Box sx={{ mt: '20px', pt: '14px', width: '100%', borderTop: hairline }}>
             <Typography sx={{ fontSize: 12, color: ios.secondaryLabel }}>sub UUID</Typography>
             <Typography sx={{ mt: '2px', fontSize: 13, color: ios.label, wordBreak: 'break-all', userSelect: 'all' }}>
               {currentUserInfo.sub}
@@ -189,8 +189,8 @@ const Me = () => {
                     left: 20,
                     right: 0,
                     bottom: 0,
-                    height: '0.5px',
-                    bgcolor: ios.separator,
+                    height: 0,
+                    borderBottom: hairline,
                   },
                 }}
               >

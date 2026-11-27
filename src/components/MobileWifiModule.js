@@ -7,6 +7,7 @@ import { deviceDetailFor } from '@/services/deviceDetail';
 import { deviceService, isAppHome } from '@/services/deviceService';
 import BleStatusBar from './BleStatusBar';
 import MobileDeviceSetting from '@/components/MobileDeviceSetting';
+import SettingsGroup, { nestedListSx, settingsHeaderSx, settingsPageSx } from './SettingsGroup';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import {
   Box,
@@ -422,6 +423,7 @@ const ExistingWifiModule = () => {
       sx={{
         height: '100dvh',
         overflow: 'auto',
+        bgcolor: settingsPageSx.bgcolor,
         '&::-webkit-scrollbar': {
           display: 'none',
         },
@@ -429,7 +431,7 @@ const ExistingWifiModule = () => {
         scrollbarWidth: 'none',
       }}
     >
-      {isAppHome && <PageHeader onBack={() => navigate(-1)} />}
+      {isAppHome && <PageHeader sx={settingsHeaderSx} onBack={() => navigate(-1)} title={currentDevice?.deviceName} />}
       {isAppHome && <BleStatusBar deviceUUID={did} />}
       {showBleStatus && (
         <Box
@@ -446,192 +448,184 @@ const ExistingWifiModule = () => {
           <Typography>{bleStatus['bleStatus']}</Typography>
         </Box>
       )}
-      <List>
-        <ListItem disablePadding>
-          <MobileDeviceSetting />
-        </ListItem>
-        <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-        <ListItem>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
-          <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(currentDevice.deviceModel)}</Typography>
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem
-          onClick={() => {
-            if (isAppHome) {
-              if (!bleAvailable) {
-                setSnackbarValue({
-                  logScope: 'components/MobileWifiModule.ExistingWifiModule',
-                  logReason: 'lockSettings.failed',
-                  open: true,
-                  msg: t('lockSettings.failed'),
-                  severity: 'error',
-                });
-                return;
-              }
-              setWifiOpen(true);
-              // The native scan gate reuses an active scan or results less than 30 seconds old.
-              deviceService.request('hubSettings', { deviceUUID: did, operation: 'scan' }).catch(() =>
-                setSnackbarValue({
-                  logScope: 'components/MobileWifiModule.ExistingWifiModule',
-                  logReason: 'lockSettings.failed',
-                  open: true,
-                  msg: t('lockSettings.failed'),
-                  severity: 'error',
-                })
-              );
-            } else if (isFromApp) requestConfigureInternetFromApp({ deviceUUID: did });
-            else appOnly();
-          }}
-        >
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {t('pages.sesameAccessControlDevice.index.WiFiSSID')}
-                {currentDevice.stateInfo && !currentDevice.stateInfo?.wifiSsid && (
-                  <ListItemIcon sx={{ minWidth: 'auto', color: 'error.main' }}>
-                    <Error />
-                  </ListItemIcon>
-                )}
-              </Box>
-            }
-          />
-          <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiSsid}</Typography>
-          {currentDevice.stateInfo?.wifiSsid && isHub3Pro && (
-            <ListItemIcon
-              onClick={handleDeleteWifiClick}
-              sx={{
-                minWidth: 'auto',
-                color: 'title.other',
-                mr: -1,
-                p: 1,
-                cursor: 'pointer',
-                borderRadius: '4px',
-              }}
-            >
-              <ClearOutlinedIcon fontSize="medium" />
-            </ListItemIcon>
-          )}
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.WiFiPWD')} />
-          <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiPwd}</Typography>
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.InternetStatus')} />
-          <WifiNetworkStatus
-            status={internetStatus}
-            resolved={isDeviceInfoResolved}
-            hub3Pro={isHub3Pro}
-            connectivity={networkConnectivity}
-            activeNet={hub3ProActiveNet}
-          />
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        {/* 仅 Hub3 Pro：当前网络 / 网络切换次数 / 接入方式（内联展开） */}
-        {isHub3Pro && (
-          <>
-            <Hub3ProNetworkSwitch
-              info={currentDevice.stateInfo?.netSwitchInfo}
-              connectivity={networkConnectivity}
-              onSetAccessMode={handleSetAccessMode}
-            />
-            <Divider variant="middle" sx={{ opacity: 0.4 }} />
-          </>
-        )}
-        <UpgradeFirmware device={currentDevice} bleAvailable={bleAvailable} />
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <SliderItem
-          text={t('pages.sesameAccessControlDevice.index.LED')}
-          value={LEDBrightness ?? loadHub3LedPercent(did)}
-          onChangeCommitted={(val) => handleChangeLEDBrightness(val)}
-        />
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <BatteryPercent device={currentDevice} />
-        {currentDevice?.stateInfo?.registerTime && (
+      <List disablePadding sx={settingsPageSx}>
+        <MobileDeviceSetting />
+        <SettingsGroup>
           <ListItem>
-            <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
-            <Typography sx={{ color: 'title.other' }}>
-              {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
-            </Typography>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
+            <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(currentDevice.deviceModel)}</Typography>
           </ListItem>
-        )}
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.UUID')} />
-          <Typography
-            sx={{
-              color: 'title.other',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
-              minWidth: 0,
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <ListItem
+            onClick={() => {
+              if (isAppHome) {
+                if (!bleAvailable) {
+                  setSnackbarValue({
+                    logScope: 'components/MobileWifiModule.ExistingWifiModule',
+                    logReason: 'lockSettings.failed',
+                    open: true,
+                    msg: t('lockSettings.failed'),
+                    severity: 'error',
+                  });
+                  return;
+                }
+                setWifiOpen(true);
+                // The native scan gate reuses an active scan or results less than 30 seconds old.
+                deviceService.request('hubSettings', { deviceUUID: did, operation: 'scan' }).catch(() =>
+                  setSnackbarValue({
+                    logScope: 'components/MobileWifiModule.ExistingWifiModule',
+                    logReason: 'lockSettings.failed',
+                    open: true,
+                    msg: t('lockSettings.failed'),
+                    severity: 'error',
+                  })
+                );
+              } else if (isFromApp) requestConfigureInternetFromApp({ deviceUUID: did });
+              else appOnly();
             }}
           >
-            {did}
-          </Typography>
-          <SvgIcon component={SvgArrow} />
-        </ListItem>
-        <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-        {/* Hub3 Pro 隐藏 Matter 栏；其它机型仍显示 */}
-        {!isHub3Pro && (
-          <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
-            <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
-            <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
-              {isRequestMatter ? <CircularProgress size={16} /> : <QrCode />}
-              <SvgIcon component={SvgArrow} />
-            </ListItemIcon>
+            <ListItemText
+              primary={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {t('pages.sesameAccessControlDevice.index.WiFiSSID')}
+                  {currentDevice.stateInfo && !currentDevice.stateInfo?.wifiSsid && (
+                    <ListItemIcon sx={{ minWidth: 'auto', color: 'error.main' }}>
+                      <Error />
+                    </ListItemIcon>
+                  )}
+                </Box>
+              }
+            />
+            <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiSsid}</Typography>
+            {currentDevice.stateInfo?.wifiSsid && isHub3Pro && (
+              <ListItemIcon
+                onClick={handleDeleteWifiClick}
+                sx={{
+                  minWidth: 'auto',
+                  color: 'title.other',
+                  mr: -1,
+                  p: 1,
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                }}
+              >
+                <ClearOutlinedIcon fontSize="medium" />
+              </ListItemIcon>
+            )}
           </ListItem>
-        )}
-        {/* 继电器使能：放在 Matter 栏之后 */}
-        {isHub3Pro && (
-          <>
-            <ListItem>
-              <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay1')} />
-              <Switch
-                edge="end"
-                checked={relayEnable.enable1}
-                onChange={(e) => handleToggleRelayEnable(1, e.target.checked)}
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <ListItem>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.WiFiPWD')} />
+            <Typography sx={{ color: 'title.other' }}>{currentDevice.stateInfo?.wifiPwd}</Typography>
+          </ListItem>
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <ListItem>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.InternetStatus')} />
+            <WifiNetworkStatus
+              status={internetStatus}
+              resolved={isDeviceInfoResolved}
+              hub3Pro={isHub3Pro}
+              connectivity={networkConnectivity}
+              activeNet={hub3ProActiveNet}
+            />
+          </ListItem>
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          {/* 仅 Hub3 Pro：当前网络 / 网络切换次数 / 接入方式（内联展开） */}
+          {isHub3Pro && (
+            <>
+              <Hub3ProNetworkSwitch
+                info={currentDevice.stateInfo?.netSwitchInfo}
+                connectivity={networkConnectivity}
+                onSetAccessMode={handleSetAccessMode}
               />
-            </ListItem>
-            <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </>
+          )}
+          <UpgradeFirmware device={currentDevice} bleAvailable={bleAvailable} />
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <SliderItem
+            text={t('pages.sesameAccessControlDevice.index.LED')}
+            value={LEDBrightness ?? loadHub3LedPercent(did)}
+            onChangeCommitted={(val) => handleChangeLEDBrightness(val)}
+          />
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <BatteryPercent device={currentDevice} />
+          {currentDevice?.stateInfo?.registerTime && (
             <ListItem>
-              <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay2')} />
-              <Switch
-                edge="end"
-                checked={relayEnable.enable2}
-                onChange={(e) => handleToggleRelayEnable(2, e.target.checked)}
-              />
+              <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
+              <Typography sx={{ color: 'title.other' }}>
+                {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
+              </Typography>
             </ListItem>
-            <Divider variant="middle" sx={{ opacity: 0.4 }} />
-          </>
-        )}
-        <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-          <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-            {t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: 'Hub3' })}
-          </Typography>
-        </Box>
-        <ListItem sx={{ py: 0 }}>
+          )}
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.UUID')} />
+            <Typography
+              sx={{
+                color: 'title.other',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
+                minWidth: 0,
+              }}
+            >
+              {did}
+            </Typography>
+            <SvgIcon component={SvgArrow} />
+          </ListItem>
+        </SettingsGroup>
+        <SettingsGroup>
+          {/* Hub3 Pro 隐藏 Matter 栏；其它机型仍显示 */}
+          {!isHub3Pro && (
+            <ListItem onClick={isRequestMatter ? null : handleOpenMatter}>
+              <ListItemText primary={t('pages.sesameAccessControlDevice.index.Matter')} />
+              <ListItemIcon sx={{ minWidth: 'auto', justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                {isRequestMatter ? <CircularProgress size={16} /> : <QrCode />}
+                <SvgIcon component={SvgArrow} />
+              </ListItemIcon>
+            </ListItem>
+          )}
+          {/* 继电器使能：放在 Matter 栏之后 */}
+          {isHub3Pro && (
+            <>
+              <ListItem>
+                <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay1')} />
+                <Switch
+                  edge="end"
+                  checked={relayEnable.enable1}
+                  onChange={(e) => handleToggleRelayEnable(1, e.target.checked)}
+                />
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              <ListItem>
+                <ListItemText primary={t('pages.sesameAccessControlDevice.index.EnableRelay2')} />
+                <Switch
+                  edge="end"
+                  checked={relayEnable.enable2}
+                  onChange={(e) => handleToggleRelayEnable(2, e.target.checked)}
+                />
+              </ListItem>
+              <Divider variant="middle" sx={{ opacity: 0.4 }} />
+            </>
+          )}
+        </SettingsGroup>
+        <SettingsGroup
+          header={t('pages.sesameAccessControlDevice.index.BindDeviceToHub3Hint', { deviceName: 'Hub3' })}
+          cardSx={nestedListSx}
+        >
           <MobileBindDevice device={currentDevice} />
-        </ListItem>
-        <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-          <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-            {t('pages.sesameAccessControlDevice.index.BindIRToHub3Hint')}
-          </Typography>
-        </Box>
-        <ListItem sx={{ py: 0 }}>
+        </SettingsGroup>
+        <SettingsGroup header={t('pages.sesameAccessControlDevice.index.BindIRToHub3Hint')} cardSx={nestedListSx}>
           <MobileHub3RemoteList deviceUUID={did} />
-        </ListItem>
+        </SettingsGroup>
+        <MobileRemoveDevice
+          deviceUUID={did}
+          subUUID={gStripe.customerInfo.subUUID}
+          deviceName={currentDevice?.deviceName}
+        />
       </List>
-      <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-      <MobileRemoveDevice
-        deviceUUID={did}
-        subUUID={gStripe.customerInfo.subUUID}
-        deviceName={currentDevice?.deviceName}
-      />
       {wifiOpen && <AppHubWifi deviceUUID={did} onClose={() => setWifiOpen(false)} />}
       <MobileQRCodeDialog
         onClose={() => {

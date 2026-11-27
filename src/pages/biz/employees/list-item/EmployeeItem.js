@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import BackButton from '@/components/BackButton';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardHeader, CardContent, Box } from '@mui/material';
+import { Avatar, Box, Typography } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { gUtils } from '@/utils/gUtils';
@@ -16,6 +16,25 @@ import { biz3utils } from '@utils/biz3utils';
 import { isAppHome } from '@/services/deviceService';
 import UserBasicInfo from '@/components/biz/device/UserBasicInfo';
 import { DetailPanelContext } from '@/components/detailPanelContext';
+import SettingsGroup, { settingsPageSx } from '@/components/SettingsGroup';
+import { ios } from '@/theme/appHomeStyle';
+
+// UserBasicInfo draws bare label / value rows; in the card they get row padding and iOS text colors.
+const infoCardSx = {
+  '& .MuiListItem-root': { px: '16px', height: 'auto', minHeight: 52, gap: 2 },
+  '& .MuiListItem-root > .MuiTypography-root:first-of-type': {
+    flexShrink: 0,
+    fontSize: 17,
+    fontWeight: 400,
+    color: ios.label,
+  },
+  '& .MuiListItem-root > .MuiTypography-root:last-of-type:not(:first-of-type)': {
+    fontSize: 17,
+    fontWeight: 400,
+    color: ios.secondaryLabel,
+    textAlign: 'right',
+  },
+};
 
 const EmployeeItem = () => {
   const { t } = useTranslation();
@@ -164,55 +183,80 @@ const EmployeeItem = () => {
     );
   };
 
+  const displayName = data.employeeName || data.employeeEmail || employeeEmail;
+
   return (
-    <>
-      <Card>
-        <Box>
-          <CardHeader
-            title={
-              gStripe.isFromApp ? null : (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {!panel && <BackButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}></BackButton>}
-                  <EditableText
-                    style={{
-                      fontSize: '1.2em',
-                      fontWeight: 'bold',
-                      lineHeight: '1.3',
-                    }}
-                    initialValue={data.employeeName}
-                    onSave={null}
-                  />
-                  {uid !== gStripe.customerInfo.subUUID && !gStripe.customerInfo.isSesameApp && (
-                    <DeleteMenuButton
-                      onDelete={() => {
-                        const user = gManageEmployee.findEmployeeById(uid);
-                        gManageEmployee.removeEmployees([user], (res) => {
-                          if (res.success) {
-                            if (panel) panel.onRemoved(uid);
-                            else navigate(-1);
-                          }
-                        });
-                      }}
-                    />
-                  )}
-                </Box>
-              )
-            }
+    <Box sx={{ ...settingsPageSx, minHeight: '100%' }}>
+      {/* Contacts read the same in the APP and the browser; a company's member page keeps its title row. */}
+      {gStripe.isFromApp || gStripe.customerInfo.isSesameApp ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', px: '16px', pt: '8px', pb: '24px' }}>
+          {!gStripe.isFromApp && !panel && (
+            <BackButton sx={{ alignSelf: 'flex-start', p: 0 }} size="small" onClick={() => navigate(-1)} />
+          )}
+          <Avatar
+            sx={{
+              width: 84,
+              height: 84,
+              fontSize: 34,
+              fontWeight: 600,
+              color: '#fff',
+              background: 'linear-gradient(180deg, #A5ABB8 0%, #858994 100%)',
+            }}
+          >
+            {displayName?.charAt(0).toUpperCase()}
+          </Avatar>
+          <Typography
+            sx={{
+              mt: '12px',
+              fontSize: 22,
+              fontWeight: 700,
+              color: ios.label,
+              textAlign: 'center',
+              wordBreak: 'break-all',
+            }}
+          >
+            {data.employeeName}
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', alignItems: 'center', px: '20px', pb: '16px' }}>
+          {!panel && <BackButton sx={{ p: 0 }} size="small" onClick={() => navigate(-1)}></BackButton>}
+          <EditableText
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              lineHeight: '1.3',
+            }}
+            initialValue={data.employeeName}
+            onSave={null}
           />
-          <CardContent>
-            <UserBasicInfo
-              data={data}
-              employeeEmail={employeeEmail}
-              isSesameApp={gStripe.customerInfo.isSesameApp}
-              onSave={(params, callback) => {
-                gManageEmployee.postEmployeeInfo(params, (res) => {
-                  callback(res.success);
+          {uid !== gStripe.customerInfo.subUUID && !gStripe.customerInfo.isSesameApp && (
+            <DeleteMenuButton
+              onDelete={() => {
+                const user = gManageEmployee.findEmployeeById(uid);
+                gManageEmployee.removeEmployees([user], (res) => {
+                  if (res.success) {
+                    if (panel) panel.onRemoved(uid);
+                    else navigate(-1);
+                  }
                 });
               }}
             />
-          </CardContent>
+          )}
         </Box>
-      </Card>
+      )}
+      <SettingsGroup cardSx={infoCardSx}>
+        <UserBasicInfo
+          data={data}
+          employeeEmail={employeeEmail}
+          isSesameApp={gStripe.customerInfo.isSesameApp}
+          onSave={(params, callback) => {
+            gManageEmployee.postEmployeeInfo(params, (res) => {
+              callback(res.success);
+            });
+          }}
+        />
+      </SettingsGroup>
       <MobileUserDevices
         onAddButtonClickHandler={onAddButtonClickHandler}
         deviceKeys={employeeKeys}
@@ -260,20 +304,22 @@ const EmployeeItem = () => {
         }}
       />
       {!gStripe.customerInfo.isSesameApp && employeeCards.length > 0 && (
-        <DataTable
-          isMobile={gMediaType.isMobile}
-          isShowFooter={false}
-          isAdd={false}
-          data={employeeCards}
-          selectableRows={'none'}
-          isCsv={false}
-          isBind={false}
-          isDel={false}
-          text={t('contacts.cardList')}
-          columns={DataTableColumns.deviceItemCards({ gManageDevice, ref })}
-        />
+        <Box sx={{ mx: '16px' }}>
+          <DataTable
+            isMobile={gMediaType.isMobile}
+            isShowFooter={false}
+            isAdd={false}
+            data={employeeCards}
+            selectableRows={'none'}
+            isCsv={false}
+            isBind={false}
+            isDel={false}
+            text={t('contacts.cardList')}
+            columns={DataTableColumns.deviceItemCards({ gManageDevice, ref })}
+          />
+        </Box>
       )}
-    </>
+    </Box>
   );
 };
 

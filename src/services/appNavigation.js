@@ -61,6 +61,7 @@ export function appRouteInfo(path) {
     path,
     tab: appTabPaths.includes(path),
     pageHeader: !!routeOf(path)?.appHeader,
+    grouped: !!routeOf(path)?.grouped,
     modal: layers.length > 0,
   };
 }

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { GlobalStateContext } from '@context/GlobalContextProvider';
 import { deviceModelDisplayName } from '@/constants/sesameDeviceModel';
-import { ios } from '@/theme/appHomeStyle';
+import { ios, hairline } from '@/theme/appHomeStyle';
 import { gConfig } from '@constants/gConfig';
 import { gUtils } from '@/utils/gUtils';
 import { deviceDetailFor } from '@/services/deviceDetail';
@@ -139,7 +139,7 @@ const PanelBody = ({ did, device, model, keyLevel, tab }) => {
     );
 
   return (
-    <Box sx={{ flex: 1, minHeight: 0, borderTop: `0.5px solid ${ios.separator}` }}>
+    <Box sx={{ flex: 1, minHeight: 0, borderTop: hairline }}>
       {pane('history', <DeviceHistory deviceUUID={did} showToolBar fullHeight={false} fill />, { px: '12px' })}
       {pane('users', <DeviceUserList deviceUUID={did} defaultManageMode />)}
       {pane(

@@ -10,6 +10,8 @@ import { DetailPanelContext } from './detailPanelContext';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { biz3utils } from '@/utils/biz3utils';
 import { useNavigate } from 'react-router-dom';
+import { ios } from '@/theme/appHomeStyle';
+import SettingsGroup from './SettingsGroup';
 
 const MobileRemoveDevice = ({ deviceUUID, subUUID, deviceName, showHint = true, named = false }) => {
   const { gManageDevice, setSnackbarValue } = useContext(GlobalStateContext);
@@ -42,18 +44,16 @@ const MobileRemoveDevice = ({ deviceUUID, subUUID, deviceName, showHint = true, 
 
   return (
     <>
-      <ListItem onClick={() => setDrawerOpen(true)} sx={{ justifyContent: 'center', height: '48px' }}>
-        <Typography sx={{ color: 'error.main', fontWeight: named ? 'bold' : undefined }}>
-          {named ? t('lockExtras.deleteName', { deviceName }) : t('pages.ir.remote.delete')}
-        </Typography>
-      </ListItem>
-      {showHint && (
-        <Box sx={{ bgcolor: 'secondary.main', pl: 2, py: 0.5 }}>
-          <Typography color="info.light" sx={{ lineHeight: '30px' }}>
-            {t('pages.sesameAccessControlDevice.index.DropKeyDesc', { deviceName })}
+      <SettingsGroup footer={showHint && t('pages.sesameAccessControlDevice.index.DropKeyDesc', { deviceName })}>
+        <ListItem
+          onClick={() => setDrawerOpen(true)}
+          sx={{ justifyContent: 'center', cursor: 'pointer', '&:active': { bgcolor: ios.pressed } }}
+        >
+          <Typography sx={{ fontSize: 17, color: ios.red }}>
+            {named ? t('lockExtras.deleteName', { deviceName }) : t('pages.ir.remote.delete')}
           </Typography>
-        </Box>
-      )}
+        </ListItem>
+      </SettingsGroup>
       <Drawer
         anchor="bottom"
         open={drawerOpen}

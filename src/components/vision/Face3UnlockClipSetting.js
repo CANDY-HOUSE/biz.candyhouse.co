@@ -18,6 +18,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
+import SettingsGroup from '../SettingsGroup';
 import { GlobalStateContext } from '@/context/GlobalContextProvider';
 
 /**
@@ -262,19 +263,18 @@ export default function Face3UnlockClipSetting({ deviceUUID }) {
   return (
     <>
       {/* 单独一个分组，标题样式同「感应与声音」 */}
-      <Typography sx={{ bgcolor: 'secondary.main', color: 'text.secondary', px: 2, pt: 4, pb: 1, fontSize: 13 }}>
-        {t('face3.unlockClip.group')}
-      </Typography>
-      <ListItem
-        onClick={editable ? openDialog : undefined}
-        sx={{ cursor: editable ? 'pointer' : 'default', minHeight: 53 }}
-      >
-        <ListItemText primary={t('face3.unlockClip.title')} sx={{ flex: 1, mr: 1 }} />
-        <Typography component="div" sx={{ color: 'text.secondary', textAlign: 'right' }}>
-          {rowValue}
-        </Typography>
-        {editable && <SvgIcon component={SvgArrow} />}
-      </ListItem>
+      <SettingsGroup header={t('face3.unlockClip.group')}>
+        <ListItem
+          onClick={editable ? openDialog : undefined}
+          sx={{ cursor: editable ? 'pointer' : 'default', minHeight: 53 }}
+        >
+          <ListItemText primary={t('face3.unlockClip.title')} sx={{ flex: 1, mr: 1 }} />
+          <Typography component="div" sx={{ color: 'text.secondary', textAlign: 'right' }}>
+            {rowValue}
+          </Typography>
+          {editable && <SvgIcon component={SvgArrow} />}
+        </ListItem>
+      </SettingsGroup>
 
       <Dialog
         open={open}

@@ -152,6 +152,7 @@ export default function DeviceHistory({
 
   const content = noToolBar ? (
     <MobileDeviceHistory
+      inset
       fullHeight={fullHeight}
       histories={deviceHistory}
       loading={showLoading}

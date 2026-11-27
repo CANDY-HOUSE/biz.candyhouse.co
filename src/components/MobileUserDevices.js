@@ -14,6 +14,8 @@ import {
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteItem from '@/components/biz/DeleteItem';
 import { useTranslation } from 'react-i18next';
+import { ios } from '@/theme/appHomeStyle';
+import SettingsGroup from './SettingsGroup';
 
 const MobileUserDevices = ({ deviceKeys, onAddButtonClickHandler, onDelete, onRemoveUser }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -32,94 +34,100 @@ const MobileUserDevices = ({ deviceKeys, onAddButtonClickHandler, onDelete, onRe
 
   return (
     <>
-      <Box sx={{ px: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            pb: 0,
-          }}
+      <Box>
+        <SettingsGroup
+          header={
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {t('pages.sesameAccessControlDevice.index.UserKeyList')}
+              <IconButton onClick={onAddButtonClickHandler} sx={{ my: '-8px', mr: '-8px' }}>
+                <AddCircleIcon sx={{ fontSize: 24, color: ios.tint }} />
+              </IconButton>
+            </Box>
+          }
         >
-          <Typography variant="h4" color="title.main" sx={{ fontWeight: 'bold' }}>
-            {t('pages.sesameAccessControlDevice.index.UserKeyList')}
-          </Typography>
-          <IconButton onClick={onAddButtonClickHandler}>
-            <AddCircleIcon fontSize="small" style={{ color: 'rgba(0, 0, 0, 0.54)' }} />
-          </IconButton>
-        </Box>
-        <List sx={{ bgcolor: 'white', borderRadius: 1, mb: 2 }}>
-          {deviceKeys?.length < 1 && (
-            <Typography variant="body2" color="info.light">
-              {t('pages.sesameAccessControlDevice.index.NoResult')}
-            </Typography>
-          )}
-          {deviceKeys.map((device, index) => (
-            <React.Fragment key={index}>
-              <ListItem
-                disablePadding
-                sx={{
-                  '& .MuiListItemSecondaryAction-root': {
-                    right: 0,
-                  },
-                }}
-                secondaryAction={
-                  <DeleteItem
-                    handleCheck={(_e) => {
-                      onDelete && onDelete(device.deviceUUID);
-                    }}
-                    employeeRole={parseInt(device.keyLevel) < parseInt(device.curLevel) ? 'Owner' : ''}
-                  />
-                }
-              >
-                <ListItemText
-                  primary={
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: 'title.main',
-                        mb: 0.5,
-                        mr: 5,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100%',
+          <List disablePadding>
+            {deviceKeys?.length < 1 && (
+              <Typography sx={{ px: '16px', py: '15px', fontSize: 15, color: ios.secondaryLabel }}>
+                {t('pages.sesameAccessControlDevice.index.NoResult')}
+              </Typography>
+            )}
+            {deviceKeys.map((device, index) => (
+              <React.Fragment key={index}>
+                <ListItem
+                  disablePadding
+                  sx={{
+                    minHeight: 60,
+                    pl: '16px',
+                    '& .MuiListItemSecondaryAction-root': {
+                      right: '8px',
+                    },
+                  }}
+                  secondaryAction={
+                    <DeleteItem
+                      handleCheck={(_e) => {
+                        onDelete && onDelete(device.deviceUUID);
                       }}
-                    >
-                      {device.deviceName}
-                    </Typography>
+                      employeeRole={parseInt(device.keyLevel) < parseInt(device.curLevel) ? 'Owner' : ''}
+                    />
                   }
-                  secondary={
-                    <>
-                      <Typography component="span" sx={{ color: 'title.main', fontSize: '0.8rem' }}>
-                        {roleAndTime(device)}
+                >
+                  <ListItemText
+                    primary={
+                      <Typography
+                        sx={{
+                          fontSize: 17,
+                          color: ios.label,
+                          mb: '2px',
+                          mr: 5,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {device.deviceName}
                       </Typography>
-                      <Typography component="span" sx={{ color: 'info.light', ml: 1, fontSize: '0.8rem' }}>
-                        {device.msgData || t('contacts.alwaysAvailable')}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItem>
-              <Divider light />
-            </React.Fragment>
-          ))}
-        </List>
-        <Box sx={{ display: onRemoveUser ? 'flex' : 'none', justifyContent: 'center' }}>
-          <Button
-            variant="text"
-            onClick={(event) => {
-              event.stopPropagation();
-              setDrawerOpen(true);
-            }}
-            sx={{
-              color: 'error.main',
-              fontSize: '1rem',
-            }}
-          >
-            {t('pages.sesameAccessControlDevice.index.DeleteFrienddHint')}
-          </Button>
-        </Box>
+                    }
+                    secondary={
+                      <>
+                        <Typography component="span" sx={{ color: ios.secondaryLabel, fontSize: 13 }}>
+                          {roleAndTime(device)}
+                        </Typography>
+                        <Typography component="span" sx={{ color: ios.secondaryLabel, ml: 1, fontSize: 13 }}>
+                          {device.msgData || t('contacts.alwaysAvailable')}
+                        </Typography>
+                      </>
+                    }
+                  />
+                </ListItem>
+                <Divider light />
+              </React.Fragment>
+            ))}
+          </List>
+        </SettingsGroup>
+        {onRemoveUser && (
+          <SettingsGroup>
+            <Button
+              fullWidth
+              variant="text"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDrawerOpen(true);
+              }}
+              sx={{
+                minHeight: 52,
+                borderRadius: 0,
+                color: ios.red,
+                fontSize: 17,
+                fontWeight: 400,
+                textTransform: 'none',
+                '&:active': { bgcolor: ios.pressed },
+              }}
+            >
+              {t('pages.sesameAccessControlDevice.index.DeleteFrienddHint')}
+            </Button>
+          </SettingsGroup>
+        )}
         <Drawer
           anchor="bottom"
           open={drawerOpen}

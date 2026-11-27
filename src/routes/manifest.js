@@ -101,7 +101,8 @@ export const PATHS = {
  *   pageNames key – registered when the space grants that page (gUtils.isContainPage)
  * appForced: also registered inside the APP shell regardless of access.
  * Flags: nativeTheme (NativePageTheme), appHeader (page draws its own APP header), pullRefresh (APP pull to refresh),
- * pcCard (PC grouped card background), guestGate (APP guests see a sign-in prompt), legacy (only the old native APP).
+ * pcCard (PC grouped card background), guestGate (APP guests see a sign-in prompt), legacy (only the old native APP),
+ * grouped (page sits on the grouped background, so the APP back bar matches it).
  */
 const P = PATHS;
 export const ROUTES = [
@@ -111,14 +112,14 @@ export const ROUTES = [
   { path: P.settings, access: 'fixed', pcCard: true },
 
   { path: P.contacts, access: 'appContacts', appForced: true, nativeTheme: true, pcCard: true, guestGate: true },
-  { path: P.contactAdd, access: 'always', nativeTheme: true, guestGate: true },
-  { path: P.me, access: 'appMe', appForced: true, nativeTheme: true, pcCard: true },
+  { path: P.contactAdd, access: 'always', nativeTheme: true, guestGate: true, grouped: true },
+  { path: P.me, access: 'appMe', appForced: true, nativeTheme: true, pcCard: true, grouped: true },
   { path: P.meIndex, access: 'appMe', appForced: true, nativeTheme: true, legacy: true },
   { path: P.meHomepage, access: 'appMe', appForced: true, nativeTheme: true },
   { path: P.vision, access: 'always', nativeTheme: true, pcCard: true },
 
   { path: P.members.list, access: 'members' },
-  { path: P.members.item, access: 'members' },
+  { path: P.members.item, access: 'members', grouped: true },
   { path: P.members.group, access: 'members' },
   { path: P.members.groupItem, access: 'members' },
   { path: P.members.role, access: 'members' },
@@ -144,7 +145,7 @@ export const ROUTES = [
   { path: P.developer, access: 'developer', pcCard: true },
 
   { path: P.deviceHistory, access: 'always', nativeTheme: true, appHeader: true, legacy: true },
-  { path: P.deviceNotify, access: 'always', nativeTheme: true },
+  { path: P.deviceNotify, access: 'always', nativeTheme: true, grouped: true },
   { path: P.deviceSetting.index, access: 'always', nativeTheme: true, appHeader: true },
   { path: P.deviceSetting.angle, access: 'always', nativeTheme: true, appHeader: true },
   { path: P.deviceSetting.credentials, access: 'always', nativeTheme: true, appHeader: true },
@@ -155,7 +156,7 @@ export const ROUTES = [
   { path: P.deviceSetting.rename, access: 'always', nativeTheme: true, appHeader: true },
   { path: P.deviceSetting.share, access: 'always', nativeTheme: true },
   { path: P.deviceSetting.batteryTrend, access: 'always', nativeTheme: true },
-  { path: P.deviceSetting.factoryInfo, access: 'always', nativeTheme: true },
+  { path: P.deviceSetting.factoryInfo, access: 'always', nativeTheme: true, grouped: true },
   { path: P.hub.legacyRoot, access: 'always', nativeTheme: true, appHeader: true, pullRefresh: true, legacy: true },
   { path: P.hub.index, access: 'always', nativeTheme: true, appHeader: true, pullRefresh: true, pcCard: true },
   { path: P.hub.ssmUpgrade, access: 'always' },

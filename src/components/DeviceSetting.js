@@ -28,6 +28,7 @@ import SliderItem from './SliderItem';
 import { PATHS } from '@/routes/manifest';
 import { useOpenCredential } from '@/hooks/useOpenCredential';
 import { useSettingsNavigate } from '@/components/settingsSubPage';
+import SettingsGroup, { settingsHeaderSx, settingsPageSx } from './SettingsGroup';
 
 export default function DeviceSetting(props) {
   const { gManageDevice } = useContext(GlobalStateContext);
@@ -150,7 +151,7 @@ function ExistingDeviceSetting({ showBack = true }) {
       sx={{
         height: '100vh',
         overflow: 'auto',
-        bgcolor: 'background.default',
+        bgcolor: settingsPageSx.bgcolor,
         '&::-webkit-scrollbar': {
           display: 'none',
         },
@@ -158,102 +159,106 @@ function ExistingDeviceSetting({ showBack = true }) {
         scrollbarWidth: 'none',
       }}
     >
-      {showBack && <PageHeader onBack={() => navigate(-1)} title={currentDevice.deviceName || deviceName} />}
+      {showBack && (
+        <PageHeader sx={settingsHeaderSx} onBack={() => navigate(-1)} title={currentDevice.deviceName || deviceName} />
+      )}
       {isAppHome && <BleStatusBar deviceUUID={did} top={showBack ? undefined : 0} />}
-      <List>
-        <ListItem disablePadding>
-          <MobileDeviceSetting />
-        </ListItem>
-        <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-        <ListItem>
-          <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
-          <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(deviceModel)}</Typography>
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        {deviceModel === 'ssmbot_1' &&
-          (isAppHome ? (
-            <AppBotMode key={`botMode:${did}`} deviceUUID={did} />
+      <List disablePadding sx={settingsPageSx}>
+        <MobileDeviceSetting />
+        <SettingsGroup>
+          <ListItem>
+            <ListItemText primary={t('pages.sesameAccessControlDevice.index.DeviceModel')} />
+            <Typography sx={{ color: 'title.other' }}>{deviceModelDisplayName(deviceModel)}</Typography>
+          </ListItem>
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          {deviceModel === 'ssmbot_1' &&
+            (isAppHome ? (
+              <AppBotMode key={`botMode:${did}`} deviceUUID={did} />
+            ) : (
+              <>
+                <ListItem onClick={onClickSetAngle}>
+                  <ListItemText primary={t('botSettings.mode')} />
+                </ListItem>
+                <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              </>
+            ))}
+          {isScriptBotModel(deviceModel) ? (
+            isAppHome || !gStripe.isFromApp ? (
+              <AppBotSettings deviceUUID={did} />
+            ) : (
+              <>
+                <ListItem onClick={onClickSetAngle}>
+                  <ListItemText primary={t('botSettings.script')} />
+                </ListItem>
+                <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              </>
+            )
           ) : (
+            subFunctionsComp
+          )}
+          {(!gStripe.isFromApp || /iPhone|iPad|iPod/.test(navigator.userAgent)) &&
+            !isAppHome &&
+            isAppLockModel(deviceModel) && (
+              <>
+                <ListItem
+                  onClick={() => setSnackbarValue({ open: true, msg: t('lockSettings.useApp'), severity: 'info' })}
+                >
+                  <ListItemText primary={t('pages.sesameAccessControlDevice.index.SiriCustomPhrase')} />
+                </ListItem>
+                <Divider variant="middle" sx={{ opacity: 0.4 }} />
+              </>
+            )}
+          {isAppHome && appHostSupports('voiceShortcut') && (
+            <AppVoiceShortcut deviceUUID={did} deviceModel={deviceModel} />
+          )}
+          <UpgradeFirmware
+            key={`firmware:${did}`}
+            device={currentDevice}
+            Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID}
+          />
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          <BatteryPercent
+            device={
+              nativeBattery != null
+                ? { ...currentDevice, stateInfo: { ...currentDevice.stateInfo, batteryPercentage: nativeBattery } }
+                : currentDevice
+            }
+          />
+
+          {currentDevice?.stateInfo?.registerTime && (
             <>
-              <ListItem onClick={onClickSetAngle}>
-                <ListItemText primary={t('botSettings.mode')} />
-              </ListItem>
-              <Divider variant="middle" sx={{ opacity: 0.4 }} />
-            </>
-          ))}
-        {isScriptBotModel(deviceModel) ? (
-          isAppHome || !gStripe.isFromApp ? (
-            <AppBotSettings deviceUUID={did} />
-          ) : (
-            <>
-              <ListItem onClick={onClickSetAngle}>
-                <ListItemText primary={t('botSettings.script')} />
-              </ListItem>
-              <Divider variant="middle" sx={{ opacity: 0.4 }} />
-            </>
-          )
-        ) : (
-          subFunctionsComp
-        )}
-        {(!gStripe.isFromApp || /iPhone|iPad|iPod/.test(navigator.userAgent)) &&
-          !isAppHome &&
-          isAppLockModel(deviceModel) && (
-            <>
-              <ListItem
-                onClick={() => setSnackbarValue({ open: true, msg: t('lockSettings.useApp'), severity: 'info' })}
-              >
-                <ListItemText primary={t('pages.sesameAccessControlDevice.index.SiriCustomPhrase')} />
+              <ListItem>
+                <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
+                <Typography sx={{ color: 'title.other' }}>
+                  {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
+                </Typography>
               </ListItem>
               <Divider variant="middle" sx={{ opacity: 0.4 }} />
             </>
           )}
-        {isAppHome && appHostSupports('voiceShortcut') && (
-          <AppVoiceShortcut deviceUUID={did} deviceModel={deviceModel} />
-        )}
-        <UpgradeFirmware
-          key={`firmware:${did}`}
-          device={currentDevice}
-          Hub3DeviceUUID={currentDevice.stateInfo?.wm2UUID}
-        />
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        <BatteryPercent
-          device={
-            nativeBattery != null
-              ? { ...currentDevice, stateInfo: { ...currentDevice.stateInfo, batteryPercentage: nativeBattery } }
-              : currentDevice
-          }
-        />
-
-        {currentDevice?.stateInfo?.registerTime && (
-          <>
-            <ListItem>
-              <ListItemText primary={t('pages.sesameAccessControlDevice.index.RegisterTime')} />
-              <Typography sx={{ color: 'title.other' }}>
-                {new Date(Number(currentDevice.stateInfo.registerTime)).toLocaleString()}
-              </Typography>
-            </ListItem>
-            <Divider variant="middle" sx={{ opacity: 0.4 }} />
-          </>
-        )}
-        <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
-          <ListItemText primary="UUID" sx={{ flexShrink: 0, mr: 1 }} />
-          <Typography
-            sx={{
-              color: 'text.secondary',
-              fontSize: 'clamp(10px, 2.9vw, 12px)',
-              whiteSpace: 'nowrap',
-              ml: 'auto',
-            }}
-          >
-            {did}
-          </Typography>
-          <SvgIcon component={SvgArrow} />
-        </ListItem>
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        {gUtils.isShowType(deviceModel, gConfig.sesameTouchProAuthType.face) && (
-          <SliderItem text={t('accessCtl.auth.radarDetectionDistance')} value={0} onChangeCommitted={onClickSetAngle} />
-        )}
-        <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
+          <ListItem onClick={openFactoryInfo} sx={{ cursor: 'pointer' }}>
+            <ListItemText primary="UUID" sx={{ flexShrink: 0, mr: 1 }} />
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                fontSize: 'clamp(10px, 2.9vw, 12px)',
+                whiteSpace: 'nowrap',
+                ml: 'auto',
+              }}
+            >
+              {did}
+            </Typography>
+            <SvgIcon component={SvgArrow} />
+          </ListItem>
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          {gUtils.isShowType(deviceModel, gConfig.sesameTouchProAuthType.face) && (
+            <SliderItem
+              text={t('accessCtl.auth.radarDetectionDistance')}
+              value={0}
+              onChangeCommitted={onClickSetAngle}
+            />
+          )}
+        </SettingsGroup>
         <MobileRemoveDevice
           deviceUUID={did}
           subUUID={gStripe.customerInfo.subUUID}

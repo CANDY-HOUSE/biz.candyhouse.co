@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import BackButton from '@/components/BackButton';
-import { ios, hoverSx } from '@/theme/appHomeStyle';
+import { ios, hoverSx, hairline } from '@/theme/appHomeStyle';
 
 // Browser pages on the grouped background: a large title, then labelled white cards of rows.
 export function PcPage({ title, onBack, action, children, sx }) {
@@ -46,8 +46,8 @@ const separatorSx = {
     left: 20,
     right: 0,
     bottom: 0,
-    height: '0.5px',
-    bgcolor: ios.separator,
+    height: 0,
+    borderBottom: hairline,
   },
 };
 

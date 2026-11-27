@@ -25,6 +25,7 @@ import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { mapTiles } from '@/constants/mapTiles';
 import markerIcon from '@assets/sesame-map-marker.png';
 import { lockSettingsInteraction } from './lockSettingsInteraction';
+import { groupCardSx, groupedRowsSx, groupLabelSx, settingsHeaderSx, settingsPageSx } from './SettingsGroup';
 
 const ZOOM = 17;
 // Shown until the stored point or the phone location arrives; the main market is Japan.
@@ -207,19 +208,28 @@ export default function AppAutoUnlock() {
   }, [latitude, longitude, radius]);
 
   return (
-    <Box sx={{ ...lockSettingsInteraction, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
-      <PageHeader onBack={() => navigate(-1)} />
-      <ListItem sx={{ bgcolor: 'background.paper', flexShrink: 0 }}>
-        <ListItemText primary={t('lockExtras.autoUnlock')} />
-        <Switch disableRipple checked={preferences.autoUnlock} onChange={(_, value) => enable(value).catch(error)} />
-      </ListItem>
+    <Box
+      sx={{
+        ...lockSettingsInteraction,
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: settingsPageSx.bgcolor,
+      }}
+    >
+      <PageHeader sx={settingsHeaderSx} onBack={() => navigate(-1)} />
+      <Box sx={{ ...groupCardSx, ...groupedRowsSx, mx: '16px', mt: '8px', flexShrink: 0 }}>
+        <ListItem>
+          <ListItemText primary={t('lockExtras.autoUnlock')} />
+          <Switch disableRipple checked={preferences.autoUnlock} onChange={(_, value) => enable(value).catch(error)} />
+        </ListItem>
+      </Box>
       <Typography
         sx={{
-          px: 2,
-          py: 1,
-          color: 'text.secondary',
-          fontSize: 14,
-          whiteSpace: 'pre-line',
+          ...groupLabelSx,
+          mx: '16px',
+          pt: '8px',
+          pb: '12px',
           maxHeight: '30vh',
           overflow: 'auto',
           flexShrink: 0,

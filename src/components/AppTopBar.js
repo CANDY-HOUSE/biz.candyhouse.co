@@ -78,7 +78,7 @@ export default function AppTopBar() {
               zIndex: 1100,
               flexShrink: 0,
               height: appTopBarHeight,
-              bgcolor: '#fff',
+              bgcolor: route.grouped ? ios.background : '#fff',
             }
       }
     >

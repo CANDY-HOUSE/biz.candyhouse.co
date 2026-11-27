@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import AddEmployee from './biz/device/AddEmployee';
 import { biz3utils } from '@/utils/biz3utils';
 import { PATHS } from '@/routes/manifest';
+import { settingsPageSx } from './SettingsGroup';
 
 const MobileContactAdd = () => {
   const handleOpenPage = (paramStr) => {
@@ -24,8 +25,9 @@ const MobileContactAdd = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
+    <Box sx={{ width: '100%', minHeight: '100%', ...settingsPageSx, pt: 0 }}>
       <AddEmployee
+        grouped
         completionCallback={(res) => {
           if (!res.success) {
             return;

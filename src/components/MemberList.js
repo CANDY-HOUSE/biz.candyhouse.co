@@ -95,7 +95,8 @@ const ContactCards = ({ items, rows, query, onSearch }) => {
   const floatingAddRef = useRef(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const masterDetail = useMasterDetail();
+  // With no contacts there is nothing to show beside the list, so the empty state fills the page as in the APP.
+  const masterDetail = useMasterDetail() && items.length > 0;
   const selectedUUID = masterDetail ? searchParams.get('uid') : null;
   // Dragging shows the new order before the server confirms it.
   const [ordered, setOrdered] = useState(null);
@@ -198,7 +199,7 @@ const ContactCards = ({ items, rows, query, onSearch }) => {
       panel={
         selectedUUID && (
           <DetailPanelContext.Provider value={panel}>
-            <Box sx={{ height: '100%', overflow: 'auto', p: '12px', bgcolor: ios.card, borderRadius: ios.cardRadius }}>
+            <Box sx={{ height: '100%', overflow: 'auto', borderRadius: ios.cardRadius }}>
               <EmployeeItem key={selectedUUID} />
             </Box>
           </DetailPanelContext.Provider>

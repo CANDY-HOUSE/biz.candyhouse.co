@@ -19,6 +19,9 @@ export const ios = {
   spring: 'cubic-bezier(0.32, 0.72, 0, 1)',
 };
 
+// The one separator line for every list and panel; a border (not a 0.5px-tall box) so it lands on a single device pixel.
+export const hairline = `0.5px solid ${ios.separator}`;
+
 export const appSearchSx = {
   bgcolor: ios.fill,
   borderRadius: '12px',

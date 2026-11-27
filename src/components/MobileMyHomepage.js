@@ -19,7 +19,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
-import { ios } from '@/theme/appHomeStyle';
+import { ios, hairline } from '@/theme/appHomeStyle';
 import { useTranslation } from 'react-i18next';
 import { SvgArrow } from '@/assets/svg/svgLock';
 import { QrCode } from '@mui/icons-material';
@@ -46,8 +46,8 @@ const appRowSx = {
     left: 60,
     right: 0,
     bottom: 0,
-    height: '0.5px',
-    bgcolor: ios.separator,
+    height: 0,
+    borderBottom: hairline,
   },
 };
 

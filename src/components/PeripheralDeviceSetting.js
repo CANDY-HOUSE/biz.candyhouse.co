@@ -55,6 +55,13 @@ import { useAppOnlyNotice, useBleSnapshot } from '@/hooks/useBleSnapshot';
 import { PATHS } from '@/routes/manifest';
 import { useOpenCredential } from '@/hooks/useOpenCredential';
 import { useSettingsNavigate } from '@/components/settingsSubPage';
+import SettingsGroup, {
+  groupLabelSx,
+  nestedListSx,
+  rowSeparatorSx,
+  settingsHeaderSx,
+  settingsPageSx,
+} from './SettingsGroup';
 
 export default function PeripheralDeviceSetting({ showBack = true }) {
   const { gManageDevice, gStripe, setSnackbarValue } = useContext(GlobalStateContext);
@@ -268,10 +275,10 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
   /* Face3 的雷达侦查距离放进「感应与声音」分组（分组目前只在开发环境显示） */
   const face3Group = model === sesameDeviceModel.sesame_face_3;
   return (
-    <Box sx={{ height: showBack ? '100dvh' : '100%', overflowY: 'auto', bgcolor: 'background.default' }}>
+    <Box sx={{ height: showBack ? '100dvh' : '100%', overflowY: 'auto', bgcolor: settingsPageSx.bgcolor }}>
       {showBack &&
         (isAppHome ? (
-          <PageHeader onBack={() => navigate(-1)} title={title} />
+          <PageHeader sx={settingsHeaderSx} onBack={() => navigate(-1)} title={title} />
         ) : (
           <Box
             component="header"
@@ -279,7 +286,7 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
               display: 'flex',
               alignItems: 'center',
               minHeight: 48,
-              bgcolor: 'background.paper',
+              ...settingsHeaderSx,
               position: 'sticky',
               top: 0,
               zIndex: 1100,
@@ -290,108 +297,104 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
           </Box>
         ))}
       {isAppHome && !sleeping && <BleStatusBar deviceUUID={id} top={showBack ? undefined : 0} />}
-      <List>
-        {!wifi && (
-          <>
-            <MobileDeviceSetting />
-            <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
-          </>
-        )}
-        {row(t('pages.sesameAccessControlDevice.index.DeviceModel'), deviceModelDisplayName(model))}
-        {model === 'remote_nano' && !sleeping && (
-          <>
-            {row(
-              t('peripheral.triggerDelay'),
-              t('peripheral.delayValue', { value: ((peripheral?.triggerDelay || 0) * 0.3).toFixed(1) }),
-              () => {
-                if (available()) setDelayOpen((open) => !open);
-              }
-            )}
-            {delayOpen && (
-              <LockSettingWheel
-                values={[0, 10]}
-                value={peripheral?.triggerDelay || 0}
-                label={(value) => t('peripheral.delayValue', { value: (value * 0.3).toFixed(1) })}
-                title={t('peripheral.triggerDelay')}
-                disabled={busy || !native?.bleConnected}
-                onChange={async (value) => {
-                  if (await run('triggerDelay', { value })) setDelayOpen(false);
-                }}
-              />
-            )}
-          </>
-        )}
-        {wifi && (
-          <>
-            {row('SSID', native?.hub?.wifiSsid || '', () => {
-              if (available()) setWifiOpen(true);
-            })}
-            {row(t('peripheral.password'), native?.hub?.wifiPwd || '', () => {
-              if (available()) setWifiOpen(true);
-            })}
-            {row(
-              t('peripheral.network'),
-              <WifiNetworkStatus
-                status={
-                  native?.bleConnected
-                    ? native?.hub?.network
-                    : {
-                        isAPWork: device.stateInfo?.wm2State === true,
-                        isNetwork: device.stateInfo?.wm2State === true,
-                        isIoTWork: device.stateInfo?.wm2State === true,
-                      }
+      <List disablePadding sx={settingsPageSx}>
+        {!wifi && <MobileDeviceSetting />}
+        <SettingsGroup>
+          {row(t('pages.sesameAccessControlDevice.index.DeviceModel'), deviceModelDisplayName(model))}
+          {model === 'remote_nano' && !sleeping && (
+            <>
+              {row(
+                t('peripheral.triggerDelay'),
+                t('peripheral.delayValue', { value: ((peripheral?.triggerDelay || 0) * 0.3).toFixed(1) }),
+                () => {
+                  if (available()) setDelayOpen((open) => !open);
                 }
-              />
-            )}
-          </>
-        )}
-        {caps.map((kind) =>
-          row(t(`accessCtl.auth.${credentialLabels[kind]}`), <SvgIcon component={SvgArrow} />, () => openChild(kind))
-        )}
-        {isAppHome && appHostSupports('voiceShortcut') && <AppVoiceShortcut deviceUUID={id} deviceModel={model} />}
-        <UpgradeFirmware
-          key={id}
-          device={device}
-          Hub3DeviceUUID={device.stateInfo?.wm2UUID}
-          readOnly={wifi || sleeping}
-        />
-        <Divider variant="middle" sx={{ opacity: 0.4 }} />
-        {!wifi && <BatteryPercent device={device} />}
-        {row('UUID', id, () =>
-          settingsNavigate({ pathname: PATHS.deviceSetting.factoryInfo, search: location.search })
-        )}
-        {/* 识别成功动画：Face3 一律显示；能否修改由云端按钥匙级别判定 */}
-        {face3Group && <Face3UnlockClipSetting deviceUUID={id} />}
-        {face3Group ? <Face3DeviceSettings radar={radarSetting} /> : radarSetting}
+              )}
+              {delayOpen && (
+                <LockSettingWheel
+                  values={[0, 10]}
+                  value={peripheral?.triggerDelay || 0}
+                  label={(value) => t('peripheral.delayValue', { value: (value * 0.3).toFixed(1) })}
+                  title={t('peripheral.triggerDelay')}
+                  disabled={busy || !native?.bleConnected}
+                  onChange={async (value) => {
+                    if (await run('triggerDelay', { value })) setDelayOpen(false);
+                  }}
+                />
+              )}
+            </>
+          )}
+          {wifi && (
+            <>
+              {row('SSID', native?.hub?.wifiSsid || '', () => {
+                if (available()) setWifiOpen(true);
+              })}
+              {row(t('peripheral.password'), native?.hub?.wifiPwd || '', () => {
+                if (available()) setWifiOpen(true);
+              })}
+              {row(
+                t('peripheral.network'),
+                <WifiNetworkStatus
+                  status={
+                    native?.bleConnected
+                      ? native?.hub?.network
+                      : {
+                          isAPWork: device.stateInfo?.wm2State === true,
+                          isNetwork: device.stateInfo?.wm2State === true,
+                          isIoTWork: device.stateInfo?.wm2State === true,
+                        }
+                  }
+                />
+              )}
+            </>
+          )}
+          {caps.map((kind) =>
+            row(t(`accessCtl.auth.${credentialLabels[kind]}`), <SvgIcon component={SvgArrow} />, () => openChild(kind))
+          )}
+          {isAppHome && appHostSupports('voiceShortcut') && <AppVoiceShortcut deviceUUID={id} deviceModel={model} />}
+          <UpgradeFirmware
+            key={id}
+            device={device}
+            Hub3DeviceUUID={device.stateInfo?.wm2UUID}
+            readOnly={wifi || sleeping}
+          />
+          <Divider variant="middle" sx={{ opacity: 0.4 }} />
+          {!wifi && <BatteryPercent device={device} />}
+          {row('UUID', id, () =>
+            settingsNavigate({ pathname: PATHS.deviceSetting.factoryInfo, search: location.search })
+          )}
+        </SettingsGroup>
         {sleeping && (
-          <Typography sx={{ p: 2, color: 'text.secondary', fontSize: 13, whiteSpace: 'pre-line' }}>
+          <Typography sx={{ ...groupLabelSx, mx: '16px', mt: '-16px', mb: '24px', pt: '8px' }}>
             {t('peripheral.sleeping', {
               device: t(model === 'remote_nano' ? 'peripheral.nanoName' : 'peripheral.openSensorName'),
             })}
           </Typography>
         )}
+        {/* 识别成功动画：Face3 一律显示；能否修改由云端按钥匙级别判定 */}
+        {face3Group && <Face3UnlockClipSetting deviceUUID={id} />}
+        {face3Group ? (
+          <Face3DeviceSettings radar={radarSetting} />
+        ) : (
+          radarSetting && <SettingsGroup cardSx={{ overflow: 'visible' }}>{radarSetting}</SettingsGroup>
+        )}
         {pcConnector && !isSleepy(model) && (
-          <>
-            <Typography sx={{ bgcolor: 'secondary.main', color: 'text.secondary', px: 2, pt: 4, pb: 1, fontSize: 13 }}>
-              {t('peripheral.boundDevicesHint', { device: title })}
-            </Typography>
-            <Box sx={{ px: 2 }}>
-              <MobileBindDevice
-                device={
-                  peripheral?.bound
-                    ? { ...device, stateInfo: { ...device.stateInfo, sesameDevices: peripheral.bound } }
-                    : device
-                }
-                editable={false}
-              />
-            </Box>
-          </>
+          <SettingsGroup header={t('peripheral.boundDevicesHint', { device: title })} cardSx={nestedListSx}>
+            <MobileBindDevice
+              device={
+                peripheral?.bound
+                  ? { ...device, stateInfo: { ...device.stateInfo, sesameDevices: peripheral.bound } }
+                  : device
+              }
+              editable={false}
+            />
+          </SettingsGroup>
         )}
         {!pcConnector && !isBike(model) && !sleeping && (
-          <>
-            <Typography sx={{ bgcolor: 'secondary.main', color: 'text.secondary', px: 2, pt: 4, pb: 1, fontSize: 13 }}>
-              {t(wifi ? 'peripheral.wifiBindHint' : 'peripheral.bindHint', { device: title })}
-            </Typography>
+          <SettingsGroup
+            header={t(wifi ? 'peripheral.wifiBindHint' : 'peripheral.bindHint', { device: title })}
+            cardSx={rowSeparatorSx}
+          >
             {bound.map((target) => (
               <ListItem key={target}>
                 <ListItemText
@@ -423,12 +426,11 @@ export default function PeripheralDeviceSetting({ showBack = true }) {
               }}
               sx={{ cursor: 'pointer', minHeight: 53, gap: 1 }}
             >
-              <Typography>{t('peripheral.addDevice')}</Typography>
+              <Typography sx={{ fontSize: 17, color: 'primary.main' }}>{t('peripheral.addDevice')}</Typography>
               {!bound.length && <Error color="error" sx={{ fontSize: 22 }} />}
             </ListItem>
-          </>
+          </SettingsGroup>
         )}
-        <Box sx={{ bgcolor: 'secondary.main', height: 10 }} />
         <MobileRemoveDevice deviceUUID={id} subUUID={gStripe.customerInfo.subUUID} deviceName={title} named />
         {!wifi && !sleeping && (
           <LockSettingsExtras
