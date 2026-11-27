@@ -216,6 +216,9 @@ const App = () => {
               body: { WebkitUserSelect: 'none', userSelect: 'none' },
               // The WebView's own overscroll stretch moves the whole page, title bar included.
               'html, body': { overscrollBehavior: 'none' },
+              // Scroll areas show no bar in the APP, as the Android WebView never draws one.
+              '*': { scrollbarWidth: 'none' },
+              '*::-webkit-scrollbar': { display: 'none' },
               'input, textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]': {
                 WebkitUserSelect: 'text',
                 userSelect: 'text',

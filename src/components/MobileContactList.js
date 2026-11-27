@@ -84,7 +84,7 @@ const SortableContactItem = ({ index, user, callRowClick, enableDrag, selected }
             left: 72,
             right: 0,
             bottom: 0,
-            height: 0,
+            height: '1px',
             borderBottom: hairline,
           },
         }}

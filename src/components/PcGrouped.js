@@ -46,7 +46,7 @@ const separatorSx = {
     left: 20,
     right: 0,
     bottom: 0,
-    height: 0,
+    height: '1px',
     borderBottom: hairline,
   },
 };

@@ -46,7 +46,7 @@ const appRowSx = {
     left: 60,
     right: 0,
     bottom: 0,
-    height: 0,
+    height: '1px',
     borderBottom: hairline,
   },
 };

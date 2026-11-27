@@ -20,6 +20,7 @@ export const ios = {
 };
 
 // The one separator line for every list and panel; a border (not a 0.5px-tall box) so it lands on a single device pixel.
+// Its box needs a real height (1px, line at the bottom): a box no taller than the line can snap to zero height in WebKit and vanish.
 export const hairline = `0.5px solid ${ios.separator}`;
 
 export const appSearchSx = {

@@ -21,8 +21,9 @@ export const groupedRowsSx = {
   ...iosSwitchSx,
   '& .MuiListItem-root, & .MuiListItemButton-root': { minHeight: 52 },
   '& .MuiListItemText-root': { my: '6px' },
-  '& .MuiListItemText-primary': { fontSize: { xs: 17, md: 16 }, color: ios.label },
-  '& .MuiDivider-root': { m: 0, ml: '16px', borderBottom: hairline, opacity: 1 },
+  // A whole-pixel line height keeps rows (and the separators between them) on whole pixels.
+  '& .MuiListItemText-primary': { fontSize: { xs: 17, md: 16 }, lineHeight: { xs: '26px', md: 1.5 }, color: ios.label },
+  '& .MuiDivider-root': { m: 0, mt: '-1px', ml: '16px', height: '1px', borderBottom: hairline, opacity: 1 },
   // Rows end with their own divider; the card edge replaces the last one.
   '& > .MuiDivider-root:last-child, & > :last-child > .MuiDivider-root:last-child, & > :last-child > :last-child > .MuiDivider-root:last-child':
     { display: 'none' },
@@ -37,7 +38,7 @@ export const rowSeparatorSx = {
     left: 16,
     right: 0,
     bottom: 0,
-    height: 0,
+    height: '1px',
     borderBottom: hairline,
   },
 };
