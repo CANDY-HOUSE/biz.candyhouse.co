@@ -4,7 +4,6 @@ import { GlobalStateContext } from '@/context/GlobalContextProvider';
 import { Box, IconButton } from '@mui/material';
 import React, { useState, useEffect, useMemo, useContext, useRef } from 'react';
 import Hider from '@/components/biz/Hider';
-import { PngBotIcon, SvgLock, SvgLockDisable, SvgOPS, SvgUnLock } from '@/assets/svg/svgLock';
 import { gUtils } from '@/utils/gUtils';
 import { gConfig } from '@/constants/gConfig';
 import { keyframes } from '@mui/system';
@@ -60,7 +59,6 @@ const VIotSwitch = ({
   onCommandStart,
   position,
   size = 51,
-  tinted = false,
   botIndex,
   disabled = false,
 }) => {
@@ -140,53 +138,35 @@ const VIotSwitch = ({
             );
           }}
         >
-          {tinted ? (
-            <TintedIcon size={size} tone={checked === undefined ? 'unknown' : 'unlocked'} Icon={PlayArrowRoundedIcon} />
-          ) : checked === undefined ? (
-            <PngBotIcon state={-1} />
-          ) : (
-            <PngBotIcon state={0} />
-          )}
+          <TintedIcon size={size} tone={checked === undefined ? 'unknown' : 'unlocked'} Icon={PlayArrowRoundedIcon} />
         </IconButton>
       );
     }
     if (isLockButtonModel(model)) {
       return (
         <IconButton disabled={disabled} onClick={handleChange}>
-          {tinted ? (
-            <TintedIcon size={size} tone={lockTone(checked)} Icon={checked ? LockOpenRoundedIcon : LockRoundedIcon} />
-          ) : checked === undefined ? (
-            <SvgLockDisable />
-          ) : checked ? (
-            <SvgUnLock />
-          ) : (
-            <SvgLock />
-          )}
+          <TintedIcon size={size} tone={lockTone(checked)} Icon={checked ? LockOpenRoundedIcon : LockRoundedIcon} />
         </IconButton>
       );
     }
     if (gUtils.isOPSModel(model)) {
       return (
         <IconButton>
-          {tinted ? (
-            <Box
-              sx={{
-                minWidth: size,
-                height: size,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: ios.secondaryLabel,
-                fontSize: 15,
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {defaultState}
-            </Box>
-          ) : (
-            <SvgOPS label={defaultState} size={size} />
-          )}
+          <Box
+            sx={{
+              minWidth: size,
+              height: size,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: ios.secondaryLabel,
+              fontSize: 15,
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {defaultState}
+          </Box>
         </IconButton>
       );
     }
@@ -210,24 +190,16 @@ const VIotSwitch = ({
             );
           }}
         >
-          {tinted ? (
-            <TintedIcon
-              size={size}
-              tone={disabled ? 'unknown' : lockTone(checked)}
-              Icon={checked && !disabled ? LockOpenRoundedIcon : LockRoundedIcon}
-            />
-          ) : disabled || checked === undefined ? (
-            <SvgLockDisable />
-          ) : checked ? (
-            <SvgUnLock />
-          ) : (
-            <SvgLock />
-          )}
+          <TintedIcon
+            size={size}
+            tone={disabled ? 'unknown' : lockTone(checked)}
+            Icon={checked && !disabled ? LockOpenRoundedIcon : LockRoundedIcon}
+          />
         </IconButton>
       );
     }
     return <></>;
-  }, [checked, model, deviceUUID, shareKey, handleChange, relayIndex, relayEnabled, onCommand, botIndex, size, tinted]);
+  }, [checked, model, deviceUUID, shareKey, handleChange, relayIndex, relayEnabled, onCommand, botIndex, size]);
   return (
     <>
       <Hider show={isShow}>
@@ -236,8 +208,7 @@ const VIotSwitch = ({
             position: 'relative',
             display: 'inline-flex',
             ...(shaking ? { animation: `${shake} 60ms linear infinite alternate` } : {}),
-            ...(tinted ? { '& .MuiIconButton-root:active > div': { transform: 'scale(0.9)' } } : {}),
-            ...(size !== 51 ? { '& img': { width: `${size}px !important`, height: `${size}px !important` } } : {}),
+            '& .MuiIconButton-root:active > div': { transform: 'scale(0.9)' },
           }}
         >
           {stateView}
@@ -258,7 +229,7 @@ const VIotSwitch = ({
               <Box
                 sx={{
                   position: 'absolute',
-                  right: tinted ? 5 : -3,
+                  right: 5,
                   top: '50%',
                   width: size > 51 ? 8 : 6,
                   height: size > 51 ? 8 : 6,

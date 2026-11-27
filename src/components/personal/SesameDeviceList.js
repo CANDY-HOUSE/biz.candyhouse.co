@@ -497,7 +497,7 @@ const SortableItemComponent = ({
   );
 };
 
-const appSwitchProps = homeCards ? { tinted: true, size: 62 } : {};
+const appSwitchProps = homeCards ? { size: 62 } : {};
 const appExpandedSx = {
   // Line the script play buttons up under the card's main button.
   '& .MuiIconButton-root': { width: 60 },

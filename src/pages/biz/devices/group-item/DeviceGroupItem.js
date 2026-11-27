@@ -118,7 +118,7 @@ const DeviceGroupItem = () => {
         isBind={false}
         isBack={false}
         text={t('manage.group.devicesCount', { num: items.length })}
-        columns={DataTableColumns.ssmDevices({ gIot: gIot })}
+        columns={DataTableColumns.ssmDevices({ datas: items, gIot: gIot })}
         callDelData={(items) => {
           const deviceItem = gManageGroup.deviceGroups.Items.find((item) => item.gid === gid);
           gManageGroup.removeDeviceInGroup(gid, deviceItem.uuids, items, (res) => {
